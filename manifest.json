@@ -1,0 +1,19 @@
+{
+  "name": "Specter",
+  "id": "741784072267500042",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "menu": [
+    {"name": "Create Text", "command": "text"},
+    {"name": "Create Frame", "command": "frame"},
+    {"separator": true},
+    {"name": "Create Shape",
+     "menu": [
+       {"name": "Create Circle", "command": "circle"},
+       {"separator": true},
+       {"name": "Create Rectangle", "command": "rectangle"}
+     ]
+    }
+  ]
+}
