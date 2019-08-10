@@ -1,0 +1,7 @@
+# because typescript
+*.js
+
+# npm
+node_modules
+.npm
+npm-debug.log
