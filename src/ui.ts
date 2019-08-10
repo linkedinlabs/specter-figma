@@ -1,9 +1,4 @@
-<h2>Rectangle Creator</h2>
-<p>Count: <input id="count" value="5"></p>
-<button id="create">Create</button>
-<button id="lol">Lawls</button>
-<button id="cancel">Cancel</button>
-<script>
+import './ui.css'
 
 document.getElementById('create').onclick = () => {
   const textbox = document.getElementById('count');
@@ -31,5 +26,3 @@ document.getElementById('lol').onclick = () => {
 document.getElementById('cancel').onclick = () => {
   parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
 }
-
-</script>
