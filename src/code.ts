@@ -5,8 +5,15 @@
 // You can access browser APIs in the <script> tag inside "ui.html" which has a
 // full browser enviroment (see documentation).
 
+const getRandomInt = (min, max) => {
+  const setMin = Math.ceil(min);
+  const setMax = Math.floor(max);
+  const num = Math.floor(Math.random() * (setMax - setMin + 1)) + setMin;
+  return num;
+}
+
 // This shows the HTML page in "ui.html".
-figma.showUI(__html__, { width: 100, height: 100 });
+figma.showUI(__html__, { width: 100, height: 300 });
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
@@ -18,8 +25,14 @@ figma.ui.onmessage = msg => {
     const nodes: SceneNode[] = [];
     for (let i = 0; i < msg.count; i++) {
       const rect = figma.createRectangle();
-      rect.x = i * 150;
-      rect.fills = [{type: 'SOLID', color: {r: 1, g: 0.5, b: 0}}];
+      rect.x = i * 20;
+      rect.y = i * 20;
+
+      const r = (getRandomInt(0,255) / 255);
+      const g = (getRandomInt(0,255) / 255);
+      const b = (getRandomInt(0,255) / 255);
+
+      rect.fills = [{type: 'SOLID', color: {r: r, g: g, b: b}}];
       figma.currentPage.appendChild(rect);
       nodes.push(rect);
     }
