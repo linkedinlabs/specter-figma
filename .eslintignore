@@ -1,0 +1,6 @@
+# ignore files/directories that start with a period (.)
+.*
+
+# ignore specific directories
+dist/*
+src/vendor/*
