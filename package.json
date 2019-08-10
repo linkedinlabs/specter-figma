@@ -12,8 +12,8 @@
     "start": "npm run watch",
     "postinstall": "npm run build && skpm-link",
     "lint": "npm run lint:js",
-    "lint:eslint": "eslint './src/**/*.js' './resources/**/*.js'",
-    "lint:stylelint": "stylelint './resources/**/*.css'",
+    "lint:eslint": "eslint './src/**/*.js' './src/**/*.js'",
+    "lint:stylelint": "stylelint './src/**/*.css'",
     "lint:js": "npm run lint:eslint",
     "lint:css": "npm run lint:stylelint",
     "lint:staged": "lint-staged"
