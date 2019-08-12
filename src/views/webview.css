@@ -42,3 +42,7 @@ button:focus {
 input:focus {
   box-shadow: inset 0 0 0 2px #18a0fb;
 }
+
+h2 {
+  color: red;
+}

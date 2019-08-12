@@ -2,7 +2,7 @@
 // it will then create that many rectangles on the screen.
 
 // This file holds the main code for the plugins. It has access to the *document*.
-// You can access browser APIs in the <script> tag inside "ui.html" which has a
+// You can access browser APIs in the <script> tag inside "webview.html" which has a
 // full browser enviroment (see documentation).
 
 const getRandomInt = (min: number, max: number): number => {
@@ -12,7 +12,7 @@ const getRandomInt = (min: number, max: number): number => {
   return num;
 };
 
-// This shows the HTML page in "ui.html".
+// This shows the HTML page in "webview.html".
 figma.showUI(__html__, { width: 100, height: 300 }); // eslint-disable-line no-undef
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
