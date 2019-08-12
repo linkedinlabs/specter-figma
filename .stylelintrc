@@ -1,0 +1,7 @@
+{
+  "processors": ["stylelint"],
+  "extends": [
+    "stylelint-config-standard",
+  ],
+  "rules": {}
+}

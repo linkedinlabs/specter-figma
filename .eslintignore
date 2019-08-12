@@ -1,0 +1,9 @@
+# ignore files/directories that start with a period (.)
+.*
+
+# ignore specific files
+figma.d.ts
+
+# ignore specific directories
+dist/*
+src/vendor/*
