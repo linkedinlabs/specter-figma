@@ -13,7 +13,7 @@ const getRandomInt = (min: number, max: number): number => {
 };
 
 // This shows the HTML page in "webview.html".
-figma.showUI(__html__, { width: 100, height: 300 }); // eslint-disable-line no-undef
+figma.showUI(__html__, { width: 225, height: 225 }); // eslint-disable-line no-undef
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
