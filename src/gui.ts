@@ -1,6 +1,6 @@
 import './views/webview.css';
 
-document.getElementById('create').onclick = () => {
+document.getElementById('annotate').onclick = () => {
   const textbox = (<HTMLInputElement> document.getElementById('count'));
   const count = parseInt(textbox.value, 10);
   parent.postMessage({
@@ -11,7 +11,7 @@ document.getElementById('create').onclick = () => {
   }, '*');
 };
 
-document.getElementById('lol').onclick = () => {
+document.getElementById('measure').onclick = () => {
   const textbox = (<HTMLInputElement> document.getElementById('count'));
   const count = parseInt(textbox.value, 10);
   parent.postMessage({
