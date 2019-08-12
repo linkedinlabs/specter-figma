@@ -1,6 +1,6 @@
-const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-const path = require('path')
+const HtmlWebpackInlineSourcePlugin = require('html-webpack-inline-source-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require('path');
 
 module.exports = (env, argv) => ({
   mode: argv.mode === 'production' ? 'production' : 'development',
@@ -44,4 +44,4 @@ module.exports = (env, argv) => ({
     }),
     new HtmlWebpackInlineSourcePlugin(),
   ],
-})
+});
