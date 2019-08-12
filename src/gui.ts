@@ -21,8 +21,3 @@ document.getElementById('lol').onclick = () => {
     },
   }, '*');
 };
-
-
-document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
-};
