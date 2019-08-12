@@ -1,7 +1,7 @@
 import './ui.css'
 
 document.getElementById('create').onclick = () => {
-  const textbox = document.getElementById('count');
+  const textbox = (<HTMLInputElement> document.getElementById('count'));
   const count = parseInt(textbox.value, 10);
   parent.postMessage({
     pluginMessage: {
@@ -12,7 +12,7 @@ document.getElementById('create').onclick = () => {
 }
 
 document.getElementById('lol').onclick = () => {
-  const textbox = document.getElementById('count');
+  const textbox = (<HTMLInputElement> document.getElementById('count'));
   const count = parseInt(textbox.value, 10);
   parent.postMessage({
     pluginMessage: {
