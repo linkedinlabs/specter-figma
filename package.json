@@ -10,7 +10,7 @@
     "build": "npx webpack --mode=production",
     "watch": "npx webpack --mode=development --watch",
     "start": "npm run watch",
-    "postinstall": "npm run build && skpm-link",
+    "postinstall": "npm run build",
     "lint": "npm run lint:js",
     "lint:eslint": "eslint . --ext .js,.tsx,.ts",
     "lint:stylelint": "stylelint './**/*.css'",
