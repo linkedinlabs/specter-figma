@@ -1,4 +1,4 @@
-import './ui.css';
+import './views/webview.css';
 
 document.getElementById('create').onclick = () => {
   const textbox = (<HTMLInputElement> document.getElementById('count'));
