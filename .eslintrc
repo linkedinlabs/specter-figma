@@ -6,7 +6,9 @@
     "airbnb-base"
   ],
   "globals": {
-    "log": "readonly"
+    "document": "readonly",
+    "figma": "readonly",
+    "parent": "readonly"
   },
   settings: {
     "import/extensions": [".js",".jsx",".ts",".tsx"],
@@ -24,6 +26,7 @@
     "jsdoc"
   ],
   "rules": {
+    "no-restricted-globals": "off",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",
     "no-useless-constructor": "off",

@@ -5,7 +5,7 @@
 // You can access browser APIs in the <script> tag inside "ui.html" which has a
 // full browser enviroment (see documentation).
 
-const getRandomInt = (min, max) => {
+const getRandomInt = (min: number, max: number): number => {
   const setMin = Math.ceil(min);
   const setMax = Math.floor(max);
   const num = Math.floor(Math.random() * (setMax - setMin + 1)) + setMin;
@@ -18,12 +18,14 @@ figma.showUI(__html__, { width: 100, height: 300 }); // eslint-disable-line no-u
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
-figma.ui.onmessage = (msg) => {
+figma.ui.onmessage = (msg): void => {
   // One way of distinguishing between different types of messages sent from
   // your HTML page is to use an object with a "type" property like this.
   if (msg.type === 'create-rectangles') {
     const nodes: SceneNode[] = [];
-    for (let i = 0; i < msg.count; i++) {
+    for (
+      let i = 0; i < msg.count; i += 1
+    ) {
       const rect = figma.createRectangle();
       rect.x = i * 20;
       rect.y = i * 20;
@@ -45,6 +47,7 @@ figma.ui.onmessage = (msg) => {
 
   if (msg.type === 'lawls') {
     console.log('hullo');
+    figma.ui.resize(300, 400);
   }
 
   // Make sure to close the plugin when you're done. Otherwise the plugin will
