@@ -1,4 +1,4 @@
-import './ui.css'
+import './ui.css';
 
 document.getElementById('create').onclick = () => {
   const textbox = (<HTMLInputElement> document.getElementById('count'));
@@ -7,9 +7,9 @@ document.getElementById('create').onclick = () => {
     pluginMessage: {
       type: 'create-rectangles',
       count,
-    }
-  }, '*')
-}
+    },
+  }, '*');
+};
 
 document.getElementById('lol').onclick = () => {
   const textbox = (<HTMLInputElement> document.getElementById('count'));
@@ -18,11 +18,11 @@ document.getElementById('lol').onclick = () => {
     pluginMessage: {
       type: 'lawls',
       count,
-    }
-  }, '*')
-}
+    },
+  }, '*');
+};
 
 
 document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
-}
+  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
+};
