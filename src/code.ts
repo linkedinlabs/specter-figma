@@ -49,10 +49,4 @@ figma.ui.onmessage = (msg): void => {
     console.log('hullo');
     figma.ui.resize(300, 400);
   }
-
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
-  if (msg.type !== 'lawls') {
-    figma.closePlugin();
-  }
 };
