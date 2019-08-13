@@ -12,17 +12,21 @@ const getRandomInt = (min: number, max: number): number => {
   return num;
 };
 
-console.log(figma.command);
-
+// watch menu commands
 if (figma.command) {
-  // This shows the HTML page in "webview.html".
-  figma.showUI(__html__, { width: 140, height: 180 }); // eslint-disable-line no-undef
+  if (figma.command === 'tools') {
+    // This shows the HTML page in "webview.html".
+    figma.showUI(__html__, { width: 140, height: 180 }); // eslint-disable-line no-undef    
+  } else {
+    console.log(`Do the thing: ${figma.command}`);
+    figma.closePlugin();
+  }
 }
 
-// Calls to "parent.postMessage" from within the HTML page will trigger this
-// callback. The callback will be passed the "pluginMessage" property of the
-// posted message.
+// watch GUI action clicks
 figma.ui.onmessage = (msg): void => {
+  console.log(`Do the thing: ${msg.type}`);
+
   // One way of distinguishing between different types of messages sent from
   // your HTML page is to use an object with a "type" property like this.
   if (msg.type === 'create-rectangles') {

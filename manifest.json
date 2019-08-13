@@ -7,14 +7,13 @@
   "menu": [
     {"name": "Show Toolbar", "command": "tools"},
     {"separator": true},
-    {"name": "Create Text", "command": "text"},
-    {"name": "Create Frame", "command": "frame"},
-    {"name": "Create Shape",
+    {"name": "Annotate",
      "menu": [
-       {"name": "Create Circle", "command": "circle"},
-       {"separator": true},
-       {"name": "Create Rectangle", "command": "rectangle"}
+       {"name": "Lookup Annotation", "command": "annotate"},
+       {"name": "Custom Annotation…", "command": "annotate-custom"}
      ]
-    }
+    },
+    {"name": "Set Measurement", "command": "measure"},
+    {"name": "Draw Bounding Box", "command": "bounding"}    
   ]
 }
