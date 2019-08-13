@@ -5,9 +5,10 @@
   "main": "dist/code.js",
   "ui": "dist/webview.html",
   "menu": [
+    {"name": "Show Toolbar", "command": "tools"},
+    {"separator": true},
     {"name": "Create Text", "command": "text"},
     {"name": "Create Frame", "command": "frame"},
-    {"separator": true},
     {"name": "Create Shape",
      "menu": [
        {"name": "Create Circle", "command": "circle"},
