@@ -2,7 +2,7 @@
   "name": "Specter",
   "id": "***REMOVED***",
   "api": "1.0.0",
-  "main": "dist/code.js",
+  "main": "dist/main.js",
   "ui": "dist/webview.html",
   "menu": [
     {"name": "Show Toolbar", "command": "tools"},
