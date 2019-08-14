@@ -4,7 +4,8 @@ const actions = (<HTMLInputElement> document.getElementById('actions'));
 
 if (actions) {
   const onClick = (e: MouseEvent) => {
-    const button = e.target.closest('button');
+    const target = e.target as HTMLTextAreaElement;
+    const button = target.closest('button');
     
      if (button) {
        // find action by element id
