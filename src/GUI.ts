@@ -1,3 +1,6 @@
+/**
+ * @description A set of functions to operate the plugin GUI.
+ */
 import './views/webview.css';
 
 const actions = (<HTMLInputElement> document.getElementById('actions')); 
@@ -11,7 +14,7 @@ if (actions) {
        // find action by element id
        const action = button.id;
 
-       // bubble message to main
+       // bubble action to main
        parent.postMessage({
          pluginMessage: {
            type: action,
