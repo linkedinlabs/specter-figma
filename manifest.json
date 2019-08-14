@@ -5,15 +5,33 @@
   "main": "dist/main.js",
   "ui": "dist/webview.html",
   "menu": [
-    {"name": "Show Toolbar", "command": "tools"},
-    {"separator": true},
-    {"name": "Annotate",
-     "menu": [
-       {"name": "Lookup Annotation", "command": "annotate"},
-       {"name": "Custom Annotation…", "command": "annotate-custom"}
-     ]
+    {
+      "name": "Show Toolbar",
+      "command": "tools"
     },
-    {"name": "Set Measurement", "command": "measure"},
-    {"name": "Draw Bounding Box", "command": "bounding"}    
+    {
+      "separator": true
+    },
+    {
+      "name": "Annotate",
+        "menu": [
+          {
+            "name": "Lookup Annotation",
+            "command": "annotate"
+          },
+          {
+            "name": "Custom Annotation…",
+            "command": "annotate-custom"
+          }
+        ]
+    },
+    {
+      "name": "Set Measurement",
+      "command": "measure"
+    },
+    {
+      "name": "Draw Bounding Box",
+      "command": "bounding"
+    }
   ]
 }
