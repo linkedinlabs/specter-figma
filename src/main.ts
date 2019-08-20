@@ -1,4 +1,5 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
+import { GUI } from './constants';
 
 // invoked commands -------------------------------------------------
 
@@ -7,13 +8,14 @@
  *
  * @kind function
  * @name annotateLayer
+ *
  * @param {Object} context The current context (event) received from Sketch.
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
-const annotateLayer = (closeGui: boolean): void => {
+const annotateLayer = (closeGUI: boolean): void => {
   console.log('action: annotateLayer');
 
-  if (closeGui) {
+  if (closeGUI) {
     figma.closePlugin();
   }
   return null;
@@ -24,14 +26,15 @@ const annotateLayer = (closeGui: boolean): void => {
  *
  * @kind function
  * @name annotateLayerCustom
+ *
  * @param {Object} context The current context (event) received from Sketch.
  * @returns {null} Shows a Toast in the UI if nothing is selected or
  * if multiple layers are selected.
  */
-const annotateLayerCustom = (closeGui: boolean): void => {
+const annotateLayerCustom = (closeGUI: boolean): void => {
   console.log('action: annotateLayerCustom');
 
-  if (closeGui) {
+  if (closeGUI) {
     figma.closePlugin();
   }
   return null;
@@ -43,14 +46,15 @@ const annotateLayerCustom = (closeGui: boolean): void => {
  *
  * @kind function
  * @name annotateMeasurement
+ *
  * @param {Object} context The current context (event) received from Sketch.
  * @returns {null} Shows a Toast in the UI if nothing is selected or
  * if more than two layers are selected.
  */
-const annotateMeasurement = (closeGui: boolean): void => {
+const annotateMeasurement = (closeGUI: boolean): void => {
   console.log('action: annotateMeasurement');
 
-  if (closeGui) {
+  if (closeGUI) {
     figma.closePlugin();
   }
   return null;
@@ -61,49 +65,74 @@ const annotateMeasurement = (closeGui: boolean): void => {
  *
  * @kind function
  * @name drawBoundingBox
+ *
  * @param {Object} context The current context (event) received from Sketch.
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
-const drawBoundingBox = (closeGui: boolean = true): void => {
+const drawBoundingBox = (closeGUI: boolean = true): void => {
   console.log('action: drawBoundingBox');
 
-  if (closeGui) {
+  if (closeGUI) {
     figma.closePlugin();
   }
   return null;
 };
 
+/**
+ * @description Enables the plugin GUI within Figma.
+ *
+ * @kind function
+ * @name showGUI
+ *
+ * @returns {null} Shows a Toast in the UI if nothing is selected.
+ */
+const showGUI = (): void => {
+  // show UI – command: tools
+  figma.showUI(__html__, { // eslint-disable-line no-undef
+    width: GUI.default.width,
+    height: GUI.default.height,
+  });
+
+  return  null;
+}
+
 // watch for commands -------------------------------------------------
-/** WIP
+/**
  * @description Identifies and annotates a selected layer in a Sketch file.
  *
  * @kind function
  * @name dispatch
- * @param {string} actionType A string representing the action received from the GUI.
+ * @param {object} action An object comprised of `type`, a string representing
+ * the action received from the GUI and `visual` a boolean indicating if the
+ * command came from the GUI or the menu.
  * @returns {null}
  */
 const dispatch = (action: {
   type: string,
   visual: boolean,
 }): void => {
-  const closeGui: boolean = !action.visual;
+  // if the action is not visual, close the plugin after running
+  const closeGUI: boolean = !action.visual;
+
+  // run the action based on type
   switch (action.type) {
     case 'annotate':
-      annotateLayer(closeGui);
+      annotateLayer(closeGUI);
       break;
     case 'annotate-custom':
-      annotateLayerCustom(closeGui);
+      annotateLayerCustom(closeGUI);
       break;
     case 'bounding':
-      drawBoundingBox(closeGui);
+      drawBoundingBox(closeGUI);
       break;
      case 'measure':
-       annotateMeasurement(closeGui);
+       annotateMeasurement(closeGUI);
        break;
      default:
-       // show UI – command: tools
-       figma.showUI(__html__, { width: 140, height: 180 }); // eslint-disable-line no-undef
+       showGUI();
   }
+
+  return null;
 }
 
 // watch menu commands -------------------------------------------------
@@ -123,6 +152,7 @@ figma.ui.onmessage = (msg): void => {
     });
   }
 
+  return null;
   // if (msg.type === 'lawls') {
   //   console.log('hullo');
   //   figma.ui.resize(300, 400);
