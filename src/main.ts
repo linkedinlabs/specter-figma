@@ -1,5 +1,5 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
-import { GUI } from './constants';
+import { GUI_SETTINGS } from './constants';
 
 // invoked commands -------------------------------------------------
 
@@ -89,8 +89,8 @@ const drawBoundingBox = (closeGUI: boolean = true): void => {
 const showGUI = (): void => {
   // show UI – command: tools
   figma.showUI(__html__, { // eslint-disable-line no-undef
-    width: GUI.default.width,
-    height: GUI.default.height,
+    width: GUI_SETTINGS.default.width,
+    height: GUI_SETTINGS.default.height,
   });
 
   return  null;

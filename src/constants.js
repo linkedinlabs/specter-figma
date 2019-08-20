@@ -18,7 +18,7 @@ const COLORS = {
   style: '#ff6655',
 };
 
-const GUI = {
+const GUI_SETTINGS = {
   default: {
     width: 140,
     height: 180,
@@ -27,7 +27,7 @@ const GUI = {
 
 export {
   COLORS,
-  GUI,
+  GUI_SETTINGS,
   PLUGIN_NAME,
 };
 /* eslint-enable import/prefer-default-export */
