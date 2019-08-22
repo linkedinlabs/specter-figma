@@ -14,7 +14,7 @@ import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
 const closeGUI = (): void => {
   // close the UI
   throw CLOSE_PLUGIN_MSG;
-}
+};
 
 /**
  * @description Enables the plugin GUI within Figma.
@@ -32,7 +32,7 @@ const showGUI = (): void => {
   });
 
   return null;
-}
+};
 
 // invoked commands -------------------------------------------------
 
@@ -141,15 +141,15 @@ const dispatch = (action: {
     case 'bounding':
       drawBoundingBox(shouldTerminate);
       break;
-     case 'measure':
-       annotateMeasurement(shouldTerminate);
-       break;
-     default:
-       showGUI();
+    case 'measure':
+      annotateMeasurement(shouldTerminate);
+      break;
+    default:
+      showGUI();
   }
 
   return null;
-}
+};
 
 /**
  * @description Acts as the main wrapper function for the plugin, run by default
@@ -180,7 +180,7 @@ const main = (): void => {
 
     return null;
   };
-}
+};
 
 /**
  * @description Listens for the command to close/shut-down the plugin in a way that prevents
