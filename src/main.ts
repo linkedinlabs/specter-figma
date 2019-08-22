@@ -1,5 +1,5 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
-import { GUI_SETTINGS } from './constants';
+import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
 
 // GUI management -------------------------------------------------
 /**
@@ -12,8 +12,7 @@ import { GUI_SETTINGS } from './constants';
  */
 const closeGUI = (): void => {
   // close the UI
-  figma.closePlugin();
-  return;
+  throw CLOSE_PLUGIN_MSG;
 }
 
 /**
@@ -150,6 +149,16 @@ const dispatch = (action: {
   return null;
 }
 
+/** WIP
+ * @description Identifies and annotates a selected layer in a Sketch file.
+ *
+ * @kind function
+ * @name dispatch
+ * @param {object} action An object comprised of `type`, a string representing
+ * the action received from the GUI and `visual` a boolean indicating if the
+ * command came from the GUI or the menu.
+ * @returns {null}
+ */
 const main = (): void => {
   // watch menu commands -------------------------------------------------
   if (figma.command) {
@@ -171,4 +180,26 @@ const main = (): void => {
     return null;
   };
 }
-main();
+
+/** WIP
+ * @description Identifies and annotates a selected layer in a Sketch file.
+ *
+ * @kind function
+ * @name dispatch
+ * @param {object} action An object comprised of `type`, a string representing
+ * the action received from the GUI and `visual` a boolean indicating if the
+ * command came from the GUI or the menu.
+ * @returns {null}
+ */
+// watch for close in a way that prevents unnecessary errors in the UI
+try {
+  main();
+} catch (e) {
+  if (e === CLOSE_PLUGIN_MSG) {
+    figma.closePlugin()
+  } else {
+    // If we caught any other kind of exception,
+    // it's a real error and should be passed along.
+    throw e;
+  }
+}
