@@ -2,13 +2,14 @@
 import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
 
 // GUI management -------------------------------------------------
+
 /**
- * @description Enables the plugin GUI within Figma.
+ * @description Shuts down the plugin and closes the GUI.
  *
  * @kind function
  * @name closeGUI
  *
- * @returns {null} Shows a Toast in the UI if nothing is selected.
+ * @throws {CLOSE_PLUGIN_MSG} Throws the command to close the plugin.
  */
 const closeGUI = (): void => {
   // close the UI
@@ -111,6 +112,7 @@ const drawBoundingBox = (shouldTerminate: boolean = true): void => {
 };
 
 // watch for commands -------------------------------------------------
+
 /**
  * @description Identifies and annotates a selected layer in a Sketch file.
  *
@@ -149,14 +151,13 @@ const dispatch = (action: {
   return null;
 }
 
-/** WIP
- * @description Identifies and annotates a selected layer in a Sketch file.
+/**
+ * @description Acts as the main wrapper function for the plugin, run by default
+ * when Figma calls the plugin.
  *
  * @kind function
- * @name dispatch
- * @param {object} action An object comprised of `type`, a string representing
- * the action received from the GUI and `visual` a boolean indicating if the
- * command came from the GUI or the menu.
+ * @name main
+ *
  * @returns {null}
  */
 const main = (): void => {
@@ -169,7 +170,7 @@ const main = (): void => {
   }
 
   // watch GUI action clicks -------------------------------------------------
-  figma.ui.onmessage = (msg): void => {
+  figma.ui.onmessage = (msg: { type: string }): void => {
     if (msg.type) {
       dispatch({
         type: msg.type,
@@ -181,22 +182,20 @@ const main = (): void => {
   };
 }
 
-/** WIP
- * @description Identifies and annotates a selected layer in a Sketch file.
+/**
+ * @description Listens for the command to close/shut-down the plugin in a way that prevents
+ * users from seeing unnecessary errors in the UI (recommended in the Figma docs).
  *
- * @kind function
- * @name dispatch
- * @param {object} action An object comprised of `type`, a string representing
- * the action received from the GUI and `visual` a boolean indicating if the
- * command came from the GUI or the menu.
+ * @kind try...catch
  * @returns {null}
+ * @throws {e} If the event is not the `CLOSE_PLUGIN_MSG`, it is thrown.
  */
 // watch for close in a way that prevents unnecessary errors in the UI
 try {
   main();
 } catch (e) {
   if (e === CLOSE_PLUGIN_MSG) {
-    figma.closePlugin()
+    // figma.closePlugin();
   } else {
     // If we caught any other kind of exception,
     // it's a real error and should be passed along.
