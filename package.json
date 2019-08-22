@@ -19,8 +19,8 @@
     "lint:staged": "lint-staged"
   },
   "lint-staged": {
-    "*.js": "eslint",
-    "*.css": "stylelint"
+    "*.{js,jsx,tsx,ts}": "eslint",
+    "*.{css,scss}": "stylelint"
   },
   "pre-commit": "lint:staged",
   "devDependencies": {
