@@ -1,82 +1,20 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import { GUI_SETTINGS } from './constants';
 
-// invoked commands -------------------------------------------------
-
-/** WIP
- * @description Identifies and annotates a selected layer in a Sketch file.
+// GUI management -------------------------------------------------
+/**
+ * @description Enables the plugin GUI within Figma.
  *
  * @kind function
- * @name annotateLayer
+ * @name closeGUI
  *
- * @param {Object} context The current context (event) received from Sketch.
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
-const annotateLayer = (closeGUI: boolean): void => {
-  console.log('action: annotateLayer');
-
-  if (closeGUI) {
-    figma.closePlugin();
-  }
-  return null;
-};
-
-/** WIP
- * @description Annotates a selected layer in a Sketch file with user input.
- *
- * @kind function
- * @name annotateLayerCustom
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected or
- * if multiple layers are selected.
- */
-const annotateLayerCustom = (closeGUI: boolean): void => {
-  console.log('action: annotateLayerCustom');
-
-  if (closeGUI) {
-    figma.closePlugin();
-  }
-  return null;
-};
-
-/** WIP
- * @description Annotates a selection of layers in a Sketch file with the
- * spacing number (“IS-X”) based on the gap between the two layers.
- *
- * @kind function
- * @name annotateMeasurement
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected or
- * if more than two layers are selected.
- */
-const annotateMeasurement = (closeGUI: boolean): void => {
-  console.log('action: annotateMeasurement');
-
-  if (closeGUI) {
-    figma.closePlugin();
-  }
-  return null;
-};
-
-/** WIP
- * @description Draws a semi-transparent “Bounding Box” around any selected elements.
- *
- * @kind function
- * @name drawBoundingBox
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected.
- */
-const drawBoundingBox = (closeGUI: boolean = true): void => {
-  console.log('action: drawBoundingBox');
-
-  if (closeGUI) {
-    figma.closePlugin();
-  }
-  return null;
-};
+const closeGUI = (): void => {
+  // close the UI
+  figma.closePlugin();
+  return;
+}
 
 /**
  * @description Enables the plugin GUI within Figma.
@@ -93,8 +31,85 @@ const showGUI = (): void => {
     height: GUI_SETTINGS.default.height,
   });
 
-  return  null;
+  return null;
 }
+
+// invoked commands -------------------------------------------------
+
+/** WIP
+ * @description Identifies and annotates a selected layer in a Sketch file.
+ *
+ * @kind function
+ * @name annotateLayer
+ *
+ * @param {Object} context The current context (event) received from Sketch.
+ * @returns {null} Shows a Toast in the UI if nothing is selected.
+ */
+const annotateLayer = (shouldTerminate: boolean): void => {
+  console.log('action: annotateLayer');
+
+  if (shouldTerminate) {
+    closeGUI();
+  }
+  return null;
+};
+
+/** WIP
+ * @description Annotates a selected layer in a Sketch file with user input.
+ *
+ * @kind function
+ * @name annotateLayerCustom
+ *
+ * @param {Object} context The current context (event) received from Sketch.
+ * @returns {null} Shows a Toast in the UI if nothing is selected or
+ * if multiple layers are selected.
+ */
+const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
+  console.log('action: annotateLayerCustom');
+
+  if (shouldGloseGUI) {
+    closeGUI();
+  }
+  return null;
+};
+
+/** WIP
+ * @description Annotates a selection of layers in a Sketch file with the
+ * spacing number (“IS-X”) based on the gap between the two layers.
+ *
+ * @kind function
+ * @name annotateMeasurement
+ *
+ * @param {Object} context The current context (event) received from Sketch.
+ * @returns {null} Shows a Toast in the UI if nothing is selected or
+ * if more than two layers are selected.
+ */
+const annotateMeasurement = (shouldTerminate: boolean): void => {
+  console.log('action: annotateMeasurement');
+
+  if (shouldTerminate) {
+    closeGUI();
+  }
+  return null;
+};
+
+/** WIP
+ * @description Draws a semi-transparent “Bounding Box” around any selected elements.
+ *
+ * @kind function
+ * @name drawBoundingBox
+ *
+ * @param {Object} context The current context (event) received from Sketch.
+ * @returns {null} Shows a Toast in the UI if nothing is selected.
+ */
+const drawBoundingBox = (shouldTerminate: boolean = true): void => {
+  console.log('action: drawBoundingBox');
+
+  if (shouldTerminate) {
+    closeGUI();
+  }
+  return null;
+};
 
 // watch for commands -------------------------------------------------
 /**
@@ -112,21 +127,21 @@ const dispatch = (action: {
   visual: boolean,
 }): void => {
   // if the action is not visual, close the plugin after running
-  const closeGUI: boolean = !action.visual;
+  const shouldTerminate: boolean = !action.visual;
 
   // run the action based on type
   switch (action.type) {
     case 'annotate':
-      annotateLayer(closeGUI);
+      annotateLayer(shouldTerminate);
       break;
     case 'annotate-custom':
-      annotateLayerCustom(closeGUI);
+      annotateLayerCustom(shouldTerminate);
       break;
     case 'bounding':
-      drawBoundingBox(closeGUI);
+      drawBoundingBox(shouldTerminate);
       break;
      case 'measure':
-       annotateMeasurement(closeGUI);
+       annotateMeasurement(shouldTerminate);
        break;
      default:
        showGUI();
@@ -135,26 +150,25 @@ const dispatch = (action: {
   return null;
 }
 
-// watch menu commands -------------------------------------------------
-if (figma.command) {
-  dispatch({
-    type: figma.command,
-    visual: false,
-  });
-}
-
-// watch GUI action clicks -------------------------------------------------
-figma.ui.onmessage = (msg): void => {
-  if (msg.type) {
+const main = (): void => {
+  // watch menu commands -------------------------------------------------
+  if (figma.command) {
     dispatch({
-      type: msg.type,
-      visual: true,
+      type: figma.command,
+      visual: false,
     });
   }
 
-  return null;
-  // if (msg.type === 'lawls') {
-  //   console.log('hullo');
-  //   figma.ui.resize(300, 400);
-  // }
-};
+  // watch GUI action clicks -------------------------------------------------
+  figma.ui.onmessage = (msg): void => {
+    if (msg.type) {
+      dispatch({
+        type: msg.type,
+        visual: true,
+      });
+    }
+
+    return null;
+  };
+}
+main();

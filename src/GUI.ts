@@ -25,3 +25,7 @@ if (actions) {
 
   actions.addEventListener('click', onClick);
 }
+
+onmessage = (event) => {
+  console.log("got this from the plugin code", event.data.pluginMessage)
+}
