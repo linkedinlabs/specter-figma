@@ -195,7 +195,7 @@ try {
   main();
 } catch (e) {
   if (e === CLOSE_PLUGIN_MSG) {
-    // figma.closePlugin();
+    figma.closePlugin();
   } else {
     // If we caught any other kind of exception,
     // it's a real error and should be passed along.
