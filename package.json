@@ -45,5 +45,8 @@
     "webpack": "^4.39.1",
     "webpack-cli": "^3.3.6"
   },
-  "author": "Grant Blakeman <gblakeman@linkedin.com>"
+  "author": "Grant Blakeman <gblakeman@linkedin.com>",
+  "dependencies": {
+    "hex-rgb": "^4.1.0"
+  }
 }
