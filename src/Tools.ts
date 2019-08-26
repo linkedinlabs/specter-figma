@@ -1,3 +1,5 @@
+const hexRgb = require('hex-rgb');
+
 // --- helper functions
 
 /**
@@ -17,7 +19,7 @@
  */
 const updateArray = (
   key: string,
-  item: object,
+  item: any,
   array: Array<any>,
   action: string = 'add',
 ) => {
@@ -46,6 +48,30 @@ const updateArray = (
   return updatedArray;
 };
 
+/** WIP
+ * @description A reusable helper function to take an array and add or remove data from it
+ * based on a top-level key and a defined action.
+ * an action (`add` or `remove`).
+ *
+ * @kind function
+ * @name hexToDecimalRGB
+ * @param {string} key String representing the top-level area of the array to modify.
+ *
+ * @returns {Object} The modified array.
+ * @private
+ */
+const hexToDecimalRgb = (hexColor: string) => {
+  const rgbColor = hexRgb(hexColor);
+
+  const r = (rgbColor.red / 255);
+  const g = (rgbColor.green / 255);
+  const b = (rgbColor.blue / 255);
+
+  const decimalRgb = { r, g, b };
+  return decimalRgb;
+};
+
 export {
+  hexToDecimalRgb,
   updateArray,
 };
