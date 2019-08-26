@@ -1,5 +1,26 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
+import Crawler from './Crawler';
+import Painter from './Painter';
 import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
+
+/**
+ * @description A shared helper function to set up in-UI messages and the logger.
+ *
+ * @kind function
+ * @name assemble
+ * @param {Object} context The current context (event) received from Sketch.
+ * @returns {Object} Contains an object with the current document as a javascript object,
+ * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
+ */
+const assemble = (context = null) => {
+  const page = context.currentPage;
+  const selection = context.currentPage.selection;
+
+  return {
+    page,
+    selection,
+  };
+};
 
 // GUI management -------------------------------------------------
 
@@ -103,11 +124,35 @@ const annotateMeasurement = (shouldTerminate: boolean): void => {
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const drawBoundingBox = (shouldTerminate: boolean = true): void => {
+  const {
+    page,
+    selection,
+  } = assemble(figma);
+
   console.log('action: drawBoundingBox');
 
-  if (shouldTerminate) {
-    closeGUI();
+  // need a selected layer to annotate it
+  if (selection === null || selection.length === 0) {
+    // return messenger.alert('At least one layer must be selected');
+    console.log('notify here of empty selection');
   }
+
+  // grab the frame from the selection
+  const crawler = new Crawler({ for: selection });
+  const layer = crawler.first();
+  const position = crawler.position();
+  console.log(position);
+  const painter = new Painter({ for: layer, in: page });
+
+  // draw the bounding box (if position exists)
+  let paintResult = null;
+  if (position) {
+    paintResult = painter.addBoundingBox(position);
+  }
+
+  // if (shouldTerminate) {
+  //   closeGUI();
+  // }
   return null;
 };
 
