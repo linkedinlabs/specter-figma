@@ -1,5 +1,6 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import Crawler from './Crawler';
+import Messenger from './Messenger';
 import Painter from './Painter';
 import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
 
@@ -15,8 +16,10 @@ import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
 const assemble = (context = null) => {
   const page = context.currentPage;
   const selection = context.currentPage.selection;
+  const messenger = new Messenger({ for: context, in: page });
 
   return {
+    messenger,
     page,
     selection,
   };
@@ -125,6 +128,7 @@ const annotateMeasurement = (shouldTerminate: boolean): void => {
  */
 const drawBoundingBox = (shouldTerminate: boolean = true): void => {
   const {
+    messenger,
     page,
     selection,
   } = assemble(figma);
