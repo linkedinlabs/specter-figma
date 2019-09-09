@@ -15,7 +15,7 @@ import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
  */
 const assemble = (context = null) => {
   const page = context.currentPage;
-  const selection = context.currentPage.selection;
+  const { selection } = context.currentPage;
   const messenger = new Messenger({ for: context, in: page });
 
   return {
@@ -123,7 +123,7 @@ const annotateMeasurement = (shouldTerminate: boolean): void => {
  * @kind function
  * @name drawBoundingBox
  *
- * @param {Object} context The current context (event) received from Sketch.
+ * @param {Object} context The current context (event) received from Figma.
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const drawBoundingBox = (shouldTerminate: boolean = true): void => {
@@ -133,19 +133,16 @@ const drawBoundingBox = (shouldTerminate: boolean = true): void => {
     selection,
   } = assemble(figma);
 
-  console.log('action: drawBoundingBox');
-
   // need a selected layer to annotate it
   if (selection === null || selection.length === 0) {
-    // return messenger.alert('At least one layer must be selected');
-    console.log('notify here of empty selection');
+    messenger.log('Draw bounding box: nothing selected');
+    return messenger.toast('At least one layer must be selected');
   }
 
   // grab the frame from the selection
   const crawler = new Crawler({ for: selection });
   const layer = crawler.first();
   const position = crawler.position();
-  console.log(position);
   const painter = new Painter({ for: layer, in: page });
 
   // draw the bounding box (if position exists)
@@ -154,16 +151,19 @@ const drawBoundingBox = (shouldTerminate: boolean = true): void => {
     paintResult = painter.addBoundingBox(position);
   }
 
-  // if (shouldTerminate) {
-  //   closeGUI();
-  // }
+  // read the response from Painter; log and display message(s)
+  messenger.handleResult(paintResult);
+
+  if (shouldTerminate) {
+    closeGUI();
+  }
   return null;
 };
 
 // watch for commands -------------------------------------------------
 
-/**
- * @description Identifies and annotates a selected layer in a Sketch file.
+/** WIP
+ * @description Takes a unique string (`type`) and calls the corresponding action.
  *
  * @kind function
  * @name dispatch
@@ -201,7 +201,7 @@ const dispatch = (action: {
 };
 
 /**
- * @description Acts as the main wrapper function for the plugin, run by default
+ * @description Acts as the main wrapper function for the plugin. Run by default
  * when Figma calls the plugin.
  *
  * @kind function
@@ -232,8 +232,9 @@ const main = (): void => {
 };
 
 /**
- * @description Listens for the command to close/shut-down the plugin in a way that prevents
+ * @description Listens for the command to close/shut down the plugin in a way that prevents
  * users from seeing unnecessary errors in the UI (recommended in the Figma docs).
+ * [More info]{@link https://www.figma.com/plugin-docs/api/properties/figma-closeplugin//}
  *
  * @kind try...catch
  * @returns {null}

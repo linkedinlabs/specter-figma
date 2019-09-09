@@ -9,7 +9,7 @@ import { PLUGIN_NAME } from './constants';
  * @constructor
  *
  * @property event The encompassing event we are logging or applying a message/alert to.
- * @property page The Sketch file that will display messages/alerts
+ * @property page The Figma file that will display messages/alerts
  * or that the log will reference.
  */
 export default class Messenger {
@@ -33,15 +33,17 @@ export default class Messenger {
    * @param {string} type The optional string declaring the type of log: error or normal (default).
    */
   log(message: string, type: 'normal' | 'error' = 'normal') {
-    const logType = type === 'error' ? '🆘' : '🐞';
+    const logType = type === 'error' ? '🆘' : '👻';
     const pageIdString = this.page ? ` ${this.page.id} :` : '';
     const eventTypeString = this.event && this.event.action ? ` ${this.event.action} :` : ' Invoked :';
 
-    console.log(`${PLUGIN_NAME} ${logType}${pageIdString}${eventTypeString} ${message}`); // eslint-disable-line no-console
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`${PLUGIN_NAME} ${logType}${pageIdString}${eventTypeString} ${message}`); // eslint-disable-line no-console
+    }
   }
 
   /**
-   * @description Takes a string message and renders it as a Toast in the Sketch UI.
+   * @description Takes a string message and renders it as a Toast in the Figma UI.
    *
    * @kind function
    * @name toast
