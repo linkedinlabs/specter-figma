@@ -200,7 +200,7 @@ export const createContainerGroup = (
   const groupKey = setGroupKey(groupType);
   const locked = groupType === 'topLevel';
 
-  // set up new container group layer on the artboard
+  // set up new container group layer on the frame
   const newInnerGroup = drawContainerGroup({
     name: groupName,
     position: { x: layer.x, y: layer.y },
