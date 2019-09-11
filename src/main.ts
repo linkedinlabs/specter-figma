@@ -70,7 +70,75 @@ const showGUI = (): void => {
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const annotateLayer = (shouldTerminate: boolean): void => {
-  console.log('action: annotateLayer');
+  const {
+    messenger,
+    page,
+    selection,
+  } = assemble(figma);
+
+  // need a selected layer to annotate it
+  if (selection === null || selection.length === 0) {
+    messenger.log('Annotate layer: nothing selected');
+    return messenger.toast('A layer must be selected');
+  }
+
+  // iterate through each layer in a selection
+  const layers = new Crawler({ for: selection }).all();
+  const multipleLayers = (layers.length > 1);
+
+  layers.forEach((layer) => {
+    console.log(layer)
+    console.log(`multipleLayers ${multipleLayers}`);
+    // // set up Identifier instance for the layer
+    // const layerToAnnotate = new Identifier({
+    //   for: layer,
+    //   document,
+    //   documentData,
+    //   messenger,
+    // });
+    // // set up Painter instance for the layer
+    // const painter = new Painter({ for: layer, in: document });
+
+    // // determine the annotation text
+    // let hasText = false;
+    // const hasCustomTextResult = layerToAnnotate.hasCustomText();
+
+    // if (hasCustomTextResult.status === 'error') {
+    //   let setTextResult = null;
+    //   const getLingoNameResult = layerToAnnotate.getLingoName();
+    //   if (getLingoNameResult.status === 'error') {
+    //     messenger.handleResult(getLingoNameResult);
+
+    //     if (!multipleLayers) {
+    //       setTextResult = layerToAnnotate.setText();
+    //       messenger.handleResult(setTextResult);
+
+    //       if (setTextResult.status === 'success') {
+    //         hasText = true;
+    //       }
+    //     }
+    //   } else {
+    //     hasText = true;
+    //   }
+    // } else {
+    //   hasText = true;
+    // }
+
+    // // draw the annotation (if the text exists)
+    // let paintResult = null;
+    // if (hasText) {
+    //   paintResult = painter.addAnnotation();
+    // }
+
+    // // read the response from Painter; if it was unsuccessful, log and display the error
+    // if (paintResult && (paintResult.status === 'error')) {
+    //   return messenger.handleResult(paintResult);
+    // }
+
+    return null;
+  });
+
+  return null;
 
   if (shouldTerminate) {
     closeGUI();
