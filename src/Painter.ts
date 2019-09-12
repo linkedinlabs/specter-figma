@@ -1,7 +1,10 @@
-import { hexToDecimalRgb, updateArray } from './Tools';
+import {
+  findFrame,
+  hexToDecimalRgb,
+  updateArray,
+} from './Tools';
 import {
   COLORS,
-  FRAME_TYPES,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
 } from './constants';
@@ -42,29 +45,6 @@ const buildBoundingBox = (position) => {
   }];
 
   return boundingBox;
-};
-
-/** WIP
- * @description Takes a string representing the type of element getting painted and
- * returns the name of the group used for that element.
- *
- * @kind function
- * @name findFrame
- * @param {string} elementType A string representing the type of element getting painted.
- *
- * @returns {string} The name of the group getting painted.
- * @private
- */
-const findFrame = (layer: any) => {
-  let { parent } = layer;
-
-  // loop through each parent and adjust the coordinates
-  if (parent) {
-    while (parent.type !== FRAME_TYPES.main) {
-      parent = parent.parent;
-    }
-  }
-  return parent;
 };
 
 /**
@@ -145,17 +125,28 @@ const setGroupName = (elementType: string) => {
   return groupName;
 };
 
-/** WIP
- * @description Sets up the individual elements for a container group (inner or outer).
+/**
+ * @description Sets up the individual elements for a container group (inner or outer) and
+ * adds the child layer to the group.
  *
  * @kind function
  * @name drawContainerGroup
- * @param {Object} groupSettings Object containing the `name`, `width`,
- * `height`, and `parent` layer.
+ *
+ * @param {Object} groupSettings Object containing the `name`, `position`,
+ * `child` and `parent` layers, and `locked` status.
  * @returns {Object} The container group layer object.
  * @private
  */
-const drawContainerGroup = (groupSettings) => {
+const drawContainerGroup = (groupSettings: {
+  name: string,
+  position: {
+    x: number,
+    y: number,
+  },
+  parent: any,
+  child: any,
+  locked: boolean,
+}) => {
   const {
     name,
     position,
@@ -176,25 +167,26 @@ const drawContainerGroup = (groupSettings) => {
   return containerGroup;
 };
 
-/** WIP
+/**
  * @description Builds the inner container group that holds annotations of a certain
  * `annotationType` and makes updates to the accompanying parent container group
  * settings object.
  *
  * @kind function
  * @name createContainerGroup
- * @param {Object} outerGroupLayer The layer to draw within.
  * @param {Object} containerSet An instance of the parent container group’s settings object.
  * @param {string} groupType A string representing the type of element going inside the continer.
+ * @param {Object} frame An object representing the top-level Figma Frame for the container group.
+ * @param {Object} layer An object representing the Figma layer to be set in the container group.
  * @returns {Object} The inner container group layer object and the accompanying
  * updated parent container group settings object.
  * @private
  */
 export const createContainerGroup = (
-  containerSet,
-  groupType,
-  frame,
-  layer,
+  containerSet: any,
+  groupType: string,
+  frame: any,
+  layer: any,
 ) => {
   const groupName = setGroupName(groupType);
   const groupKey = setGroupKey(groupType);
@@ -219,16 +211,16 @@ export const createContainerGroup = (
   };
 };
 
-/** WIP
- * @description Sets (finds or builds) the parent container group and
- * updates the document settings (if a new container group has been created).
+/**
+ * @description Sets (finds or builds) the parent container group(s), places the layer in the
+ * container(s) and updates the document settings (if a new container group has been created).
  *
  * @kind function
- * @name setContainerGroups
- * @param {Object} frame The frame to draw within.
- * @param {Object} document The document to draw within.
- * @param {string} elementType A string representing the type of annotation to draw.
- * @returns {Object} The container group layer.
+ * @name setLayerInContainers
+ * @param {Object} layerToContain An object including the `layer` that needs placement,
+ * the `frame` and `page` the layer exists within, the `position` of the layer, and the
+ * `type` of annotation or drawing action.
+ * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
  * @private
  */
 const setLayerInContainers = (layerToContain: {

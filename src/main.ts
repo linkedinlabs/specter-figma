@@ -189,13 +189,13 @@ const annotateMeasurement = (shouldTerminate: boolean): void => {
   return null;
 };
 
-/** WIP
+/**
  * @description Draws a semi-transparent “Bounding Box” around any selected elements.
  *
  * @kind function
  * @name drawBoundingBox
  *
- * @param {Object} context The current context (event) received from Figma.
+ * @param {boolean} shouldTerminate Whether or not to close the plugin at the end of the action.
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const drawBoundingBox = (shouldTerminate: boolean = true): void => {
