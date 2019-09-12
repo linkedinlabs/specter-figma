@@ -1,3 +1,5 @@
+import { FRAME_TYPES } from './constants';
+
 const hexRgb = require('hex-rgb');
 
 // --- helper functions
@@ -48,17 +50,16 @@ const updateArray = (
   return updatedArray;
 };
 
-/** WIP
- * @description A reusable helper function to take an array and add or remove data from it
- * based on a top-level key and a defined action.
- * an action (`add` or `remove`).
+/**
+ * @description A helper function to take a hexcolor string, conver it to an object in RGB format,
+ * and further convert the `red`, `green`, and `blue` values to a decimal value.
  *
  * @kind function
  * @name hexToDecimalRGB
- * @param {string} key String representing the top-level area of the array to modify.
+ * @param {string} hexColor A color in hex format (i.e. `#ffcc00`).
  *
- * @returns {Object} The modified array.
- * @private
+ * @returns {Object} A representation of the original hex color in red, green, and blue (`r`,
+ * `g`, `b`) decimal values.
  */
 const hexToDecimalRgb = (hexColor: string) => {
   const rgbColor = hexRgb(hexColor);
@@ -71,7 +72,30 @@ const hexToDecimalRgb = (hexColor: string) => {
   return decimalRgb;
 };
 
+/**
+ * @description Takes a layer object and traverses parent relationships until the top-level
+ * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+ *
+ * @kind function
+ * @name findFrame
+ * @param {Object} layer A Figma layer object.
+ *
+ * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ */
+const findFrame = (layer: any) => {
+  let { parent } = layer;
+
+  // loop through each parent and adjust the coordinates
+  if (parent) {
+    while (parent.type !== FRAME_TYPES.main) {
+      parent = parent.parent;
+    }
+  }
+  return parent;
+};
+
 export {
+  findFrame,
   hexToDecimalRgb,
   updateArray,
 };
