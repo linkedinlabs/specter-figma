@@ -86,9 +86,15 @@ const annotateLayer = (shouldTerminate: boolean): void => {
   const layers = new Crawler({ for: selection }).all();
   const multipleLayers = (layers.length > 1);
 
+  console.log(`number layers: ${layers.length}; multipleLayers ${multipleLayers}`)
+
   layers.forEach((layer) => {
-    console.log(layer)
-    console.log(`multipleLayers ${multipleLayers}`);
+    if (layer.masterComponent) {
+      console.log(`component name: ${layer.masterComponent.name}`)
+    } else {
+      console.log(`layer name: ${layer.name}`)
+    }
+    // console.log(layer)
     // // set up Identifier instance for the layer
     // const layerToAnnotate = new Identifier({
     //   for: layer,
@@ -137,8 +143,6 @@ const annotateLayer = (shouldTerminate: boolean): void => {
 
     return null;
   });
-
-  return null;
 
   if (shouldTerminate) {
     closeGUI();
