@@ -1,4 +1,4 @@
-// import { FRAME_TYPES } from './constants';
+import { FRAME_TYPES } from './constants';
 
 /** WIP
  * @description A class to handle traversing an array of selected items and return useful items
@@ -37,30 +37,58 @@ export default class Crawler {
    * @returns {Object} All items in the array as a javascript array.
    */
   all() {
-    return this.array;
-    // const initialSelection = setArray(this.array);
-    // const flatSelection = [];
-    // initialSelection.forEach((layer) => {
-    //   if (
-    //     fromNative(layer).type === 'Group'
-    //     || fromNative(layer).type === 'Artboard'
-    //   ) {
-    //     const innerLayers = layer.children();
-    //     innerLayers.forEach((innerLayer) => {
-    //       // .children() includes the outer layer group, so we want to exclude it
-    //       // from our flattened selection
-    //       if (
-    //         fromNative(innerLayer).type !== 'Group'
-    //         && fromNative(innerLayer).type !== 'Artboard'
-    //       ) {
-    //         flatSelection.push(innerLayer);
-    //       }
-    //     });
-    //   } else {
-    //     flatSelection.push(layer);
-    //   }
-    // });
-    // return flatSelection;
+    const initialSelection = this.array;
+    const flatSelection = [];
+
+    // iterate through initial selection
+    initialSelection.forEach((layer) => {
+      if (
+        layer.type !== FRAME_TYPES.group
+        && layer.type !== FRAME_TYPES.main
+      ) {
+        // non-frame or -group layers get added to the final selection
+        flatSelection.push(layer);
+      } else {
+        // +++ frames and groups are checked for child layers
+
+        // set initial holding array and add first level of children
+        let innerLayers = [];
+        layer.children.forEach(child => innerLayers.push(child));
+
+        // WIP
+        const iterateKnownChildren = () => {
+          // iterate through known child layers in `innerLayers`,
+          // adding more children to the array as they are found in descendent layers
+          innerLayers.forEach((innerLayer) => {
+            if (
+              innerLayer.type !== FRAME_TYPES.group
+              && innerLayer.type !== FRAME_TYPES.main
+            ) {
+              // non-frame or -group layers get added to the final selection
+              flatSelection.push(innerLayer);
+            } else {
+              innerLayer.children.forEach(child => innerLayers.push(child));
+            }
+
+            // update the overall list of child layers, removing the layer that was just examined.
+            // this array should eventually be empty, breaking the `while` loop
+            const innerLayerIndex = innerLayers.findIndex(
+              foundInnerLayer => (foundInnerLayer.id === innerLayer.id),
+            );
+            innerLayers = [
+              ...innerLayers.slice(0, innerLayerIndex),
+              ...innerLayers.slice(innerLayerIndex + 1),
+            ];
+          });
+        };
+
+        // loop through the `innerLayers` array as long as it is not empty
+        while (innerLayers.length > 0) {
+          iterateKnownChildren();
+        }
+      }
+    });
+    return flatSelection;
   }
 
   /** WIP
