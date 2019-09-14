@@ -40,34 +40,35 @@ const setAnnotationTextSettings = (
   return null;
 };
 
-// /**
-//  * @description Checks the Kit name against a list of known Foundation Kit names
-//  * and sets `annotationType` appropriately.
-//  *
-//  * @kind function
-//  * @name checkNameForType
-//  * @param {string} name The full name of the Layer.
-//  * @returns {string} The `annotationType` – either `component` or `style`.
-//  * @private
-//  */
-// const checkNameForType = (name) => {
-//   let annotationType = 'component';
-//   // grab the first segment of the name (before the first “/”) – top-level Kit name
-//   let kitName = name.split('/')[0];
+/**
+ * @description Checks the Kit name against a list of known Foundation Kit names
+ * and sets `annotationType` appropriately.
+ *
+ * @kind function
+ * @name checkNameForType
+ * @param {string} name The full name of the Layer.
+ * @returns {string} The `annotationType` – either `component` or `style`.
+ * @private
+ */
+const checkNameForType = (name) => {
+  // TKTK
+  let annotationType = 'component';
+  // grab the first segment of the name (before the first “/”) – top-level Kit name
+  let libraryName = name.split('/')[0]; // eslint-disable-line prefer-destructuring
 
-//   // set up some known exceptions (remove the text that would trigger a type change)
-//   kitName = kitName.replace('(Dual Icons)', '');
+  // set up some known exceptions (remove the text that would trigger a type change)
+  libraryName = libraryName.replace('(Dual Icons)', '');
 
-//   // kit name substrings, exclusive to Foundations
-//   const foundations = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
+  // kit name substrings, exclusive to Foundations
+  const foundations = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
 
-//   // check if one of the foundation substrings exists in the `kitName`
-//   if (foundations.some(foundation => kitName.indexOf(foundation) >= 0)) {
-//     annotationType = 'style';
-//   }
+  // check if one of the foundation substrings exists in the `libraryName`
+  if (foundations.some(foundation => libraryName.indexOf(foundation) >= 0)) {
+    annotationType = 'style';
+  }
 
-//   return annotationType;
-// };
+  return annotationType;
+};
 
 /**
  * @description Removes any library/grouping names from the layer name
@@ -87,7 +88,7 @@ const cleanName = (name: string) => {
   return cleanedName;
 };
 
-// /**
+// /** WIP TKTK
 //  * @description Looks through layer overrides and returns a text string based
 //  * on the override(s) and context.
 //  *
@@ -208,10 +209,10 @@ export default class Identifier {
    * matching the layer to the Lingo Kit list of layers.
    *
    * @kind function
-   * @name getMasterComponentName
+   * @name getLibraryName
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
-  getMasterComponentName() {
+  getLibraryName() {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -226,82 +227,43 @@ export default class Identifier {
       },
     };
 
-    // // check for Lingo data - not much else we can do at the moment if it does not exist
-    // if (
-    //   !this.documentData.userInfo()['com.lingoapp.lingo']
-    //   || !this.documentData.userInfo()['com.lingoapp.lingo'].storage
-    // ) {
-    //   result.status = 'error';
-    //   result.messages.log = 'No data from Lingo in the file';
-    //   result.messages.toast = '🆘 Lingo does not seem to be connected to this file.';
-    //   return result;
-    // }
+    // check for library `masterComponent` or styling IDs
+    // not much else we can do at the moment if none of it exists
+    if (
+      !this.layer.masterComponent
+      && !this.layer.effectStyleId
+      && !this.layer.fillStyleId
+    ) {
+      result.status = 'error';
+      result.messages.log = 'Layer is not connected to a Master Component or library styles';
+      result.messages.toast = '🆘 This layer is not a component or styled.';
+      return result;
+    }
 
-    // // lingo data from their storage hashes
-    // const lingoData = this.documentData.userInfo()['com.lingoapp.lingo'].storage.hashes;
+    this.messenger.log(`Simple name for layer: ${this.layer.name}`);
 
-    // // convert layer to be identified into json to expose params to match with Lingo
-    // const layerJSON = fromNative(this.layer);
-    // const {
-    //   id,
-    //   sharedStyleId,
-    //   symbolId,
-    // } = layerJSON;
+    // locate a `masterComponent`
+    if (this.layer.masterComponent) {
+      const { masterComponent } = this.layer;
 
-    // this.messenger.log(`Simple name for layer: ${this.layer.name}`);
+      // sets symbol type to `foundation` or `component` based on name checks
+      const symbolType = checkNameForType(masterComponent.name);
+      // take only the last segment of the name (after a “/”, if available)
+      const textToSet = cleanName(masterComponent.name);
+      // const subtextToSet = parseOverrides(this.layer, this.page, textToSet); // TKTK
+      const subtextToSet = null; // temporary
 
-    // // locate a symbol in Lingo
-    // if (symbolId) {
-    //   // use the API to find the MasterSymbol instance based on the `symbolId`
-    //   const masterSymbol = this.documentData.symbolWithID(symbolId);
-    //   const masterSymbolJSON = fromNative(masterSymbol);
-    //   const masterSymbolId = masterSymbolJSON.id;
+      // set `annotationText` on the layer settings as the kit symbol name
+      // set option `subtextToSet` on the layer settings based on existing overrides
+      setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
 
-    //   // parse the connected Lingo Kit data and find the corresponding Kit Symbol
-    //   const kitSymbol = lingoData.symbols[masterSymbolId];
+      // log the official name alongside the original layer name and set as success
+      result.status = 'success';
+      result.messages.log = `Name in library for “${this.layer.name}” is “${textToSet}”`;
+      return result;
+    }
 
-    //   // could not find a matching master symbol in the Lingo Kit
-    //   if (!kitSymbol) {
-    //     result.status = 'error';
-    //     result.messages.log = `${masterSymbolId} was not found in a connected Lingo Kit`;
-    //     result.messages.toast = '😢 This symbol could not be found in a connected Lingo Kit. Please make sure your Kits are up-to-date.';
-    //     return result;
-    //   }
-
-    //   // sets symbol type to `foundation` or `component` based on name checks
-    //   const symbolType = checkNameForType(kitSymbol.name);
-    //   // take only the last segment of the name (after a “/”, if available)
-    //   const textToSet = cleanName(kitSymbol.name);
-    //   const subtextToSet = parseOverrides(this.layer, this.document, textToSet);
-
-    //   // set `annotationText` on the layer settings as the kit symbol name
-    //   // set option `subtextToSet` on the layer settings based on existing overrides
-    //   setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer);
-
-    //   // log the official name alongside the original layer name and set as success
-    //   result.status = 'success';
-    //   result.messages.log = `Name in Lingo Kit for “${this.layer.name}” is “${textToSet}”`;
-    //   return result;
-    // }
-
-    // // locate a layer in Lingo
-    // const kitLayer = lingoData.layers[id];
-
-    // if (kitLayer) {
-    //   const symbolType = checkNameForType(kitLayer.name);
-    //   // take only the last segment of the name (after a “/”, if available)
-    //   const textToSet = cleanName(kitLayer.name);
-
-    //   // set `annotationText` on the layer settings as the kit layer name
-    //   setAnnotationTextSettings(textToSet, null, symbolType, this.layer);
-
-    //   // log the official name alongside the original layer name and set as success
-    //   result.status = 'success';
-    //   result.messages.log = `Name in Lingo Kit for “${this.layer.name}” is “${textToSet}”`;
-    //   return result;
-    // }
-
-    // // locate a shared style in Lingo
+    // // locate a shared style in Lingo TKTK
     // if (sharedStyleId) {
     //   const kitStyle = lingoData.layerStyles[sharedStyleId] || lingoData.textStyles[sharedStyleId];
 

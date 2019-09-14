@@ -90,14 +90,6 @@ const annotateLayer = (shouldTerminate: boolean): void => {
   console.log(`number layers: ${layers.length}; multipleLayers ${multipleLayers}`)
 
   layers.forEach((layer) => {
-    //  temp
-    if (layer.masterComponent) {
-      console.log(`component name: ${layer.masterComponent.name}`)
-    } else {
-      console.log(`layer name: ${layer.name}`)
-    }
-    // console.log(layer)
-
     // set up Identifier instance for the layer
     const layerToAnnotate = new Identifier({
       for: layer,
@@ -111,12 +103,13 @@ const annotateLayer = (shouldTerminate: boolean): void => {
     // determine the annotation text
     let hasText = false;
     const hasCustomTextResult = layerToAnnotate.hasCustomText();
+    console.log(`hasCustomTextResult ${hasCustomTextResult.status}`)
 
     if (hasCustomTextResult.status === 'error') {
       let setTextResult = null;
-      const getMasterComponentNameResult = layerToAnnotate.getMasterComponentName();
-      if (getMasterComponentNameResult.status === 'error') {
-        messenger.handleResult(getMasterComponentNameResult);
+      const getLibraryNameResult = layerToAnnotate.getLibraryName();
+      if (getLibraryNameResult.status === 'error') {
+        messenger.handleResult(getLibraryNameResult);
 
         if (!multipleLayers) {
           setTextResult = layerToAnnotate.setText();
@@ -132,6 +125,8 @@ const annotateLayer = (shouldTerminate: boolean): void => {
     } else {
       hasText = true;
     }
+
+    console.log(`hasText ${hasText}`)
 
     // // draw the annotation (if the text exists)
     // let paintResult = null;
