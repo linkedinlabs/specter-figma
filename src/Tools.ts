@@ -1,4 +1,4 @@
-import { FRAME_TYPES } from './constants';
+import { FRAME_TYPES, PLUGIN_IDENTIFIER } from './constants';
 
 const hexRgb = require('hex-rgb');
 
@@ -94,8 +94,67 @@ const findFrame = (layer: any) => {
   return parent;
 };
 
+/** WIP
+ * @description Takes a layer object and traverses parent relationships until the top-level
+ * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+ *
+ * @kind function
+ * @name getLayerSettings
+ * @param {Object} layer A Figma layer object.
+ *
+ * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ */
+const getLayerSettings = (page: any, layerId: string) => {
+  const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
+  let layerSettings: any = null;
+  if (pageSettings && pageSettings.layerSettings) {
+    const settingSetIndex = pageSettings.layerSettings.findIndex(
+      settingsSet => (settingsSet.id === layerId),
+    );
+    layerSettings = pageSettings.layerSettings[settingSetIndex];
+  }
+
+  return layerSettings;
+};
+
+/** WIP
+ * @description Takes a layer object and traverses parent relationships until the top-level
+ * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+ *
+ * @kind function
+ * @name setLayerSettings
+ * @param {Object} layer A Figma layer object.
+ *
+ * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ */
+const setLayerSettings = (page: any, newLayerSettings: any): void => {
+  const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
+  let newPageSettings: any = {};
+  if (pageSettings) {
+    newPageSettings = pageSettings;
+  }
+
+  // update the `newPageSettings` array with `newLayerSettings`
+  newPageSettings = updateArray(
+    'layerSettings',
+    newLayerSettings,
+    newPageSettings,
+    'add',
+  );
+
+  // commit the `Settings` update
+  page.setPluginData(
+    PLUGIN_IDENTIFIER,
+    JSON.stringify(newPageSettings),
+  );
+
+  return null;
+};
+
 export {
   findFrame,
+  getLayerSettings,
   hexToDecimalRgb,
+  setLayerSettings,
   updateArray,
 };
