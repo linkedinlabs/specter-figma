@@ -42,7 +42,7 @@ export default class Crawler {
     const flatSelection = [];
 
     // iterate through initial selection
-    initialSelection.forEach((layer) => {
+    initialSelection.forEach((layer: any) => {
       if (
         layer.type !== FRAME_TYPES.group
         && layer.type !== FRAME_TYPES.main
@@ -64,10 +64,16 @@ export default class Crawler {
          * @name iterateKnownChildren
          * @private
          */
-        const iterateKnownChildren = () => {
+        const iterateKnownChildren = (): void => {
           // iterate through known child layers in `innerLayers`,
           // adding more children to the array as they are found in descendent layers
-          innerLayers.forEach((innerLayer) => {
+          innerLayers.forEach((
+            innerLayer: {
+              children: any,
+              id: string,
+              type: string,
+            },
+          ) => {
             if (
               innerLayer.type !== FRAME_TYPES.group
               && innerLayer.type !== FRAME_TYPES.main

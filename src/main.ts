@@ -1,5 +1,6 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import Crawler from './Crawler';
+import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
 import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
@@ -13,7 +14,7 @@ import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
  * @returns {Object} Contains an object with the current document as a javascript object,
  * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
  */
-const assemble = (context = null) => {
+const assemble = (context: any = null) => {
   const page = context.currentPage;
   const { selection } = context.currentPage;
   const messenger = new Messenger({ for: context, in: page });
@@ -89,46 +90,48 @@ const annotateLayer = (shouldTerminate: boolean): void => {
   console.log(`number layers: ${layers.length}; multipleLayers ${multipleLayers}`)
 
   layers.forEach((layer) => {
+    //  temp
     if (layer.masterComponent) {
       console.log(`component name: ${layer.masterComponent.name}`)
     } else {
       console.log(`layer name: ${layer.name}`)
     }
     // console.log(layer)
-    // // set up Identifier instance for the layer
-    // const layerToAnnotate = new Identifier({
-    //   for: layer,
-    //   document,
-    //   documentData,
-    //   messenger,
-    // });
-    // // set up Painter instance for the layer
-    // const painter = new Painter({ for: layer, in: document });
 
-    // // determine the annotation text
-    // let hasText = false;
-    // const hasCustomTextResult = layerToAnnotate.hasCustomText();
+    // set up Identifier instance for the layer
+    const layerToAnnotate = new Identifier({
+      for: layer,
+      data: page,
+      messenger,
+    });
 
-    // if (hasCustomTextResult.status === 'error') {
-    //   let setTextResult = null;
-    //   const getLingoNameResult = layerToAnnotate.getLingoName();
-    //   if (getLingoNameResult.status === 'error') {
-    //     messenger.handleResult(getLingoNameResult);
+    // set up Painter instance for the layer
+    const painter = new Painter({ for: layer, in: page });
 
-    //     if (!multipleLayers) {
-    //       setTextResult = layerToAnnotate.setText();
-    //       messenger.handleResult(setTextResult);
+    // determine the annotation text
+    let hasText = false;
+    const hasCustomTextResult = layerToAnnotate.hasCustomText();
 
-    //       if (setTextResult.status === 'success') {
-    //         hasText = true;
-    //       }
-    //     }
-    //   } else {
-    //     hasText = true;
-    //   }
-    // } else {
-    //   hasText = true;
-    // }
+    if (hasCustomTextResult.status === 'error') {
+      let setTextResult = null;
+      const getMasterComponentNameResult = layerToAnnotate.getMasterComponentName();
+      if (getMasterComponentNameResult.status === 'error') {
+        messenger.handleResult(getMasterComponentNameResult);
+
+        if (!multipleLayers) {
+          setTextResult = layerToAnnotate.setText();
+          messenger.handleResult(setTextResult);
+
+          if (setTextResult.status === 'success') {
+            hasText = true;
+          }
+        }
+      } else {
+        hasText = true;
+      }
+    } else {
+      hasText = true;
+    }
 
     // // draw the annotation (if the text exists)
     // let paintResult = null;
