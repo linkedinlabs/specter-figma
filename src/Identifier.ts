@@ -212,7 +212,13 @@ export default class Identifier {
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   getMasterComponentName() {
-    const result = {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
       status: null,
       messages: {
         toast: null,
@@ -330,7 +336,13 @@ export default class Identifier {
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   hasCustomText() {
-    const result = {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
       status: null,
       messages: {
         toast: null,
@@ -367,7 +379,7 @@ export default class Identifier {
    */
   setText() {
     const result: {
-      status: string,
+      status: 'error' | 'success',
       messages: {
         toast: string,
         log: string,
@@ -407,8 +419,8 @@ export default class Identifier {
     //   return result;
     // }
 
-    // const customText: string = customInput.value;
-    const customText: string = 'Banana';
+    // const customText = customInput.value;
+    const customText = 'Banana';
 
     // set `annotationText` on the layer settings as the custom text
     setAnnotationTextSettings(customText, null, 'custom', this.layer.id, this.page);
