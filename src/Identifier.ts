@@ -1,4 +1,5 @@
 import { getLayerSettings, setLayerSettings } from './Tools';
+
 // --- private functions
 /**
  * @description Sets the `annotationText` on a given layer’s settings object.
@@ -245,6 +246,9 @@ export default class Identifier {
     // locate a `masterComponent`
     if (this.layer.masterComponent) {
       const { masterComponent } = this.layer;
+
+      // temp
+      this.messenger.log(`Master Component name for layer: ${masterComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
       const symbolType = checkNameForType(masterComponent.name);
