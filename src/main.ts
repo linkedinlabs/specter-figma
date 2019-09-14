@@ -108,9 +108,9 @@ const annotateLayer = (shouldTerminate: boolean): void => {
     if (hasCustomTextResult.status === 'error') {
       let setTextResult = null;
       const getLibraryNameResult = layerToAnnotate.getLibraryName();
-      if (getLibraryNameResult.status === 'error') {
-        messenger.handleResult(getLibraryNameResult);
+      messenger.handleResult(getLibraryNameResult);
 
+      if (getLibraryNameResult.status === 'error') {
         if (!multipleLayers) {
           setTextResult = layerToAnnotate.setText();
           messenger.handleResult(setTextResult);
