@@ -366,7 +366,13 @@ export default class Painter {
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
   addBoundingBox(position) {
-    const result = {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
       status: null,
       messages: {
         toast: null,
