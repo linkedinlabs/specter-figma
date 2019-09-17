@@ -29,6 +29,11 @@
     "no-console": "error",
     "no-restricted-globals": "off",
     "no-unused-vars": "off",
+    "no-unused-expressions": [
+      "error", {
+        "allowTernary": true
+      }
+    ],
     "@typescript-eslint/no-unused-vars": "error",
     "no-useless-constructor": "off",
     "@typescript-eslint/no-useless-constructor": "error",
@@ -64,6 +69,11 @@
     }, {
       "enforceForRenamedProperties": false
     }],
-    "lines-between-class-members": ["error", "always", { exceptAfterSingleLine: true }]
+    "lines-between-class-members": [
+      "error",
+      "always", {
+        "exceptAfterSingleLine": true
+      }
+    ]
   }
 }

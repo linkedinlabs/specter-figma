@@ -3,7 +3,11 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
+import {
+  CLOSE_PLUGIN_MSG,
+  GUI_SETTINGS,
+  TYPEFACES,
+} from './constants';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -87,8 +91,6 @@ const annotateLayer = (shouldTerminate: boolean): void => {
   const layers = new Crawler({ for: selection }).all();
   const multipleLayers = (layers.length > 1);
 
-  console.log(`number layers: ${layers.length}; multipleLayers ${multipleLayers}`)
-
   layers.forEach((layer) => {
     // set up Identifier instance for the layer
     const layerToAnnotate = new Identifier({
@@ -103,7 +105,6 @@ const annotateLayer = (shouldTerminate: boolean): void => {
     // determine the annotation text
     let hasText = false;
     const hasCustomTextResult = layerToAnnotate.hasCustomText();
-    console.log(`hasCustomTextResult ${hasCustomTextResult.status}`)
 
     if (hasCustomTextResult.status === 'error') {
       let setTextResult = null;
@@ -126,18 +127,16 @@ const annotateLayer = (shouldTerminate: boolean): void => {
       hasText = true;
     }
 
-    console.log(`hasText ${hasText}`)
+    // draw the annotation (if the text exists)
+    let paintResult = null;
+    if (hasText) {
+      paintResult = painter.addAnnotation();
+    }
 
-    // // draw the annotation (if the text exists)
-    // let paintResult = null;
-    // if (hasText) {
-    //   paintResult = painter.addAnnotation();
-    // }
-
-    // // read the response from Painter; if it was unsuccessful, log and display the error
-    // if (paintResult && (paintResult.status === 'error')) {
-    //   return messenger.handleResult(paintResult);
-    // }
+    // read the response from Painter; if it was unsuccessful, log and display the error
+    if (paintResult && (paintResult.status === 'error')) {
+      return messenger.handleResult(paintResult);
+    }
 
     return null;
   });
@@ -159,7 +158,7 @@ const annotateLayer = (shouldTerminate: boolean): void => {
  * if multiple layers are selected.
  */
 const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
-  console.log('action: annotateLayerCustom');
+  console.log('action: annotateLayerCustom'); // eslint-disable-line no-console
 
   if (shouldGloseGUI) {
     closeGUI();
@@ -179,7 +178,7 @@ const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
  * if more than two layers are selected.
  */
 const annotateMeasurement = (shouldTerminate: boolean): void => {
-  console.log('action: annotateMeasurement');
+  console.log('action: annotateMeasurement'); // eslint-disable-line no-console
 
   if (shouldTerminate) {
     closeGUI();
@@ -246,13 +245,23 @@ const dispatch = (action: {
   type: string,
   visual: boolean,
 }): void => {
+  const { messenger } = assemble(figma);
+
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
   // run the action based on type
   switch (action.type) {
     case 'annotate':
-      annotateLayer(shouldTerminate);
+      (async () => {
+        try {
+          await figma.loadFontAsync(TYPEFACES.primary);
+          await annotateLayer(shouldTerminate);
+        } catch (err) {
+          messenger.log('Could not load typeface', 'error');
+          console.log(err); // eslint-disable-line no-console
+        }
+      })();
       break;
     case 'annotate-custom':
       annotateLayerCustom(shouldTerminate);

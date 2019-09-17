@@ -36,6 +36,24 @@ const COLORS = {
   style: '#ff6655',
 };
 
+/** WIP
+ * @description An object containing the set of colors in-use by the plugin.
+ *
+ * @kind constant
+ * @name TYPEFACES
+ * @type {Object}
+ */
+const TYPEFACES = {
+  primary: {
+    family: 'Helvetica Neue',
+    style: 'Regular',
+  },
+  secondary: {
+    family: 'Roboto',
+    style: 'Regular',
+  },
+};
+
 /**
  * @description An object containing the current string constants the Figma API returns for
  * top-level (`main`) layer and `group` layer types.
@@ -79,5 +97,6 @@ export {
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  TYPEFACES,
 };
 /* eslint-enable import/prefer-default-export */
