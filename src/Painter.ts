@@ -556,6 +556,76 @@ const setGroupName = (elementType: string) => {
 };
 
 /**
+ * @description Resets the layer order for the Component, Foundation, and Bounding Box layers
+ * within the outer container group layer.
+ *
+ * @kind function
+ * @name orderContainerLayers
+ * @param {string} outerGroupId String ID for finding the outer container group.
+ * @param {Object} page The page containing the outer container group.
+ *
+ * @private
+ */
+const orderContainerLayers = (outerGroupId, page) => {
+  const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || {});
+  let containerGroupId = null;
+  let boundingGroupId = null;
+  let componentGroupId = null;
+  let dimensionGroupId = null;
+  let spacingGroupId = null;
+  let styleGroupId = null;
+
+  // find the correct group set and inner groups based on the `outerGroupId`
+  pageSettings.containerGroups.forEach((groupSet) => {
+    if (groupSet.id === outerGroupId) {
+      boundingGroupId = groupSet.boundingInnerGroupId;
+      containerGroupId = groupSet.id;
+      componentGroupId = groupSet.componentInnerGroupId;
+      dimensionGroupId = groupSet.dimensionInnerGroupId;
+      spacingGroupId = groupSet.spacingInnerGroupId;
+      styleGroupId = groupSet.styleInnerGroupId;
+    }
+    return null;
+  });
+
+  // make sure the container group exists
+  const containerGroup: any = figma.getNodeById(containerGroupId);
+  if (containerGroup) {
+    // always move bounding box group to bottom of list
+    const boundingBoxGroup = figma.getNodeById(boundingGroupId);
+    if (boundingBoxGroup) {
+      containerGroup.appendChild(boundingBoxGroup);
+    }
+
+    // always move dimension annotations group to second from bottom of list
+    const dimensionBoxGroup = figma.getNodeById(dimensionGroupId);
+    if (dimensionBoxGroup) {
+      containerGroup.appendChild(dimensionBoxGroup);
+    }
+
+    // always move spacing annotations group to third from bottom of list
+    const spacingBoxGroup = figma.getNodeById(spacingGroupId);
+    if (spacingBoxGroup) {
+      containerGroup.appendChild(spacingBoxGroup);
+    }
+
+    // foundations group moves to second from top
+    const styleGroup = figma.getNodeById(styleGroupId);
+    if (styleGroup) {
+      containerGroup.appendChild(styleGroup);
+    }
+
+    // always move component group to top of list
+    const componentGroup = figma.getNodeById(componentGroupId);
+    if (componentGroup) {
+      containerGroup.appendChild(componentGroup);
+    }
+  }
+
+  return null;
+};
+
+/**
  * @description Sets up the individual elements for a container group (inner or outer) and
  * adds the child layer to the group.
  *
@@ -671,12 +741,12 @@ const setLayerInContainers = (layerToContain: {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
   // set some variables
-  let layerIsContained = false;
   let outerGroup = null;
   let outerGroupId = null;
   let outerGroupSet = null;
   let innerGroup = null;
   let innerGroupId = null;
+  let containerSet: any = {};
 
   // find the existing `outerGroup` (if it exists)
   if (pageSettings && pageSettings.containerGroups) {
@@ -698,7 +768,8 @@ const setLayerInContainers = (layerToContain: {
   if (!outerGroup || !innerGroup) {
     // boilerplate settings
     let newPageSettings: any = {};
-    let updatedContainerSet: any = { frameId };
+    let updatedContainerSet: any = {};
+
     if (pageSettings) {
       newPageSettings = pageSettings;
     }
@@ -740,12 +811,14 @@ const setLayerInContainers = (layerToContain: {
     );
 
     // commit the `Settings` update
-    layerToContain.page.setPluginData(
+    page.setPluginData(
       PLUGIN_IDENTIFIER,
       JSON.stringify(newPageSettings),
     );
 
-    return updatedContainerSet;
+    containerSet = updatedContainerSet;
+  } else {
+    containerSet = outerGroupSet;
   }
 
   if (outerGroup && innerGroup && layer) {
@@ -756,14 +829,11 @@ const setLayerInContainers = (layerToContain: {
     // move the outer container layer to the front
     frame.appendChild(outerGroup);
 
-    // set the order of the inner container layers - WIP
-    // orderContainerLayers(outerGroup.id, document);
-
-    // set the flag to success
-    layerIsContained = true;
+    // set the order of the inner container layers
+    orderContainerLayers(outerGroup.id, page);
   }
 
-  return layerIsContained;
+  return containerSet;
 };
 
 /** WIP
