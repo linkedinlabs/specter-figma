@@ -83,7 +83,8 @@ const checkNameForType = (name) => {
 const cleanName = (name: string) => {
   // take only the last segment of the name (after a “/”, if available)
   // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-  let cleanedName: string = name.split(/(?:[^w])(\/)/).pop();
+  // let cleanedName = name.split(/(?:[^w])(\/)/).pop();
+  let cleanedName = name; // WIP
   // otherwise, fall back to the kit layer name
   cleanedName = !cleanedName ? name : cleanedName;
   return cleanedName;
