@@ -4,9 +4,6 @@
 }
 
 body {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
   margin: 0;
   padding: 0;
   font: 12px sans-serif;
@@ -16,6 +13,17 @@ body {
 svg {
   display: block;
   width: 100%;
+}
+
+.container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.container.wide {
+  flex-direction: row;
 }
 
 header {
@@ -129,7 +137,7 @@ nav button svg.icons-measure {
 
 #input p .button {
   cursor: pointer;
-  width: 80px;
+  width: 68px;
 }
 
 #input p.form-actions {

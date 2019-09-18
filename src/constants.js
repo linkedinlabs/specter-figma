@@ -76,13 +76,13 @@ const FRAME_TYPES = {
  */
 const GUI_SETTINGS = {
   default: {
-    width: 440,
-    height: 140,
+    width: 140,
+    height: 180,
   },
-  // default: {
-  //   width: 140,
-  //   height: 180,
-  // },
+  input: {
+    width: 440,
+    height: 145,
+  },
 };
 
 /**
