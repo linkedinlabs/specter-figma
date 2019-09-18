@@ -364,8 +364,6 @@ const positionAnnotation = (
   }
 
   // set annotation group placement, relative to container group
-  // group.x = placementX - layerPosition.x;
-  // group.y = placementY - layerPosition.y;
   group.x = placementX;
   group.y = placementY;
 
@@ -746,6 +744,8 @@ const setLayerInContainers = (layerToContain: {
       PLUGIN_IDENTIFIER,
       JSON.stringify(newPageSettings),
     );
+
+    return updatedContainerSet;
   }
 
   if (outerGroup && innerGroup && layer) {
@@ -764,6 +764,23 @@ const setLayerInContainers = (layerToContain: {
   }
 
   return layerIsContained;
+};
+
+/** WIP
+ * @description Takes the data representing an existing annotation and removes that data
+ * (and cleans up the data).
+ *
+ * @kind function
+ * @name removeAnnotation
+ *
+ * @param {Object} existingItemData The data object containing an `id` representting the
+ * annotation to be removed.
+ */
+const removeAnnotation = (existingItemData) => {
+  const layerToDelete = figma.getNodeById(existingItemData.id);
+  if (layerToDelete) {
+    layerToDelete.remove();
+  }
 };
 
 // --- main Painter class function
@@ -785,24 +802,6 @@ export default class Painter {
     this.layer = layer;
     this.frame = findFrame(this.layer);
     this.page = page;
-  }
-
-  /** WIP
-   * @description Takes the data representing an existing annotation and removes that data
-   * (and cleans up the data).
-   *
-   * @kind function
-   * @name removeAnnotation
-   *
-   * @param {Object} existingItemData The data object containing a
-   * `containerGroupId`, `id` (representting the annotation) and `layerId` representing
-   * the original layer that received the annotation.
-   */
-  removeAnnotation(existingItemData) {
-    const layerToDelete = this.page.getNodeById(existingItemData.id); // figma.getNodeById(existingItemData.id);
-    if (layerToDelete) {
-      layerToDelete.remove();
-    }
   }
 
   /**
@@ -856,21 +855,27 @@ export default class Painter {
 
     // retrieve document settings
     const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
-    let newPageSettings = pageSettings;
 
     // check if we have already annotated this element and remove the old annotation
     if (pageSettings && pageSettings.annotatedLayers) {
-      // remove the old ID pair(s) from the `newPageSettings` array
+      // remove the old ID pair(s) from the `pageSettings` array
       pageSettings.annotatedLayers.forEach((layerSet) => {
         if (layerSet.originalId === layerId) {
-          this.removeAnnotation(layerSet);
+          removeAnnotation(layerSet);
 
-          // remove the layerSet from the `newPageSettings` array
+          // remove the layerSet from the `pageSettings` array
+          let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
           newPageSettings = updateArray(
             'annotatedLayers',
             { id: layerSet.id },
             newPageSettings,
             'remove',
+          );
+
+          // commit the settings update
+          this.page.setPluginData(
+            PLUGIN_IDENTIFIER,
+            JSON.stringify(newPageSettings),
           );
         }
       });
@@ -882,8 +887,6 @@ export default class Painter {
       annotationSecondaryText,
       annotationType,
     );
-
-    // this.frame.appendChild(annotation.rectangle)
 
     // group and position the base annotation elements
     const layerIndex = this.layer.parent.children.findIndex(node => node === this.layer);
@@ -904,7 +907,7 @@ export default class Painter {
     );
 
     // set it in the correct containers
-    const isAnnotationSet = setLayerInContainers({
+    const containerSet = setLayerInContainers({
       layer: group,
       frame: this.frame,
       page: this.page,
@@ -912,31 +915,30 @@ export default class Painter {
       type: annotationType,
     });
 
-    // // new object with IDs to add to settings
-    // const newAnnotatedLayerSet = {
-    //   containerGroupId: containerGroup.id,
-    //   id: group.id,
-    //   originalId: layerId,
-    // };
+    // new object with IDs to add to settings
+    const newAnnotatedLayerSet = {
+      containerGroupId: containerSet.componentInnerGroupId,
+      id: group.id,
+      originalId: layerId,
+    };
 
-    // // update the `newPageSettings` array
-    // newPageSettings = updateArray(
-    //   'annotatedLayers',
-    //   newAnnotatedLayerSet,
-    //   newPageSettings,
-    //   'add',
-    // );
+    // update the `newPageSettings` array
+    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
+    newPageSettings = updateArray(
+      'annotatedLayers',
+      newAnnotatedLayerSet,
+      newPageSettings,
+      'add',
+    );
 
-    // // commit the `Settings` update
-    // Settings.setDocumentSettingForKey(
-    //   this.page,
-    //   PLUGIN_IDENTIFIER,
-    //   newPageSettings,
-    // );
+    // commit the `Settings` update
+    this.page.setPluginData(
+      PLUGIN_IDENTIFIER,
+      JSON.stringify(newPageSettings),
+    );
 
     // return a successful result
-    result.status = 'error';
-    // result.status = 'success';
+    result.status = 'success';
     return result;
   }
 
@@ -969,7 +971,7 @@ export default class Painter {
     const boundingBox = buildBoundingBox(position);
 
     // set it in the correct containers
-    const isBoundingBoxSet = setLayerInContainers({
+    const containerSet = setLayerInContainers({
       layer: boundingBox,
       frame: this.frame,
       page: this.page,
@@ -977,7 +979,7 @@ export default class Painter {
       type: 'boundingBox',
     });
 
-    if (!boundingBox || !isBoundingBoxSet) {
+    if (!boundingBox || !containerSet.boundingInnerGroupId) {
       result.status = 'error';
       result.messages.log = 'Failed to draw the bounding box for a selection';
       result.messages.toast = 'Hmm… an error occured drawing that bounding box 😬';
