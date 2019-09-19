@@ -1,4 +1,8 @@
-import { FRAME_TYPES, PLUGIN_IDENTIFIER } from './constants';
+import {
+  FRAME_TYPES,
+  GUI_SETTINGS,
+  PLUGIN_IDENTIFIER,
+} from './constants';
 
 const hexRgb = require('hex-rgb');
 
@@ -151,10 +155,31 @@ const setLayerSettings = (page: any, newLayerSettings: any): void => {
   return null;
 };
 
+/** WIP
+ * @description Enables the plugin GUI within Figma.
+ *
+ * @kind function
+ * @name resizeGUI
+ *
+ * @returns {null} Shows a Toast in the UI if nothing is selected.
+ */
+const resizeGUI = (
+  type: string,
+  ui: { resize: Function },
+): void => {
+  ui.resize(
+    GUI_SETTINGS[type].width,
+    GUI_SETTINGS[type].height,
+  );
+
+  return null;
+};
+
 export {
   findFrame,
   getLayerSettings,
   hexToDecimalRgb,
+  resizeGUI,
   setLayerSettings,
   updateArray,
 };
