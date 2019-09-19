@@ -374,6 +374,10 @@ export default class Identifier {
     // TKTK WIP `getInputFromUser` is a Sketch library and needs to be rebuilt
     let customInput = null;
     resizeGUI('input', figma.ui);
+    figma.ui.postMessage({
+      action: 'showInput',
+      payload: { initialValue },
+    });
     // getInputFromUser('Set the annotation’s text:', {
     //   type: INPUT_TYPE.string,
     //   initialValue,

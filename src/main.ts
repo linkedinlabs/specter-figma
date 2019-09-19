@@ -298,10 +298,10 @@ const main = (): void => {
   }
 
   // watch GUI action clicks -------------------------------------------------
-  figma.ui.onmessage = (msg: { type: string }): void => {
-    if (msg.type) {
+  figma.ui.onmessage = (msg: { navType: string }): void => {
+    if (msg.navType) {
       dispatch({
-        type: msg.type,
+        type: msg.navType,
         visual: true,
       });
     }
