@@ -1,4 +1,8 @@
-import { getLayerSettings, setLayerSettings } from './Tools';
+import {
+  getLayerSettings,
+  resizeGUI,
+  setLayerSettings,
+} from './Tools';
 
 // --- private functions
 /**
@@ -368,7 +372,8 @@ export default class Identifier {
     }
 
     // TKTK WIP `getInputFromUser` is a Sketch library and needs to be rebuilt
-    // let customInput = null;
+    let customInput = null;
+    resizeGUI('input', figma.ui);
     // getInputFromUser('Set the annotation’s text:', {
     //   type: INPUT_TYPE.string,
     //   initialValue,
@@ -387,7 +392,8 @@ export default class Identifier {
     // }
 
     // const customText = customInput.value;
-    const customText = 'Banana';
+    // const customText = 'Banana';
+    const customText = null;
 
     // set `annotationText` on the layer settings as the custom text
     setAnnotationTextSettings(customText, null, 'custom', this.layer.id, this.page);
