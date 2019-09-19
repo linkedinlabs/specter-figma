@@ -54,15 +54,16 @@
     </ul>
   </nav>
 
-  <section id="input" style="display: none;">
+  <section id="userInput" style="display: none;">
     <h3>
       Set the annotation’s text…
     </h3>
     <p>
-      <input id="text" class="input" placeholder="Write something…">
+      <input type="text" class="input" placeholder="Write something…">
     </p>
     <p class="form-actions">
-      <button class='button button--secondary button--margin-right'>Cancel</button> <button class='button button--primary'>Set</button>
+      <button class="button button--secondary button--margin-right" id="userInput-cancel">Cancel</button>
+      <button class="button button--primary" id="userInput-submit">Set</button>
     </p>
   </section>  
 </div>
