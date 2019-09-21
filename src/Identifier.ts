@@ -348,7 +348,7 @@ export default class Identifier {
    * @name setText
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
-  setText() {
+  setText(callbackMain): any {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -371,40 +371,75 @@ export default class Identifier {
       initialValue = layerSettings.annotationText;
     }
 
-    // TKTK WIP `getInputFromUser` is a Sketch library and needs to be rebuilt
-    let customInput = null;
-    resizeGUI('input', figma.ui);
-    figma.ui.postMessage({
-      action: 'showInput',
-      payload: { initialValue },
-    });
-    // getInputFromUser('Set the annotation’s text:', {
-    //   type: INPUT_TYPE.string,
-    //   initialValue,
-    // }, (error, value) => {
-    //   customInput = {
-    //     error,
-    //     value,
-    //   };
-    // });
+    const getInputFromUser = (callback): any => {
+      let userInputIsOpen: boolean = true;
+      let userInput: string = null;
 
-    // if (customInput.error) {
-    //   // most likely the user canceled the input
-    //   result.status = 'error';
-    //   result.messages.log = 'Set text was canceled by user';
-    //   return result;
-    // }
+      // switch plugin UI to user input state
+      resizeGUI('input', figma.ui);
+      figma.ui.postMessage({
+        action: 'showInput',
+        payload: { initialValue },
+      });
 
-    // const customText = customInput.value;
-    // const customText = 'Banana';
-    const customText = null;
+      // listen for feedback from the UI
+      figma.ui.onmessage = (
+        msg: {
+          inputType: 'cancel' | 'submit',
+          inputValue: string,
+        },
+      ): void => {
+        const resetGUI = () => {
+          // switch plugin UI to navigation state
+          figma.ui.postMessage({ action: 'hideInput' });
+          resizeGUI('default', figma.ui);
+        };
 
-    // set `annotationText` on the layer settings as the custom text
-    setAnnotationTextSettings(customText, null, 'custom', this.layer.id, this.page);
+        if (msg.inputType === 'submit') {
+          if (msg.inputValue && msg.inputValue !== '') {
+            userInput = msg.inputValue;
+            this.messenger.log(`User input received: ${msg.inputValue}`);
+            resetGUI();
+            userInputIsOpen = false;
+          } else {
+            this.messenger.log('User input is empty', 'error');
+            // TKTK handle empty state validation
+          }
+        } else {
+          resetGUI();
+          userInputIsOpen = false;
+        }
+      };
 
-    // log the custom name alongside the original layer name and set as success
-    result.status = 'success';
-    result.messages.log = `Custom Text set for “${this.layer.name}” is “${customText}”`;
-    return result;
+      // wait on the user input
+      const checkUserInput = (): Function | NodeJS.Timeout => {
+        if (userInputIsOpen) {
+          return setTimeout(() => {
+            checkUserInput();
+          }, 200);
+        }
+        return callback(userInput);
+      };
+      return checkUserInput();
+    };
+
+    const setStatus = (customInput?: string): any => {
+      if (!customInput) {
+        // most likely the user canceled the input
+        result.status = 'error';
+        result.messages.log = 'Set text was canceled by user';
+        return callbackMain(result);
+      }
+
+      // set `annotationText` on the layer settings as the custom text
+      setAnnotationTextSettings(customInput, null, 'custom', this.layer.id, this.page);
+
+      // log the custom name alongside the original layer name and set as success
+      result.status = 'success';
+      result.messages.log = `Custom Text set for “${this.layer.name}” is “${customInput}”`;
+      return callbackMain(result);
+    };
+
+    return getInputFromUser(setStatus);
   }
 }
