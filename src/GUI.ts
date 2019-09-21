@@ -38,7 +38,7 @@ if (userInputElement) {
 
     if (button) {
       // find action by element id
-      const action = button.id;
+      const action = button.id.replace('userInput-', '');
 
       // bubble action to main
       parent.postMessage({

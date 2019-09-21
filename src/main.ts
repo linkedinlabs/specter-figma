@@ -102,42 +102,65 @@ const annotateLayer = (shouldTerminate: boolean): void => {
     // set up Painter instance for the layer
     const painter = new Painter({ for: layer, in: page });
 
+    // set up function to draw annotations
+    const drawAnnotation = (hasText: boolean) => {
+      // draw the annotation (if the text exists)
+      let paintResult = null;
+      if (hasText) {
+        paintResult = painter.addAnnotation();
+      }
+
+      // read the response from Painter; if it was unsuccessful, log and display the error
+      if (paintResult && (paintResult.status === 'error')) {
+        return messenger.handleResult(paintResult);
+      }
+
+      return null;
+    };
+
     // determine the annotation text
     let hasText = false;
     const hasCustomTextResult = layerToAnnotate.hasCustomText();
 
     if (hasCustomTextResult.status === 'error') {
-      let setTextResult = null;
       const getLibraryNameResult = layerToAnnotate.getLibraryName();
       messenger.handleResult(getLibraryNameResult);
 
       if (getLibraryNameResult.status === 'error') {
         if (!multipleLayers) {
-          setTextResult = layerToAnnotate.setText();
-          messenger.handleResult(setTextResult);
+          const setText = (callback: Function) => layerToAnnotate.setText(callback);
+          const handleSetTextResult = (setTextResult: {
+            status: 'error' | 'success',
+            messages: {
+              toast: string,
+              log: string,
+            },
+          }) => {
+            messenger.handleResult(setTextResult);
 
-          if (setTextResult.status === 'success') {
-            hasText = true;
-          }
+            if (setTextResult.status === 'success') {
+              hasText = true;
+            }
+
+            // draw the annotation
+            drawAnnotation(hasText);
+          };
+
+          // set the custom text
+          setText(handleSetTextResult);
         }
       } else {
         hasText = true;
+
+        // draw the annotation
+        drawAnnotation(hasText);
       }
     } else {
       hasText = true;
-    }
 
-    // draw the annotation (if the text exists)
-    let paintResult = null;
-    if (hasText) {
-      paintResult = painter.addAnnotation();
+      // draw the annotation
+      drawAnnotation(hasText);
     }
-
-    // read the response from Painter; if it was unsuccessful, log and display the error
-    if (paintResult && (paintResult.status === 'error')) {
-      return messenger.handleResult(paintResult);
-    }
-
     return null;
   });
 
