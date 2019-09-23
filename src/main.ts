@@ -223,7 +223,6 @@ const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
       log: string,
     },
   }) => {
-    console.log('do we get here?')
     messenger.handleResult(setTextResult);
 
     if (setTextResult.status === 'success') {
@@ -236,14 +235,16 @@ const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
         return messenger.handleResult(paintResult);
       }
     }
+
+    return null;
   };
 
   // set the custom text
   setText(handleSetTextResult);
 
-  // if (shouldGloseGUI) {
-  //   closeGUI();
-  // }
+  if (shouldGloseGUI) {
+    closeGUI();
+  }
   return null;
 };
 
@@ -322,7 +323,7 @@ const drawBoundingBox = (shouldTerminate: boolean = true): void => {
  * command came from the GUI or the menu.
  * @returns {null}
  */
-const dispatch = (action: {
+export const dispatch = (action: {
   type: string,
   visual: boolean,
 }): void => {
@@ -380,6 +381,7 @@ const main = (): void => {
 
   // watch GUI action clicks -------------------------------------------------
   figma.ui.onmessage = (msg: { navType: string }): void => {
+    // watch for nav actions and send to `dispatch`
     if (msg.navType) {
       dispatch({
         type: msg.navType,
@@ -387,6 +389,7 @@ const main = (): void => {
       });
     }
 
+    // ignore everything else
     return null;
   };
 };

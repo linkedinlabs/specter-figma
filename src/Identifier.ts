@@ -1,3 +1,4 @@
+import { dispatch } from './main';
 import {
   getLayerSettings,
   resizeGUI,
@@ -387,6 +388,7 @@ export default class Identifier {
         msg: {
           inputType: 'cancel' | 'submit',
           inputValue: string,
+          navType: string,
         },
       ): void => {
         const resetGUI = () => {
@@ -394,9 +396,8 @@ export default class Identifier {
           figma.ui.postMessage({ action: 'hideInput' });
           resizeGUI('default', figma.ui);
         };
-        console.log('do we get here?')
-        console.log(msg)
 
+        // watch for submit
         if (msg.inputType === 'submit') {
           if (msg.inputValue && msg.inputValue !== '') {
             userInput = msg.inputValue;
@@ -408,8 +409,19 @@ export default class Identifier {
             // TKTK handle empty state validation
           }
         } else {
-          resetGUI();
-          userInputIsOpen = false;
+          if (userInputIsOpen) {
+            resetGUI();
+            userInputIsOpen = false;
+          }
+
+          // watch for nav actions and send to `dispatch`
+          // `figma.ui.onmessage` can only have one instance at a time
+          if (msg.navType) {
+            dispatch({
+              type: msg.navType,
+              visual: true,
+            });
+          }
         }
       };
 
