@@ -181,11 +181,69 @@ const annotateLayer = (shouldTerminate: boolean): void => {
  * if multiple layers are selected.
  */
 const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
-  console.log('action: annotateLayerCustom'); // eslint-disable-line no-console
+  const {
+    messenger,
+    page,
+    selection,
+  } = assemble(figma);
+
+  // need a selected layer to annotate it
+  if (selection === null || selection.length === 0) {
+    return messenger.toast('A layer must be selected');
+  }
+
+  // need a selected layer to annotate it
+  if (selection.length > 1) {
+    return messenger.toast('Only one layer may be selected');
+  }
 
   if (shouldGloseGUI) {
-    closeGUI();
+    showGUI();
   }
+
+  // grab the layer form the selection
+  const layer = new Crawler({ for: selection }).first();
+
+  // set up Identifier instance for the layer
+  const layerToAnnotate = new Identifier({
+    for: layer,
+    data: page,
+    messenger,
+  });
+
+  // set up Painter instance for the layer
+  const painter = new Painter({ for: layer, in: document });
+
+  // determine the annotation text
+  const setText = (callback: Function) => layerToAnnotate.setText(callback);
+  const handleSetTextResult = (setTextResult: {
+    status: 'error' | 'success',
+    messages: {
+      toast: string,
+      log: string,
+    },
+  }) => {
+    console.log('do we get here?')
+    messenger.handleResult(setTextResult);
+
+    if (setTextResult.status === 'success') {
+      // draw the annotation
+      let paintResult = null;
+      paintResult = painter.addAnnotation();
+
+      // read the response from Painter; if it was unsuccessful, log and display the error
+      if (paintResult && (paintResult.status === 'error')) {
+        return messenger.handleResult(paintResult);
+      }
+    }
+  };
+
+  // set the custom text
+  setText(handleSetTextResult);
+
+  // if (shouldGloseGUI) {
+  //   closeGUI();
+  // }
   return null;
 };
 

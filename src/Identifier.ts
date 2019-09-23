@@ -394,6 +394,8 @@ export default class Identifier {
           figma.ui.postMessage({ action: 'hideInput' });
           resizeGUI('default', figma.ui);
         };
+        console.log('do we get here?')
+        console.log(msg)
 
         if (msg.inputType === 'submit') {
           if (msg.inputValue && msg.inputValue !== '') {
