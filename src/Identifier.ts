@@ -1,4 +1,3 @@
-import { dispatch } from './main';
 import {
   getLayerSettings,
   resizeGUI,
@@ -197,15 +196,18 @@ export default class Identifier {
   layer: any;
   page: any;
   messenger: any;
+  dispatcher?: Function;
 
   constructor({
     for: layer,
     data: page,
     messenger,
+    dispatcher,
   }) {
     this.layer = layer;
     this.page = page;
     this.messenger = messenger;
+    this.dispatcher = dispatcher;
   }
 
   /**
@@ -414,10 +416,10 @@ export default class Identifier {
             userInputIsOpen = false;
           }
 
-          // watch for nav actions and send to `dispatch`
+          // watch for nav actions and send to `dispatcher`
           // `figma.ui.onmessage` can only have one instance at a time
           if (msg.navType) {
-            dispatch({
+            this.dispatcher({
               type: msg.navType,
               visual: true,
             });
