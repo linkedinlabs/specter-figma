@@ -13,7 +13,7 @@ import {
  * @param {string} annotationText The text to add to the layer’s settings.
  * @param {string} annotationSecondaryText Optional text to add to the layer’s settings.
  * @param {string} annotationType The type of annotation (`custom`, `component`, `style`).
- * @param {Object} layer The Sketch layer object receiving the settings update.
+ * @param {Object} layer The Figma layer object receiving the settings update.
  * @private
  */
 const setAnnotationTextSettings = (
@@ -100,8 +100,8 @@ const cleanName = (name: string) => {
 //  *
 //  * @kind function
 //  * @name parseOverrides
-//  * @param {Object} layer The Sketch js layer object.
-//  * @param {Object} document The Sketch document object that contains the layer.
+//  * @param {Object} layer The Figma js layer object.
+//  * @param {Object} document The Figma document object that contains the layer.
 //  * @param {Object} workingName The top-level layer name.
 //  * @returns {string} Text containing information about the override(s).
 //  *
@@ -181,7 +181,7 @@ const cleanName = (name: string) => {
 
 // --- main Identifier class function
 /** WIP
- * @description A class to handle identifying a Sketch layer as a valid part of the Design System.
+ * @description A class to handle identifying a Figma layer as a valid part of the Design System.
  *
  * @class
  * @name Identifier
@@ -189,7 +189,7 @@ const cleanName = (name: string) => {
  * @constructor
  *
  * @property layer The layer that needs identification.
- * @property document The Sketch document that contains the layer.
+ * @property page The Figma page that contains the layer.
  * @property messenger An instance of the Messenger class.
  */
 export default class Identifier {
@@ -344,8 +344,8 @@ export default class Identifier {
   }
 
   /**
-   * @description Uses Sketch’s `getInputFromUser` dialog box to allow the user to set custom
-   * annotation text and adds the text to the layer’s settings object.
+   * @description Displays a dialog box to allow the user to set custom annotation text and
+   * adds the text to the layer’s settings object.
    *
    * @kind function
    * @name setText

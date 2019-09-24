@@ -13,7 +13,7 @@ import {
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /** WIP
- * @description Builds the initial annotation elements in Sketch (diamond, rectangle, text).
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text).
  *
  * @kind function
  * @name buildAnnotation
@@ -190,7 +190,7 @@ const buildAnnotation = (
  * @kind function
  * @name buildBoundingBox
  * @param {Object} position The frame coordinates (`x`, `y`, `width`, and `height`) for the box.
- * @returns {Object} The Sketch ShapePath object for the box.
+ * @returns {Object} The Figma RECTANGLE object for the box.
  * @private
  */
 const buildBoundingBox = (position) => {
@@ -855,14 +855,14 @@ const removeAnnotation = (existingItemData) => {
 
 // --- main Painter class function
 /**
- * @description A class to add elements to the Sketch file.
+ * @description A class to add elements directly onto Figma file frames.
  *
  * @class
  * @name Painter
  *
  * @constructor
  *
- * @property layer The layer in the Sketch file that we want to annotate or modify.
+ * @property layer The layer in the Figma file that we want to annotate or modify.
  */
 export default class Painter {
   layer: any;
@@ -876,7 +876,7 @@ export default class Painter {
 
   /**
    * @description Locates annotation text in a layer’s Settings object and
-   * builds the visual annotation on the Sketch frame.
+   * builds the visual annotation on the Figma frame.
    *
    * @kind function
    * @name addAnnotation
