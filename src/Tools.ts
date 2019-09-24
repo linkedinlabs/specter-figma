@@ -42,7 +42,7 @@ const updateArray = (
   if (action === 'remove') {
     let updatedItems = null;
     // find the items updatedArray index of the item to remove
-    const itemIndex = updatedArray[key].findIndex(foundItem => (foundItem.id === item.id));
+    const itemIndex: number = updatedArray[key].findIndex(foundItem => (foundItem.id === item.id));
 
     updatedItems = [
       ...updatedArray[key].slice(0, itemIndex),
@@ -65,14 +65,18 @@ const updateArray = (
  * @returns {Object} A representation of the original hex color in red, green, and blue (`r`,
  * `g`, `b`) decimal values.
  */
-const hexToDecimalRgb = (hexColor: string) => {
-  const rgbColor = hexRgb(hexColor);
+const hexToDecimalRgb = (hexColor: string): {
+  r: number,
+  g: number,
+  b: number,
+} => {
+  const rgbColor: { red: number, green: number, blue: number } = hexRgb(hexColor);
 
-  const r = (rgbColor.red / 255);
-  const g = (rgbColor.green / 255);
-  const b = (rgbColor.blue / 255);
+  const r: number = (rgbColor.red / 255);
+  const g: number = (rgbColor.green / 255);
+  const b: number = (rgbColor.blue / 255);
 
-  const decimalRgb = { r, g, b };
+  const decimalRgb: { r: number, g: number, b: number } = { r, g, b };
   return decimalRgb;
 };
 
