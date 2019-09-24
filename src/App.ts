@@ -8,7 +8,7 @@ import Painter from './Painter';
  *
  * @kind function
  * @name assemble
- * @param {Object} context The current context (event) received from Sketch.
+ * @param {Object} context The current context (event) received from Figma.
  * @returns {Object} Contains an object with the current document as a javascript object,
  * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
  */
@@ -55,12 +55,12 @@ export default class App {
   }
 
   /** WIP
-   * @description Identifies and annotates a selected layer in a Sketch file.
+   * @description Identifies and annotates a selected layer in a Figma file.
    *
    * @kind function
    * @name annotateLayer
    *
-   * @param {Object} context The current context (event) received from Sketch.
+   * @param {Object} context The current context (event) received from Figma.
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
   annotateLayer() {
@@ -161,12 +161,12 @@ export default class App {
   }
 
   /** WIP
-   * @description Annotates a selected layer in a Sketch file with user input.
+   * @description Annotates a selected layer in a Figma file with user input.
    *
    * @kind function
    * @name annotateLayerCustom
    *
-   * @param {Object} context The current context (event) received from Sketch.
+   * @param {Object} context The current context (event) received from Figma.
    * @returns {null} Shows a Toast in the UI if nothing is selected or
    * if multiple layers are selected.
    */
@@ -240,13 +240,13 @@ export default class App {
   }
 
   /** WIP
-   * @description Annotates a selection of layers in a Sketch file with the
+   * @description Annotates a selection of layers in a Figma file with the
    * spacing number (“IS-X”) based on the gap between the two layers.
    *
    * @kind function
    * @name annotateMeasurement
    *
-   * @param {Object} context The current context (event) received from Sketch.
+   * @param {Object} context The current context (event) received from Figma.
    * @returns {null} Shows a Toast in the UI if nothing is selected or
    * if more than two layers are selected.
    */
