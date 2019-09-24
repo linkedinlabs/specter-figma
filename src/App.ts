@@ -24,17 +24,19 @@ const assemble = (context: any = null) => {
   };
 };
 
-/** WIP
- * @description A class to handle UI alerts, messages, and logging.
+/**
+ * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
  * @name App
  *
  * @constructor
  *
- * @property event The encompassing event we are logging or applying a message/alert to.
- * @property page The Figma file that will display messages/alerts
- * or that the log will reference.
+ * @property closeGUI A convenience function for closing the GUI and shutting down the plugin.
+ * @property showGUI A convenience function for showing the GUI.
+ * @property dispatcher The function from `main.ts` that determines where to route GUI clicks.
+ * @property shouldTerminate A boolean that tells us whether or not the GUI should remain open
+ * at the end of the plugin’s current task.
  */
 export default class App {
   closeGUI: Function;
@@ -54,13 +56,12 @@ export default class App {
     this.showGUI = showGUI;
   }
 
-  /** WIP
-   * @description Identifies and annotates a selected layer in a Figma file.
+  /**
+   * @description Identifies and annotates a selected layer or multiple layers in a Figma file.
    *
    * @kind function
    * @name annotateLayer
    *
-   * @param {Object} context The current context (event) received from Figma.
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
   annotateLayer() {
@@ -160,15 +161,14 @@ export default class App {
     return null;
   }
 
-  /** WIP
+  /**
    * @description Annotates a selected layer in a Figma file with user input.
    *
    * @kind function
    * @name annotateLayerCustom
    *
-   * @param {Object} context The current context (event) received from Figma.
-   * @returns {null} Shows a Toast in the UI if nothing is selected or
-   * if multiple layers are selected.
+   * @returns {null} Shows a Toast in the UI if nothing is selected or if multiple layers
+   * are selected.
    */
   annotateLayerCustom() {
     const {
@@ -246,7 +246,6 @@ export default class App {
    * @kind function
    * @name annotateMeasurement
    *
-   * @param {Object} context The current context (event) received from Figma.
    * @returns {null} Shows a Toast in the UI if nothing is selected or
    * if more than two layers are selected.
    */
@@ -265,7 +264,6 @@ export default class App {
    * @kind function
    * @name drawBoundingBox
    *
-   * @param {boolean} shouldTerminate Whether or not to close the plugin at the end of the action.
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
   drawBoundingBox() {
