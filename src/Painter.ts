@@ -12,7 +12,7 @@ import {
 } from './constants';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
-/** WIP
+/**
  * @description Builds the initial annotation elements in Figma (diamond, rectangle, text).
  *
  * @kind function
@@ -22,15 +22,16 @@ import {
  * @param {string} annotationType A string representing the type of annotation
  * (component or foundation).
  * @returns {Object} Each annotation element (`diamond`, `rectangle`, `text`).
+ *
  * @private
  */
 const buildAnnotation = (
-  annotationText,
-  annotationSecondaryText,
-  annotationType = 'component',
+  annotationText: string,
+  annotationSecondaryText?: string,
+  annotationType: string = 'component',
 ) => {
   // set the dominant color
-  let colorHex = null;
+  let colorHex: string = null;
   switch (annotationType) {
     case 'component':
       colorHex = COLORS.component;
@@ -51,12 +52,12 @@ const buildAnnotation = (
       colorHex = COLORS.component;
   }
 
-  let setText = annotationText;
+  let setText: string = annotationText;
   if (annotationSecondaryText) {
     setText = `${annotationText}\n${annotationSecondaryText}`;
   }
 
-  let isMeasurement = false;
+  let isMeasurement: boolean = false;
   if (
     annotationType === 'spacing'
     || annotationType === 'dimension'
@@ -65,7 +66,10 @@ const buildAnnotation = (
   }
 
   // build the text box
-  const textPosition = {
+  const textPosition: {
+    x: number,
+    y: number,
+  } = {
     x: 16,
     y: 0,
   };
@@ -76,18 +80,18 @@ const buildAnnotation = (
   }
 
   // adjustment for two-line annotations
-  let rectTextBuffer = 0;
+  let rectTextBuffer: number = 0;
   if (annotationSecondaryText) {
     rectTextBuffer = 22;
   }
 
   // set up the color object
   // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
-  const color = hexToDecimalRgb(colorHex);
+  const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle
-  const rectHeight = (isMeasurement ? 22 : 30) + rectTextBuffer;
-  const rectangle = figma.createRectangle();
+  const rectHeight: number = (isMeasurement ? 22 : 30) + rectTextBuffer;
+  const rectangle: any = figma.createRectangle();
   rectangle.name = 'Rectangle';
 
   // position and size the rectangle
@@ -108,8 +112,8 @@ const buildAnnotation = (
   rectangle.bottomRightRadius = 2;
 
   // build the dangling diamond
-  const diamondOffset = (isMeasurement ? 19 : 30);
-  const diamond = figma.createRectangle();
+  const diamondOffset: number = (isMeasurement ? 19 : 30);
+  const diamond: any = figma.createRectangle();
   diamond.name = 'Diamond';
 
   // position and size the diamond
@@ -125,7 +129,7 @@ const buildAnnotation = (
   }];
 
   // create empty text layer
-  const text = figma.createText();
+  const text: any = figma.createText();
 
   // style text layer
   text.fontName = TYPEFACES.primary;
@@ -152,13 +156,13 @@ const buildAnnotation = (
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
 
   // adjust rectangle width based on text width
-  const textWidth = text.width;
-  const textPadding = (isMeasurement ? 6 : 32);
-  const rectangleWidth = textWidth + textPadding;
+  const textWidth: number = text.width;
+  const textPadding: number = (isMeasurement ? 6 : 32);
+  const rectangleWidth: number = textWidth + textPadding;
   rectangle.resize(rectangleWidth, rectangle.height);
 
   // move the diamond to the mid-point of the rectangle
-  const diamondMidX = ((rectangleWidth - 6) / 2);
+  const diamondMidX: number = ((rectangleWidth - 6) / 2);
   diamond.x = diamondMidX;
 
   // set z-axis placement of all elements
@@ -191,14 +195,15 @@ const buildAnnotation = (
  * @name buildBoundingBox
  * @param {Object} position The frame coordinates (`x`, `y`, `width`, and `height`) for the box.
  * @returns {Object} The Figma RECTANGLE object for the box.
+ *
  * @private
  */
 const buildBoundingBox = (position) => {
-  const colorHex = COLORS.style;
-  const colorOpactiy = 0.3; // 30% opacity
+  const colorHex: string = COLORS.style;
+  const colorOpactiy: number = 0.3; // 30% opacity
 
   // build and name the initial rectangle object
-  const boundingBox = figma.createRectangle();
+  const boundingBox: any = figma.createRectangle();
   boundingBox.name = 'Bounding Box';
 
   // position and size the rectangle
@@ -208,7 +213,7 @@ const buildBoundingBox = (position) => {
 
   // set up the color object
   // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
-  const color = hexToDecimalRgb(colorHex);
+  const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // style it – set the rectangle type, color, and opacity
   boundingBox.fills = [{
@@ -220,17 +225,17 @@ const buildBoundingBox = (position) => {
   return boundingBox;
 };
 
-/** WIP
+/**
  * @description Takes the individual annotation elements, the specs for the layer(s) receiving
  * the annotation, and adds the annotation to the container group in the proper position.
  *
  * @kind function
  * @name positionAnnotation
- * @param {Object} containerGroup The group layer that holds all annotations.
+ * @param {Object} frame The Figma `frame` that contains the annotation.
  * @param {string} groupName The name of the group that holds the annotation elements
  * inside the `containerGroup`.
- * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`).
- * @param {Object} layerPosition The frame specifications (`width`, `height`, `x`, `y`, `index`)
+ * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
+ * @param {Object} layerPosition The position specifications (`width`, `height`, `x`, `y`, `index`)
  * for the layer receiving the annotation + the artboard width/height (`artboardWidth` /
  * `artboardHeight`).
  * @param {string} annotationType An optional string representing the type of annotation.
@@ -256,12 +261,12 @@ const positionAnnotation = (
   } = annotation;
 
   const { artboardWidth, artboardHeight } = layerPosition;
-  const layerWidth = layerPosition.width;
-  const layerHeight = layerPosition.height;
-  const layerX = layerPosition.x;
-  const layerY = layerPosition.y;
+  const layerWidth: number = layerPosition.width;
+  const layerHeight: number = layerPosition.height;
+  const layerX: number = layerPosition.x;
+  const layerY: number = layerPosition.y;
 
-  let isMeasurement = false;
+  let isMeasurement: boolean = false;
   if (
     annotationType === 'spacing'
     || annotationType === 'dimension'
@@ -270,7 +275,7 @@ const positionAnnotation = (
   }
 
   // create the annotation group
-  const groupArray = [];
+  const groupArray: Array<any> = [];
   if (icon) { groupArray.push(icon); }
   if (rectangle) { groupArray.push(rectangle); }
   if (diamond) { groupArray.push(diamond); }
@@ -280,27 +285,27 @@ const positionAnnotation = (
   group.name = groupName;
 
   // ------- position the group within the artboard, above the layer receiving the annotation
-  let artboardEdge = null;
+  let artboardEdge: string = null;
 
   // initial placement based on layer to annotate
 
   // for top
-  let placementX = (
+  let placementX: number = (
     layerX + (
       (layerWidth - group.width) / 2
     )
   );
   // for `left` or `right`
-  let placementY = (
+  let placementY: number = (
     layerY + (
       (layerHeight - group.height) / 2
     )
   );
 
-  let offsetX = null;
-  let offsetY = null;
-  let iconOffsetX = 0;
-  let iconOffsetY = 0;
+  let offsetX: number = null;
+  let offsetY: number = null;
+  let iconOffsetX: number = 0;
+  let iconOffsetY: number = 0;
 
   // adjustments based on orientation
   switch (orientation) {
@@ -370,7 +375,7 @@ const positionAnnotation = (
   // adjust diamond on horizonal placement, if necessary
   if (artboardEdge) {
     // move the diamond to the mid-point of the layer to annotate
-    let diamondLayerMidX = null;
+    let diamondLayerMidX: number = null;
     switch (artboardEdge) {
       case 'left':
         diamondLayerMidX = ((layerX - group.x) + ((layerWidth - 6) / 2));
@@ -386,8 +391,8 @@ const positionAnnotation = (
 
   // move diamand to left/right edge, if necessary
   if (orientation === 'left' || orientation === 'right') {
-    const diamondNewY = rectangle.y + (rectangle.height / 2) - 3;
-    let diamondNewX = null;
+    const diamondNewY: number = rectangle.y + (rectangle.height / 2) - 3;
+    let diamondNewX: number = null;
 
     if (orientation === 'left') {
       // move the diamond to the left mid-point of the layer to annotate
@@ -442,14 +447,14 @@ const positionAnnotation = (
     }
   }
 
-  // // adjust the measure icon height for left-/right-oriented annotations
+  // // adjust the measure icon height for left-/right-oriented annotations TKTK
   // if (orientation !== 'top') {
   //   // remove horizontal icon (easier to re-draw)
   //   icon.remove();
 
   //   // redraw icon in vertical orientation
-  //   const measureIconColor = (annotationType === 'spacing' ? COLORS.spacing : COLORS.dimension);
-  //   const iconNew = buildMeasureIcon(group, measureIconColor, 'vertical');
+  //   const measureIconColor: string = (annotationType === 'spacing' ? COLORS.spacing : COLORS.dimension);
+  //   const iconNew: any = buildMeasureIcon(group, measureIconColor, 'vertical');
 
   //   // resize icon based on gap/layer height
   //   iconNew.height = layerHeight;
@@ -486,10 +491,11 @@ const positionAnnotation = (
  * @param {string} elementType A string representing the type of element getting painted.
  *
  * @returns {string} The key representing the type of element getting painted.
+ *
  * @private
  */
 const setGroupKey = (elementType: string) => {
-  let groupKey = null;
+  let groupKey: string = null;
   switch (elementType) {
     case 'boundingBox':
       groupKey = 'boundingInnerGroupId';
@@ -525,10 +531,11 @@ const setGroupKey = (elementType: string) => {
  * @param {string} elementType A string representing the type of element getting painted.
  *
  * @returns {string} The name of the group getting painted.
+ *
  * @private
  */
 const setGroupName = (elementType: string) => {
-  let groupName = null;
+  let groupName: string = null;
   switch (elementType) {
     case 'boundingBox':
       groupName = 'Bounding Boxes';
@@ -568,12 +575,12 @@ const setGroupName = (elementType: string) => {
  */
 const orderContainerLayers = (outerGroupId, page) => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || {});
-  let containerGroupId = null;
-  let boundingGroupId = null;
-  let componentGroupId = null;
-  let dimensionGroupId = null;
-  let spacingGroupId = null;
-  let styleGroupId = null;
+  let containerGroupId: string = null;
+  let boundingGroupId: string = null;
+  let componentGroupId: string = null;
+  let dimensionGroupId: string = null;
+  let spacingGroupId: string = null;
+  let styleGroupId: string = null;
 
   // find the correct group set and inner groups based on the `outerGroupId`
   pageSettings.containerGroups.forEach((groupSet) => {
@@ -592,31 +599,31 @@ const orderContainerLayers = (outerGroupId, page) => {
   const containerGroup: any = figma.getNodeById(containerGroupId);
   if (containerGroup) {
     // always move bounding box group to bottom of list
-    const boundingBoxGroup = figma.getNodeById(boundingGroupId);
+    const boundingBoxGroup: any = figma.getNodeById(boundingGroupId);
     if (boundingBoxGroup) {
       containerGroup.appendChild(boundingBoxGroup);
     }
 
     // always move dimension annotations group to second from bottom of list
-    const dimensionBoxGroup = figma.getNodeById(dimensionGroupId);
+    const dimensionBoxGroup: any = figma.getNodeById(dimensionGroupId);
     if (dimensionBoxGroup) {
       containerGroup.appendChild(dimensionBoxGroup);
     }
 
     // always move spacing annotations group to third from bottom of list
-    const spacingBoxGroup = figma.getNodeById(spacingGroupId);
+    const spacingBoxGroup: any = figma.getNodeById(spacingGroupId);
     if (spacingBoxGroup) {
       containerGroup.appendChild(spacingBoxGroup);
     }
 
     // foundations group moves to second from top
-    const styleGroup = figma.getNodeById(styleGroupId);
+    const styleGroup: any = figma.getNodeById(styleGroupId);
     if (styleGroup) {
       containerGroup.appendChild(styleGroup);
     }
 
     // always move component group to top of list
-    const componentGroup = figma.getNodeById(componentGroupId);
+    const componentGroup: any = figma.getNodeById(componentGroupId);
     if (componentGroup) {
       containerGroup.appendChild(componentGroup);
     }
@@ -635,6 +642,7 @@ const orderContainerLayers = (outerGroupId, page) => {
  * @param {Object} groupSettings Object containing the `name`, `position`,
  * `child` and `parent` layers, and `locked` status.
  * @returns {Object} The container group layer object.
+ *
  * @private
  */
 const drawContainerGroup = (groupSettings: {
@@ -656,7 +664,7 @@ const drawContainerGroup = (groupSettings: {
   } = groupSettings;
 
   // set new group
-  const containerGroup = figma.group([child], parent);
+  const containerGroup: any = figma.group([child], parent);
 
   // position, name, and lock new group
   containerGroup.x = position.x;
@@ -680,6 +688,7 @@ const drawContainerGroup = (groupSettings: {
  * @param {Object} layer An object representing the Figma layer to be set in the container group.
  * @returns {Object} The inner container group layer object and the accompanying
  * updated parent container group settings object.
+ *
  * @private
  */
 export const createContainerGroup = (
@@ -688,12 +697,12 @@ export const createContainerGroup = (
   frame: any,
   layer: any,
 ) => {
-  const groupName = setGroupName(groupType);
-  const groupKey = setGroupKey(groupType);
-  const locked = groupType === 'topLevel';
+  const groupName: string = setGroupName(groupType);
+  const groupKey: string = setGroupKey(groupType);
+  const locked: boolean = groupType === 'topLevel';
 
   // set up new container group layer on the frame
-  const newInnerGroup = drawContainerGroup({
+  const newInnerGroup: any = drawContainerGroup({
     name: groupName,
     position: { x: layer.x, y: layer.y },
     parent: frame,
@@ -702,7 +711,7 @@ export const createContainerGroup = (
   });
 
   // update the `containerSet` object
-  const updatedContainerSet = containerSet;
+  const updatedContainerSet: any = containerSet;
   updatedContainerSet[groupKey] = newInnerGroup.id;
 
   return {
@@ -721,6 +730,7 @@ export const createContainerGroup = (
  * the `frame` and `page` the layer exists within, the `position` of the layer, and the
  * `type` of annotation or drawing action.
  * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
+ *
  * @private
  */
 const setLayerInContainers = (layerToContain: {
@@ -741,11 +751,11 @@ const setLayerInContainers = (layerToContain: {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
   // set some variables
-  let outerGroup = null;
-  let outerGroupId = null;
-  let outerGroupSet = null;
-  let innerGroup = null;
-  let innerGroupId = null;
+  let outerGroup: any = null;
+  let outerGroupId: string = null;
+  let outerGroupSet: any = null;
+  let innerGroup: any = null;
+  let innerGroupId: string = null;
   let containerSet: any = {};
 
   // find the existing `outerGroup` (if it exists)
@@ -836,17 +846,19 @@ const setLayerInContainers = (layerToContain: {
   return containerSet;
 };
 
-/** WIP
- * @description Takes the data representing an existing annotation and removes that data
- * (and cleans up the data).
+/**
+ * @description Takes the data representing an existing annotation, removes that annotation,
+ * and cleans up the data.
  *
  * @kind function
  * @name removeAnnotation
  *
  * @param {Object} existingItemData The data object containing an `id` representting the
  * annotation to be removed.
+ *
+ * @private
  */
-const removeAnnotation = (existingItemData) => {
+const removeAnnotation = (existingItemData: { id: string }) => {
   const layerToDelete = figma.getNodeById(existingItemData.id);
   if (layerToDelete) {
     layerToDelete.remove();
@@ -863,6 +875,7 @@ const removeAnnotation = (existingItemData) => {
  * @constructor
  *
  * @property layer The layer in the Figma file that we want to annotate or modify.
+ * @property page The page in the Figma file containing the corresponding `frame` and `layer`.
  */
 export default class Painter {
   layer: any;
@@ -959,8 +972,16 @@ export default class Painter {
     );
 
     // group and position the base annotation elements
-    const layerIndex = this.layer.parent.children.findIndex(node => node === this.layer);
-    const layerPosition = {
+    const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const layerPosition: {
+      frameWidth: number,
+      frameHeight: number,
+      width: number,
+      height: number,
+      x: number,
+      y: number,
+      index: number,
+    } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: this.layer.width,
@@ -986,7 +1007,11 @@ export default class Painter {
     });
 
     // new object with IDs to add to settings
-    const newAnnotatedLayerSet = {
+    const newAnnotatedLayerSet: {
+      containerGroupId: string,
+      id: string,
+      originalId: string,
+    } = {
       containerGroupId: containerSet.componentInnerGroupId,
       id: group.id,
       originalId: layerId,
