@@ -36,8 +36,8 @@ const COLORS = {
   style: '#ff6655',
 };
 
-/** WIP
- * @description An object containing the set of colors in-use by the plugin.
+/**
+ * @description An object containing the sets of typefaces in-use by the plugin.
  *
  * @kind constant
  * @name TYPEFACES
