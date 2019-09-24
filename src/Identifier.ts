@@ -13,7 +13,8 @@ import {
  * @param {string} annotationText The text to add to the layer’s settings.
  * @param {string} annotationSecondaryText Optional text to add to the layer’s settings.
  * @param {string} annotationType The type of annotation (`custom`, `component`, `style`).
- * @param {Object} layer The Figma layer object receiving the settings update.
+ * @param {Object} layerId The `id` for the Figma layer receiving the settings update.
+ * @param {Object} page The page containing the layer to be annotated.
  * @private
  */
 const setAnnotationTextSettings = (
@@ -22,7 +23,7 @@ const setAnnotationTextSettings = (
   annotationType: string,
   layerId: string,
   page: any,
-) => {
+): void => {
   let layerSettings = getLayerSettings(page, layerId);
 
   // set `annotationText` on the layer settings
@@ -55,17 +56,17 @@ const setAnnotationTextSettings = (
  * @returns {string} The `annotationType` – either `component` or `style`.
  * @private
  */
-const checkNameForType = (name) => {
+const checkNameForType = (name: string): string => {
   // TKTK
-  let annotationType = 'component';
+  let annotationType: string = 'component';
   // grab the first segment of the name (before the first “/”) – top-level Kit name
-  let libraryName = name.split('/')[0]; // eslint-disable-line prefer-destructuring
+  let libraryName: string = name.split('/')[0]; // eslint-disable-line prefer-destructuring
 
   // set up some known exceptions (remove the text that would trigger a type change)
   libraryName = libraryName.replace('(Dual Icons)', '');
 
   // kit name substrings, exclusive to Foundations
-  const foundations = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
+  const foundations: Array<string> = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
 
   // check if one of the foundation substrings exists in the `libraryName`
   if (foundations.some(foundation => libraryName.indexOf(foundation) >= 0)) {
@@ -84,11 +85,11 @@ const checkNameForType = (name) => {
  * @returns {string} The last segment of the layer name as a string.
  * @private
  */
-const cleanName = (name: string) => {
+const cleanName = (name: string): string => {
   // take only the last segment of the name (after a “/”, if available)
   // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-  // let cleanedName = name.split(/(?:[^w])(\/)/).pop();
-  let cleanedName = name; // WIP
+  // let cleanedName: string = name.split(/(?:[^w])(\/)/).pop();
+  let cleanedName: string = name; // TKTK
   // otherwise, fall back to the kit layer name
   cleanedName = !cleanedName ? name : cleanedName;
   return cleanedName;
@@ -108,7 +109,7 @@ const cleanName = (name: string) => {
 //  * @private
 //  */
 // const parseOverrides = (layer, document, workingName = null) => {
-//   const overridesText = [];
+//   const overridesText: Array<string> = [];
 
 //   // iterate available overrides - based on current Lingo naming schemes and may break
 //   // as those change or are updated.
@@ -120,14 +121,14 @@ const cleanName = (name: string) => {
 //       && override.id.includes('symbolID')
 //     ) {
 //       // current override type/category (always last portion of the path)
-//       const overrideTypeId = override.path.split('/').pop();
-//       const overrideType = document.getLayerWithID(overrideTypeId);
-//       const overrideTypeName = overrideType.name;
+//       const overrideTypeId: string = override.path.split('/').pop();
+//       const overrideType: string = document.getLayerWithID(overrideTypeId);
+//       const overrideTypeName: string = overrideType.name;
 
 //       // current override master symbol (ID is the override value)
-//       const overrideSymbol = document.getSymbolMasterWithID(override.value);
+//       const overrideSymbol: string = document.getSymbolMasterWithID(override.value);
 //       // grab name (sometimes it does not exist if “None” is a changed override)
-//       const overrideName = overrideSymbol ? overrideSymbol.name : null;
+//       const overrideName: string = overrideSymbol ? overrideSymbol.name : null;
 
 //       if (overrideName) {
 //         // look for top-level overrides and Icon overrides - based on
@@ -147,7 +148,7 @@ const cleanName = (name: string) => {
 //           || !override.path.includes('/') // excluding “/” gives us top-level overrides
 //         ) {
 //           // default icon name (usually last element of the name, separated by “/”)
-//           let overrideValueName = overrideName.split(/(?:[^w])(\/)/).pop();
+//           let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
 //           overrideValueName = overrideValueName.replace(`${workingName}`, '');
 
 //           // ---------- set up formatting exceptions
@@ -167,9 +168,9 @@ const cleanName = (name: string) => {
 //     }
 //   });
 
-//   let setOverridesText = null;
+//   let setOverridesText: string = null;
 //   if (overridesText.length > 0) {
-//     let label = 'Override';
+//     let label: string = 'Override';
 //     if (overridesText.length > 1) {
 //       label = 'Overrides';
 //     }
@@ -180,7 +181,7 @@ const cleanName = (name: string) => {
 // };
 
 // --- main Identifier class function
-/** WIP
+/**
  * @description A class to handle identifying a Figma layer as a valid part of the Design System.
  *
  * @class
@@ -191,6 +192,7 @@ const cleanName = (name: string) => {
  * @property layer The layer that needs identification.
  * @property page The Figma page that contains the layer.
  * @property messenger An instance of the Messenger class.
+ * @property dispatcher An optional instance of the `dispatcher` function from `main.ts`.
  */
 export default class Identifier {
   layer: any;
@@ -211,11 +213,10 @@ export default class Identifier {
   }
 
   /**
-   * @description Identifies the Kit-verified master symbol name of a symbol, or the linked
-   * layer name of a layer, and adds the name to the layer’s `annotationText` settings object:
-   * The identification is achieved by cross-referencing a symbol’s `symbolId` with the master
-   * symbol instance, and then looking the name up in the connected Lingo Kit symbols, or by
-   * matching the layer to the Lingo Kit list of layers.
+   * @description Identifies the master symbol name of a component and adds the name to the layer’s
+   * `annotationText` settings object: The identification is achieved by ensuring a
+   * `masterComponent` is attached to the instance and then parsing the master’s `name` and
+   * `description` for additional identifying information.
    *
    * @kind function
    * @name getLibraryName
@@ -259,11 +260,11 @@ export default class Identifier {
       this.messenger.log(`Master Component name for layer: ${masterComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
-      const symbolType = checkNameForType(masterComponent.name);
+      const symbolType: string = checkNameForType(masterComponent.name);
       // take only the last segment of the name (after a “/”, if available)
-      const textToSet = cleanName(masterComponent.name);
+      const textToSet: string = cleanName(masterComponent.name);
       // const subtextToSet = parseOverrides(this.layer, this.page, textToSet); // TKTK
-      const subtextToSet = null; // temporary
+      const subtextToSet: string = null; // temporary
 
       // set `annotationText` on the layer settings as the kit symbol name
       // set option `subtextToSet` on the layer settings based on existing overrides
@@ -281,7 +282,7 @@ export default class Identifier {
 
     //   if (kitStyle) {
     //     // take only the last segment of the name (after a “/”, if available)
-    //     const textToSet = cleanName(kitStyle.name);
+    //     const textToSet: string = cleanName(kitStyle.name);
 
     //     // set `annotationText` on the layer settings as the kit layer name
     //     setAnnotationTextSettings(textToSet, null, 'style', this.layer);
@@ -300,7 +301,7 @@ export default class Identifier {
     return result;
   }
 
-  /** WIP
+  /**
    * @description Checks the layer’s settings object for the existence of `annotationText` and
    * and that `annotationType` is 'custom' (Component and Style annotations can be easily updated
    * and need to be rechecked each time, whereas Custom annotations do not.
@@ -349,6 +350,8 @@ export default class Identifier {
    *
    * @kind function
    * @name setText
+   * @param {Function} callbackMain A callback function.
+   *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   setText(callbackMain): any {
@@ -374,7 +377,7 @@ export default class Identifier {
       initialValue = layerSettings.annotationText;
     }
 
-    const getInputFromUser = (callback): any => {
+    const getInputFromUser = (callback: Function): any => {
       let userInputIsOpen: boolean = true;
       let userInput: string = null;
 
@@ -393,7 +396,7 @@ export default class Identifier {
           navType: string,
         },
       ): void => {
-        const resetGUI = () => {
+        const resetGUI = (): void => {
           // switch plugin UI to navigation state
           figma.ui.postMessage({ action: 'hideInput' });
           resizeGUI('default', figma.ui);

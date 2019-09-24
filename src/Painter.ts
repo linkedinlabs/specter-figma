@@ -571,9 +571,11 @@ const setGroupName = (elementType: string) => {
  * @param {string} outerGroupId String ID for finding the outer container group.
  * @param {Object} page The page containing the outer container group.
  *
+ * @returns {null}
+ *
  * @private
  */
-const orderContainerLayers = (outerGroupId, page) => {
+const orderContainerLayers = (outerGroupId, page): void => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || {});
   let containerGroupId: string = null;
   let boundingGroupId: string = null;
