@@ -1,34 +1,11 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
-import Crawler from './Crawler';
-import Identifier from './Identifier';
+import App from './App';
 import Messenger from './Messenger';
-import Painter from './Painter';
 import {
   CLOSE_PLUGIN_MSG,
   GUI_SETTINGS,
   TYPEFACES,
 } from './constants';
-
-/**
- * @description A shared helper function to set up in-UI messages and the logger.
- *
- * @kind function
- * @name assemble
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {Object} Contains an object with the current document as a javascript object,
- * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
- */
-const assemble = (context: any = null) => {
-  const page = context.currentPage;
-  const { selection } = context.currentPage;
-  const messenger = new Messenger({ for: context, in: page });
-
-  return {
-    messenger,
-    page,
-    selection,
-  };
-};
 
 // GUI management -------------------------------------------------
 
@@ -63,274 +40,32 @@ const showGUI = (): void => {
   return null;
 };
 
-// invoked commands -------------------------------------------------
-
-/** WIP
- * @description Identifies and annotates a selected layer in a Sketch file.
- *
- * @kind function
- * @name annotateLayer
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected.
- */
-const annotateLayer = (shouldTerminate: boolean): void => {
-  const {
-    messenger,
-    page,
-    selection,
-  } = assemble(figma);
-
-  // need a selected layer to annotate it
-  if (selection === null || selection.length === 0) {
-    messenger.log('Annotate layer: nothing selected');
-    return messenger.toast('A layer must be selected');
-  }
-
-  // iterate through each layer in a selection
-  const layers = new Crawler({ for: selection }).all();
-  const multipleLayers = (layers.length > 1);
-
-  layers.forEach((layer) => {
-    // set up Identifier instance for the layer
-    const layerToAnnotate = new Identifier({
-      for: layer,
-      data: page,
-      messenger,
-    });
-
-    // set up Painter instance for the layer
-    const painter = new Painter({ for: layer, in: page });
-
-    // set up function to draw annotations
-    const drawAnnotation = (hasText: boolean) => {
-      // draw the annotation (if the text exists)
-      let paintResult = null;
-      if (hasText) {
-        paintResult = painter.addAnnotation();
-      }
-
-      // read the response from Painter; if it was unsuccessful, log and display the error
-      if (paintResult && (paintResult.status === 'error')) {
-        return messenger.handleResult(paintResult);
-      }
-
-      return null;
-    };
-
-    // determine the annotation text
-    let hasText = false;
-    const hasCustomTextResult = layerToAnnotate.hasCustomText();
-
-    if (hasCustomTextResult.status === 'error') {
-      const getLibraryNameResult = layerToAnnotate.getLibraryName();
-      messenger.handleResult(getLibraryNameResult);
-
-      if (getLibraryNameResult.status === 'error') {
-        if (!multipleLayers) {
-          const setText = (callback: Function) => layerToAnnotate.setText(callback);
-          const handleSetTextResult = (setTextResult: {
-            status: 'error' | 'success',
-            messages: {
-              toast: string,
-              log: string,
-            },
-          }) => {
-            messenger.handleResult(setTextResult);
-
-            if (setTextResult.status === 'success') {
-              hasText = true;
-            }
-
-            // draw the annotation
-            drawAnnotation(hasText);
-          };
-
-          // set the custom text
-          setText(handleSetTextResult);
-        }
-      } else {
-        hasText = true;
-
-        // draw the annotation
-        drawAnnotation(hasText);
-      }
-    } else {
-      hasText = true;
-
-      // draw the annotation
-      drawAnnotation(hasText);
-    }
-    return null;
-  });
-
-  if (shouldTerminate) {
-    closeGUI();
-  }
-  return null;
-};
-
-/** WIP
- * @description Annotates a selected layer in a Sketch file with user input.
- *
- * @kind function
- * @name annotateLayerCustom
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected or
- * if multiple layers are selected.
- */
-const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
-  const {
-    messenger,
-    page,
-    selection,
-  } = assemble(figma);
-
-  // need a selected layer to annotate it
-  if (selection === null || selection.length === 0) {
-    return messenger.toast('A layer must be selected');
-  }
-
-  // need a selected layer to annotate it
-  if (selection.length > 1) {
-    return messenger.toast('Only one layer may be selected');
-  }
-
-  if (shouldGloseGUI) {
-    showGUI();
-  }
-
-  // grab the layer form the selection
-  const layer = new Crawler({ for: selection }).first();
-
-  // set up Identifier instance for the layer
-  const layerToAnnotate = new Identifier({
-    for: layer,
-    data: page,
-    messenger,
-  });
-
-  // set up Painter instance for the layer
-  const painter = new Painter({ for: layer, in: document });
-
-  // determine the annotation text
-  const setText = (callback: Function) => layerToAnnotate.setText(callback);
-  const handleSetTextResult = (setTextResult: {
-    status: 'error' | 'success',
-    messages: {
-      toast: string,
-      log: string,
-    },
-  }) => {
-    messenger.handleResult(setTextResult);
-
-    if (setTextResult.status === 'success') {
-      // draw the annotation
-      let paintResult = null;
-      paintResult = painter.addAnnotation();
-
-      // read the response from Painter; if it was unsuccessful, log and display the error
-      if (paintResult && (paintResult.status === 'error')) {
-        return messenger.handleResult(paintResult);
-      }
-    }
-
-    return null;
-  };
-
-  // set the custom text
-  setText(handleSetTextResult);
-
-  if (shouldGloseGUI) {
-    closeGUI();
-  }
-  return null;
-};
-
-/** WIP
- * @description Annotates a selection of layers in a Sketch file with the
- * spacing number (“IS-X”) based on the gap between the two layers.
- *
- * @kind function
- * @name annotateMeasurement
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected or
- * if more than two layers are selected.
- */
-const annotateMeasurement = (shouldTerminate: boolean): void => {
-  console.log('action: annotateMeasurement'); // eslint-disable-line no-console
-
-  if (shouldTerminate) {
-    closeGUI();
-  }
-  return null;
-};
-
-/**
- * @description Draws a semi-transparent “Bounding Box” around any selected elements.
- *
- * @kind function
- * @name drawBoundingBox
- *
- * @param {boolean} shouldTerminate Whether or not to close the plugin at the end of the action.
- * @returns {null} Shows a Toast in the UI if nothing is selected.
- */
-const drawBoundingBox = (shouldTerminate: boolean = true): void => {
-  const {
-    messenger,
-    page,
-    selection,
-  } = assemble(figma);
-
-  // need a selected layer to annotate it
-  if (selection === null || selection.length === 0) {
-    messenger.log('Draw bounding box: nothing selected');
-    return messenger.toast('At least one layer must be selected');
-  }
-
-  // grab the frame from the selection
-  const crawler = new Crawler({ for: selection });
-  const layer = crawler.first();
-  const position = crawler.position();
-  const painter = new Painter({ for: layer, in: page });
-
-  // draw the bounding box (if position exists)
-  let paintResult = null;
-  if (position) {
-    paintResult = painter.addBoundingBox(position);
-  }
-
-  // read the response from Painter; log and display message(s)
-  messenger.handleResult(paintResult);
-
-  if (shouldTerminate) {
-    closeGUI();
-  }
-  return null;
-};
-
 // watch for commands -------------------------------------------------
 
 /** WIP
  * @description Takes a unique string (`type`) and calls the corresponding action.
  *
  * @kind function
- * @name dispatch
+ * @name dispatcher
  * @param {object} action An object comprised of `type`, a string representing
  * the action received from the GUI and `visual` a boolean indicating if the
  * command came from the GUI or the menu.
  * @returns {null}
  */
-export const dispatch = (action: {
+const dispatcher = (action: {
   type: string,
   visual: boolean,
 }): void => {
-  const { messenger } = assemble(figma);
-
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
+
+  const messenger = new Messenger({ for: figma, in: figma.currentPage });
+  const app = new App({
+    closeGUI,
+    dispatcher,
+    shouldTerminate,
+    showGUI,
+  });
 
   // run the action based on type
   switch (action.type) {
@@ -338,7 +73,7 @@ export const dispatch = (action: {
       (async () => {
         try {
           await figma.loadFontAsync(TYPEFACES.primary);
-          await annotateLayer(shouldTerminate);
+          await app.annotateLayer();
         } catch (err) {
           messenger.log('Could not load typeface', 'error');
           console.log(err); // eslint-disable-line no-console
@@ -346,13 +81,13 @@ export const dispatch = (action: {
       })();
       break;
     case 'annotate-custom':
-      annotateLayerCustom(shouldTerminate);
+      app.annotateLayerCustom();
       break;
     case 'bounding':
-      drawBoundingBox(shouldTerminate);
+      app.drawBoundingBox();
       break;
     case 'measure':
-      annotateMeasurement(shouldTerminate);
+      app.annotateMeasurement();
       break;
     default:
       showGUI();
@@ -360,6 +95,7 @@ export const dispatch = (action: {
 
   return null;
 };
+export default dispatcher;
 
 /**
  * @description Acts as the main wrapper function for the plugin. Run by default
@@ -373,7 +109,7 @@ export const dispatch = (action: {
 const main = (): void => {
   // watch menu commands -------------------------------------------------
   if (figma.command) {
-    dispatch({
+    dispatcher({
       type: figma.command,
       visual: false,
     });
@@ -381,9 +117,9 @@ const main = (): void => {
 
   // watch GUI action clicks -------------------------------------------------
   figma.ui.onmessage = (msg: { navType: string }): void => {
-    // watch for nav actions and send to `dispatch`
+    // watch for nav actions and send to `dispatcher`
     if (msg.navType) {
-      dispatch({
+      dispatcher({
         type: msg.navType,
         visual: true,
       });
