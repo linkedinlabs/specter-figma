@@ -62,6 +62,8 @@ export default class Crawler {
          *
          * @kind function
          * @name iterateKnownChildren
+         * @returns {null}
+         *
          * @private
          */
         const iterateKnownChildren = (): void => {
@@ -94,6 +96,8 @@ export default class Crawler {
               ...innerLayers.slice(innerLayerIndex + 1),
             ];
           });
+
+          return null;
         };
 
         // loop through the `innerLayers` array as long as it is not empty

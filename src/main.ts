@@ -42,12 +42,14 @@ const showGUI = (): void => {
 
 // watch for commands -------------------------------------------------
 
-/** WIP
- * @description Takes a unique string (`type`) and calls the corresponding action.
+/**
+ * @description Takes a unique string (`type`) and calls the corresponding action
+ * in the App class. Also does some housekeeping duties such as pre-loading typefaces,
+ * logging errors, or managing the GUI.
  *
  * @kind function
  * @name dispatcher
- * @param {object} action An object comprised of `type`, a string representing
+ * @param {Object} action An object comprised of `type`, a string representing
  * the action received from the GUI and `visual` a boolean indicating if the
  * command came from the GUI or the menu.
  * @returns {null}
@@ -59,7 +61,10 @@ const dispatcher = (action: {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
+  // load a Messenger instance for logging
   const messenger = new Messenger({ for: figma, in: figma.currentPage });
+
+  // pass along some GUI management and navigation functions to the App class
   const app = new App({
     closeGUI,
     dispatcher,
@@ -67,11 +72,12 @@ const dispatcher = (action: {
     showGUI,
   });
 
-  // run the action based on type
+  // run the action in the App class based on type
   switch (action.type) {
     case 'annotate':
       (async () => {
         try {
+          // typefaces should be loaded before annotating with text
           await figma.loadFontAsync(TYPEFACES.primary);
           await app.annotateLayer();
         } catch (err) {

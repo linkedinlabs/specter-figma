@@ -98,15 +98,16 @@ const findFrame = (layer: any) => {
   return parent;
 };
 
-/** WIP
- * @description Takes a layer object and traverses parent relationships until the top-level
- * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+/**
+ * @description Takes a Figma page object and a `layerId` and uses the Figma API’s
+ * `getPluginData` to extract and return a specific layer’s settings.
  *
  * @kind function
  * @name getLayerSettings
- * @param {Object} layer A Figma layer object.
+ * @param {Object} page A Figma page object.
+ * @param {string} layerId A string representing a layer ID.
  *
- * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ * @returns {Object} The settings object that corresponds to the supplied `layerId`.
  */
 const getLayerSettings = (page: any, layerId: string) => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
@@ -121,15 +122,18 @@ const getLayerSettings = (page: any, layerId: string) => {
   return layerSettings;
 };
 
-/** WIP
- * @description Takes a layer object and traverses parent relationships until the top-level
- * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+/**
+ * @description Takes a Figma page object, updated layer settings, and saves the updates
+ * to the core page’s plugin settings using the Figma API’s `getPluginData` and
+ * `setPluginData`.
  *
  * @kind function
  * @name setLayerSettings
- * @param {Object} layer A Figma layer object.
+ * @param {Object} page A Figma page object.
+ * @param {Object} newLayerSettings An object containing the settings for a specific layer.
+ * This object will be added to (or replace) the `layerSettings` node of the plugin settings.
  *
- * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ * @returns {null}
  */
 const setLayerSettings = (page: any, newLayerSettings: any): void => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
@@ -155,13 +159,15 @@ const setLayerSettings = (page: any, newLayerSettings: any): void => {
   return null;
 };
 
-/** WIP
- * @description Enables the plugin GUI within Figma.
+/**
+ * @description Resizes the plugin iframe GUI within the Figma app.
  *
  * @kind function
  * @name resizeGUI
+ * @param {string} type A string representing the `type` of GUI to load.
+ * @param {Function} ui An instance of `figma.ui` with the GUI pre-loaded.
  *
- * @returns {null} Shows a Toast in the UI if nothing is selected.
+ * @returns {null}
  */
 const resizeGUI = (
   type: string,
