@@ -156,7 +156,7 @@ export default class App {
     });
 
     if (this.shouldTerminate) {
-      this.closeGUI();
+      this.closeGUI(false);
     }
     return null;
   }
@@ -228,7 +228,7 @@ export default class App {
       }
 
       if (this.shouldTerminate) {
-        this.closeGUI();
+        this.closeGUI(false);
       }
 
       return null;
