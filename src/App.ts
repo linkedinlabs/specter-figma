@@ -227,15 +227,15 @@ export default class App {
         }
       }
 
+      if (this.shouldTerminate) {
+        this.closeGUI();
+      }
+
       return null;
     };
 
     // set the custom text
     setText(handleSetTextResult);
-
-    if (this.shouldTerminate) {
-      this.closeGUI();
-    }
     return null;
   }
 
