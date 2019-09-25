@@ -200,6 +200,7 @@ export default class App {
       data: page,
       messenger,
       dispatcher: this.dispatcher,
+      shouldTerminate: this.shouldTerminate,
     });
 
     // set up Painter instance for the layer

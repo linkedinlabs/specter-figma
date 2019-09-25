@@ -199,17 +199,20 @@ export default class Identifier {
   page: any;
   messenger: any;
   dispatcher?: Function;
+  shouldTerminate: boolean;
 
   constructor({
     for: layer,
     data: page,
-    messenger,
     dispatcher,
+    messenger,
+    shouldTerminate = false,
   }) {
-    this.layer = layer;
-    this.page = page;
-    this.messenger = messenger;
     this.dispatcher = dispatcher;
+    this.layer = layer;
+    this.messenger = messenger;
+    this.page = page;
+    this.shouldTerminate = shouldTerminate;
   }
 
   /**
@@ -397,9 +400,11 @@ export default class Identifier {
         },
       ): void => {
         const resetGUI = (): void => {
-          // switch plugin UI to navigation state
-          figma.ui.postMessage({ action: 'hideInput' });
-          resizeGUI('default', figma.ui);
+          if (!this.shouldTerminate) {
+            // switch plugin UI to navigation state
+            figma.ui.postMessage({ action: 'hideInput' });
+            resizeGUI('default', figma.ui);
+          }
         };
 
         // watch for submit
