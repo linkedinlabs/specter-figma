@@ -203,7 +203,7 @@ export default class App {
     });
 
     // set up Painter instance for the layer
-    const painter = new Painter({ for: layer, in: document });
+    const painter = new Painter({ for: layer, in: page });
 
     // determine the annotation text
     const setText = (callback: Function) => layerToAnnotate.setText(callback);
