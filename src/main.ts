@@ -86,6 +86,12 @@ const dispatcher = (action: {
     await app.annotateLayerCustom();
   };
 
+  const runAnnotateMeasurement = async () => {
+    // typefaces should be loaded before annotating with text
+    await figma.loadFontAsync(TYPEFACES.primary);
+    await app.annotateMeasurement();
+  };
+
   // run the action in the App class based on type
   switch (action.type) {
     case 'annotate':
@@ -98,7 +104,7 @@ const dispatcher = (action: {
       app.drawBoundingBox();
       break;
     case 'measure':
-      app.annotateMeasurement();
+      runAnnotateMeasurement();
       break;
     default:
       showGUI();
