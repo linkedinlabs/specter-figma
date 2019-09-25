@@ -716,6 +716,10 @@ export const createContainerGroup = (
   const updatedContainerSet: any = containerSet;
   updatedContainerSet[groupKey] = newInnerGroup.id;
 
+  if (groupType === 'topLevel') {
+    updatedContainerSet.frameId = frame.id;
+  }
+
   return {
     newInnerGroup,
     updatedContainerSet,
