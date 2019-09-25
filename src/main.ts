@@ -1,6 +1,5 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
-import Messenger from './Messenger';
 import {
   CLOSE_PLUGIN_MSG,
   GUI_SETTINGS,
@@ -14,12 +13,18 @@ import {
  *
  * @kind function
  * @name closeGUI
+ * @param {booelan} suppress Attempt not to show users any lingering error messages.
+ * Setting to `false` within `async` functions ensures the plugin actually closes.
  *
  * @throws {CLOSE_PLUGIN_MSG} Throws the command to close the plugin.
  */
-const closeGUI = (): void => {
-  // close the UI
-  throw CLOSE_PLUGIN_MSG;
+const closeGUI = (suppress: boolean = true): void => {
+  if (suppress) {
+    // close the UI while suppressing error messages
+    throw CLOSE_PLUGIN_MSG;
+  }
+  // close the UI without suppressing error messages
+  return figma.closePlugin();
 };
 
 /**
@@ -61,9 +66,6 @@ const dispatcher = (action: {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
-  // load a Messenger instance for logging
-  const messenger = new Messenger({ for: figma, in: figma.currentPage });
-
   // pass along some GUI management and navigation functions to the App class
   const app = new App({
     closeGUI,
@@ -72,22 +74,25 @@ const dispatcher = (action: {
     showGUI,
   });
 
+  const runAnnotate = async () => {
+    // typefaces should be loaded before annotating with text
+    await figma.loadFontAsync(TYPEFACES.primary);
+    await app.annotateLayer();
+  };
+
+  const runAnnotateCustom = async () => {
+    // typefaces should be loaded before annotating with text
+    await figma.loadFontAsync(TYPEFACES.primary);
+    await app.annotateLayerCustom();
+  };
+
   // run the action in the App class based on type
   switch (action.type) {
     case 'annotate':
-      (async () => {
-        try {
-          // typefaces should be loaded before annotating with text
-          await figma.loadFontAsync(TYPEFACES.primary);
-          await app.annotateLayer();
-        } catch (err) {
-          messenger.log('Could not load typeface', 'error');
-          console.log(err); // eslint-disable-line no-console
-        }
-      })();
+      runAnnotate();
       break;
     case 'annotate-custom':
-      app.annotateLayerCustom();
+      runAnnotateCustom();
       break;
     case 'bounding':
       app.drawBoundingBox();
@@ -148,12 +153,12 @@ const main = (): void => {
 // watch for close in a way that prevents unnecessary errors in the UI
 try {
   main();
-} catch (e) {
-  if (e === CLOSE_PLUGIN_MSG) {
+} catch (err) {
+  if (err === CLOSE_PLUGIN_MSG) {
     figma.closePlugin();
   } else {
     // If we caught any other kind of exception,
     // it's a real error and should be passed along.
-    throw e;
+    throw err;
   }
 }
