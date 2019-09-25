@@ -9,8 +9,8 @@ import Painter from './Painter';
  * @kind function
  * @name assemble
  * @param {Object} context The current context (event) received from Figma.
- * @returns {Object} Contains an object with the current document as a javascript object,
- * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
+ * @returns {Object} Contains an object with the current page as a javascript object,
+ * a messenger instance, and a selection array (if applicable).
  */
 const assemble = (context: any = null) => {
   const page = context.currentPage;
@@ -240,9 +240,12 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Annotates a selection of layers in a Figma file with the
-   * spacing number (“IS-X”) based on the gap between the two layers.
+  /**
+   * @description If two layers are selected: annotates the selection with the
+   * spacing number (“IS-X”) based on either the gap between the two layers or, if they
+   * are overlapping, the 4 directions of overlap (top, bottom, right, and left). If
+   * one layer is selected: annotates the height and width of the selected layer
+   * in “dp” (digital points) units.
    *
    * @kind function
    * @name annotateMeasurement
@@ -251,13 +254,110 @@ export default class App {
    * if more than two layers are selected.
    */
   annotateMeasurement() {
-    console.log('action: annotateMeasurement'); // eslint-disable-line no-console
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected layer to annotate it
+    if (selection === null || selection.count() > 2) {
+      return messenger.toast('One or two layers must be selected');
+    }
+
+    // grab the gap frame from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
+
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
+
+    // draw the spacing annotation
+    // (if gap frame exists or layers are overlapped)
+    let paintResult = null;
+    if (selection.count() === 2) {
+      const gapFrame = crawler.gapFrame();
+      let overlapFrames = null;
+      if (gapFrame) {
+        paintResult = painter.addGapMeasurement(gapFrame);
+      } else {
+        overlapFrames = crawler.overlapFrames();
+        paintResult = painter.addOverlapMeasurements(overlapFrames);
+      }
+    }
+
+    if (selection.count() === 1) {
+      paintResult = painter.addDimMeasurement();
+    }
+
+    // read the response from Painter; log and display message(s)
+    messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
       this.closeGUI();
     }
     return null;
   }
+
+  /**
+   * @description Annotates the selection with the spacing number (“IS-X”) based on either
+   * the gap between the two layers or, if they are overlapping, the 4 directions of overlap
+   * (top, bottom, right, and left).
+   *
+   * @kind function
+   * @name annotateSpacingOnly
+   * @param {string} direction An optional string representing the annotation direction.
+   * Valid inputs are `top`, `bottom`, `right` (default), and `left`.
+   * @returns {null} Shows a Toast in the UI if nothing is selected or
+   * if more than two layers are selected.
+   */
+  annotateSpacingOnly(direction: 'top' | 'bottom' | 'left' | 'right' = 'right') {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected layer to annotate it
+    if (selection === null || selection.count() !== 2) {
+      return messenger.toast('Two layers must be selected');
+    }
+
+    // grab the gap frame from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
+
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
+
+    // draw the spacing annotation
+    // (if gap frame exists or layers are overlapped)
+    let paintResult = null;
+    if (selection.count() === 2) {
+      const overlapFrames = crawler.overlapFrames();
+
+      if (overlapFrames) {
+        const directions = [direction];
+        paintResult = painter.addOverlapMeasurements(overlapFrames, directions);
+      } else {
+        return messenger.toast('The selected layers need to overlap');
+      }
+    }
+
+    // read the response from Painter; log and display message(s)
+    messenger.handleResult(paintResult);
+
+    if (this.shouldTerminate) {
+      this.closeGUI();
+    }
+    return null;
+  }
+  // TKTK
+  // set up some pre-defined `annotateSpacingOnly` aliases for `manifest` to use in the plugin menu
+  // annotateSpacingTop() { this.annotateSpacingOnly('top') };
+  // annotateSpacingBottom() { this.annotateSpacingOnly('bottom') };
+  // annotateSpacingLeft() { this.annotateSpacingOnly('left') };
+  // annotateSpacingRight() { this.annotateSpacingOnly('right') };
 
   /**
    * @description Draws a semi-transparent “Bounding Box” around any selected elements.
