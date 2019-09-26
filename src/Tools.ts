@@ -114,22 +114,12 @@ const findFrame = (layer: any) => {
  * @private
  */
 const getRelativeIndex = (layer): number => {
-  // need to reverse the selection array
-  // Figma gives it to us highest layer to lowest
-  const reverseSelection = (selection): Array<any> => {
-    const reversedSelection = [];
-    for (let i: number = selection.length - 1; i >= 0; i -= 1) {
-      reversedSelection.push(selection[i]);
-    }
-    return reversedSelection;
-  };
-
   const getIndex = (layerSet, comparisonLayer): number => {
     const index = layerSet.findIndex(node => node === comparisonLayer);
     return index;
   };
 
-  const parentChildren = reverseSelection(layer.parent.children);
+  const parentChildren = layer.parent.children;
   let layerIndex: number = getIndex(parentChildren, layer);
 
   const innerLayerIndex = layerIndex;
@@ -139,7 +129,7 @@ const getRelativeIndex = (layer): number => {
   // loop through each parent and adjust the coordinates
   if (parent) {
     while (parent.type === FRAME_TYPES.group) {
-      const parentParentChildren = reverseSelection(parent.parent.children);
+      const parentParentChildren = parent.parent.children;
       parentGroupIndex = getIndex(parentParentChildren, parent);
       parent = parent.parent; // eslint-disable-line prefer-destructuring
     }
