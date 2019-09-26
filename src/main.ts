@@ -74,41 +74,32 @@ const dispatcher = (action: {
     showGUI,
   });
 
-  const runAnnotate = async () => {
-    // typefaces should be loaded before annotating with text
-    await figma.loadFontAsync(TYPEFACES.primary);
-    await app.annotateLayer();
+  const runAction = (actionType: string) => {
+    // run the action in the App class based on type
+    switch (actionType) {
+      case 'annotate':
+        app.annotateLayer();
+        break;
+      case 'annotate-custom':
+        app.annotateLayerCustom();
+        break;
+      case 'bounding':
+        app.drawBoundingBox();
+        break;
+      case 'measure':
+        app.annotateMeasurement();
+        break;
+      default:
+        showGUI();
+    }
   };
 
-  const runAnnotateCustom = async () => {
-    // typefaces should be loaded before annotating with text
+  const runActionWithTypefaces = async (actionType: string) => {
+    // typefaces should be loaded before running action
     await figma.loadFontAsync(TYPEFACES.primary);
-    await app.annotateLayerCustom();
+    await runAction(actionType);
   };
-
-  const runAnnotateMeasurement = async () => {
-    // typefaces should be loaded before annotating with text
-    await figma.loadFontAsync(TYPEFACES.primary);
-    await app.annotateMeasurement();
-  };
-
-  // run the action in the App class based on type
-  switch (action.type) {
-    case 'annotate':
-      runAnnotate();
-      break;
-    case 'annotate-custom':
-      runAnnotateCustom();
-      break;
-    case 'bounding':
-      app.drawBoundingBox();
-      break;
-    case 'measure':
-      runAnnotateMeasurement();
-      break;
-    default:
-      showGUI();
-  }
+  runActionWithTypefaces(action.type);
 
   return null;
 };

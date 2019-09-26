@@ -456,7 +456,7 @@ export default class Crawler {
     }
 
     // -------- set positions - essentially defining rectangles in the overapped spaces
-    // between the too layers
+    // between the two layers
     // top
     const topWidth = layerB.width;
     const topHeight = layerB.y - layerA.y;
