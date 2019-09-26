@@ -261,11 +261,11 @@ export default class App {
     } = assemble(figma);
 
     // need a selected layer to annotate it
-    if (selection === null || selection.count() > 2) {
+    if (selection === null || selection.length > 2) {
       return messenger.toast('One or two layers must be selected');
     }
 
-    // grab the gap frame from the selection
+    // grab the gap position from the selection
     const crawler = new Crawler({ for: selection });
     const layer = crawler.first();
 
@@ -273,20 +273,20 @@ export default class App {
     const painter = new Painter({ for: layer, in: page });
 
     // draw the spacing annotation
-    // (if gap frame exists or layers are overlapped)
+    // (if gap position exists or layers are overlapped)
     let paintResult = null;
-    if (selection.count() === 2) {
-      const gapFrame = crawler.gapFrame();
-      let overlapFrames = null;
-      if (gapFrame) {
-        paintResult = painter.addGapMeasurement(gapFrame);
+    if (selection.length === 2) {
+      const gapPosition = crawler.gapPosition();
+      let overlapPositions = null;
+      if (gapPosition) {
+        paintResult = painter.addGapMeasurement(gapPosition);
       } else {
-        overlapFrames = crawler.overlapFrames();
-        paintResult = painter.addOverlapMeasurements(overlapFrames);
+        overlapPositions = crawler.overlapPositions();
+        paintResult = painter.addOverlapMeasurements(overlapPositions);
       }
     }
 
-    if (selection.count() === 1) {
+    if (selection.length === 1) {
       paintResult = painter.addDimMeasurement();
     }
 
@@ -319,33 +319,33 @@ export default class App {
     } = assemble(figma);
 
     // need a selected layer to annotate it
-    if (selection === null || selection.count() !== 2) {
+    if (selection === null || selection.length !== 2) {
       return messenger.toast('Two layers must be selected');
     }
 
-    // grab the gap frame from the selection
-    const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
+    // // grab the gap position from the selection
+    // const crawler = new Crawler({ for: selection });
+    // const layer = crawler.first();
 
-    // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    // // set up Painter instance for the reference layer
+    // const painter = new Painter({ for: layer, in: page });
 
-    // draw the spacing annotation
-    // (if gap frame exists or layers are overlapped)
-    let paintResult = null;
-    if (selection.count() === 2) {
-      const overlapFrames = crawler.overlapFrames();
+    // // draw the spacing annotation
+    // // (if gap position exists or layers are overlapped)
+    // let paintResult = null;
+    // if (selection.length === 2) {
+    //   const overlapPositions = crawler.overlapPositions();
 
-      if (overlapFrames) {
-        const directions = [direction];
-        paintResult = painter.addOverlapMeasurements(overlapFrames, directions);
-      } else {
-        return messenger.toast('The selected layers need to overlap');
-      }
-    }
+    //   if (overlapPositions) {
+    //     const directions = [direction];
+    //     paintResult = painter.addOverlapMeasurements(overlapPositions, directions);
+    //   } else {
+    //     return messenger.toast('The selected layers need to overlap');
+    //   }
+    // }
 
-    // read the response from Painter; log and display message(s)
-    messenger.handleResult(paintResult);
+    // // read the response from Painter; log and display message(s)
+    // messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
       this.closeGUI();
@@ -380,7 +380,7 @@ export default class App {
       return messenger.toast('At least one layer must be selected');
     }
 
-    // grab the frame from the selection
+    // grab the position from the selection
     const crawler = new Crawler({ for: selection });
     const layer = crawler.first();
     const position = crawler.position();
