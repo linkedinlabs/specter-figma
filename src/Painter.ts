@@ -236,8 +236,8 @@ const buildBoundingBox = (position) => {
  * inside the `containerGroup`.
  * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
  * @param {Object} layerPosition The position specifications (`width`, `height`, `x`, `y`, `index`)
- * for the layer receiving the annotation + the artboard width/height (`artboardWidth` /
- * `artboardHeight`).
+ * for the layer receiving the annotation + the frame width/height (`frameWidth` /
+ * `frameHeight`).
  * @param {string} annotationType An optional string representing the type of annotation.
  * @param {string} orientation An optional string representing the orientation of the
  * annotation (`top` or `left`).
@@ -260,7 +260,7 @@ const positionAnnotation = (
     icon,
   } = annotation;
 
-  const { artboardWidth, artboardHeight } = layerPosition;
+  const { frameWidth, frameHeight } = layerPosition;
   const layerWidth: number = layerPosition.width;
   const layerHeight: number = layerPosition.height;
   const layerX: number = layerPosition.x;
@@ -284,8 +284,8 @@ const positionAnnotation = (
   const group = figma.group(groupArray, frame);
   group.name = groupName;
 
-  // ------- position the group within the artboard, above the layer receiving the annotation
-  let artboardEdge: string = null;
+  // ------- position the group within the frame, above the layer receiving the annotation
+  let frameEdge: string = null;
 
   // initial placement based on layer to annotate
 
@@ -324,7 +324,7 @@ const positionAnnotation = (
 
   // correct for left bleed
   if (placementX < 0) {
-    artboardEdge = 'left';
+    frameEdge = 'left';
     placementX = 5;
 
     // dimension/spacing annotations get their own special correction
@@ -334,9 +334,9 @@ const positionAnnotation = (
   }
 
   // correct for right bleed
-  if ((placementX + group.width) > artboardWidth) {
-    artboardEdge = 'right';
-    placementX = artboardWidth - group.width - 3;
+  if ((placementX + group.width) > frameWidth) {
+    frameEdge = 'right';
+    placementX = frameWidth - group.width - 3;
 
     // dimension/spacing annotations get their own special correction
     if (icon) {
@@ -347,7 +347,7 @@ const positionAnnotation = (
 
   // correct for top bleed
   if (placementY < 0) {
-    artboardEdge = 'top';
+    frameEdge = 'top';
     placementY = 5;
 
     // dimension/spacing annotations get their own special correction
@@ -358,10 +358,10 @@ const positionAnnotation = (
   }
 
   // correct for bottom bleed
-  if (placementY > (artboardHeight - group.height)) {
-    artboardEdge = 'bottom';
+  if (placementY > (frameHeight - group.height)) {
+    frameEdge = 'bottom';
     offsetY = icon ? 2 : 5;
-    placementY = (artboardHeight - group.height - offsetY);
+    placementY = (frameHeight - group.height - offsetY);
 
     if (icon) {
       iconOffsetY = null;
@@ -373,10 +373,10 @@ const positionAnnotation = (
   group.y = placementY;
 
   // adjust diamond on horizonal placement, if necessary
-  if (artboardEdge) {
+  if (frameEdge) {
     // move the diamond to the mid-point of the layer to annotate
     let diamondLayerMidX: number = null;
-    switch (artboardEdge) {
+    switch (frameEdge) {
       case 'left':
         diamondLayerMidX = ((layerX - group.x) + ((layerWidth - 6) / 2));
         break;
@@ -410,9 +410,9 @@ const positionAnnotation = (
     group.y += 2;
   }
 
-  // adjust diamond based on artboard edge, if necessary
-  if (artboardEdge && isMeasurement) {
-    switch (artboardEdge) {
+  // adjust diamond based on frame edge, if necessary
+  if (frameEdge && isMeasurement) {
+    switch (frameEdge) {
       case 'bottom':
         diamond.y = rectangle.height - diamond.height - offsetY;
         break;
@@ -435,11 +435,11 @@ const positionAnnotation = (
     icon.width = layerWidth;
 
     if (iconOffsetX > 0) {
-      if (artboardEdge === 'left') {
+      if (frameEdge === 'left') {
         icon.x -= icon.x;
       } else {
         icon.x = (
-          artboardWidth - group.x - icon.width
+          frameWidth - group.x - icon.width
         );
       }
     } else {
@@ -462,7 +462,7 @@ const positionAnnotation = (
   //   // position icon on `y`
   //   if (iconOffsetY !== null) {
   //     if (iconOffsetY > 0) {
-  //       // move the icon back to the top of the artboard
+  //       // move the icon back to the top of the frame
   //       iconNew.y -= iconNew.y;
   //     } else {
   //       iconNew.y = (rectangle.height - layerHeight) / 2;
@@ -1091,6 +1091,195 @@ export default class Painter {
     result.status = 'success';
     result.messages.log = `Bounding box drawn on “${this.frame.name}”`;
 
+    return result;
+  }
+
+  /**
+   * @description Takes a layer and creates two dimension annotations with the layer’s
+   * `height` and `width`.
+   *
+   * @kind function
+   * @name addDimMeasurement
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addDimMeasurement() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // return an error if the selection is not placed on an frame
+    if (!this.frame) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be on a frame';
+      return result;
+    }
+
+    // set up some information
+    const annotationType = 'dimension';
+    const layerId = this.layer.id;
+    const layerName = this.layer.name;
+
+    // retrieve document settings
+    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
+    let newPageSettings = pageSettings;
+
+    // check if we have already annotated this element and remove the old annotation
+    if (pageSettings && pageSettings.annotatedDimensions) {
+      // remove the old ID pair(s) from the `newPageSettings` array
+      pageSettings.annotatedDimensions.forEach((layerSet) => {
+        if (layerSet.originalId === layerId) {
+          removeAnnotation(layerSet);
+
+          // remove the layerSet from the `newPageSettings` array
+          newPageSettings = updateArray(
+            'annotatedDimensions',
+            { id: layerSet.id },
+            newPageSettings,
+            'remove',
+          );
+        }
+      });
+    }
+
+    // group and position the annotation elements
+    const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const layerPosition: {
+      frameWidth: number,
+      frameHeight: number,
+      width: number,
+      height: number,
+      x: number,
+      y: number,
+      index: number,
+    } = {
+      frameWidth: this.frame.width,
+      frameHeight: this.frame.height,
+      width: this.layer.width,
+      height: this.layer.height,
+      x: this.layer.x,
+      y: this.layer.y,
+      index: layerIndex,
+    };
+
+    // ------------------------
+    // construct the width annotation elements
+    const annotationTextWidth = `${this.layer.width}dp`;
+    const groupNameWidth = `Dimension Width for layer ${layerName}`;
+    const annotationWidth = buildAnnotation(
+      annotationTextWidth,
+      null, // annotationSecondaryText
+      annotationType,
+    );
+
+    const annotationOrientation = 'top';
+    const groupWidth = positionAnnotation(
+      this.frame,
+      groupNameWidth,
+      annotationWidth,
+      layerPosition,
+      annotationType,
+      annotationOrientation,
+    );
+
+    // set it in the correct containers
+    const containerSetWidth = setLayerInContainers({
+      layer: groupWidth,
+      frame: this.frame,
+      page: this.page,
+      position: { x: this.layer.x, y: this.layer.y },
+      type: annotationType,
+    });
+
+    // new object with IDs to add to settings
+    const newAnnotatedDimensionSetWidth: {
+      containerGroupId: string,
+      id: string,
+      originalId: string,
+    } = {
+      containerGroupId: containerSetWidth.componentInnerGroupId,
+      id: groupWidth.id,
+      originalId: layerId,
+    };
+
+    // update the `newPageSettings` array
+    newPageSettings = updateArray(
+      'annotatedDimensions',
+      newAnnotatedDimensionSetWidth,
+      newPageSettings,
+      'add',
+    );
+
+    // ------------------------
+    // construct the height annotation elements
+    const annotationTextHeight = `${this.layer.height}dp`;
+    const groupNameHeight = `Dimension Height for layer ${layerName}`;
+    const annotationHeight = buildAnnotation(
+      annotationTextHeight,
+      null, // annotationSecondaryText
+      annotationType,
+    );
+
+    const annotationOrientationHeight = 'right';
+    const groupHeight = positionAnnotation(
+      this.frame,
+      groupNameHeight,
+      annotationHeight,
+      layerPosition,
+      annotationType,
+      annotationOrientationHeight,
+    );
+
+    // set it in the correct containers
+    const containerSetHeight = setLayerInContainers({
+      layer: groupHeight,
+      frame: this.frame,
+      page: this.page,
+      position: { x: this.layer.x, y: this.layer.y },
+      type: annotationType,
+    });
+
+    // new object with IDs to add to settings
+    const newAnnotatedDimensionSetHeight: {
+      containerGroupId: string,
+      id: string,
+      originalId: string,
+    } = {
+      containerGroupId: containerSetHeight.componentInnerGroupId,
+      id: groupHeight.id,
+      originalId: layerId,
+    };
+
+    // update the `newPageSettings` array
+    newPageSettings = updateArray(
+      'annotatedDimensions',
+      newAnnotatedDimensionSetHeight,
+      newPageSettings,
+      'add',
+    );
+
+    // ------------------------
+
+    // commit the `Settings` update
+    this.page.setPluginData(
+      PLUGIN_IDENTIFIER,
+      JSON.stringify(newPageSettings),
+    );
+
+    // return a successful result
+    result.status = 'success';
+    result.messages.log = `Dimensions annotated for “${this.layer.name}”`;
     return result;
   }
 }
