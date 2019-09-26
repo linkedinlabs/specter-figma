@@ -294,70 +294,64 @@ export default class App {
     messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
-      this.closeGUI();
+      this.closeGUI(false);
     }
     return null;
   }
 
-  // /**
-  //  * @description Annotates the selection with the spacing number (“IS-X”) based on either
-  //  * the gap between the two layers or, if they are overlapping, the 4 directions of overlap
-  //  * (top, bottom, right, and left).
-  //  *
-  //  * @kind function
-  //  * @name annotateSpacingOnly
-  //  * @param {string} direction An optional string representing the annotation direction.
-  //  * Valid inputs are `top`, `bottom`, `right` (default), and `left`.
-  //  * @returns {null} Shows a Toast in the UI if nothing is selected or
-  //  * if more than two layers are selected.
-  //  */
-  // annotateSpacingOnly(direction: 'top' | 'bottom' | 'left' | 'right' = 'right') {
-  //   const {
-  //     messenger,
-  //     page,
-  //     selection,
-  //   } = assemble(figma);
+  /**
+   * @description Annotates the selection with the spacing number (“IS-X”) based on either
+   * the gap between the two layers or, if they are overlapping, the 4 directions of overlap
+   * (top, bottom, right, and left).
+   *
+   * @kind function
+   * @name annotateSpacingOnly
+   * @param {string} direction An optional string representing the annotation direction.
+   * Valid inputs are `top`, `bottom`, `right` (default), and `left`.
+   * @returns {null} Shows a Toast in the UI if nothing is selected or
+   * if more than two layers are selected.
+   */
+  annotateSpacingOnly(direction: 'top' | 'bottom' | 'left' | 'right' = 'right') {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
 
-  //   // need a selected layer to annotate it
-  //   if (selection === null || selection.length !== 2) {
-  //     return messenger.toast('Two layers must be selected');
-  //   }
+    // need a selected layer to annotate it
+    if (selection === null || selection.length !== 2) {
+      return messenger.toast('Two layers must be selected');
+    }
 
-  //   // grab the gap position from the selection
-  //   const crawler = new Crawler({ for: selection });
-  //   const layer = crawler.first();
+    // grab the gap position from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
 
-  //   // set up Painter instance for the reference layer
-  //   const painter = new Painter({ for: layer, in: page });
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
 
-  //   // draw the spacing annotation
-  //   // (if gap position exists or layers are overlapped)
-  //   let paintResult = null;
-  //   if (selection.length === 2) {
-  //     const overlapPositions = crawler.overlapPositions();
+    // draw the spacing annotation
+    // (if gap position exists or layers are overlapped)
+    let paintResult = null;
+    if (selection.length === 2) {
+      const overlapPositions = crawler.overlapPositions();
 
-  //     if (overlapPositions) {
-  //       const directions = [direction];
-  //       paintResult = painter.addOverlapMeasurements(overlapPositions, directions);
-  //     } else {
-  //       return messenger.toast('The selected layers need to overlap');
-  //     }
-  //   }
+      if (overlapPositions) {
+        const directions = [direction];
+        paintResult = painter.addOverlapMeasurements(overlapPositions, directions);
+      } else {
+        return messenger.toast('The selected layers need to overlap');
+      }
+    }
 
-  //   // read the response from Painter; log and display message(s)
-  //   messenger.handleResult(paintResult);
+    // read the response from Painter; log and display message(s)
+    messenger.handleResult(paintResult);
 
-  //   if (this.shouldTerminate) {
-  //     this.closeGUI();
-  //   }
-  //   return null;
-  // }
-  // // TKTK
-  // // set up some pre-defined `annotateSpacingOnly` aliases for `manifest` to use in the plugin menu
-  // // annotateSpacingTop() { this.annotateSpacingOnly('top') };
-  // // annotateSpacingBottom() { this.annotateSpacingOnly('bottom') };
-  // // annotateSpacingLeft() { this.annotateSpacingOnly('left') };
-  // // annotateSpacingRight() { this.annotateSpacingOnly('right') };
+    if (this.shouldTerminate) {
+      this.closeGUI(false);
+    }
+    return null;
+  }
 
   /**
    * @description Draws a semi-transparent “Bounding Box” around any selected elements.
