@@ -83,6 +83,18 @@ const dispatcher = (action: {
       case 'annotate-custom':
         app.annotateLayerCustom();
         break;
+      case 'annotate-spacing-left':
+        app.annotateSpacingOnly('left');
+        break;
+      case 'annotate-spacing-right':
+        app.annotateSpacingOnly('right');
+        break;
+      case 'annotate-spacing-top':
+        app.annotateSpacingOnly('top');
+        break;
+      case 'annotate-spacing-bottom':
+        app.annotateSpacingOnly('bottom');
+        break;
       case 'bounding':
         app.drawBoundingBox();
         break;
