@@ -563,6 +563,50 @@ const setGroupName = (elementType: string) => {
 };
 
 /**
+ * @description Determines the spacing value (`IS-X`) based on length and returns
+ * the appropriate spacing annotation text.
+ *
+ * @kind function
+ * @name retrieveSpacingValue
+ * @param {number} length A number representing length.
+ * @returns {string} A text label based on the spacing value.
+ * @private
+ */
+const retrieveSpacingValue = (length: number): number => {
+  let itemSpacingValue: number = null;
+
+  // IS-X spacing is not an even scale
+  // set some breakpoints and “round” `length` to the nearest proper IS-X number
+  // ignore anything so large that it’s above `IS-9`
+  switch (true) {
+    case (length >= 128): // based on 160 – IS-10 (not actually specc'd in Art Deco)
+      return itemSpacingValue;
+    case (length >= 80): // 96 – IS-9
+      itemSpacingValue = 9;
+      break;
+    case (length >= 56): // 64 – IS-8
+      itemSpacingValue = 8;
+      break;
+    case (length >= 40): // 48 – IS-7
+      itemSpacingValue = 7;
+      break;
+    case (length >= 28): // 32 – IS-6
+      itemSpacingValue = 6;
+      break;
+    case (length >= 20): // 24 – IS-5
+      itemSpacingValue = 5;
+      break;
+    case (length >= 16): // 16 – IS-4
+      itemSpacingValue = 4;
+      break;
+    default:
+      itemSpacingValue = Math.round(length / 4);
+  }
+
+  return itemSpacingValue;
+};
+
+/**
  * @description Resets the layer order for the Component, Foundation, and Bounding Box layers
  * within the outer container group layer.
  *
@@ -743,7 +787,6 @@ const setLayerInContainers = (layerToContain: {
   layer: any,
   frame: { id: string, appendChild: Function },
   page: { getPluginData: Function, setPluginData: Function },
-  position: { x: number, y: number },
   type: string,
 }) => {
   const {
@@ -1008,7 +1051,6 @@ export default class Painter {
       layer: group,
       frame: this.frame,
       page: this.page,
-      position: { x: this.layer.x, y: this.layer.y },
       type: annotationType,
     });
 
@@ -1076,7 +1118,6 @@ export default class Painter {
       layer: boundingBox,
       frame: this.frame,
       page: this.page,
-      position,
       type: 'boundingBox',
     });
 
@@ -1198,7 +1239,6 @@ export default class Painter {
       layer: groupWidth,
       frame: this.frame,
       page: this.page,
-      position: { x: this.layer.x, y: this.layer.y },
       type: annotationType,
     });
 
@@ -1246,7 +1286,6 @@ export default class Painter {
       layer: groupHeight,
       frame: this.frame,
       page: this.page,
-      position: { x: this.layer.x, y: this.layer.y },
       type: annotationType,
     });
 
@@ -1280,6 +1319,288 @@ export default class Painter {
     // return a successful result
     result.status = 'success';
     result.messages.log = `Dimensions annotated for “${this.layer.name}”`;
+    return result;
+  }
+
+  /**
+   * @description Takes a `spacingPosition` object and creates a spacing measurement annotation
+   * with the correct spacing number (“IS-X”). If the calculated spacing number is larger
+   * than “IS-9”, the annotation is not created.
+   *
+   * @kind function
+   * @name addSpacingAnnotation
+   * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
+   * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
+   * for the two layers used to calculated the gap.
+   *
+   * @returns null
+   */
+  addSpacingAnnotation(spacingPosition) {
+    // set up some information
+    const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
+    const spacingValue = retrieveSpacingValue(measurementToUse);
+
+    // if there is no `spacingValue`, the measurement is above an `IS-9` and
+    // isn’t considered valid
+    if (!spacingValue) {
+      return null;
+    }
+
+    const annotationText = `IS-${spacingValue}`;
+    const annotationType = 'spacing';
+    const layerName = this.layer.name;
+    const groupName = `Spacing for ${layerName} (${spacingPosition.direction})`;
+
+    // retrieve document settings
+    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
+    let newPageSettings = pageSettings;
+
+    // check if we have already annotated this element and remove the old annotation
+    if (pageSettings && pageSettings.annotatedSpacings) {
+      // remove the old ID pair(s) from the `newPageSettings` array
+      pageSettings.annotatedSpacings.forEach((layerSet) => {
+        if (
+          layerSet.layerAId === spacingPosition.layerAId
+          && layerSet.layerBId === spacingPosition.layerBId
+          && layerSet.direction === spacingPosition.direction
+        ) {
+          removeAnnotation(layerSet);
+
+          // remove the layerSet from the `newPageSettings` array
+          newPageSettings = updateArray(
+            'annotatedSpacings',
+            { id: layerSet.id },
+            newPageSettings,
+            'remove',
+          );
+        }
+      });
+    }
+
+    // construct the base annotation elements
+    const annotation = buildAnnotation(
+      annotationText,
+      null, // annotationSecondaryText
+      annotationType,
+    );
+
+    // group and position the base annotation elements
+    const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const layerPosition: {
+      frameWidth: number,
+      frameHeight: number,
+      width: number,
+      height: number,
+      x: number,
+      y: number,
+      index: number,
+    } = {
+      frameWidth: this.frame.width,
+      frameHeight: this.frame.height,
+      width: spacingPosition.width,
+      height: spacingPosition.height,
+      x: spacingPosition.x,
+      y: spacingPosition.y,
+      index: layerIndex,
+    };
+
+    const annotationOrientation = (spacingPosition.orientation === 'vertical' ? 'top' : 'left');
+    const group = positionAnnotation(
+      this.frame,
+      groupName,
+      annotation,
+      layerPosition,
+      annotationType,
+      annotationOrientation,
+    );
+
+    // set it in the correct containers
+    const containerSet = setLayerInContainers({
+      layer: group,
+      frame: this.frame,
+      page: this.page,
+      type: annotationType,
+    });
+
+    // new object with IDs to add to settings
+    const newAnnotatedSpacingSet: {
+      containerGroupId: string,
+      id: string,
+      layerAId: string,
+      layerBId: string,
+      direction: 'top' | 'bottom' | 'right' | 'left',
+    } = {
+      containerGroupId: containerSet.componentInnerGroupId,
+      id: group.id,
+      layerAId: spacingPosition.layerAId,
+      layerBId: spacingPosition.layerBId,
+      direction: spacingPosition.direction,
+    };
+
+    // update the `newPageSettings` array
+    newPageSettings = updateArray(
+      'annotatedSpacings',
+      newAnnotatedSpacingSet,
+      newPageSettings,
+      'add',
+    );
+
+    // commit the `Settings` update
+    this.page.setPluginData(
+      PLUGIN_IDENTIFIER,
+      JSON.stringify(newPageSettings),
+    );
+
+    return null;
+  }
+
+  /**
+   * @description Takes a `spacingPosition` object from Crawler and creates a spacing measurement
+   * annotation with the correct spacing number (“IS-X”).
+   *
+   * @kind function
+   * @name addGapMeasurement
+   * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
+   * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
+   * for the two layers used to calculated the gap.
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addGapMeasurement(spacingPosition) {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // return an error if the selection is not placed on an artboard
+    if (!this.frame) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on artboard';
+      result.messages.toast = 'Your selection needs to be on an artboard';
+      return result;
+    }
+
+    // return an error if the selection is not placed on an artboard
+    if (!spacingPosition) {
+      result.status = 'error';
+      result.messages.log = 'spacingPosition is missing';
+      result.messages.toast = 'Could not find a gap in your selection';
+      return result;
+    }
+
+    // set direction (type)
+    spacingPosition.direction = 'gap'; // eslint-disable-line no-param-reassign
+
+    // add the annotation
+    this.addSpacingAnnotation(spacingPosition);
+
+    // return a successful result
+    result.status = 'success';
+    result.messages.log = `Spacing annotated for “${this.layer.name}”`;
+    return result;
+  }
+
+  /**
+   * @description Takes a `overlapFrames` object from Crawler and creates spacing measurement
+   * annotations with the correct spacing number (“IS-X”) in the selected directions (top, bottom,
+   * right, and left). The default is all four directions.
+   *
+   * @kind function
+   * @name addOverlapMeasurements
+   * @param {Object} overlapFrames The `top`, `bottom`, `right`, and `left` frames. Each frame
+   * contains `x`, `y` coordinates, `width`, `height`, and `orientation`. The object also includes
+   * layer IDs (`layerAId` and `layerBId`) for the two layers used to calculated the
+   * overlapped areas.
+   * @param {array} directions An optional array containing 4 unique strings representating
+   * the annotation directions: `top`, `bottom`, `right`, `left`.
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addOverlapMeasurements(
+    overlapFrames,
+    directions: Array<'top' | 'bottom' | 'right' | 'left'> = ['top', 'bottom', 'right', 'left'],
+  ) {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // return an error if the selection is not placed on an artboard
+    if (!this.frame) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on artboard';
+      result.messages.toast = 'Your selection needs to be on an artboard';
+      return result;
+    }
+
+    // return an error if the selection is not placed on an artboard
+    if (!overlapFrames) {
+      result.status = 'error';
+      result.messages.log = 'overlapFrames is missing';
+      result.messages.toast = 'Could not find a overlapped layers in your selection';
+      return result;
+    }
+
+    directions.forEach((direction) => {
+      // do not annotate if the results are negative, or less than a single
+      // IS-X spacing unit
+      if (overlapFrames[direction].width <= 2 || overlapFrames[direction].height <= 2) {
+        return null;
+      }
+
+      // otherwise, set up the frame we can use for the annotation
+      let frameX = overlapFrames[direction].x + (overlapFrames[direction].width / 2);
+      let frameY = overlapFrames[direction].y;
+
+      if ((direction === 'left') || (direction === 'right')) {
+        frameY = overlapFrames[direction].y + (overlapFrames[direction].height / 2);
+        frameX = overlapFrames[direction].x;
+      }
+
+      const spacingPosition: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+        layerAId: string,
+        layerBId: string,
+        direction: 'top' | 'bottom' | 'right' | 'left',
+      } = {
+        x: frameX,
+        y: frameY,
+        width: overlapFrames[direction].width,
+        height: overlapFrames[direction].height,
+        orientation: overlapFrames[direction].orientation,
+        layerAId: overlapFrames.layerAId,
+        layerBId: overlapFrames.layerBId,
+        direction,
+      };
+
+      return this.addSpacingAnnotation(spacingPosition);
+    });
+
+    // return a successful result
+    result.status = 'success';
+    result.messages.log = `Spacing (${directions.join(', ')}) annotated for “${this.layer.name}”`;
     return result;
   }
 }
