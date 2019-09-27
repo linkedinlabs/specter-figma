@@ -986,7 +986,7 @@ export default class Painter {
     const groupName = `Annotation for ${layerName}`;
 
     // retrieve document settings
-    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
+    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
     // check if we have already annotated this element and remove the old annotation
     if (pageSettings && pageSettings.annotatedLayers) {
@@ -1066,7 +1066,7 @@ export default class Painter {
     };
 
     // update the `newPageSettings` array
-    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
+    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateArray(
       'annotatedLayers',
       newAnnotatedLayerSet,
@@ -1173,8 +1173,7 @@ export default class Painter {
     const layerName = this.layer.name;
 
     // retrieve document settings
-    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
-    let newPageSettings = pageSettings;
+    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
     // check if we have already annotated this element and remove the old annotation
     if (pageSettings && pageSettings.annotatedDimensions) {
@@ -1183,12 +1182,19 @@ export default class Painter {
         if (layerSet.originalId === layerId) {
           removeAnnotation(layerSet);
 
-          // remove the layerSet from the `newPageSettings` array
+          // remove the layerSet from the `pageSettings` array
+          let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
           newPageSettings = updateArray(
             'annotatedDimensions',
             { id: layerSet.id },
             newPageSettings,
             'remove',
+          );
+
+          // commit the settings update
+          this.page.setPluginData(
+            PLUGIN_IDENTIFIER,
+            JSON.stringify(newPageSettings),
           );
         }
       });
@@ -1254,6 +1260,7 @@ export default class Painter {
     };
 
     // update the `newPageSettings` array
+    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateArray(
       'annotatedDimensions',
       newAnnotatedDimensionSetWidth,
@@ -1352,8 +1359,7 @@ export default class Painter {
     const groupName = `Spacing for ${layerName} (${spacingPosition.direction})`;
 
     // retrieve document settings
-    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || {});
-    let newPageSettings = pageSettings;
+    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
     // check if we have already annotated this element and remove the old annotation
     if (pageSettings && pageSettings.annotatedSpacings) {
@@ -1366,12 +1372,19 @@ export default class Painter {
         ) {
           removeAnnotation(layerSet);
 
-          // remove the layerSet from the `newPageSettings` array
+          // remove the layerSet from the `pageSettings` array
+          let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
           newPageSettings = updateArray(
             'annotatedSpacings',
             { id: layerSet.id },
             newPageSettings,
             'remove',
+          );
+
+          // commit the settings update
+          this.page.setPluginData(
+            PLUGIN_IDENTIFIER,
+            JSON.stringify(newPageSettings),
           );
         }
       });
@@ -1438,6 +1451,7 @@ export default class Painter {
     };
 
     // update the `newPageSettings` array
+    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateArray(
       'annotatedSpacings',
       newAnnotatedSpacingSet,
