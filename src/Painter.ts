@@ -75,8 +75,7 @@ const buildAnnotation = (
   };
 
   if (isMeasurement) {
-    textPosition.x = 4;
-    textPosition.y = -1;
+    textPosition.x = 3;
   }
 
   // adjustment for two-line annotations
@@ -112,7 +111,7 @@ const buildAnnotation = (
   rectangle.bottomRightRadius = 2;
 
   // build the dangling diamond
-  const diamondOffset: number = (isMeasurement ? 19 : 30);
+  const diamondOffset: number = (isMeasurement ? 22 : 30);
   const diamond: any = figma.createRectangle();
   diamond.name = 'Diamond';
 
@@ -161,14 +160,12 @@ const buildAnnotation = (
   const rectangleWidth: number = textWidth + textPadding;
   rectangle.resize(rectangleWidth, rectangle.height);
 
-  // move the diamond to the mid-point of the rectangle
-  const diamondMidX: number = ((rectangleWidth - 6) / 2);
-  diamond.x = diamondMidX;
+  // move the text to the mid-point of the rectangle
+  text.x = rectangle.x + (textPadding / 2);
 
-  // set z-axis placement of all elements
-  // rectangle.moveToFront();
-  // text.index = rectangle.index + 1;
-  // diamond.index = rectangle.index - 1;
+  // move the diamond to the mid-point of the rectangle
+  const diamondMidX: number = ((rectangleWidth - 9) / 2);
+  diamond.x = diamondMidX;
 
   // icon TKTK
   // let icon = null;
@@ -391,15 +388,15 @@ const positionAnnotation = (
 
   // move diamand to left/right edge, if necessary
   if (orientation === 'left' || orientation === 'right') {
-    const diamondNewY: number = rectangle.y + (rectangle.height / 2) - 3;
+    const diamondNewY: number = rectangle.y + (rectangle.height / 2);
     let diamondNewX: number = null;
 
     if (orientation === 'left') {
       // move the diamond to the left mid-point of the layer to annotate
-      diamondNewX = rectangle.x + rectangle.width - 3;
+      diamondNewX = rectangle.x + rectangle.width - 4;
     } else {
       // move the diamond to the right mid-point of the layer to annotate
-      diamondNewX = rectangle.x - 3;
+      diamondNewX = rectangle.x - 4;
     }
 
     // re-position diamond
@@ -407,7 +404,7 @@ const positionAnnotation = (
     diamond.y = diamondNewY;
 
     // re-size the annotation group frame
-    group.y += 2;
+    // group.y += 2;
   }
 
   // adjust diamond based on frame edge, if necessary
