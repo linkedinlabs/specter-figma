@@ -90,7 +90,7 @@ const buildAnnotation = (
 
   // build the rounded rectangle
   const rectHeight: number = (isMeasurement ? 22 : 30) + rectTextBuffer;
-  const rectangle: any = figma.createRectangle();
+  const rectangle: RectangleNode = figma.createRectangle();
   rectangle.name = 'Rectangle';
 
   // position and size the rectangle
@@ -112,7 +112,7 @@ const buildAnnotation = (
 
   // build the dangling diamond
   const diamondOffset: number = (isMeasurement ? 22 : 30);
-  const diamond: any = figma.createRectangle();
+  const diamond: RectangleNode = figma.createRectangle();
   diamond.name = 'Diamond';
 
   // position and size the diamond
@@ -128,7 +128,7 @@ const buildAnnotation = (
   }];
 
   // create empty text layer
-  const text: any = figma.createText();
+  const text: TextNode = figma.createText();
 
   // style text layer
   text.fontName = TYPEFACES.primary;
@@ -200,7 +200,7 @@ const buildBoundingBox = (position) => {
   const colorOpactiy: number = 0.3; // 30% opacity
 
   // build and name the initial rectangle object
-  const boundingBox: any = figma.createRectangle();
+  const boundingBox: RectangleNode = figma.createRectangle();
   boundingBox.name = 'Bounding Box';
 
   // position and size the rectangle
