@@ -13,6 +13,150 @@ import {
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
+ * @description Builds the initial annotation elements in Sketch (diamond, rectangle, text).
+ *
+ * @kind function
+ * @name buildMeasureIcon
+ * @param {Object} parent The artboard or layer to draw within.
+ * @param {string} colorHex A string representing the hex color for the icon.
+ * @param {string} orientation A string representing the orientation (optional).
+ * @returns {Object} Layer group containing the icon.
+ * @private
+ */
+const buildMeasureIcon = (
+  colorHex: string,
+  orientation: 'horizontal' | 'vertical' = 'horizontal',
+): FrameNode => {
+  // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
+  const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
+  const iconArray: Array<any> = [];
+
+  // horizontal orientation lines
+  let line1Params = {
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 5,
+  };
+  let line2Params = {
+    x: 9,
+    y: 0,
+    width: 1,
+    height: 5,
+  };
+  let line3Params = {
+    x: 1,
+    y: 2,
+    width: 8,
+    height: 1,
+  };
+
+  let initialWidth = (line1Params.width + line2Params.width + line3Params.width);
+  let initialHeight = line1Params.height;
+
+  // vertical orientation lines
+  if (orientation === 'vertical') {
+    line1Params = {
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 1,
+    };
+    line2Params = {
+      x: 0,
+      y: 9,
+      width: 5,
+      height: 1,
+    };
+    line3Params = {
+      x: 2,
+      y: 1,
+      width: 1,
+      height: 8,
+    };
+
+    initialWidth = line1Params.width;
+    initialHeight = (line1Params.height + line2Params.height + line3Params.height);
+  }
+
+  // create the rectangles
+  const line1: RectangleNode = figma.createRectangle();
+  line1.name = 'Line 1';
+  line1.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+  line1.x = line1Params.x;
+  line1.y = line1Params.y;
+  line1.resize(line1Params.width, line1Params.height);
+  iconArray.push(line1);
+
+  const line2: RectangleNode = figma.createRectangle();
+  line2.name = 'Line 2';
+  line2.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+  line2.x = line2Params.x;
+  line2.y = line2Params.y;
+  line2.resize(line2Params.width, line2Params.height);
+  iconArray.push(line2);
+
+  const line3: RectangleNode = figma.createRectangle();
+  line3.name = 'Line 3';
+  line3.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+  line3.x = line3Params.x;
+  line3.y = line3Params.y;
+  line3.resize(line3Params.width, line3Params.height);
+  iconArray.push(line3);
+
+  // set constraints
+  line1.constraints = {
+    horizontal: 'MIN',
+    vertical: 'STRETCH',
+  };
+
+  line2.constraints = {
+    horizontal: 'MAX',
+    vertical: 'STRETCH',
+  };
+
+  line3.constraints = {
+    horizontal: 'STRETCH',
+    vertical: 'CENTER',
+  };
+
+  if (orientation === 'vertical') {
+    line1.constraints = {
+      horizontal: 'STRETCH',
+      vertical: 'MIN',
+    };
+
+    line2.constraints = {
+      horizontal: 'STRETCH',
+      vertical: 'MAX',
+    };
+
+    line3.constraints = {
+      horizontal: 'CENTER',
+      vertical: 'STRETCH',
+    };
+  }
+
+  // create the icon frame
+  const icon = figma.createFrame();
+  icon.name = 'Icon';
+  icon.backgrounds = [];
+  icon.resize(initialWidth, initialHeight);
+  iconArray.forEach((line) => { icon.appendChild(line); });
+
+  return icon;
+};
+
+/**
  * @description Builds the initial annotation elements in Figma (diamond, rectangle, text).
  *
  * @kind function
@@ -28,8 +172,13 @@ import {
 const buildAnnotation = (
   annotationText: string,
   annotationSecondaryText?: string,
-  annotationType: string = 'component',
-) => {
+  annotationType: 'component' | 'custom' | 'dimension' | 'spacing' | 'style' = 'component',
+): {
+  diamond: RectangleNode,
+  rectangle: RectangleNode,
+  text: TextNode,
+  icon: FrameNode,
+} => {
   // set the dominant color
   let colorHex: string = null;
   switch (annotationType) {
@@ -167,21 +316,18 @@ const buildAnnotation = (
   const diamondMidX: number = ((rectangleWidth - 9) / 2);
   diamond.x = diamondMidX;
 
-  // icon TKTK
-  // let icon = null;
-  // if (isMeasurement) {
-  //   icon = buildMeasureIcon(frame, colorHex);
-  //   icon.moveToBack();
-  //   icon.x = diamondMidX - 2;
-  //   icon.y = rectangle.height + 4;
-  // }
+  // create icon
+  let icon: FrameNode = null;
+  if (isMeasurement) {
+    icon = buildMeasureIcon(colorHex);
+  }
 
   // return an object with each element
   return {
     diamond,
     rectangle,
     text,
-    // icon,
+    icon,
   };
 };
 
@@ -243,12 +389,25 @@ const buildBoundingBox = (position) => {
  * @private
  */
 const positionAnnotation = (
-  frame,
-  groupName,
-  annotation,
-  layerPosition,
-  annotationType = 'component',
-  orientation = 'top',
+  frame: FrameNode,
+  groupName: string,
+  annotation: {
+    diamond: RectangleNode,
+    rectangle: RectangleNode,
+    text: TextNode,
+    icon: FrameNode,
+  },
+  layerPosition: {
+    frameWidth: number,
+    frameHeight: number,
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+    index: number,
+  },
+  annotationType: 'component' | 'custom' | 'dimension' | 'spacing' | 'style' = 'component',
+  orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
 ) => {
   const {
     diamond,
@@ -273,12 +432,12 @@ const positionAnnotation = (
 
   // create the annotation group
   const groupArray: Array<any> = [];
-  if (icon) { groupArray.push(icon); }
   if (rectangle) { groupArray.push(rectangle); }
   if (diamond) { groupArray.push(diamond); }
   if (text) { groupArray.push(text); }
+  if (icon) { groupArray.push(icon); }
 
-  const group = figma.group(groupArray, frame);
+  const group: FrameNode = figma.group(groupArray, frame);
   group.name = groupName;
 
   // ------- position the group within the frame, above the layer receiving the annotation
@@ -289,13 +448,13 @@ const positionAnnotation = (
   // for top
   let placementX: number = (
     layerX + (
-      (layerWidth - group.width) / 2
+      (layerWidth - rectangle.width) / 2
     )
   );
   // for `left` or `right`
   let placementY: number = (
     layerY + (
-      (layerHeight - group.height) / 2
+      (layerHeight - rectangle.height) / 2
     )
   );
 
@@ -307,7 +466,7 @@ const positionAnnotation = (
   // adjustments based on orientation
   switch (orientation) {
     case 'left':
-      offsetX = (isMeasurement ? 40 : 38);
+      offsetX = (isMeasurement ? 36 : 38);
       placementX = layerX - offsetX;
       break;
     case 'right':
@@ -386,7 +545,7 @@ const positionAnnotation = (
     diamond.x = diamondLayerMidX;
   }
 
-  // move diamand to left/right edge, if necessary
+  // move diamond to left/right edge, if necessary
   if (orientation === 'left' || orientation === 'right') {
     const diamondNewY: number = rectangle.y + (rectangle.height / 2);
     let diamondNewX: number = null;
@@ -429,9 +588,11 @@ const positionAnnotation = (
 
   // adjust the measure icon width for top-oriented annotations
   if (orientation === 'top' && icon) {
-    icon.width = layerWidth;
+    icon.y += 26;
+    // icon.width = layerWidth;
+    icon.resize(layerWidth, icon.height);
 
-    if (iconOffsetX > 0) {
+    if (iconOffsetX > 0) { // TKTK
       if (frameEdge === 'left') {
         icon.x -= icon.x;
       } else {
@@ -440,41 +601,46 @@ const positionAnnotation = (
         );
       }
     } else {
-      icon.x = (rectangle.width - layerWidth) / 2;
+      icon.x += (rectangle.width - layerWidth) / 2;
+      // icon.x += (icon.width + rectangle.width - layerWidth) / 2; // TKTK
     }
   }
 
-  // // adjust the measure icon height for left-/right-oriented annotations TKTK
-  // if (orientation !== 'top') {
-  //   // remove horizontal icon (easier to re-draw)
-  //   icon.remove();
+  // adjust the measure icon height for left-/right-oriented annotations
+  if (orientation !== 'top') {
+    // remove horizontal icon (easier to re-draw)
+    icon.remove();
 
-  //   // redraw icon in vertical orientation
-  //   const measureIconColor: string = (annotationType === 'spacing' ? COLORS.spacing : COLORS.dimension);
-  //   const iconNew: any = buildMeasureIcon(group, measureIconColor, 'vertical');
+    // redraw icon in vertical orientation
+    const measureIconColor: string = (annotationType === 'spacing' ? COLORS.spacing : COLORS.dimension);
+    const iconNew: FrameNode = buildMeasureIcon(measureIconColor, 'vertical');
 
-  //   // resize icon based on gap/layer height
-  //   iconNew.height = layerHeight;
+    // add back into group
+    group.appendChild(iconNew);
 
-  //   // position icon on `y`
-  //   if (iconOffsetY !== null) {
-  //     if (iconOffsetY > 0) {
-  //       // move the icon back to the top of the frame
-  //       iconNew.y -= iconNew.y;
-  //     } else {
-  //       iconNew.y = (rectangle.height - layerHeight) / 2;
-  //     }
-  //   } else {
-  //     iconNew.y = group.height - iconNew.height;
-  //   }
+    // resize icon based on gap/layer height
+    iconNew.resize(iconNew.width, layerHeight);
 
-  //   // position icon on `x` based on orientation
-  //   if (orientation === 'right') {
-  //     iconNew.x = rectangle.x - 10;
-  //   } else {
-  //     iconNew.x = rectangle.x + rectangle.width + 4;
-  //   }
-  // }
+    // position icon on `y`
+    if (iconOffsetY !== null) {
+      if (iconOffsetY > 0) {
+        // move the icon back to the top of the frame
+        iconNew.y -= iconNew.y;
+      } else {
+        // iconNew.y += (rectangle.height - layerHeight) / 2; // TKTK
+        iconNew.y = layerPosition.y;
+      }
+    } else {
+      iconNew.y = group.height - iconNew.height;
+    }
+
+    // position icon on `x` based on orientation
+    if (orientation === 'right') {
+      iconNew.x = rectangle.x - 10;
+    } else {
+      iconNew.x = rectangle.x + rectangle.width + 4;
+    }
+  }
 
   return group;
 };
@@ -639,35 +805,35 @@ const orderContainerLayers = (outerGroupId, page): void => {
   });
 
   // make sure the container group exists
-  const containerGroup: any = figma.getNodeById(containerGroupId);
-  if (containerGroup) {
+  const containerGroup: BaseNode = figma.getNodeById(containerGroupId);
+  if (containerGroup && containerGroup.type === 'GROUP') {
     // always move bounding box group to bottom of list
-    const boundingBoxGroup: any = figma.getNodeById(boundingGroupId);
-    if (boundingBoxGroup) {
+    const boundingBoxGroup: BaseNode = figma.getNodeById(boundingGroupId);
+    if (boundingBoxGroup && boundingBoxGroup.type === 'GROUP') {
       containerGroup.appendChild(boundingBoxGroup);
     }
 
     // always move dimension annotations group to second from bottom of list
-    const dimensionBoxGroup: any = figma.getNodeById(dimensionGroupId);
-    if (dimensionBoxGroup) {
+    const dimensionBoxGroup: BaseNode = figma.getNodeById(dimensionGroupId);
+    if (dimensionBoxGroup && dimensionBoxGroup.type === 'GROUP') {
       containerGroup.appendChild(dimensionBoxGroup);
     }
 
     // always move spacing annotations group to third from bottom of list
-    const spacingBoxGroup: any = figma.getNodeById(spacingGroupId);
-    if (spacingBoxGroup) {
+    const spacingBoxGroup: BaseNode = figma.getNodeById(spacingGroupId);
+    if (spacingBoxGroup && spacingBoxGroup.type === 'GROUP') {
       containerGroup.appendChild(spacingBoxGroup);
     }
 
     // foundations group moves to second from top
-    const styleGroup: any = figma.getNodeById(styleGroupId);
-    if (styleGroup) {
+    const styleGroup: BaseNode = figma.getNodeById(styleGroupId);
+    if (styleGroup && styleGroup.type === 'GROUP') {
       containerGroup.appendChild(styleGroup);
     }
 
     // always move component group to top of list
-    const componentGroup: any = figma.getNodeById(componentGroupId);
-    if (componentGroup) {
+    const componentGroup: BaseNode = figma.getNodeById(componentGroupId);
+    if (componentGroup && componentGroup.type === 'GROUP') {
       containerGroup.appendChild(componentGroup);
     }
   }
@@ -707,7 +873,7 @@ const drawContainerGroup = (groupSettings: {
   } = groupSettings;
 
   // set new group
-  const containerGroup: any = figma.group([child], parent);
+  const containerGroup: FrameNode = figma.group([child], parent);
 
   // position, name, and lock new group
   containerGroup.x = position.x;
@@ -1344,8 +1510,7 @@ export default class Painter {
     const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
     const spacingValue = retrieveSpacingValue(measurementToUse);
 
-    // if there is no `spacingValue`, the measurement is above an `IS-9` and
-    // isn’t considered valid
+    // if there is no `spacingValue`, the measurement is above an `IS-9` and isn’t considered valid
     if (!spacingValue) {
       return null;
     }
