@@ -534,10 +534,10 @@ const positionAnnotation = (
     let diamondLayerMidX: number = null;
     switch (frameEdge) {
       case 'left':
-        diamondLayerMidX = ((layerX - group.x) + ((layerWidth - 6) / 2));
+        diamondLayerMidX = ((layerX - group.x) + ((layerWidth + diamond.width + 6) / 2));
         break;
       case 'right':
-        diamondLayerMidX = ((layerX - group.x) + ((layerWidth - 6) / 2));
+        diamondLayerMidX = layerX - ((diamond.width + 6) / 2);
         break;
       default:
         diamondLayerMidX = diamond.x;
@@ -561,48 +561,21 @@ const positionAnnotation = (
     // re-position diamond
     diamond.x = diamondNewX;
     diamond.y = diamondNewY;
-
-    // re-size the annotation group frame
-    // group.y += 2;
-  }
-
-  // adjust diamond based on frame edge, if necessary
-  if (frameEdge && isMeasurement) {
-    switch (frameEdge) {
-      case 'bottom':
-        diamond.y = rectangle.height - diamond.height - offsetY;
-        break;
-      case 'left':
-        diamond.x = diamond.width / 2;
-        break;
-      case 'right':
-        diamond.x = rectangle.width - diamond.width - offsetX - 2;
-        break;
-      case 'top':
-        diamond.y = diamond.height / 2;
-        break;
-      default:
-        diamond.y = diamond.y;
-    }
   }
 
   // adjust the measure icon width for top-oriented annotations
   if (orientation === 'top' && icon) {
     icon.y += 26;
-    // icon.width = layerWidth;
     icon.resize(layerWidth, icon.height);
 
-    if (iconOffsetX > 0) { // TKTK
+    if (iconOffsetX > 0) {
       if (frameEdge === 'left') {
         icon.x -= icon.x;
       } else {
-        icon.x = (
-          frameWidth - group.x - icon.width
-        );
+        icon.x = frameWidth - icon.width;
       }
     } else {
       icon.x += (rectangle.width - layerWidth) / 2;
-      // icon.x += (icon.width + rectangle.width - layerWidth) / 2; // TKTK
     }
   }
 
@@ -627,7 +600,6 @@ const positionAnnotation = (
         // move the icon back to the top of the frame
         iconNew.y -= iconNew.y;
       } else {
-        // iconNew.y += (rectangle.height - layerHeight) / 2; // TKTK
         iconNew.y = layerPosition.y;
       }
     } else {
