@@ -71,6 +71,8 @@ export default class App {
       selection,
     } = assemble(figma);
 
+    let shouldTerminateLocal = this.shouldTerminate;
+
     // need a selected layer to annotate it
     if (selection === null || selection.length === 0) {
       messenger.log('Annotate layer: nothing selected');
@@ -81,7 +83,7 @@ export default class App {
     const layers = new Crawler({ for: selection }).all();
     const multipleLayers = (layers.length > 1);
 
-    layers.forEach((layer) => {
+    layers.forEach((layer: BaseNode) => {
       // set up Identifier instance for the layer
       const layerToAnnotate = new Identifier({
         for: layer,
@@ -119,6 +121,12 @@ export default class App {
 
         if (getLibraryNameResult.status === 'error') {
           if (!multipleLayers) {
+            // show the GUI if we are annotating a single custom layer
+            if (shouldTerminateLocal) {
+              shouldTerminateLocal = false;
+              this.showGUI();
+            }
+
             const setText = (callback: Function) => layerToAnnotate.setText(callback);
             const handleSetTextResult = (setTextResult: {
               status: 'error' | 'success',
@@ -135,6 +143,11 @@ export default class App {
 
               // draw the annotation
               drawAnnotation(hasText);
+
+              // close the GUI if it started closed
+              if (this.shouldTerminate && !shouldTerminateLocal) {
+                this.closeGUI(false);
+              }
             };
 
             // set the custom text
@@ -155,7 +168,7 @@ export default class App {
       return null;
     });
 
-    if (this.shouldTerminate) {
+    if (shouldTerminateLocal) {
       this.closeGUI(false);
     }
     return null;
