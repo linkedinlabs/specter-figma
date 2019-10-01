@@ -1062,9 +1062,9 @@ const removeAnnotation = (existingItemData: { id: string }) => {
  * @property page The page in the Figma file containing the corresponding `frame` and `layer`.
  */
 export default class Painter {
-  layer: any;
-  frame: any;
-  page: any;
+  layer: SceneNode;
+  frame: FrameNode;
+  page: PageNode;
   constructor({ for: layer, in: page }) {
     this.layer = layer;
     this.frame = findFrame(this.layer);

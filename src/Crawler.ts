@@ -14,7 +14,7 @@ import { getRelativeIndex } from './Tools';
  * @property selectionArray The array of selected items.
  */
 export default class Crawler {
-  array: Array<any>;
+  array: Array<SceneNode>;
   constructor({ for: selectionArray }) {
     this.array = selectionArray;
   }
