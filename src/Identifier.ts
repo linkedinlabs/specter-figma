@@ -196,7 +196,7 @@ const cleanName = (name: string): string => {
  */
 export default class Identifier {
   layer: any;
-  page: any;
+  page: PageNode;
   messenger: any;
   dispatcher?: Function;
   shouldTerminate: boolean;
