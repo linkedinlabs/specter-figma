@@ -13,7 +13,7 @@ import {
  *
  * @kind function
  * @name closeGUI
- * @param {booelan} suppress Attempt not to show users any lingering error messages.
+ * @param {boolean} suppress Attempt not to show users any lingering error messages.
  * Setting to `false` within `async` functions ensures the plugin actually closes.
  *
  * @throws {CLOSE_PLUGIN_MSG} Throws the command to close the plugin.
@@ -49,8 +49,8 @@ const showGUI = (): void => {
 
 /**
  * @description Takes a unique string (`type`) and calls the corresponding action
- * in the App class. Also does some housekeeping duties such as pre-loading typefaces,
- * logging errors, or managing the GUI.
+ * in the App class. Also does some housekeeping duties such as pre-loading typefaces
+ * and managing the GUI.
  *
  * @kind function
  * @name dispatcher
@@ -74,8 +74,8 @@ const dispatcher = (action: {
     showGUI,
   });
 
+  // run the action in the App class based on type
   const runAction = (actionType: string) => {
-    // run the action in the App class based on type
     switch (actionType) {
       case 'annotate':
         app.annotateLayer();
@@ -106,6 +106,7 @@ const dispatcher = (action: {
     }
   };
 
+  // load the typeface and then run the action
   const runActionWithTypefaces = async (actionType: string) => {
     // typefaces should be loaded before running action
     await figma.loadFontAsync(TYPEFACES.primary);

@@ -17,10 +17,11 @@ import {
  *
  * @kind function
  * @name buildMeasureIcon
- * @param {Object} parent The artboard or layer to draw within.
+ *
  * @param {string} colorHex A string representing the hex color for the icon.
  * @param {string} orientation A string representing the orientation (optional).
- * @returns {Object} Layer group containing the icon.
+ *
+ * @returns {Object} FrameNode layer group containing the icon.
  * @private
  */
 const buildMeasureIcon = (
@@ -161,11 +162,14 @@ const buildMeasureIcon = (
  *
  * @kind function
  * @name buildAnnotation
+ *
  * @param {Object} annotationText The text for the annotation.
  * @param {Object} annotationSecondaryText Optional secondary text for the annotation.
  * @param {string} annotationType A string representing the type of annotation
  * (component or foundation).
- * @returns {Object} Each annotation element (`diamond`, `rectangle`, `text`).
+ *
+ * @returns {Object} Each annotation element as a layer node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
  *
  * @private
  */
@@ -336,12 +340,18 @@ const buildAnnotation = (
  *
  * @kind function
  * @name buildBoundingBox
- * @param {Object} position The frame coordinates (`x`, `y`, `width`, and `height`) for the box.
- * @returns {Object} The Figma RECTANGLE object for the box.
  *
+ * @param {Object} position The frame coordinates (`x`, `y`, `width`, and `height`) for the box.
+ *
+ * @returns {Object} The Figma RectangleNode object for the box.
  * @private
  */
-const buildBoundingBox = (position) => {
+const buildBoundingBox = (position: {
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+}): RectangleNode => {
   const colorHex: string = COLORS.style;
   const colorOpactiy: number = 0.3; // 30% opacity
 
@@ -374,6 +384,7 @@ const buildBoundingBox = (position) => {
  *
  * @kind function
  * @name positionAnnotation
+ *
  * @param {Object} frame The Figma `frame` that contains the annotation.
  * @param {string} groupName The name of the group that holds the annotation elements
  * inside the `containerGroup`.
@@ -626,11 +637,22 @@ const positionAnnotation = (
  * @param {string} elementType A string representing the type of element getting painted.
  *
  * @returns {string} The key representing the type of element getting painted.
- *
  * @private
  */
-const setGroupKey = (elementType: string) => {
-  let groupKey: string = null;
+const setGroupKey = (elementType: string):
+  'boundingInnerGroupId'
+  | 'componentInnerGroupId'
+  | 'dimensionInnerGroupId'
+  | 'spacingInnerGroupId'
+  | 'styleInnerGroupId'
+  | 'id' => {
+  let groupKey:
+    'boundingInnerGroupId'
+    | 'componentInnerGroupId'
+    | 'dimensionInnerGroupId'
+    | 'spacingInnerGroupId'
+    | 'styleInnerGroupId'
+    | 'id' = null;
   switch (elementType) {
     case 'boundingBox':
       groupKey = 'boundingInnerGroupId';
@@ -666,10 +688,18 @@ const setGroupKey = (elementType: string) => {
  * @param {string} elementType A string representing the type of element getting painted.
  *
  * @returns {string} The name of the group getting painted.
- *
  * @private
  */
-const setGroupName = (elementType: string) => {
+const setGroupName = (
+  elementType:
+    'boundingBox'
+    | 'component'
+    | 'custom'
+    | 'dimension'
+    | 'spacing'
+    | 'style'
+    | 'topLevel',
+): string => {
   let groupName: string = null;
   switch (elementType) {
     case 'boundingBox':
@@ -703,7 +733,9 @@ const setGroupName = (elementType: string) => {
  *
  * @kind function
  * @name retrieveSpacingValue
+ *
  * @param {number} length A number representing length.
+ *
  * @returns {string} A text label based on the spacing value.
  * @private
  */
@@ -754,7 +786,7 @@ const retrieveSpacingValue = (length: number): number => {
  *
  * @private
  */
-const orderContainerLayers = (outerGroupId, page): void => {
+const orderContainerLayers = (outerGroupId: string, page): void => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || {});
   let containerGroupId: string = null;
   let boundingGroupId: string = null;
@@ -822,8 +854,8 @@ const orderContainerLayers = (outerGroupId, page): void => {
  *
  * @param {Object} groupSettings Object containing the `name`, `position`,
  * `child` and `parent` layers, and `locked` status.
- * @returns {Object} The container group layer object.
  *
+ * @returns {Object} The container group layer object.
  * @private
  */
 const drawContainerGroup = (groupSettings: {
@@ -835,7 +867,7 @@ const drawContainerGroup = (groupSettings: {
   parent: any,
   child: any,
   locked: boolean,
-}) => {
+}): FrameNode => {
   const {
     name,
     position,
@@ -863,27 +895,52 @@ const drawContainerGroup = (groupSettings: {
  *
  * @kind function
  * @name createContainerGroup
+ *
  * @param {Object} containerSet An instance of the parent container group’s settings object.
  * @param {string} groupType A string representing the type of element going inside the continer.
  * @param {Object} frame An object representing the top-level Figma Frame for the container group.
  * @param {Object} layer An object representing the Figma layer to be set in the container group.
+ *
  * @returns {Object} The inner container group layer object and the accompanying
  * updated parent container group settings object.
- *
  * @private
  */
 export const createContainerGroup = (
-  containerSet: any,
-  groupType: string,
-  frame: any,
-  layer: any,
-) => {
+  containerSet: {
+    boundingInnerGroupId?: string,
+    componentInnerGroupId?: string,
+    dimensionInnerGroupId?: string,
+    frameId: string,
+    spacingInnerGroupId?: string,
+    styleInnerGroupId?: string,
+  },
+  groupType:
+    'boundingBox'
+    | 'component'
+    | 'custom'
+    | 'dimension'
+    | 'spacing'
+    | 'style'
+    | 'topLevel',
+  frame: FrameNode,
+  layer: SceneNode,
+): {
+  newInnerGroup: FrameNode,
+  updatedContainerSet: {
+    boundingInnerGroupId?: string,
+    componentInnerGroupId?: string,
+    dimensionInnerGroupId?: string,
+    frameId: string,
+    spacingInnerGroupId?: string,
+    styleInnerGroupId?: string,
+  },
+} => {
   const groupName: string = setGroupName(groupType);
   const groupKey: string = setGroupKey(groupType);
   const locked: boolean = groupType === 'topLevel';
 
   // set up new container group layer on the frame
-  const newInnerGroup: any = drawContainerGroup({
+  const newInnerGroup: FrameNode = drawContainerGroup({
     name: groupName,
     position: { x: layer.x, y: layer.y },
     parent: frame,
@@ -892,7 +949,7 @@ export const createContainerGroup = (
   });
 
   // update the `containerSet` object
-  const updatedContainerSet: any = containerSet;
+  const updatedContainerSet = containerSet;
   updatedContainerSet[groupKey] = newInnerGroup.id;
 
   if (groupType === 'topLevel') {
@@ -914,16 +971,29 @@ export const createContainerGroup = (
  * @param {Object} layerToContain An object including the `layer` that needs placement,
  * the `frame` and `page` the layer exists within, the `position` of the layer, and the
  * `type` of annotation or drawing action.
- * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
  *
+ * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
  * @private
  */
 const setLayerInContainers = (layerToContain: {
-  layer: any,
-  frame: { id: string, appendChild: Function },
-  page: { getPluginData: Function, setPluginData: Function },
-  type: string,
-}) => {
+  layer: SceneNode,
+  frame: FrameNode,
+  page: PageNode,
+  type:
+    'boundingBox'
+    | 'component'
+    | 'custom'
+    | 'dimension'
+    | 'spacing'
+    | 'style',
+}): {
+  boundingInnerGroupId?: string,
+  componentInnerGroupId?: string,
+  dimensionInnerGroupId?: string,
+  frameId: string,
+  spacingInnerGroupId?: string,
+  styleInnerGroupId?: string,
+} => {
   const {
     layer,
     frame,
@@ -931,7 +1001,7 @@ const setLayerInContainers = (layerToContain: {
     type,
   } = layerToContain;
   const groupKey = setGroupKey(type);
-  const frameId = frame.id;
+  const frameId: string = frame.id;
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
   // set some variables
@@ -944,7 +1014,7 @@ const setLayerInContainers = (layerToContain: {
 
   // find the existing `outerGroup` (if it exists)
   if (pageSettings && pageSettings.containerGroups) {
-    pageSettings.containerGroups.forEach((containerGroupSet: any) => {
+    pageSettings.containerGroups.forEach((containerGroupSet) => {
       if (containerGroupSet.frameId === frameId) {
         outerGroupId = containerGroupSet.id;
         outerGroupSet = containerGroupSet;
@@ -1040,13 +1110,15 @@ const setLayerInContainers = (layerToContain: {
  * @param {Object} existingItemData The data object containing an `id` representting the
  * annotation to be removed.
  *
+ * @returns {null}
  * @private
  */
-const removeAnnotation = (existingItemData: { id: string }) => {
+const removeAnnotation = (existingItemData: { id: string }): void => {
   const layerToDelete = figma.getNodeById(existingItemData.id);
   if (layerToDelete) {
     layerToDelete.remove();
   }
+  return null;
 };
 
 // --- main Painter class function
@@ -1058,8 +1130,9 @@ const removeAnnotation = (existingItemData: { id: string }) => {
  *
  * @constructor
  *
- * @property layer The layer in the Figma file that we want to annotate or modify.
- * @property page The page in the Figma file containing the corresponding `frame` and `layer`.
+ * @property layer The SceneNode in the Figma file that we want to annotate or modify.
+ * @property frame The top-level FrameNode in the Figma file that we want to annotate or modify.
+ * @property page The PageNode in the Figma file containing the corresponding `frame` and `layer`.
  */
 export default class Painter {
   layer: SceneNode;
@@ -1077,6 +1150,7 @@ export default class Painter {
    *
    * @kind function
    * @name addAnnotation
+   *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
   addAnnotation() {
@@ -1228,6 +1302,7 @@ export default class Painter {
    * @name addBoundingBox
    * @param {Object} position The position coordinates (`x`, `y`, `width`, and `height`)
    * for the box.
+   *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
   addBoundingBox(position) {
@@ -1357,8 +1432,8 @@ export default class Painter {
 
     // ------------------------
     // construct the width annotation elements
-    const annotationTextWidth = `${this.layer.width}dp`;
-    const groupNameWidth = `Dimension Width for layer ${layerName}`;
+    const annotationTextWidth: string = `${this.layer.width}dp`;
+    const groupNameWidth: string = `Dimension Width for layer ${layerName}`;
     const annotationWidth = buildAnnotation(
       annotationTextWidth,
       null, // annotationSecondaryText
@@ -1405,8 +1480,8 @@ export default class Painter {
 
     // ------------------------
     // construct the height annotation elements
-    const annotationTextHeight = `${this.layer.height}dp`;
-    const groupNameHeight = `Dimension Height for layer ${layerName}`;
+    const annotationTextHeight: string = `${this.layer.height}dp`;
+    const groupNameHeight: string = `Dimension Height for layer ${layerName}`;
     const annotationHeight = buildAnnotation(
       annotationTextHeight,
       null, // annotationSecondaryText
@@ -1471,11 +1546,12 @@ export default class Painter {
    *
    * @kind function
    * @name addSpacingAnnotation
+   *
    * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
    * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
    * for the two layers used to calculated the gap.
    *
-   * @returns null
+   * @returns {null}
    */
   addSpacingAnnotation(spacingPosition) {
     // set up some information
@@ -1487,10 +1563,10 @@ export default class Painter {
       return null;
     }
 
-    const annotationText = `IS-${spacingValue}`;
+    const annotationText: string = `IS-${spacingValue}`;
     const annotationType = 'spacing';
-    const layerName = this.layer.name;
-    const groupName = `Spacing for ${layerName} (${spacingPosition.direction})`;
+    const layerName: string = this.layer.name;
+    const groupName: string = `Spacing for ${layerName} (${spacingPosition.direction})`;
 
     // retrieve document settings
     const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
@@ -1608,6 +1684,7 @@ export default class Painter {
    *
    * @kind function
    * @name addGapMeasurement
+   *
    * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
    * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
    * for the two layers used to calculated the gap.
@@ -1664,11 +1741,12 @@ export default class Painter {
    *
    * @kind function
    * @name addOverlapMeasurements
+   *
    * @param {Object} overlapFrames The `top`, `bottom`, `right`, and `left` frames. Each frame
    * contains `x`, `y` coordinates, `width`, `height`, and `orientation`. The object also includes
    * layer IDs (`layerAId` and `layerBId`) for the two layers used to calculated the
    * overlapped areas.
-   * @param {array} directions An optional array containing 4 unique strings representating
+   * @param {Array} directions An optional array containing 4 unique strings representating
    * the annotation directions: `top`, `bottom`, `right`, `left`.
    *
    * @returns {Object} A result object container success/error status and log/toast messages.
