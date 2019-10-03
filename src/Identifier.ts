@@ -246,10 +246,12 @@ export default class Identifier {
   }
 
   /**
-   * @description Identifies the master symbol name of a component and adds the name to the layer’s
-   * `annotationText` settings object: The identification is achieved by ensuring a
-   * `masterComponent` is attached to the instance and then parsing the master’s `name` and
-   * `description` for additional identifying information.
+   * @description Identifies the master name of a component OR the effect and adds the name to
+   * the layer’s `annotationText` settings object: Master Component identification is achieved
+   * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
+   * `name` and `description` for additional identifying information. If a layer is not
+   * attached to a Master Component, it is checked for an `effectStyleId` and a remote (library)
+   * effect. If found, the effect is labeled as a foundation.
    *
    * @kind function
    * @name getLibraryName
@@ -289,7 +291,6 @@ export default class Identifier {
     if (this.layer.masterComponent) {
       const { masterComponent } = this.layer;
 
-      // temp
       this.messenger.log(`Master Component name for layer: ${masterComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
@@ -299,7 +300,7 @@ export default class Identifier {
       // const subtextToSet = parseOverrides(this.layer, this.page, textToSet); // TKTK
       const subtextToSet: string = null; // temporary
 
-      // set `annotationText` on the layer settings as the kit symbol name
+      // set `annotationText` on the layer settings as the component name
       // set option `subtextToSet` on the layer settings based on existing overrides
       setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
 
@@ -309,28 +310,62 @@ export default class Identifier {
       return result;
     }
 
-    // // locate a shared style in Lingo TKTK
-    // if (sharedStyleId) {
-    //   const kitStyle = lingoData.layerStyles[sharedStyleId] || lingoData.textStyles[sharedStyleId];
+    // locate shared effect or fill styles
+    if (this.layer.effectStyleId || this.layer.fillStyleId) {
+      let textToSet: string = null;
+      let subtextToSet: string = null;
 
-    //   if (kitStyle) {
-    //     // take only the last segment of the name (after a “/”, if available)
-    //     const textToSet: string = cleanName(kitStyle.name);
+      // load the styles
+      const effectStyle: BaseStyle = figma.getStyleById(this.layer.effectStyleId);
+      const fillStyle: BaseStyle = figma.getStyleById(this.layer.fillStyleId);
 
-    //     // set `annotationText` on the layer settings as the kit layer name
-    //     setAnnotationTextSettings(textToSet, null, 'style', this.layer);
+      /**
+       * @description Color names in the library contain more information than necessary:
+       * “Blue / Blue-60”. Only use the bit after the last “/”, and change any hyphens to
+       * spaces for easier reading.
+       *
+       * @kind function
+       * @name cleanColorName
+       * @param {string} name The original name of the color
+       *
+       * @returns {string} The cleaned name of the color for the annotation.
+       */
+      const cleanColorName = (name: string): string => {
+        let cleanedName = name;
+        cleanedName = cleanedName.split(' / ').pop();
+        cleanedName = cleanedName.replace('-', ' ');
+        return cleanedName;
+      };
 
-    //     // log the official name alongside the original layer name and set as success
-    //     result.status = 'success';
-    //     result.messages.log = `Style Name in Lingo Kit for “${this.layer.name}” is “${textToSet}”`;
-    //     return result;
-    //   }
-    // }
+      // set text
+      if (effectStyle && effectStyle.remote) {
+        // set effect name
+        textToSet = effectStyle.name;
 
-    // could not find a matching layer in the Lingo Kit
+        // set fill color as an override
+        if (fillStyle && fillStyle.remote) {
+          subtextToSet = cleanColorName(fillStyle.name);
+        }
+      } else if (fillStyle && fillStyle.remote) {
+        // set color as main text (no effect)
+        textToSet = cleanColorName(fillStyle.name);
+      }
+
+      if (textToSet) {
+        // set `annotationText` on the layer settings as the effect name
+        setAnnotationTextSettings(textToSet, subtextToSet, 'style', this.layer.id, this.page);
+
+        // log the official name alongside the original layer name and set as success
+        result.status = 'success';
+        result.messages.log = `Style Name in design library for “${this.layer.name}” is “${textToSet}”`;
+        return result;
+      }
+    }
+
+    // could not find a matching layer in a connected design library
     result.status = 'error';
-    result.messages.log = `${this.layer.id} was not found in a connected Lingo Kit`;
-    result.messages.toast = '😢 This layer could not be found in a connected Lingo Kit.';
+    result.messages.log = `${this.layer.id} was not found in a connected design library`;
+    result.messages.toast = '😢 This layer could not be found in a connected design library.';
     return result;
   }
 
