@@ -173,19 +173,21 @@ const buildMeasureIcon = (
  *
  * @private
  */
-const buildAnnotation = (
-  annotationText: string,
-  annotationSecondaryText?: string,
-  annotationType: 'component' | 'custom' | 'dimension' | 'spacing' | 'style' = 'component',
-): {
+const buildAnnotation = (options: {
+  mainText: string,
+  secondaryText?: string,
+  type: 'component' | 'custom' | 'dimension' | 'spacing' | 'style',
+}): {
   diamond: RectangleNode,
   rectangle: RectangleNode,
   text: TextNode,
   icon: FrameNode,
 } => {
+  const { mainText, secondaryText, type } = options;
+
   // set the dominant color
   let colorHex: string = null;
-  switch (annotationType) {
+  switch (type) {
     case 'component':
       colorHex = COLORS.component;
       break;
@@ -205,15 +207,15 @@ const buildAnnotation = (
       colorHex = COLORS.component;
   }
 
-  let setText: string = annotationText;
-  if (annotationSecondaryText) {
-    setText = `${annotationText}\n${annotationSecondaryText}`;
+  let setText: string = mainText;
+  if (secondaryText) {
+    setText = `${mainText}\n${secondaryText}`;
   }
 
   let isMeasurement: boolean = false;
   if (
-    annotationType === 'spacing'
-    || annotationType === 'dimension'
+    type === 'spacing'
+    || type === 'dimension'
   ) {
     isMeasurement = true;
   }
@@ -233,7 +235,7 @@ const buildAnnotation = (
 
   // adjustment for two-line annotations
   let rectTextBuffer: number = 0;
-  if (annotationSecondaryText) {
+  if (secondaryText) {
     rectTextBuffer = 18;
   }
 
@@ -1219,11 +1221,11 @@ export default class Painter {
     }
 
     // construct the base annotation elements
-    const annotation = buildAnnotation(
-      annotationText,
-      annotationSecondaryText,
-      annotationType,
-    );
+    const annotation = buildAnnotation({
+      mainText: annotationText,
+      secondaryText: annotationSecondaryText,
+      type: annotationType,
+    });
 
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
@@ -1430,11 +1432,10 @@ export default class Painter {
     // construct the width annotation elements
     const annotationTextWidth: string = `${this.layer.width}dp`;
     const groupNameWidth: string = `Dimension Width for layer ${layerName}`;
-    const annotationWidth = buildAnnotation(
-      annotationTextWidth,
-      null, // annotationSecondaryText
-      annotationType,
-    );
+    const annotationWidth = buildAnnotation({
+      mainText: annotationTextWidth,
+      type: annotationType,
+    });
 
     const annotationOrientation = 'top';
     const groupWidth = positionAnnotation(
@@ -1478,11 +1479,10 @@ export default class Painter {
     // construct the height annotation elements
     const annotationTextHeight: string = `${this.layer.height}dp`;
     const groupNameHeight: string = `Dimension Height for layer ${layerName}`;
-    const annotationHeight = buildAnnotation(
-      annotationTextHeight,
-      null, // annotationSecondaryText
-      annotationType,
-    );
+    const annotationHeight = buildAnnotation({
+      mainText: annotationTextHeight,
+      type: annotationType,
+    });
 
     const annotationOrientationHeight = 'right';
     const groupHeight = positionAnnotation(
@@ -1597,11 +1597,10 @@ export default class Painter {
     }
 
     // construct the base annotation elements
-    const annotation = buildAnnotation(
-      annotationText,
-      null, // annotationSecondaryText
-      annotationType,
-    );
+    const annotation = buildAnnotation({
+      mainText: annotationText,
+      type: annotationType,
+    });
 
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
