@@ -301,10 +301,6 @@ const buildAnnotation = (
   text.textAlignVertical = 'CENTER';
   text.textAlignHorizontal = 'CENTER';
   text.resize(text.width, rectHeight);
-  text.constraints = {
-    horizontal: 'CENTER',
-    vertical: 'CENTER',
-  };
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
 
   // adjust rectangle width based on text width
