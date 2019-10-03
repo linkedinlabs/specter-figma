@@ -46,6 +46,25 @@ const setAnnotationTextSettings = (
   return null;
 };
 
+/** WIP
+ * @description Checks the Kit name against a list of known Foundation Kit names
+ * and sets `annotationType` appropriately.
+ *
+ * @kind function
+ * @name isLegacyByName
+ * @param {string} name The full name of the Layer.
+ * @returns {string} The `annotationType` – either `component` or `style`.
+ * @private
+ */
+const isLegacyByName = (name: string): boolean => {
+  let isLegacy: boolean = true;
+
+  isLegacy = !name.includes('☾');
+  if (isLegacy) { isLegacy = !name.includes('☼'); }
+
+  return isLegacy;
+};
+
 /**
  * @description Checks the Kit name against a list of known Foundation Kit names
  * and sets `annotationType` appropriately.
@@ -56,17 +75,21 @@ const setAnnotationTextSettings = (
  * @returns {string} The `annotationType` – either `component` or `style`.
  * @private
  */
-const checkNameForType = (name: string): string => {
-  // TKTK
-  let annotationType: string = 'component';
-  // grab the first segment of the name (before the first “/”) – top-level Kit name
-  let libraryName: string = name.split('/')[0]; // eslint-disable-line prefer-destructuring
+const checkNameForType = (name: string): 'component' | 'style' => {
+  let annotationType: 'component' | 'style' = 'component';
 
-  // set up some known exceptions (remove the text that would trigger a type change)
-  libraryName = libraryName.replace('(Dual Icons)', '');
-
-  // kit name substrings, exclusive to Foundations
+  // name substrings, exclusive to Foundations
   const foundations: Array<string> = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
+  let libraryName: string = name;
+
+  // process checks based on whether or not the source is from a legacy or new library
+  if (isLegacyByName(name)) {
+    // grab the first segment of the name (before the first “/”) – top-level Kit name
+    libraryName = name.split('/')[0]; // eslint-disable-line prefer-destructuring
+
+    // set up some known exceptions (remove the text that would trigger a type change)
+    libraryName = libraryName.replace('(Dual Icons)', '');
+  }
 
   // check if one of the foundation substrings exists in the `libraryName`
   if (foundations.some(foundation => libraryName.indexOf(foundation) >= 0)) {
@@ -86,11 +109,18 @@ const checkNameForType = (name: string): string => {
  * @private
  */
 const cleanName = (name: string): string => {
-  // take only the last segment of the name (after a “/”, if available)
-  // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-  // let cleanedName: string = name.split(/(?:[^w])(\/)/).pop();
-  let cleanedName: string = name; // TKTK
-  // otherwise, fall back to the kit layer name
+  let cleanedName: string = name;
+
+  if (isLegacyByName(name)) {
+    // take only the last segment of the name (after a “/”, if available)
+    // ignore segments that begin with a “w” as-in “…Something w/ Icon”
+    cleanedName = name.split(/(?:[^w])(\/)/).pop();
+  } else {
+    cleanedName = name.replace('☾ ', '');
+    cleanedName = name.replace('☼ ', '');
+  }
+
+  // otherwise, fall back to the full layer name
   cleanedName = !cleanedName ? name : cleanedName;
   return cleanedName;
 };
