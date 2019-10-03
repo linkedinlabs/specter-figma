@@ -234,7 +234,7 @@ const buildAnnotation = (
   // adjustment for two-line annotations
   let rectTextBuffer: number = 0;
   if (annotationSecondaryText) {
-    rectTextBuffer = 22;
+    rectTextBuffer = 18;
   }
 
   // set up the color object
@@ -242,7 +242,7 @@ const buildAnnotation = (
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle
-  const rectHeight: number = (isMeasurement ? 22 : 30) + rectTextBuffer;
+  const rectHeight: number = (isMeasurement ? 18 : 30) + rectTextBuffer;
   const rectangle: RectangleNode = figma.createRectangle();
   rectangle.name = 'Rectangle';
 
@@ -264,7 +264,7 @@ const buildAnnotation = (
   rectangle.bottomRightRadius = 2;
 
   // build the dangling diamond
-  const diamondOffset: number = (isMeasurement ? 22 : 30);
+  const diamondOffset: number = (isMeasurement ? 18 : 30);
   const diamond: RectangleNode = figma.createRectangle();
   diamond.name = 'Diamond';
 
@@ -286,7 +286,7 @@ const buildAnnotation = (
   // style text layer
   text.fontName = TYPEFACES.primary;
   text.fontSize = 12;
-  text.lineHeight = { value: 22, unit: 'PIXELS' };
+  text.lineHeight = { value: 18, unit: 'PIXELS' };
   text.fills = [{
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
