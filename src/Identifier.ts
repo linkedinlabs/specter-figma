@@ -125,90 +125,163 @@ const cleanName = (name: string): string => {
   return cleanedName;
 };
 
-// /** WIP TKTK
-//  * @description Looks through layer overrides and returns a text string based
-//  * on the override(s) and context.
-//  *
-//  * @kind function
-//  * @name parseOverrides
-//  * @param {Object} layer The Figma js layer object.
-//  * @param {Object} document The Figma document object that contains the layer.
-//  * @param {Object} workingName The top-level layer name.
-//  * @returns {string} Text containing information about the override(s).
-//  *
-//  * @private
-//  */
-// const parseOverrides = (layer, document, workingName = null) => {
-//   const overridesText: Array<string> = [];
+/**
+ * @description Color names in the library contain more information than necessary:
+ * “Blue / Blue-60”. Only use the bit after the last “/”, and change any hyphens to
+ * spaces for easier reading.
+ *
+ * @kind function
+ * @name cleanColorName
+ * @param {string} name The original name of the color
+ *
+ * @returns {string} The cleaned name of the color for the annotation.
+ */
+const cleanColorName = (name: string): string => {
+  let cleanedName = name;
+  cleanedName = cleanedName.split(' / ').pop();
+  cleanedName = cleanedName.replace('-', ' ');
+  return cleanedName;
+};
 
-//   // iterate available overrides - based on current Lingo naming schemes and may break
-//   // as those change or are updated.
-//   fromNative(layer).overrides.forEach((override) => {
-//     // only worry about an editable override that has changed and is based on a symbol
-//     if (
-//       override.editable
-//       && !override.isDefault
-//       && override.id.includes('symbolID')
-//     ) {
-//       // current override type/category (always last portion of the path)
-//       const overrideTypeId: string = override.path.split('/').pop();
-//       const overrideType: string = document.getLayerWithID(overrideTypeId);
-//       const overrideTypeName: string = overrideType.name;
+/** WIP
+ * @description Color names in the library contain more information than necessary:
+ * “Blue / Blue-60”. Only use the bit after the last “/”, and change any hyphens to
+ * spaces for easier reading.
+ *
+ * @kind function
+ * @name setStyleText
+ * @param {string} name The original name of the color
+ *
+ * @returns {string} The cleaned name of the color for the annotation.
+ */
+const setStyleText = (options: {
+  effectStyleId: string,
+  fillStyleId: string,
+}): {
+  textToSet: string,
+  subtextToSet: string,
+} => {
+  const { effectStyleId, fillStyleId } = options;
+  let textToSet: string = null;
+  let subtextToSet: string = null;
 
-//       // current override master symbol (ID is the override value)
-//       const overrideSymbol: string = document.getSymbolMasterWithID(override.value);
-//       // grab name (sometimes it does not exist if “None” is a changed override)
-//       const overrideName: string = overrideSymbol ? overrideSymbol.name : null;
+  // load the styles
+  const effectStyle: BaseStyle = figma.getStyleById(effectStyleId);
+  const fillStyle: BaseStyle = figma.getStyleById(fillStyleId);
 
-//       if (overrideName) {
-//         // look for top-level overrides and Icon overrides - based on
-//         // parsing the text of an `overrideTypeName` and making some
-//         // comparisons and exceptions
-//         if (
-//           (
-//             overrideTypeName.toLowerCase().includes('icon')
-//             && !overrideTypeName.toLowerCase().includes('color')
-//             && !overrideTypeName.toLowerCase().includes('🎨')
-//             && !overrideTypeName.toLowerCase().includes('button')
-//           )
-//           || overrideTypeName.toLowerCase() === 'checkbox'
-//           || overrideTypeName.toLowerCase() === 'radio'
-//           || overrideTypeName.toLowerCase() === 'type'
-//           || overrideTypeName.toLowerCase().includes('pebble')
-//           || !override.path.includes('/') // excluding “/” gives us top-level overrides
-//         ) {
-//           // default icon name (usually last element of the name, separated by “/”)
-//           let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
-//           overrideValueName = overrideValueName.replace(`${workingName}`, '');
+  // set text
+  if (effectStyle && effectStyle.remote) {
+    // set effect name
+    textToSet = effectStyle.name;
 
-//           // ---------- set up formatting exceptions
-//           // parsing exception for Ghost Entity symbols
-//           if (overrideTypeName.toLowerCase().includes('ghost')) {
-//             // in some kits, Ghost naming scheme is fine but in the Web kit it
-//             // is reversed: “…/Article Ghost/3” instead of “…/3/Article Ghost”
-//             if (Number(overrideValueName) === parseInt(overrideValueName, 10)) {
-//               overrideValueName = overrideName.split('/').reverse()[1]; // eslint-disable-line prefer-destructuring
-//             }
-//           }
+    // set fill color as an override
+    if (fillStyle && fillStyle.remote) {
+      subtextToSet = cleanColorName(fillStyle.name);
+    }
+  } else if (fillStyle && fillStyle.remote) {
+    // set color as main text (no effect)
+    textToSet = cleanColorName(fillStyle.name);
+  }
 
-//           // update `overridesText`
-//           overridesText.push(overrideValueName);
-//         }
-//       }
-//     }
-//   });
+  return {
+    textToSet,
+    subtextToSet,
+  };
+};
 
-//   let setOverridesText: string = null;
-//   if (overridesText.length > 0) {
-//     let label: string = 'Override';
-//     if (overridesText.length > 1) {
-//       label = 'Overrides';
-//     }
-//     setOverridesText = `${label}: ${overridesText.join(', ')}`;
-//   }
+/** WIP TKTK
+ * @description Looks through layer overrides and returns a text string based
+ * on the override(s) and context.
+ *
+ * @kind function
+ * @name parseOverrides
+ * @param {Object} layer The Figma layer object.
+ * @param {Object} page The Figma page object that contains the layer.
+ * @param {Object} workingName The top-level layer name.
+ * @returns {string} Text containing information about the override(s).
+ *
+ * @private
+ */
+const parseOverrides = (layer, page, workingName = null) => {
+  const overridesText: Array<string> = [];
 
-//   return setOverridesText;
-// };
+  // check for styles
+  const { effectStyleId, fillStyleId } = layer;
+
+  // set styles text
+  const { textToSet, subtextToSet } = setStyleText({ effectStyleId, fillStyleId });
+
+  if (textToSet) { overridesText.push(textToSet); }
+  if (subtextToSet) { overridesText.push(subtextToSet); }
+
+  // // iterate available overrides - based on current Lingo naming schemes and may break TKTK
+  // // as those change or are updated.
+  // layer.overrides.forEach((override) => {
+  //   // only worry about an editable override that has changed and is based on a symbol
+  //   if (
+  //     override.editable
+  //     && !override.isDefault
+  //     && override.id.includes('symbolID')
+  //   ) {
+  //     // current override type/category (always last portion of the path)
+  //     const overrideTypeId: string = override.path.split('/').pop();
+  //     const overrideType: string = page.getLayerWithID(overrideTypeId);
+  //     const overrideTypeName: string = overrideType.name;
+
+  //     // current override master symbol (ID is the override value)
+  //     const overrideSymbol: string = page.getSymbolMasterWithID(override.value);
+  //     // grab name (sometimes it does not exist if “None” is a changed override)
+  //     const overrideName: string = overrideSymbol ? overrideSymbol.name : null;
+
+  //     if (overrideName) {
+  //       // look for top-level overrides and Icon overrides - based on
+  //       // parsing the text of an `overrideTypeName` and making some
+  //       // comparisons and exceptions
+  //       if (
+  //         (
+  //           overrideTypeName.toLowerCase().includes('icon')
+  //           && !overrideTypeName.toLowerCase().includes('color')
+  //           && !overrideTypeName.toLowerCase().includes('🎨')
+  //           && !overrideTypeName.toLowerCase().includes('button')
+  //         )
+  //         || overrideTypeName.toLowerCase() === 'checkbox'
+  //         || overrideTypeName.toLowerCase() === 'radio'
+  //         || overrideTypeName.toLowerCase() === 'type'
+  //         || overrideTypeName.toLowerCase().includes('pebble')
+  //         || !override.path.includes('/') // excluding “/” gives us top-level overrides
+  //       ) {
+  //         // default icon name (usually last element of the name, separated by “/”)
+  //         let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
+  //         overrideValueName = overrideValueName.replace(`${workingName}`, '');
+
+  //         // ---------- set up formatting exceptions
+  //         // parsing exception for Ghost Entity symbols
+  //         if (overrideTypeName.toLowerCase().includes('ghost')) {
+  //           // in some kits, Ghost naming scheme is fine but in the Web kit it
+  //           // is reversed: “…/Article Ghost/3” instead of “…/3/Article Ghost”
+  //           if (Number(overrideValueName) === parseInt(overrideValueName, 10)) {
+  //             overrideValueName = overrideName.split('/').reverse()[1]; // eslint-disable-line prefer-destructuring
+  //           }
+  //         }
+
+  //         // update `overridesText`
+  //         overridesText.push(overrideValueName);
+  //       }
+  //     }
+  //   }
+  // });
+
+  let setOverridesText: string = null;
+  if (overridesText.length > 0) {
+    let label: string = 'Override';
+    if (overridesText.length > 1) {
+      label = 'Overrides';
+    }
+    setOverridesText = `${label}: ${overridesText.join(', ')}`;
+  }
+
+  return setOverridesText;
+};
 
 // --- main Identifier class function
 /**
@@ -297,11 +370,10 @@ export default class Identifier {
       const symbolType: string = checkNameForType(masterComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       const textToSet: string = cleanName(masterComponent.name);
-      // const subtextToSet = parseOverrides(this.layer, this.page, textToSet); // TKTK
-      const subtextToSet: string = null; // temporary
+      const subtextToSet = parseOverrides(this.layer, this.page, textToSet);
 
-      // set `annotationText` on the layer settings as the component name
-      // set option `subtextToSet` on the layer settings based on existing overrides
+      // set `textToSet` on the layer settings as the component name
+      // set optional `subtextToSet` on the layer settings based on existing overrides
       setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
 
       // log the official name alongside the original layer name and set as success
@@ -312,44 +384,10 @@ export default class Identifier {
 
     // locate shared effect or fill styles
     if (this.layer.effectStyleId || this.layer.fillStyleId) {
-      let textToSet: string = null;
-      let subtextToSet: string = null;
-
-      // load the styles
-      const effectStyle: BaseStyle = figma.getStyleById(this.layer.effectStyleId);
-      const fillStyle: BaseStyle = figma.getStyleById(this.layer.fillStyleId);
-
-      /**
-       * @description Color names in the library contain more information than necessary:
-       * “Blue / Blue-60”. Only use the bit after the last “/”, and change any hyphens to
-       * spaces for easier reading.
-       *
-       * @kind function
-       * @name cleanColorName
-       * @param {string} name The original name of the color
-       *
-       * @returns {string} The cleaned name of the color for the annotation.
-       */
-      const cleanColorName = (name: string): string => {
-        let cleanedName = name;
-        cleanedName = cleanedName.split(' / ').pop();
-        cleanedName = cleanedName.replace('-', ' ');
-        return cleanedName;
-      };
+      const { effectStyleId, fillStyleId } = this.layer;
 
       // set text
-      if (effectStyle && effectStyle.remote) {
-        // set effect name
-        textToSet = effectStyle.name;
-
-        // set fill color as an override
-        if (fillStyle && fillStyle.remote) {
-          subtextToSet = cleanColorName(fillStyle.name);
-        }
-      } else if (fillStyle && fillStyle.remote) {
-        // set color as main text (no effect)
-        textToSet = cleanColorName(fillStyle.name);
-      }
+      const { textToSet, subtextToSet } = setStyleText({ effectStyleId, fillStyleId });
 
       if (textToSet) {
         // set `annotationText` on the layer settings as the effect name
