@@ -163,10 +163,9 @@ const buildMeasureIcon = (
  * @kind function
  * @name buildAnnotation
  *
- * @param {Object} annotationText The text for the annotation.
- * @param {Object} annotationSecondaryText Optional secondary text for the annotation.
- * @param {string} annotationType A string representing the type of annotation
- * (component or foundation).
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
  *
  * @returns {Object} Each annotation element as a layer node (`diamond`, `rectangle`, `text`,
  * and `icon`).
@@ -234,9 +233,9 @@ const buildAnnotation = (options: {
   }
 
   // adjustment for two-line annotations
-  let rectTextBuffer: number = 0;
+  let textBuffer: number = 0;
   if (secondaryText) {
-    rectTextBuffer = 18;
+    textBuffer = 18;
   }
 
   // set up the color object
@@ -244,13 +243,13 @@ const buildAnnotation = (options: {
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle
-  const rectHeight: number = (isMeasurement ? 18 : 30) + rectTextBuffer;
+  const rectHeight: number = (isMeasurement ? 18 : 30) + textBuffer;
   const rectangle: RectangleNode = figma.createRectangle();
   rectangle.name = 'Rectangle';
 
   // position and size the rectangle
   rectangle.x = 0;
-  rectangle.y = -rectTextBuffer;
+  rectangle.y = 0;
   rectangle.resize(200, rectHeight);
 
   // style it – set the rectangle type, color, and opacity
@@ -272,7 +271,7 @@ const buildAnnotation = (options: {
 
   // position and size the diamond
   diamond.x = 0;
-  diamond.y = diamondOffset;
+  diamond.y = diamondOffset + textBuffer;
   diamond.resize(6, 6);
   diamond.rotation = 45;
 
@@ -299,7 +298,7 @@ const buildAnnotation = (options: {
 
   // position and size the text
   text.x = textPosition.x;
-  text.y = (textPosition.y - rectTextBuffer);
+  text.y = textPosition.y;
   text.textAlignVertical = 'CENTER';
   text.textAlignHorizontal = 'CENTER';
   text.resize(text.width, rectHeight);
@@ -483,8 +482,8 @@ const positionAnnotation = (
       placementX = layerX + layerWidth + offsetX;
       break;
     default: // top
-      offsetY = (isMeasurement ? 33 : 38);
-      placementY = layerY - offsetY;
+      offsetY = (isMeasurement ? 15 : 8);
+      placementY = layerY - rectangle.height - offsetY;
   }
 
   // correct for left bleed
