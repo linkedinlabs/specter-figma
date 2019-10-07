@@ -139,7 +139,7 @@ const cleanName = (name: string): string => {
 const cleanColorName = (name: string): string => {
   let cleanedName = name;
   cleanedName = cleanedName.split(' / ').pop();
-  cleanedName = cleanedName.replace('-', ' ');
+  cleanedName = cleanedName.replace(/-/g, ' ');
   return cleanedName;
 };
 
@@ -189,7 +189,7 @@ const setStyleText = (options: {
   };
 };
 
-/** WIP TKTK
+/** WIP
  * @description Looks through layer overrides and returns a text string based
  * on the override(s) and context.
  *
@@ -214,62 +214,40 @@ const parseOverrides = (layer, page, workingName = null) => {
   if (textToSet) { overridesText.push(textToSet); }
   if (subtextToSet) { overridesText.push(subtextToSet); }
 
-  // // iterate available overrides - based on current Lingo naming schemes and may break TKTK
-  // // as those change or are updated.
-  // layer.overrides.forEach((override) => {
-  //   // only worry about an editable override that has changed and is based on a symbol
-  //   if (
-  //     override.editable
-  //     && !override.isDefault
-  //     && override.id.includes('symbolID')
-  //   ) {
-  //     // current override type/category (always last portion of the path)
-  //     const overrideTypeId: string = override.path.split('/').pop();
-  //     const overrideType: string = page.getLayerWithID(overrideTypeId);
-  //     const overrideTypeName: string = overrideType.name;
+  // iterate available inner layers - based on legacy Lingo naming schemes and may break.
+  layer.findOne((node) => {
+    if (node.visible) {
+      // current override full name
+      const overrideTypeName: string = node.name;
 
-  //     // current override master symbol (ID is the override value)
-  //     const overrideSymbol: string = page.getSymbolMasterWithID(override.value);
-  //     // grab name (sometimes it does not exist if “None” is a changed override)
-  //     const overrideName: string = overrideSymbol ? overrideSymbol.name : null;
+      // grab cleanned name (last portion)
+      const overrideName: string = cleanName(node.name);
 
-  //     if (overrideName) {
-  //       // look for top-level overrides and Icon overrides - based on
-  //       // parsing the text of an `overrideTypeName` and making some
-  //       // comparisons and exceptions
-  //       if (
-  //         (
-  //           overrideTypeName.toLowerCase().includes('icon')
-  //           && !overrideTypeName.toLowerCase().includes('color')
-  //           && !overrideTypeName.toLowerCase().includes('🎨')
-  //           && !overrideTypeName.toLowerCase().includes('button')
-  //         )
-  //         || overrideTypeName.toLowerCase() === 'checkbox'
-  //         || overrideTypeName.toLowerCase() === 'radio'
-  //         || overrideTypeName.toLowerCase() === 'type'
-  //         || overrideTypeName.toLowerCase().includes('pebble')
-  //         || !override.path.includes('/') // excluding “/” gives us top-level overrides
-  //       ) {
-  //         // default icon name (usually last element of the name, separated by “/”)
-  //         let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
-  //         overrideValueName = overrideValueName.replace(`${workingName}`, '');
+      if (overrideName) {
+        // look for Icon overrides - based on parsing the text of an `overrideTypeName` and
+        // making some comparisons and exceptions – if the override name exists in the
+        // master component, we ignore it as it’s likely not an actual override
+        if (
+          overrideTypeName.toLowerCase().includes('icon')
+          && !overrideTypeName.toLowerCase().includes('color')
+          && !overrideTypeName.toLowerCase().includes('🎨')
+          && !overrideTypeName.toLowerCase().includes('button')
+          && overrideTypeName.toLowerCase() !== 'icon'
+          && !layer.masterComponent.findOne(mcNode => mcNode.name === overrideTypeName)
+        ) {
+          // default icon name (usually last element of the name, separated by “/”)
+          let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
+          overrideValueName = overrideValueName.replace(`${workingName}`, '');
 
-  //         // ---------- set up formatting exceptions
-  //         // parsing exception for Ghost Entity symbols
-  //         if (overrideTypeName.toLowerCase().includes('ghost')) {
-  //           // in some kits, Ghost naming scheme is fine but in the Web kit it
-  //           // is reversed: “…/Article Ghost/3” instead of “…/3/Article Ghost”
-  //           if (Number(overrideValueName) === parseInt(overrideValueName, 10)) {
-  //             overrideValueName = overrideName.split('/').reverse()[1]; // eslint-disable-line prefer-destructuring
-  //           }
-  //         }
-
-  //         // update `overridesText`
-  //         overridesText.push(overrideValueName);
-  //       }
-  //     }
-  //   }
-  // });
+          // update `overridesText`
+          const existingIndex: number = overridesText.findIndex(text => text === overrideValueName);
+          if (existingIndex < 0) {
+            overridesText.push(overrideValueName);
+          }
+        }
+      }
+    }
+  });
 
   let setOverridesText: string = null;
   if (overridesText.length > 0) {
