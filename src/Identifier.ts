@@ -162,31 +162,63 @@ const cleanColorName = (name: string): string => {
 const setStyleText = (options: {
   effectStyleId?: string,
   fillStyleId?: string,
+  strokeStyleId?: string,
+  textStyleId?: string,
 }): {
   textToSet: string,
   subtextToSet: string,
 } => {
-  const { effectStyleId, fillStyleId } = options;
+  const {
+    effectStyleId,
+    fillStyleId,
+    strokeStyleId,
+    textStyleId,
+  } = options;
   let textToSet: string = null;
   let subtextToSet: string = null;
+  const subtextToSetArray: Array<string> = [];
 
   // load the styles
   const effectStyle: BaseStyle = figma.getStyleById(effectStyleId);
   const fillStyle: BaseStyle = figma.getStyleById(fillStyleId);
+  const strokeStyle: BaseStyle = figma.getStyleById(strokeStyleId);
+  const textStyle: BaseStyle = figma.getStyleById(textStyleId);
 
-  // set text
-  if (effectStyle && effectStyle.remote) {
-    // set effect name
+  // ------- set text (based on hierarchy Text > Effect > Fill > Stroke)
+
+  // set type
+  if (textStyle && textStyle.remote) {
+    textToSet = textStyle.name;
+
+    // set effect, fill, and stroke as override(s)
+    if (effectStyle && effectStyle.remote) { subtextToSetArray.push(effectStyle.name); }
+    if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
+    if (fillStyle && fillStyle.remote) { subtextToSetArray.push(cleanColorName(fillStyle.name)); }
+  }
+
+  if (!textToSet && effectStyle && effectStyle.remote) {
+    // set effect name as main text
     textToSet = effectStyle.name;
 
-    // set fill color as an override
-    if (fillStyle && fillStyle.remote) {
-      subtextToSet = cleanColorName(fillStyle.name);
-    }
-  } else if (fillStyle && fillStyle.remote) {
-    // set color as main text (no effect)
-    textToSet = cleanColorName(fillStyle.name);
+    // set fill and stroke color(s) as override(s)
+    if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
+    if (fillStyle && fillStyle.remote) { subtextToSetArray.push(cleanColorName(fillStyle.name)); }
   }
+
+  if (!textToSet && fillStyle && fillStyle.remote) {
+    // set fill color as main text
+    textToSet = cleanColorName(fillStyle.name);
+
+    // set stroke color as override
+    if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
+  }
+
+  if (!textToSet && strokeStyle && strokeStyle.remote) {
+    // set stroke color as main text
+    textToSet = `Stroke: ${cleanColorName(strokeStyle.name)}`;
+  }
+
+  subtextToSet = subtextToSetArray.join(', ');
 
   return {
     textToSet,
@@ -212,11 +244,25 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
   const overridesText: Array<string> = [];
 
   // check for styles
-  const { effectStyleId, fillStyleId } = layer;
+  const {
+    effectStyleId,
+    fillStyleId,
+    strokeStyleId,
+    textStyleId,
+  } = layer;
 
   // set styles text
-  const { textToSet, subtextToSet } = setStyleText({ effectStyleId, fillStyleId });
+  const {
+    textToSet,
+    subtextToSet,
+  } = setStyleText({
+    effectStyleId,
+    fillStyleId,
+    strokeStyleId,
+    textStyleId,
+  });
 
+  // add styles to overrides
   if (textToSet) { overridesText.push(textToSet); }
   if (subtextToSet) { overridesText.push(subtextToSet); }
 
@@ -307,8 +353,8 @@ export default class Identifier {
    * the layer’s `annotationText` settings object: Master Component identification is achieved
    * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
    * `name` and `description` for additional identifying information. If a layer is not
-   * attached to a Master Component, it is checked for an `effectStyleId` and a remote (library)
-   * effect. If found, the effect is labeled as a foundation.
+   * attached to a Master Component, it is checked for remote style IDs. If found, the style(s)
+   * are labeled as Foundation elements or overrides to the main Component.
    *
    * @kind function
    * @name getLibraryName
@@ -335,6 +381,8 @@ export default class Identifier {
       !this.layer.masterComponent
       && !this.layer.effectStyleId
       && !this.layer.fillStyleId
+      && !this.layer.strokeStyleId
+      && !this.layer.textStyleId
     ) {
       result.status = 'error';
       result.messages.log = 'Layer is not connected to a Master Component or library styles';
@@ -366,12 +414,30 @@ export default class Identifier {
       return result;
     }
 
-    // locate shared effect or fill styles
-    if (this.layer.effectStyleId || this.layer.fillStyleId) {
-      const { effectStyleId, fillStyleId } = this.layer;
+    // locate shared effect, fill, stroke, or type styles
+    if (
+      this.layer.effectStyleId
+      || this.layer.fillStyleId
+      || this.layer.strokeStyleId
+      || this.layer.textStyleId
+    ) {
+      const {
+        effectStyleId,
+        fillStyleId,
+        strokeStyleId,
+        textStyleId,
+      } = this.layer;
 
       // set text
-      const { textToSet, subtextToSet } = setStyleText({ effectStyleId, fillStyleId });
+      const {
+        textToSet,
+        subtextToSet,
+      } = setStyleText({
+        effectStyleId,
+        fillStyleId,
+        strokeStyleId,
+        textStyleId,
+      });
 
       if (textToSet) {
         // set `annotationText` on the layer settings as the effect name
