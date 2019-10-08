@@ -14,7 +14,7 @@ import { PLUGIN_NAME } from './constants';
  */
 export default class Messenger {
   event: any;
-  page: any;
+  page: PageNode;
 
   constructor({
     for: event,
