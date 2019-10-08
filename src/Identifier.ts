@@ -46,14 +46,15 @@ const setAnnotationTextSettings = (
   return null;
 };
 
-/** WIP
- * @description Checks the Kit name against a list of known Foundation Kit names
- * and sets `annotationType` appropriately.
+/**
+ * @description Checks the component name for the presence of `☾` or `☼` icons. If neither icon is
+ * found, the component is most-likely a legacy component.
  *
  * @kind function
  * @name isLegacyByName
  * @param {string} name The full name of the Layer.
- * @returns {string} The `annotationType` – either `component` or `style`.
+ *
+ * @returns {boolean} Bool declaring `true` for legacy component and `false` for newer component.
  * @private
  */
 const isLegacyByName = (name: string): boolean => {
@@ -66,12 +67,13 @@ const isLegacyByName = (name: string): boolean => {
 };
 
 /**
- * @description Checks the Kit name against a list of known Foundation Kit names
- * and sets `annotationType` appropriately.
+ * @description Checks the component name against a list of known Foundation names and sets
+ * `annotationType` appropriately.
  *
  * @kind function
  * @name checkNameForType
  * @param {string} name The full name of the Layer.
+ *
  * @returns {string} The `annotationType` – either `component` or `style`.
  * @private
  */
@@ -105,6 +107,7 @@ const checkNameForType = (name: string): 'component' | 'style' => {
  * @kind function
  * @name cleanName
  * @param {string} name The full name of the Layer.
+ *
  * @returns {string} The last segment of the layer name as a string.
  * @private
  */
@@ -126,8 +129,8 @@ const cleanName = (name: string): string => {
 };
 
 /**
- * @description Color names in the library contain more information than necessary:
- * “Blue / Blue-60”. Only use the bit after the last “/”, and change any hyphens to
+ * @description Color names in the library contain more information than necessary for speccing
+ * (i.e. “Blue / Blue-60”) – only use the bit after the last “/”, and change any hyphens to
  * spaces for easier reading.
  *
  * @kind function
@@ -135,6 +138,7 @@ const cleanName = (name: string): string => {
  * @param {string} name The original name of the color
  *
  * @returns {string} The cleaned name of the color for the annotation.
+ * @private
  */
 const cleanColorName = (name: string): string => {
   let cleanedName = name;
@@ -143,20 +147,21 @@ const cleanColorName = (name: string): string => {
   return cleanedName;
 };
 
-/** WIP
- * @description Color names in the library contain more information than necessary:
- * “Blue / Blue-60”. Only use the bit after the last “/”, and change any hyphens to
- * spaces for easier reading.
+/**
+ * @description Set the style (Foundation) text based on applied effect or fill styles. Effect
+ * styles take precedence over fill styles in the hierarchy. Color names (fill styles) are
+ * “cleaned” to remove duplication and hyphens using `cleanColorName`.
  *
  * @kind function
  * @name setStyleText
- * @param {string} name The original name of the color
+ * @param {Object} options Object containing the lookup IDs for effect and/or fill.
  *
  * @returns {string} The cleaned name of the color for the annotation.
+ * @private
  */
 const setStyleText = (options: {
-  effectStyleId: string,
-  fillStyleId: string,
+  effectStyleId?: string,
+  fillStyleId?: string,
 }): {
   textToSet: string,
   subtextToSet: string,
@@ -189,20 +194,21 @@ const setStyleText = (options: {
   };
 };
 
-/** WIP
- * @description Looks through layer overrides and returns a text string based
- * on the override(s) and context.
+/**
+ * @description Looks through a component’s inner layers primarily for Icon layers. Checks those
+ * layers for presence in the master component. If the icon layer cannot be found in the master
+ * it is declared an override. Returns a text string based on the override(s) and context.
  *
  * @kind function
  * @name parseOverrides
- * @param {Object} layer The Figma layer object.
- * @param {Object} page The Figma page object that contains the layer.
- * @param {Object} workingName The top-level layer name.
- * @returns {string} Text containing information about the override(s).
  *
+ * @param {Object} layer The Figma layer object.
+ * @param {Object} workingName The top-level layer name.
+ *
+ * @returns {string} Text containing information about the override(s).
  * @private
  */
-const parseOverrides = (layer, page, workingName = null) => {
+const parseOverrides = (layer: any, workingName: string = null): string => {
   const overridesText: Array<string> = [];
 
   // check for styles
@@ -348,7 +354,7 @@ export default class Identifier {
       const symbolType: string = checkNameForType(masterComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       const textToSet: string = cleanName(masterComponent.name);
-      const subtextToSet = parseOverrides(this.layer, this.page, textToSet);
+      const subtextToSet = parseOverrides(this.layer, textToSet);
 
       // set `textToSet` on the layer settings as the component name
       // set optional `subtextToSet` on the layer settings based on existing overrides
