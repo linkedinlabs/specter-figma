@@ -2,6 +2,7 @@ import {
   getLayerSettings,
   resizeGUI,
   setLayerSettings,
+  toSentenceCase,
 } from './Tools';
 
 // --- private functions
@@ -164,6 +165,7 @@ const setStyleText = (options: {
   fillStyleId?: string,
   strokeStyleId?: string,
   textStyleId?: string,
+  textAlignHorizontal?: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED',
 }): {
   textToSet: string,
   subtextToSet: string,
@@ -173,6 +175,7 @@ const setStyleText = (options: {
     fillStyleId,
     strokeStyleId,
     textStyleId,
+    textAlignHorizontal,
   } = options;
   let textToSet: string = null;
   let subtextToSet: string = null;
@@ -218,6 +221,14 @@ const setStyleText = (options: {
     textToSet = `Stroke: ${cleanColorName(strokeStyle.name)}`;
   }
 
+  // check type for alignment
+  if (textAlignHorizontal && textAlignHorizontal !== 'LEFT') {
+    let textAlignmentOverride: string = null;
+    const textAlignment = toSentenceCase(textAlignHorizontal);
+    textAlignmentOverride = `Align: ${textAlignment}`;
+    subtextToSetArray.push(textAlignmentOverride);
+  }
+
   subtextToSet = subtextToSetArray.join(', ');
 
   return {
@@ -249,6 +260,7 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
     fillStyleId,
     strokeStyleId,
     textStyleId,
+    textAlignHorizontal,
   } = layer;
 
   // set styles text
@@ -260,6 +272,7 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
     fillStyleId,
     strokeStyleId,
     textStyleId,
+    textAlignHorizontal,
   });
 
   // add styles to overrides
@@ -426,6 +439,7 @@ export default class Identifier {
         fillStyleId,
         strokeStyleId,
         textStyleId,
+        textAlignHorizontal,
       } = this.layer;
 
       // set text
@@ -437,6 +451,7 @@ export default class Identifier {
         fillStyleId,
         strokeStyleId,
         textStyleId,
+        textAlignHorizontal,
       });
 
       if (textToSet) {
