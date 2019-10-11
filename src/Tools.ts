@@ -88,6 +88,26 @@ const hexToDecimalRgb = (hexColor: string): {
 };
 
 /**
+ * @description Takes a string and converts everything except for the first alpha-letter to
+ * lowercase. It also capitalizes the first alpha-letter.
+ *
+ * @kind function
+ * @name toSentenceCase
+ * @param {string} anyString String of text to title-case.
+ *
+ * @returns {string} The title-cased string.
+ */
+const toSentenceCase = (anyString: string): string => {
+  const lowerCaseString = anyString.toLowerCase();
+  const titleCaseString = lowerCaseString.replace(
+    /[a-z]/i,
+    firstLetter => firstLetter.toUpperCase(),
+  ).trim();
+
+  return titleCaseString;
+};
+
+/**
  * @description Takes a layer object and traverses parent relationships until the top-level
  * `FRAME_TYPES.main` layer is found. Returns the frame layer.
  *
@@ -239,5 +259,6 @@ export {
   hexToDecimalRgb,
   resizeGUI,
   setLayerSettings,
+  toSentenceCase,
   updateArray,
 };
