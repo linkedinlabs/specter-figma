@@ -1,29 +1,10 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
-import Crawler from './Crawler';
-import Messenger from './Messenger';
-import Painter from './Painter';
-import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
-
-/**
- * @description A shared helper function to set up in-UI messages and the logger.
- *
- * @kind function
- * @name assemble
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {Object} Contains an object with the current document as a javascript object,
- * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
- */
-const assemble = (context = null) => {
-  const page = context.currentPage;
-  const { selection } = context.currentPage;
-  const messenger = new Messenger({ for: context, in: page });
-
-  return {
-    messenger,
-    page,
-    selection,
-  };
-};
+import App from './App';
+import {
+  CLOSE_PLUGIN_MSG,
+  GUI_SETTINGS,
+  TYPEFACES,
+} from './constants';
 
 // GUI management -------------------------------------------------
 
@@ -32,12 +13,18 @@ const assemble = (context = null) => {
  *
  * @kind function
  * @name closeGUI
+ * @param {booelan} suppress Attempt not to show users any lingering error messages.
+ * Setting to `false` within `async` functions ensures the plugin actually closes.
  *
  * @throws {CLOSE_PLUGIN_MSG} Throws the command to close the plugin.
  */
-const closeGUI = (): void => {
-  // close the UI
-  throw CLOSE_PLUGIN_MSG;
+const closeGUI = (suppress: boolean = true): void => {
+  if (suppress) {
+    // close the UI while suppressing error messages
+    throw CLOSE_PLUGIN_MSG;
+  }
+  // close the UI without suppressing error messages
+  return figma.closePlugin();
 };
 
 /**
@@ -58,140 +45,60 @@ const showGUI = (): void => {
   return null;
 };
 
-// invoked commands -------------------------------------------------
-
-/** WIP
- * @description Identifies and annotates a selected layer in a Sketch file.
- *
- * @kind function
- * @name annotateLayer
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected.
- */
-const annotateLayer = (shouldTerminate: boolean): void => {
-  console.log('action: annotateLayer');
-
-  if (shouldTerminate) {
-    closeGUI();
-  }
-  return null;
-};
-
-/** WIP
- * @description Annotates a selected layer in a Sketch file with user input.
- *
- * @kind function
- * @name annotateLayerCustom
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected or
- * if multiple layers are selected.
- */
-const annotateLayerCustom = (shouldGloseGUI: boolean): void => {
-  console.log('action: annotateLayerCustom');
-
-  if (shouldGloseGUI) {
-    closeGUI();
-  }
-  return null;
-};
-
-/** WIP
- * @description Annotates a selection of layers in a Sketch file with the
- * spacing number (“IS-X”) based on the gap between the two layers.
- *
- * @kind function
- * @name annotateMeasurement
- *
- * @param {Object} context The current context (event) received from Sketch.
- * @returns {null} Shows a Toast in the UI if nothing is selected or
- * if more than two layers are selected.
- */
-const annotateMeasurement = (shouldTerminate: boolean): void => {
-  console.log('action: annotateMeasurement');
-
-  if (shouldTerminate) {
-    closeGUI();
-  }
-  return null;
-};
-
-/** WIP
- * @description Draws a semi-transparent “Bounding Box” around any selected elements.
- *
- * @kind function
- * @name drawBoundingBox
- *
- * @param {Object} context The current context (event) received from Figma.
- * @returns {null} Shows a Toast in the UI if nothing is selected.
- */
-const drawBoundingBox = (shouldTerminate: boolean = true): void => {
-  const {
-    messenger,
-    page,
-    selection,
-  } = assemble(figma);
-
-  // need a selected layer to annotate it
-  if (selection === null || selection.length === 0) {
-    messenger.log('Draw bounding box: nothing selected');
-    return messenger.toast('At least one layer must be selected');
-  }
-
-  // grab the frame from the selection
-  const crawler = new Crawler({ for: selection });
-  const layer = crawler.first();
-  const position = crawler.position();
-  const painter = new Painter({ for: layer, in: page });
-
-  // draw the bounding box (if position exists)
-  let paintResult = null;
-  if (position) {
-    paintResult = painter.addBoundingBox(position);
-  }
-
-  // read the response from Painter; log and display message(s)
-  messenger.handleResult(paintResult);
-
-  if (shouldTerminate) {
-    closeGUI();
-  }
-  return null;
-};
-
 // watch for commands -------------------------------------------------
 
-/** WIP
- * @description Takes a unique string (`type`) and calls the corresponding action.
+/**
+ * @description Takes a unique string (`type`) and calls the corresponding action
+ * in the App class. Also does some housekeeping duties such as pre-loading typefaces,
+ * logging errors, or managing the GUI.
  *
  * @kind function
- * @name dispatch
- * @param {object} action An object comprised of `type`, a string representing
+ * @name dispatcher
+ * @param {Object} action An object comprised of `type`, a string representing
  * the action received from the GUI and `visual` a boolean indicating if the
  * command came from the GUI or the menu.
  * @returns {null}
  */
-const dispatch = (action: {
+const dispatcher = (action: {
   type: string,
   visual: boolean,
 }): void => {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
-  // run the action based on type
+  // pass along some GUI management and navigation functions to the App class
+  const app = new App({
+    closeGUI,
+    dispatcher,
+    shouldTerminate,
+    showGUI,
+  });
+
+  const runAnnotate = async () => {
+    // typefaces should be loaded before annotating with text
+    await figma.loadFontAsync(TYPEFACES.primary);
+    await app.annotateLayer();
+  };
+
+  const runAnnotateCustom = async () => {
+    // typefaces should be loaded before annotating with text
+    await figma.loadFontAsync(TYPEFACES.primary);
+    await app.annotateLayerCustom();
+  };
+
+  // run the action in the App class based on type
   switch (action.type) {
     case 'annotate':
-      annotateLayer(shouldTerminate);
+      runAnnotate();
       break;
     case 'annotate-custom':
-      annotateLayerCustom(shouldTerminate);
+      runAnnotateCustom();
       break;
     case 'bounding':
-      drawBoundingBox(shouldTerminate);
+      app.drawBoundingBox();
       break;
     case 'measure':
-      annotateMeasurement(shouldTerminate);
+      app.annotateMeasurement();
       break;
     default:
       showGUI();
@@ -199,6 +106,7 @@ const dispatch = (action: {
 
   return null;
 };
+export default dispatcher;
 
 /**
  * @description Acts as the main wrapper function for the plugin. Run by default
@@ -212,21 +120,23 @@ const dispatch = (action: {
 const main = (): void => {
   // watch menu commands -------------------------------------------------
   if (figma.command) {
-    dispatch({
+    dispatcher({
       type: figma.command,
       visual: false,
     });
   }
 
   // watch GUI action clicks -------------------------------------------------
-  figma.ui.onmessage = (msg: { type: string }): void => {
-    if (msg.type) {
-      dispatch({
-        type: msg.type,
+  figma.ui.onmessage = (msg: { navType: string }): void => {
+    // watch for nav actions and send to `dispatcher`
+    if (msg.navType) {
+      dispatcher({
+        type: msg.navType,
         visual: true,
       });
     }
 
+    // ignore everything else
     return null;
   };
 };
@@ -243,12 +153,12 @@ const main = (): void => {
 // watch for close in a way that prevents unnecessary errors in the UI
 try {
   main();
-} catch (e) {
-  if (e === CLOSE_PLUGIN_MSG) {
+} catch (err) {
+  if (err === CLOSE_PLUGIN_MSG) {
     figma.closePlugin();
   } else {
     // If we caught any other kind of exception,
     // it's a real error and should be passed along.
-    throw e;
+    throw err;
   }
 }
