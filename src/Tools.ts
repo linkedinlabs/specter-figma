@@ -15,35 +15,36 @@ const hexRgb = require('hex-rgb');
  *
  * @kind function
  * @name updateArray
+ *
  * @param {string} key String representing the top-level area of the array to modify.
  * @param {Object} item Object containing the new bit of data to add or
  * remove (must include an `id` string for comparison).
  * @param {Array} array The array to be modified.
  * @param {string} action Constant string representing the action to take (`add` or `remove`).
+ *
  * @returns {Object} The modified array.
  * @private
  */
 const updateArray = (
   key: string,
-  item: any,
+  item: { id: string },
   array: Array<any>,
-  action: string = 'add',
+  action: 'add' | 'remove' = 'add',
 ) => {
+  let updatedItems = null;
   const updatedArray = array;
 
-  if (action === 'add') {
-    if (!updatedArray[key]) {
-      updatedArray[key] = [];
-    }
-
-    updatedArray[key].push(item);
+  // initialize the key if it does not exist
+  if (!updatedArray[key]) {
+    updatedArray[key] = [];
   }
 
-  if (action === 'remove') {
-    let updatedItems = null;
-    // find the items updatedArray index of the item to remove
-    const itemIndex: number = updatedArray[key].findIndex(foundItem => (foundItem.id === item.id));
+  // find the index of a pre-existing `id` match on the array
+  const itemIndex: number = updatedArray[key].findIndex(foundItem => (foundItem.id === item.id));
 
+  // if a match exists, remove it
+  // even if the action is `add`, always remove the existing entry to prevent duplicates
+  if (itemIndex > -1) {
     updatedItems = [
       ...updatedArray[key].slice(0, itemIndex),
       ...updatedArray[key].slice(itemIndex + 1),
@@ -51,6 +52,12 @@ const updateArray = (
 
     updatedArray[key] = updatedItems;
   }
+
+  // if the `action` is `add`, append the new `item` to the array
+  if (action === 'add') {
+    updatedArray[key].push(item);
+  }
+
   return updatedArray;
 };
 
@@ -78,6 +85,26 @@ const hexToDecimalRgb = (hexColor: string): {
 
   const decimalRgb: { r: number, g: number, b: number } = { r, g, b };
   return decimalRgb;
+};
+
+/**
+ * @description Takes a string and converts everything except for the first alpha-letter to
+ * lowercase. It also capitalizes the first alpha-letter.
+ *
+ * @kind function
+ * @name toSentenceCase
+ * @param {string} anyString String of text to title-case.
+ *
+ * @returns {string} The title-cased string.
+ */
+const toSentenceCase = (anyString: string): string => {
+  const lowerCaseString = anyString.toLowerCase();
+  const titleCaseString = lowerCaseString.replace(
+    /[a-z]/i,
+    firstLetter => firstLetter.toUpperCase(),
+  ).trim();
+
+  return titleCaseString;
 };
 
 /**
@@ -232,5 +259,6 @@ export {
   hexToDecimalRgb,
   resizeGUI,
   setLayerSettings,
+  toSentenceCase,
   updateArray,
 };

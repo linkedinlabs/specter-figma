@@ -2,6 +2,7 @@ import {
   getLayerSettings,
   resizeGUI,
   setLayerSettings,
+  toSentenceCase,
 } from './Tools';
 
 // --- private functions
@@ -47,26 +48,51 @@ const setAnnotationTextSettings = (
 };
 
 /**
- * @description Checks the Kit name against a list of known Foundation Kit names
- * and sets `annotationType` appropriately.
+ * @description Checks the component name for the presence of `☾` or `☼` icons. If neither icon is
+ * found, the component is most-likely a legacy component.
+ *
+ * @kind function
+ * @name isLegacyByName
+ * @param {string} name The full name of the Layer.
+ *
+ * @returns {boolean} Bool declaring `true` for legacy component and `false` for newer component.
+ * @private
+ */
+const isLegacyByName = (name: string): boolean => {
+  let isLegacy: boolean = true;
+
+  isLegacy = !name.includes('☾');
+  if (isLegacy) { isLegacy = !name.includes('☼'); }
+
+  return isLegacy;
+};
+
+/**
+ * @description Checks the component name against a list of known Foundation names and sets
+ * `annotationType` appropriately.
  *
  * @kind function
  * @name checkNameForType
  * @param {string} name The full name of the Layer.
+ *
  * @returns {string} The `annotationType` – either `component` or `style`.
  * @private
  */
-const checkNameForType = (name: string): string => {
-  // TKTK
-  let annotationType: string = 'component';
-  // grab the first segment of the name (before the first “/”) – top-level Kit name
-  let libraryName: string = name.split('/')[0]; // eslint-disable-line prefer-destructuring
+const checkNameForType = (name: string): 'component' | 'style' => {
+  let annotationType: 'component' | 'style' = 'component';
 
-  // set up some known exceptions (remove the text that would trigger a type change)
-  libraryName = libraryName.replace('(Dual Icons)', '');
-
-  // kit name substrings, exclusive to Foundations
+  // name substrings, exclusive to Foundations
   const foundations: Array<string> = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
+  let libraryName: string = name;
+
+  // process checks based on whether or not the source is from a legacy or new library
+  if (isLegacyByName(name)) {
+    // grab the first segment of the name (before the first “/”) – top-level Kit name
+    libraryName = name.split('/')[0]; // eslint-disable-line prefer-destructuring
+
+    // set up some known exceptions (remove the text that would trigger a type change)
+    libraryName = libraryName.replace('(Dual Icons)', '');
+  }
 
   // check if one of the foundation substrings exists in the `libraryName`
   if (foundations.some(foundation => libraryName.indexOf(foundation) >= 0)) {
@@ -82,103 +108,223 @@ const checkNameForType = (name: string): string => {
  * @kind function
  * @name cleanName
  * @param {string} name The full name of the Layer.
+ *
  * @returns {string} The last segment of the layer name as a string.
  * @private
  */
 const cleanName = (name: string): string => {
-  // take only the last segment of the name (after a “/”, if available)
-  // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-  // let cleanedName: string = name.split(/(?:[^w])(\/)/).pop();
-  let cleanedName: string = name; // TKTK
-  // otherwise, fall back to the kit layer name
+  let cleanedName: string = name;
+
+  if (isLegacyByName(name)) {
+    // take only the last segment of the name (after a “/”, if available)
+    // ignore segments that begin with a “w” as-in “…Something w/ Icon”
+    cleanedName = name.split(/(?:[^w])(\/)/).pop();
+  } else {
+    cleanedName = name.replace('☾ ', '');
+    cleanedName = name.replace('☼ ', '');
+  }
+
+  // otherwise, fall back to the full layer name
   cleanedName = !cleanedName ? name : cleanedName;
   return cleanedName;
 };
 
-// /** WIP TKTK
-//  * @description Looks through layer overrides and returns a text string based
-//  * on the override(s) and context.
-//  *
-//  * @kind function
-//  * @name parseOverrides
-//  * @param {Object} layer The Figma js layer object.
-//  * @param {Object} document The Figma document object that contains the layer.
-//  * @param {Object} workingName The top-level layer name.
-//  * @returns {string} Text containing information about the override(s).
-//  *
-//  * @private
-//  */
-// const parseOverrides = (layer, document, workingName = null) => {
-//   const overridesText: Array<string> = [];
+/**
+ * @description Color names in the library contain more information than necessary for speccing
+ * (i.e. “Blue / Blue-60”) – only use the bit after the last “/”, and change any hyphens to
+ * spaces for easier reading.
+ *
+ * @kind function
+ * @name cleanColorName
+ * @param {string} name The original name of the color
+ *
+ * @returns {string} The cleaned name of the color for the annotation.
+ * @private
+ */
+const cleanColorName = (name: string): string => {
+  let cleanedName = name;
+  cleanedName = cleanedName.split(' / ').pop();
+  cleanedName = cleanedName.replace(/-/g, ' ');
+  return cleanedName;
+};
 
-//   // iterate available overrides - based on current Lingo naming schemes and may break
-//   // as those change or are updated.
-//   fromNative(layer).overrides.forEach((override) => {
-//     // only worry about an editable override that has changed and is based on a symbol
-//     if (
-//       override.editable
-//       && !override.isDefault
-//       && override.id.includes('symbolID')
-//     ) {
-//       // current override type/category (always last portion of the path)
-//       const overrideTypeId: string = override.path.split('/').pop();
-//       const overrideType: string = document.getLayerWithID(overrideTypeId);
-//       const overrideTypeName: string = overrideType.name;
+/**
+ * @description Set the style (Foundation) text based on applied effect or fill styles. Effect
+ * styles take precedence over fill styles in the hierarchy. Color names (fill styles) are
+ * “cleaned” to remove duplication and hyphens using `cleanColorName`.
+ *
+ * @kind function
+ * @name setStyleText
+ * @param {Object} options Object containing the lookup IDs for effect and/or fill.
+ *
+ * @returns {string} The cleaned name of the color for the annotation.
+ * @private
+ */
+const setStyleText = (options: {
+  effectStyleId?: string,
+  fillStyleId?: string,
+  strokeStyleId?: string,
+  textStyleId?: string,
+  textAlignHorizontal?: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED',
+}): {
+  textToSet: string,
+  subtextToSet: string,
+} => {
+  const {
+    effectStyleId,
+    fillStyleId,
+    strokeStyleId,
+    textStyleId,
+    textAlignHorizontal,
+  } = options;
+  let textToSet: string = null;
+  let subtextToSet: string = null;
+  const subtextToSetArray: Array<string> = [];
 
-//       // current override master symbol (ID is the override value)
-//       const overrideSymbol: string = document.getSymbolMasterWithID(override.value);
-//       // grab name (sometimes it does not exist if “None” is a changed override)
-//       const overrideName: string = overrideSymbol ? overrideSymbol.name : null;
+  // load the styles
+  const effectStyle: BaseStyle = figma.getStyleById(effectStyleId);
+  const fillStyle: BaseStyle = figma.getStyleById(fillStyleId);
+  const strokeStyle: BaseStyle = figma.getStyleById(strokeStyleId);
+  const textStyle: BaseStyle = figma.getStyleById(textStyleId);
 
-//       if (overrideName) {
-//         // look for top-level overrides and Icon overrides - based on
-//         // parsing the text of an `overrideTypeName` and making some
-//         // comparisons and exceptions
-//         if (
-//           (
-//             overrideTypeName.toLowerCase().includes('icon')
-//             && !overrideTypeName.toLowerCase().includes('color')
-//             && !overrideTypeName.toLowerCase().includes('🎨')
-//             && !overrideTypeName.toLowerCase().includes('button')
-//           )
-//           || overrideTypeName.toLowerCase() === 'checkbox'
-//           || overrideTypeName.toLowerCase() === 'radio'
-//           || overrideTypeName.toLowerCase() === 'type'
-//           || overrideTypeName.toLowerCase().includes('pebble')
-//           || !override.path.includes('/') // excluding “/” gives us top-level overrides
-//         ) {
-//           // default icon name (usually last element of the name, separated by “/”)
-//           let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
-//           overrideValueName = overrideValueName.replace(`${workingName}`, '');
+  // ------- set text (based on hierarchy Text > Effect > Fill > Stroke)
 
-//           // ---------- set up formatting exceptions
-//           // parsing exception for Ghost Entity symbols
-//           if (overrideTypeName.toLowerCase().includes('ghost')) {
-//             // in some kits, Ghost naming scheme is fine but in the Web kit it
-//             // is reversed: “…/Article Ghost/3” instead of “…/3/Article Ghost”
-//             if (Number(overrideValueName) === parseInt(overrideValueName, 10)) {
-//               overrideValueName = overrideName.split('/').reverse()[1]; // eslint-disable-line prefer-destructuring
-//             }
-//           }
+  // set type
+  if (textStyle && textStyle.remote) {
+    textToSet = textStyle.name;
 
-//           // update `overridesText`
-//           overridesText.push(overrideValueName);
-//         }
-//       }
-//     }
-//   });
+    // set effect, fill, and stroke as override(s)
+    if (effectStyle && effectStyle.remote) { subtextToSetArray.push(effectStyle.name); }
+    if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
+    if (fillStyle && fillStyle.remote) { subtextToSetArray.push(cleanColorName(fillStyle.name)); }
+  }
 
-//   let setOverridesText: string = null;
-//   if (overridesText.length > 0) {
-//     let label: string = 'Override';
-//     if (overridesText.length > 1) {
-//       label = 'Overrides';
-//     }
-//     setOverridesText = `${label}: ${overridesText.join(', ')}`;
-//   }
+  if (!textToSet && effectStyle && effectStyle.remote) {
+    // set effect name as main text
+    textToSet = effectStyle.name;
 
-//   return setOverridesText;
-// };
+    // set fill and stroke color(s) as override(s)
+    if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
+    if (fillStyle && fillStyle.remote) { subtextToSetArray.push(cleanColorName(fillStyle.name)); }
+  }
+
+  if (!textToSet && fillStyle && fillStyle.remote) {
+    // set fill color as main text
+    textToSet = cleanColorName(fillStyle.name);
+
+    // set stroke color as override
+    if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
+  }
+
+  if (!textToSet && strokeStyle && strokeStyle.remote) {
+    // set stroke color as main text
+    textToSet = `Stroke: ${cleanColorName(strokeStyle.name)}`;
+  }
+
+  // check type for alignment
+  if (textAlignHorizontal && textAlignHorizontal !== 'LEFT') {
+    let textAlignmentOverride: string = null;
+    const textAlignment = toSentenceCase(textAlignHorizontal);
+    textAlignmentOverride = `Align: ${textAlignment}`;
+    subtextToSetArray.push(textAlignmentOverride);
+  }
+
+  subtextToSet = subtextToSetArray.join(', ');
+
+  return {
+    textToSet,
+    subtextToSet,
+  };
+};
+
+/**
+ * @description Looks through a component’s inner layers primarily for Icon layers. Checks those
+ * layers for presence in the master component. If the icon layer cannot be found in the master
+ * it is declared an override. Returns a text string based on the override(s) and context.
+ *
+ * @kind function
+ * @name parseOverrides
+ *
+ * @param {Object} layer The Figma layer object.
+ * @param {Object} workingName The top-level layer name.
+ *
+ * @returns {string} Text containing information about the override(s).
+ * @private
+ */
+const parseOverrides = (layer: any, workingName: string = null): string => {
+  const overridesText: Array<string> = [];
+
+  // check for styles
+  const {
+    effectStyleId,
+    fillStyleId,
+    strokeStyleId,
+    textStyleId,
+    textAlignHorizontal,
+  } = layer;
+
+  // set styles text
+  const {
+    textToSet,
+    subtextToSet,
+  } = setStyleText({
+    effectStyleId,
+    fillStyleId,
+    strokeStyleId,
+    textStyleId,
+    textAlignHorizontal,
+  });
+
+  // add styles to overrides
+  if (textToSet) { overridesText.push(textToSet); }
+  if (subtextToSet) { overridesText.push(subtextToSet); }
+
+  // iterate available inner layers - based on legacy Lingo naming schemes and may break.
+  layer.findOne((node) => {
+    if (node.visible) {
+      // current override full name
+      const overrideTypeName: string = node.name;
+
+      // grab cleanned name (last portion)
+      const overrideName: string = cleanName(node.name);
+
+      if (overrideName) {
+        // look for Icon overrides - based on parsing the text of an `overrideTypeName` and
+        // making some comparisons and exceptions – if the override name exists in the
+        // master component, we ignore it as it’s likely not an actual override
+        if (
+          overrideTypeName.toLowerCase().includes('icon')
+          && !overrideTypeName.toLowerCase().includes('color')
+          && !overrideTypeName.toLowerCase().includes('🎨')
+          && !overrideTypeName.toLowerCase().includes('button')
+          && overrideTypeName.toLowerCase() !== 'icon'
+          && !layer.masterComponent.findOne(mcNode => mcNode.name === overrideTypeName)
+        ) {
+          // default icon name (usually last element of the name, separated by “/”)
+          let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
+          overrideValueName = overrideValueName.replace(`${workingName}`, '');
+
+          // update `overridesText`
+          const existingIndex: number = overridesText.findIndex(text => text === overrideValueName);
+          if (existingIndex < 0) {
+            overridesText.push(overrideValueName);
+          }
+        }
+      }
+    }
+  });
+
+  let setOverridesText: string = null;
+  if (overridesText.length > 0) {
+    let label: string = 'Override';
+    if (overridesText.length > 1) {
+      label = 'Overrides';
+    }
+    setOverridesText = `${label}: ${overridesText.join(', ')}`;
+  }
+
+  return setOverridesText;
+};
 
 // --- main Identifier class function
 /**
@@ -216,10 +362,12 @@ export default class Identifier {
   }
 
   /**
-   * @description Identifies the master symbol name of a component and adds the name to the layer’s
-   * `annotationText` settings object: The identification is achieved by ensuring a
-   * `masterComponent` is attached to the instance and then parsing the master’s `name` and
-   * `description` for additional identifying information.
+   * @description Identifies the master name of a component OR the effect and adds the name to
+   * the layer’s `annotationText` settings object: Master Component identification is achieved
+   * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
+   * `name` and `description` for additional identifying information. If a layer is not
+   * attached to a Master Component, it is checked for remote style IDs. If found, the style(s)
+   * are labeled as Foundation elements or overrides to the main Component.
    *
    * @kind function
    * @name getLibraryName
@@ -246,6 +394,8 @@ export default class Identifier {
       !this.layer.masterComponent
       && !this.layer.effectStyleId
       && !this.layer.fillStyleId
+      && !this.layer.strokeStyleId
+      && !this.layer.textStyleId
     ) {
       result.status = 'error';
       result.messages.log = 'Layer is not connected to a Master Component or library styles';
@@ -259,18 +409,16 @@ export default class Identifier {
     if (this.layer.masterComponent) {
       const { masterComponent } = this.layer;
 
-      // temp
       this.messenger.log(`Master Component name for layer: ${masterComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
       const symbolType: string = checkNameForType(masterComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       const textToSet: string = cleanName(masterComponent.name);
-      // const subtextToSet = parseOverrides(this.layer, this.page, textToSet); // TKTK
-      const subtextToSet: string = null; // temporary
+      const subtextToSet = parseOverrides(this.layer, textToSet);
 
-      // set `annotationText` on the layer settings as the kit symbol name
-      // set option `subtextToSet` on the layer settings based on existing overrides
+      // set `textToSet` on the layer settings as the component name
+      // set optional `subtextToSet` on the layer settings based on existing overrides
       setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
 
       // log the official name alongside the original layer name and set as success
@@ -279,28 +427,48 @@ export default class Identifier {
       return result;
     }
 
-    // // locate a shared style in Lingo TKTK
-    // if (sharedStyleId) {
-    //   const kitStyle = lingoData.layerStyles[sharedStyleId] || lingoData.textStyles[sharedStyleId];
+    // locate shared effect, fill, stroke, or type styles
+    if (
+      this.layer.effectStyleId
+      || this.layer.fillStyleId
+      || this.layer.strokeStyleId
+      || this.layer.textStyleId
+    ) {
+      const {
+        effectStyleId,
+        fillStyleId,
+        strokeStyleId,
+        textStyleId,
+        textAlignHorizontal,
+      } = this.layer;
 
-    //   if (kitStyle) {
-    //     // take only the last segment of the name (after a “/”, if available)
-    //     const textToSet: string = cleanName(kitStyle.name);
+      // set text
+      const {
+        textToSet,
+        subtextToSet,
+      } = setStyleText({
+        effectStyleId,
+        fillStyleId,
+        strokeStyleId,
+        textStyleId,
+        textAlignHorizontal,
+      });
 
-    //     // set `annotationText` on the layer settings as the kit layer name
-    //     setAnnotationTextSettings(textToSet, null, 'style', this.layer);
+      if (textToSet) {
+        // set `annotationText` on the layer settings as the effect name
+        setAnnotationTextSettings(textToSet, subtextToSet, 'style', this.layer.id, this.page);
 
-    //     // log the official name alongside the original layer name and set as success
-    //     result.status = 'success';
-    //     result.messages.log = `Style Name in Lingo Kit for “${this.layer.name}” is “${textToSet}”`;
-    //     return result;
-    //   }
-    // }
+        // log the official name alongside the original layer name and set as success
+        result.status = 'success';
+        result.messages.log = `Style Name in design library for “${this.layer.name}” is “${textToSet}”`;
+        return result;
+      }
+    }
 
-    // could not find a matching layer in the Lingo Kit
+    // could not find a matching layer in a connected design library
     result.status = 'error';
-    result.messages.log = `${this.layer.id} was not found in a connected Lingo Kit`;
-    result.messages.toast = '😢 This layer could not be found in a connected Lingo Kit.';
+    result.messages.log = `${this.layer.id} was not found in a connected design library`;
+    result.messages.toast = '😢 This layer could not be found in a connected design library.';
     return result;
   }
 
