@@ -16,7 +16,7 @@
       "name": "Annotate",
         "menu": [
           {
-            "name": "Lookup Annotation",
+            "name": "Set Auto-Annotation",
             "command": "annotate"
           },
           {
@@ -26,8 +26,32 @@
         ]
     },
     {
-      "name": "Set Measurement",
-      "command": "measure"
+      "name": "Spacing & Dimensions",
+        "menu": [
+          {
+            "name": "Set Auto-Measurement",
+            "command": "measure"
+          },
+          {
+            "separator": true
+          },
+          {
+            "name": "Set Spacing: ← Left",
+            "command": "annotate-spacing-left"
+          },
+          {
+            "name": "Set Spacing: → Right",
+            "command": "annotate-spacing-right"
+          },
+          {
+            "name": "Set Spacing: ↑ Top",
+            "command": "annotate-spacing-top"
+          },
+          {
+            "name": "Set Spacing: ↓ Bottom",
+            "command": "annotate-spacing-bottom"
+          }
+        ]
     },
     {
       "name": "Draw Bounding Box",

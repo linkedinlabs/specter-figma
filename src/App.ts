@@ -9,8 +9,8 @@ import Painter from './Painter';
  * @kind function
  * @name assemble
  * @param {Object} context The current context (event) received from Figma.
- * @returns {Object} Contains an object with the current document as a javascript object,
- * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
+ * @returns {Object} Contains an object with the current page as a javascript object,
+ * a messenger instance, and a selection array (if applicable).
  */
 const assemble = (context: any = null) => {
   const page = context.currentPage;
@@ -71,6 +71,8 @@ export default class App {
       selection,
     } = assemble(figma);
 
+    let shouldTerminateLocal = this.shouldTerminate;
+
     // need a selected layer to annotate it
     if (selection === null || selection.length === 0) {
       messenger.log('Annotate layer: nothing selected');
@@ -81,7 +83,7 @@ export default class App {
     const layers = new Crawler({ for: selection }).all();
     const multipleLayers = (layers.length > 1);
 
-    layers.forEach((layer) => {
+    layers.forEach((layer: BaseNode) => {
       // set up Identifier instance for the layer
       const layerToAnnotate = new Identifier({
         for: layer,
@@ -119,6 +121,12 @@ export default class App {
 
         if (getLibraryNameResult.status === 'error') {
           if (!multipleLayers) {
+            // show the GUI if we are annotating a single custom layer
+            if (shouldTerminateLocal) {
+              shouldTerminateLocal = false;
+              this.showGUI();
+            }
+
             const setText = (callback: Function) => layerToAnnotate.setText(callback);
             const handleSetTextResult = (setTextResult: {
               status: 'error' | 'success',
@@ -135,6 +143,11 @@ export default class App {
 
               // draw the annotation
               drawAnnotation(hasText);
+
+              // close the GUI if it started closed
+              if (this.shouldTerminate && !shouldTerminateLocal) {
+                this.closeGUI(false);
+              }
             };
 
             // set the custom text
@@ -155,7 +168,7 @@ export default class App {
       return null;
     });
 
-    if (this.shouldTerminate) {
+    if (shouldTerminateLocal) {
       this.closeGUI(false);
     }
     return null;
@@ -240,9 +253,12 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Annotates a selection of layers in a Figma file with the
-   * spacing number (“IS-X”) based on the gap between the two layers.
+  /**
+   * @description If two layers are selected: annotates the selection with the
+   * spacing number (“IS-X”) based on either the gap between the two layers or, if they
+   * are overlapping, the 4 directions of overlap (top, bottom, right, and left). If
+   * one layer is selected: annotates the height and width of the selected layer
+   * in “dp” (digital points) units.
    *
    * @kind function
    * @name annotateMeasurement
@@ -251,10 +267,101 @@ export default class App {
    * if more than two layers are selected.
    */
   annotateMeasurement() {
-    console.log('action: annotateMeasurement'); // eslint-disable-line no-console
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected layer to annotate it
+    if (selection === null || selection.length > 2) {
+      return messenger.toast('One or two layers must be selected');
+    }
+
+    // grab the gap position from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
+
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
+
+    // draw the spacing annotation
+    // (if gap position exists or layers are overlapped)
+    let paintResult = null;
+    if (selection.length === 2) {
+      const gapPosition = crawler.gapPosition();
+      let overlapPositions = null;
+      if (gapPosition) {
+        paintResult = painter.addGapMeasurement(gapPosition);
+      } else {
+        overlapPositions = crawler.overlapPositions();
+        paintResult = painter.addOverlapMeasurements(overlapPositions);
+      }
+    }
+
+    if (selection.length === 1) {
+      paintResult = painter.addDimMeasurement();
+    }
+
+    // read the response from Painter; log and display message(s)
+    messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
-      this.closeGUI();
+      this.closeGUI(false);
+    }
+    return null;
+  }
+
+  /**
+   * @description Annotates the selection with the spacing number (“IS-X”) based on either
+   * the gap between the two layers or, if they are overlapping, the 4 directions of overlap
+   * (top, bottom, right, and left).
+   *
+   * @kind function
+   * @name annotateSpacingOnly
+   * @param {string} direction An optional string representing the annotation direction.
+   * Valid inputs are `top`, `bottom`, `right` (default), and `left`.
+   * @returns {null} Shows a Toast in the UI if nothing is selected or
+   * if more than two layers are selected.
+   */
+  annotateSpacingOnly(direction: 'top' | 'bottom' | 'left' | 'right' = 'right') {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected layer to annotate it
+    if (selection === null || selection.length !== 2) {
+      return messenger.toast('Two layers must be selected');
+    }
+
+    // grab the gap position from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
+
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
+
+    // draw the spacing annotation
+    // (if gap position exists or layers are overlapped)
+    let paintResult = null;
+    if (selection.length === 2) {
+      const overlapPositions = crawler.overlapPositions();
+
+      if (overlapPositions) {
+        const directions = [direction];
+        paintResult = painter.addOverlapMeasurements(overlapPositions, directions);
+      } else {
+        return messenger.toast('The selected layers need to overlap');
+      }
+    }
+
+    // read the response from Painter; log and display message(s)
+    messenger.handleResult(paintResult);
+
+    if (this.shouldTerminate) {
+      this.closeGUI(false);
     }
     return null;
   }
@@ -280,7 +387,7 @@ export default class App {
       return messenger.toast('At least one layer must be selected');
     }
 
-    // grab the frame from the selection
+    // grab the position from the selection
     const crawler = new Crawler({ for: selection });
     const layer = crawler.first();
     const position = crawler.position();

@@ -103,6 +103,46 @@ const findFrame = (layer: any) => {
 };
 
 /**
+ * @description Compensates for a mix of groups and non-groups when determining a
+ * layer index. Grouped layers are parsed to a decimal value that includes the final
+ * parent Group index.
+ *
+ * @kind function
+ * @name getRelativeIndex
+ * @param {Object} layer The Figma layer.
+ * @returns {number} The index.
+ * @private
+ */
+const getRelativeIndex = (layer): number => {
+  const getIndex = (layerSet, comparisonLayer): number => {
+    const index = layerSet.findIndex(node => node === comparisonLayer);
+    return index;
+  };
+
+  const parentChildren = layer.parent.children;
+  let layerIndex: number = getIndex(parentChildren, layer);
+
+  const innerLayerIndex = layerIndex;
+  let parentGroupIndex: number = null;
+
+  let { parent } = layer;
+  // loop through each parent and adjust the coordinates
+  if (parent) {
+    while (parent.type === FRAME_TYPES.group) {
+      const parentParentChildren = parent.parent.children;
+      parentGroupIndex = getIndex(parentParentChildren, parent);
+      parent = parent.parent; // eslint-disable-line prefer-destructuring
+    }
+
+    if (parentGroupIndex !== null) {
+      layerIndex = parseFloat(`${parentGroupIndex}.${innerLayerIndex}`);
+    }
+  }
+
+  return layerIndex;
+};
+
+/**
  * @description Takes a Figma page object and a `layerId` and uses the Figma API’s
  * `getPluginData` to extract and return a specific layer’s settings.
  *
@@ -188,6 +228,7 @@ const resizeGUI = (
 export {
   findFrame,
   getLayerSettings,
+  getRelativeIndex,
   hexToDecimalRgb,
   resizeGUI,
   setLayerSettings,
