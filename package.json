@@ -1,7 +1,7 @@
 {
-  "name": "figma-specter",
+  "name": "specter-figma",
   "description": "A Figma plugin for easily spec’ing design system elements.",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/linkedinlabs/specter-figma.git"
