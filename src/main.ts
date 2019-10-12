@@ -1,5 +1,29 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
+import Crawler from './Crawler';
+import Messenger from './Messenger';
+import Painter from './Painter';
 import { CLOSE_PLUGIN_MSG, GUI_SETTINGS } from './constants';
+
+/**
+ * @description A shared helper function to set up in-UI messages and the logger.
+ *
+ * @kind function
+ * @name assemble
+ * @param {Object} context The current context (event) received from Sketch.
+ * @returns {Object} Contains an object with the current document as a javascript object,
+ * a JSON object with documentData, a messenger instance, and a selection array (if applicable).
+ */
+const assemble = (context = null) => {
+  const page = context.currentPage;
+  const { selection } = context.currentPage;
+  const messenger = new Messenger({ for: context, in: page });
+
+  return {
+    messenger,
+    page,
+    selection,
+  };
+};
 
 // GUI management -------------------------------------------------
 
@@ -99,11 +123,36 @@ const annotateMeasurement = (shouldTerminate: boolean): void => {
  * @kind function
  * @name drawBoundingBox
  *
- * @param {Object} context The current context (event) received from Sketch.
+ * @param {Object} context The current context (event) received from Figma.
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const drawBoundingBox = (shouldTerminate: boolean = true): void => {
-  console.log('action: drawBoundingBox');
+  const {
+    messenger,
+    page,
+    selection,
+  } = assemble(figma);
+
+  // need a selected layer to annotate it
+  if (selection === null || selection.length === 0) {
+    messenger.log('Draw bounding box: nothing selected');
+    return messenger.toast('At least one layer must be selected');
+  }
+
+  // grab the frame from the selection
+  const crawler = new Crawler({ for: selection });
+  const layer = crawler.first();
+  const position = crawler.position();
+  const painter = new Painter({ for: layer, in: page });
+
+  // draw the bounding box (if position exists)
+  let paintResult = null;
+  if (position) {
+    paintResult = painter.addBoundingBox(position);
+  }
+
+  // read the response from Painter; log and display message(s)
+  messenger.handleResult(paintResult);
 
   if (shouldTerminate) {
     closeGUI();
@@ -113,8 +162,8 @@ const drawBoundingBox = (shouldTerminate: boolean = true): void => {
 
 // watch for commands -------------------------------------------------
 
-/**
- * @description Identifies and annotates a selected layer in a Sketch file.
+/** WIP
+ * @description Takes a unique string (`type`) and calls the corresponding action.
  *
  * @kind function
  * @name dispatch
@@ -152,7 +201,7 @@ const dispatch = (action: {
 };
 
 /**
- * @description Acts as the main wrapper function for the plugin, run by default
+ * @description Acts as the main wrapper function for the plugin. Run by default
  * when Figma calls the plugin.
  *
  * @kind function
@@ -183,8 +232,9 @@ const main = (): void => {
 };
 
 /**
- * @description Listens for the command to close/shut-down the plugin in a way that prevents
+ * @description Listens for the command to close/shut down the plugin in a way that prevents
  * users from seeing unnecessary errors in the UI (recommended in the Figma docs).
+ * [More info]{@link https://www.figma.com/plugin-docs/api/properties/figma-closeplugin//}
  *
  * @kind try...catch
  * @returns {null}
@@ -195,7 +245,7 @@ try {
   main();
 } catch (e) {
   if (e === CLOSE_PLUGIN_MSG) {
-    // figma.closePlugin();
+    figma.closePlugin();
   } else {
     // If we caught any other kind of exception,
     // it's a real error and should be passed along.
