@@ -13,7 +13,7 @@ import {
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
- * @description Builds the initial annotation elements in Sketch (diamond, rectangle, text).
+ * @description Builds the initial annotation elements in Figma.
  *
  * @kind function
  * @name buildMeasureIcon
@@ -21,7 +21,7 @@ import {
  * @param {string} colorHex A string representing the hex color for the icon.
  * @param {string} orientation A string representing the orientation (optional).
  *
- * @returns {Object} FrameNode layer group containing the icon.
+ * @returns {Object} FrameNode layer group containing the icon layers.
  * @private
  */
 const buildMeasureIcon = (
