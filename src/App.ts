@@ -111,11 +111,14 @@ export default class App {
         return null;
       };
 
-      // determine the annotation text
+      // ---------- determine the annotation text
       let hasText = false;
+
+      // check first for custom text
       const hasCustomTextResult = layerToAnnotate.hasCustomText();
 
       if (hasCustomTextResult.status === 'error') {
+        // find the name from a design library component, effect, or style
         const getLibraryNameResult = layerToAnnotate.getLibraryName();
         messenger.handleResult(getLibraryNameResult);
 
@@ -127,6 +130,7 @@ export default class App {
               this.showGUI();
             }
 
+            // present the option to set custom text
             const setText = (callback: Function) => layerToAnnotate.setText(callback);
             const handleSetTextResult = (setTextResult: {
               status: 'error' | 'success',

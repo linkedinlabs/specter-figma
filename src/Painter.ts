@@ -13,7 +13,7 @@ import {
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
- * @description Builds the initial annotation elements in Sketch (diamond, rectangle, text).
+ * @description Builds the initial annotation elements in Figma.
  *
  * @kind function
  * @name buildMeasureIcon
@@ -21,7 +21,7 @@ import {
  * @param {string} colorHex A string representing the hex color for the icon.
  * @param {string} orientation A string representing the orientation (optional).
  *
- * @returns {Object} FrameNode layer group containing the icon.
+ * @returns {Object} FrameNode layer group containing the icon layers.
  * @private
  */
 const buildMeasureIcon = (
@@ -163,29 +163,30 @@ const buildMeasureIcon = (
  * @kind function
  * @name buildAnnotation
  *
- * @param {Object} annotationText The text for the annotation.
- * @param {Object} annotationSecondaryText Optional secondary text for the annotation.
- * @param {string} annotationType A string representing the type of annotation
- * (component or foundation).
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
  *
  * @returns {Object} Each annotation element as a layer node (`diamond`, `rectangle`, `text`,
  * and `icon`).
  *
  * @private
  */
-const buildAnnotation = (
-  annotationText: string,
-  annotationSecondaryText?: string,
-  annotationType: 'component' | 'custom' | 'dimension' | 'spacing' | 'style' = 'component',
-): {
+const buildAnnotation = (options: {
+  mainText: string,
+  secondaryText?: string,
+  type: 'component' | 'custom' | 'dimension' | 'spacing' | 'style',
+}): {
   diamond: RectangleNode,
   rectangle: RectangleNode,
   text: TextNode,
   icon: FrameNode,
 } => {
+  const { mainText, secondaryText, type } = options;
+
   // set the dominant color
   let colorHex: string = null;
-  switch (annotationType) {
+  switch (type) {
     case 'component':
       colorHex = COLORS.component;
       break;
@@ -205,15 +206,15 @@ const buildAnnotation = (
       colorHex = COLORS.component;
   }
 
-  let setText: string = annotationText;
-  if (annotationSecondaryText) {
-    setText = `${annotationText}\n${annotationSecondaryText}`;
+  let setText: string = mainText;
+  if (secondaryText) {
+    setText = `${mainText}\n${secondaryText}`;
   }
 
   let isMeasurement: boolean = false;
   if (
-    annotationType === 'spacing'
-    || annotationType === 'dimension'
+    type === 'spacing'
+    || type === 'dimension'
   ) {
     isMeasurement = true;
   }
@@ -232,9 +233,9 @@ const buildAnnotation = (
   }
 
   // adjustment for two-line annotations
-  let rectTextBuffer: number = 0;
-  if (annotationSecondaryText) {
-    rectTextBuffer = 22;
+  let textBuffer: number = 0;
+  if (secondaryText) {
+    textBuffer = 18;
   }
 
   // set up the color object
@@ -242,13 +243,13 @@ const buildAnnotation = (
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle
-  const rectHeight: number = (isMeasurement ? 22 : 30) + rectTextBuffer;
+  const rectHeight: number = (isMeasurement ? 18 : 30) + textBuffer;
   const rectangle: RectangleNode = figma.createRectangle();
   rectangle.name = 'Rectangle';
 
   // position and size the rectangle
   rectangle.x = 0;
-  rectangle.y = -rectTextBuffer;
+  rectangle.y = 0;
   rectangle.resize(200, rectHeight);
 
   // style it – set the rectangle type, color, and opacity
@@ -264,13 +265,13 @@ const buildAnnotation = (
   rectangle.bottomRightRadius = 2;
 
   // build the dangling diamond
-  const diamondOffset: number = (isMeasurement ? 22 : 30);
+  const diamondOffset: number = (isMeasurement ? 18 : 30);
   const diamond: RectangleNode = figma.createRectangle();
   diamond.name = 'Diamond';
 
   // position and size the diamond
   diamond.x = 0;
-  diamond.y = diamondOffset;
+  diamond.y = diamondOffset + textBuffer;
   diamond.resize(6, 6);
   diamond.rotation = 45;
 
@@ -286,7 +287,7 @@ const buildAnnotation = (
   // style text layer
   text.fontName = TYPEFACES.primary;
   text.fontSize = 12;
-  text.lineHeight = { value: 22, unit: 'PIXELS' };
+  text.lineHeight = { value: 18, unit: 'PIXELS' };
   text.fills = [{
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
@@ -297,14 +298,10 @@ const buildAnnotation = (
 
   // position and size the text
   text.x = textPosition.x;
-  text.y = (textPosition.y - rectTextBuffer);
+  text.y = textPosition.y;
   text.textAlignVertical = 'CENTER';
   text.textAlignHorizontal = 'CENTER';
   text.resize(text.width, rectHeight);
-  text.constraints = {
-    horizontal: 'CENTER',
-    vertical: 'CENTER',
-  };
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
 
   // adjust rectangle width based on text width
@@ -485,8 +482,8 @@ const positionAnnotation = (
       placementX = layerX + layerWidth + offsetX;
       break;
     default: // top
-      offsetY = (isMeasurement ? 33 : 38);
-      placementY = layerY - offsetY;
+      offsetY = (isMeasurement ? 15 : 8);
+      placementY = layerY - rectangle.height - offsetY;
   }
 
   // correct for left bleed
@@ -1223,11 +1220,11 @@ export default class Painter {
     }
 
     // construct the base annotation elements
-    const annotation = buildAnnotation(
-      annotationText,
-      annotationSecondaryText,
-      annotationType,
-    );
+    const annotation = buildAnnotation({
+      mainText: annotationText,
+      secondaryText: annotationSecondaryText,
+      type: annotationType,
+    });
 
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
@@ -1434,11 +1431,10 @@ export default class Painter {
     // construct the width annotation elements
     const annotationTextWidth: string = `${this.layer.width}dp`;
     const groupNameWidth: string = `Dimension Width for layer ${layerName}`;
-    const annotationWidth = buildAnnotation(
-      annotationTextWidth,
-      null, // annotationSecondaryText
-      annotationType,
-    );
+    const annotationWidth = buildAnnotation({
+      mainText: annotationTextWidth,
+      type: annotationType,
+    });
 
     const annotationOrientation = 'top';
     const groupWidth = positionAnnotation(
@@ -1482,11 +1478,10 @@ export default class Painter {
     // construct the height annotation elements
     const annotationTextHeight: string = `${this.layer.height}dp`;
     const groupNameHeight: string = `Dimension Height for layer ${layerName}`;
-    const annotationHeight = buildAnnotation(
-      annotationTextHeight,
-      null, // annotationSecondaryText
-      annotationType,
-    );
+    const annotationHeight = buildAnnotation({
+      mainText: annotationTextHeight,
+      type: annotationType,
+    });
 
     const annotationOrientationHeight = 'right';
     const groupHeight = positionAnnotation(
@@ -1601,11 +1596,10 @@ export default class Painter {
     }
 
     // construct the base annotation elements
-    const annotation = buildAnnotation(
-      annotationText,
-      null, // annotationSecondaryText
-      annotationType,
-    );
+    const annotation = buildAnnotation({
+      mainText: annotationText,
+      type: annotationType,
+    });
 
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
