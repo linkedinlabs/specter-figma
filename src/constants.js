@@ -21,13 +21,12 @@ const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
  */
 const PLUGIN_NAME = 'Specter';
 
-/** WIP
- * @description The public-facing name for the plugin. This should match the
- * `name` stated in manifset.json.
+/**
+ * @description An object containing the set of colors in-use by the plugin.
  *
  * @kind constant
- * @name PLUGIN_NAME
- * @type {string}
+ * @name COLORS
+ * @type {Object}
  */
 const COLORS = {
   component: '#9966ff',
@@ -37,34 +36,62 @@ const COLORS = {
   style: '#ff6655',
 };
 
-/** WIP
- * @description The public-facing name for the plugin. This should match the
- * `name` stated in manifset.json.
+/**
+ * @description An object containing the sets of typefaces in-use by the plugin.
  *
  * @kind constant
- * @name PLUGIN_NAME
- * @type {string}
+ * @name TYPEFACES
+ * @type {Object}
+ */
+const TYPEFACES = {
+  primary: {
+    family: 'Helvetica Neue',
+    style: 'Regular',
+  },
+  secondary: {
+    family: 'Roboto',
+    style: 'Regular',
+  },
+};
+
+/**
+ * @description An object containing the current string constants the Figma API returns for
+ * top-level (`main`) layer and `group` layer types.
+ *
+ * @kind constant
+ * @name FRAME_TYPES
+ * @type {Object}
  */
 const FRAME_TYPES = {
   main: 'FRAME',
   group: 'GROUP',
 };
 
-/** WIP
- * @description The public-facing name for the plugin. This should match the
- * `name` stated in manifset.json.
+/**
+ * @description An object containing `height`/`width` settings for the plugin GUI window.
  *
  * @kind constant
- * @name PLUGIN_NAME
- * @type {string}
+ * @name GUI_SETTINGS
+ * @type {Object}
  */
 const GUI_SETTINGS = {
   default: {
     width: 140,
     height: 180,
   },
+  input: {
+    width: 440,
+    height: 145,
+  },
 };
 
+/**
+ * @description A unique message that will cause the plugin to shut-down.
+ *
+ * @kind constant
+ * @name CLOSE_PLUGIN_MSG
+ * @type {string}
+ */
 const CLOSE_PLUGIN_MSG = '_CLOSE_PLUGIN_';
 
 export {
@@ -74,5 +101,6 @@ export {
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  TYPEFACES,
 };
 /* eslint-enable import/prefer-default-export */
