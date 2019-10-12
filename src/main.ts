@@ -13,7 +13,7 @@ import {
  *
  * @kind function
  * @name closeGUI
- * @param {booelan} suppress Attempt not to show users any lingering error messages.
+ * @param {boolean} suppress Attempt not to show users any lingering error messages.
  * Setting to `false` within `async` functions ensures the plugin actually closes.
  *
  * @throws {CLOSE_PLUGIN_MSG} Throws the command to close the plugin.
@@ -49,8 +49,8 @@ const showGUI = (): void => {
 
 /**
  * @description Takes a unique string (`type`) and calls the corresponding action
- * in the App class. Also does some housekeeping duties such as pre-loading typefaces,
- * logging errors, or managing the GUI.
+ * in the App class. Also does some housekeeping duties such as pre-loading typefaces
+ * and managing the GUI.
  *
  * @kind function
  * @name dispatcher
@@ -74,35 +74,45 @@ const dispatcher = (action: {
     showGUI,
   });
 
-  const runAnnotate = async () => {
-    // typefaces should be loaded before annotating with text
-    await figma.loadFontAsync(TYPEFACES.primary);
-    await app.annotateLayer();
-  };
-
-  const runAnnotateCustom = async () => {
-    // typefaces should be loaded before annotating with text
-    await figma.loadFontAsync(TYPEFACES.primary);
-    await app.annotateLayerCustom();
-  };
-
   // run the action in the App class based on type
-  switch (action.type) {
-    case 'annotate':
-      runAnnotate();
-      break;
-    case 'annotate-custom':
-      runAnnotateCustom();
-      break;
-    case 'bounding':
-      app.drawBoundingBox();
-      break;
-    case 'measure':
-      app.annotateMeasurement();
-      break;
-    default:
-      showGUI();
-  }
+  const runAction = (actionType: string) => {
+    switch (actionType) {
+      case 'annotate':
+        app.annotateLayer();
+        break;
+      case 'annotate-custom':
+        app.annotateLayerCustom();
+        break;
+      case 'annotate-spacing-left':
+        app.annotateSpacingOnly('left');
+        break;
+      case 'annotate-spacing-right':
+        app.annotateSpacingOnly('right');
+        break;
+      case 'annotate-spacing-top':
+        app.annotateSpacingOnly('top');
+        break;
+      case 'annotate-spacing-bottom':
+        app.annotateSpacingOnly('bottom');
+        break;
+      case 'bounding':
+        app.drawBoundingBox();
+        break;
+      case 'measure':
+        app.annotateMeasurement();
+        break;
+      default:
+        showGUI();
+    }
+  };
+
+  // load the typeface and then run the action
+  const runActionWithTypefaces = async (actionType: string) => {
+    // typefaces should be loaded before running action
+    await figma.loadFontAsync(TYPEFACES.primary);
+    await runAction(actionType);
+  };
+  runActionWithTypefaces(action.type);
 
   return null;
 };
