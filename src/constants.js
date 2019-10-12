@@ -21,6 +21,14 @@ const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
  */
 const PLUGIN_NAME = 'Specter';
 
+/** WIP
+ * @description The public-facing name for the plugin. This should match the
+ * `name` stated in manifset.json.
+ *
+ * @kind constant
+ * @name PLUGIN_NAME
+ * @type {string}
+ */
 const COLORS = {
   component: '#9966ff',
   custom: '#ff3399',
@@ -29,6 +37,27 @@ const COLORS = {
   style: '#ff6655',
 };
 
+/** WIP
+ * @description The public-facing name for the plugin. This should match the
+ * `name` stated in manifset.json.
+ *
+ * @kind constant
+ * @name PLUGIN_NAME
+ * @type {string}
+ */
+const FRAME_TYPES = {
+  main: 'FRAME',
+  group: 'GROUP',
+};
+
+/** WIP
+ * @description The public-facing name for the plugin. This should match the
+ * `name` stated in manifset.json.
+ *
+ * @kind constant
+ * @name PLUGIN_NAME
+ * @type {string}
+ */
 const GUI_SETTINGS = {
   default: {
     width: 140,
@@ -41,6 +70,7 @@ const CLOSE_PLUGIN_MSG = '_CLOSE_PLUGIN_';
 export {
   CLOSE_PLUGIN_MSG,
   COLORS,
+  FRAME_TYPES,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,

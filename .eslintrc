@@ -50,6 +50,19 @@
     "jsdoc/require-returns-check": 1,
     "jsdoc/require-returns-description": 0,
     "jsdoc/require-returns-type": 1,
-    "jsdoc/valid-types": 1
+    "jsdoc/valid-types": 1,
+    "prefer-destructuring": ["error", {
+      "VariableDeclarator": {
+        "array": true,
+        "object": true
+      },
+      "AssignmentExpression": {
+        "array": false,
+        "object": false
+      }
+    }, {
+      "enforceForRenamedProperties": false
+    }],
+    "lines-between-class-members": ["error", "always", { exceptAfterSingleLine: true }]
   }
 }
