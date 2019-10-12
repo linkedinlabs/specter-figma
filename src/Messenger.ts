@@ -77,7 +77,7 @@ export default class Messenger {
       // set up toast and log messages
       const toastMessage = result.messages.toast;
       const logMessage = result.messages.log;
-      const isError = (result.status === 'error');
+      const isError: boolean = (result.status === 'error');
 
       // log a message or error
       if (logMessage) {
