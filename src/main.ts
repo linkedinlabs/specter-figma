@@ -13,18 +13,13 @@ import {
  *
  * @kind function
  * @name closeGUI
- * @param {boolean} suppress Attempt not to show users any lingering error messages.
- * Setting to `false` within `async` functions ensures the plugin actually closes.
  *
- * @throws {CLOSE_PLUGIN_MSG} Throws the command to close the plugin.
+ * @returns {null}
  */
-const closeGUI = (suppress: boolean = true): void => {
-  if (suppress) {
-    // close the UI while suppressing error messages
-    throw CLOSE_PLUGIN_MSG;
-  }
+const closeGUI = (): void => {
   // close the UI without suppressing error messages
-  return figma.closePlugin();
+  figma.closePlugin();
+  return null;
 };
 
 /**
@@ -151,24 +146,5 @@ const main = (): void => {
   };
 };
 
-/**
- * @description Listens for the command to close/shut down the plugin in a way that prevents
- * users from seeing unnecessary errors in the UI (recommended in the Figma docs).
- * [More info]{@link https://www.figma.com/plugin-docs/api/properties/figma-closeplugin//}
- *
- * @kind try...catch
- * @returns {null}
- * @throws {e} If the event is not the `CLOSE_PLUGIN_MSG`, it is thrown.
- */
-// watch for close in a way that prevents unnecessary errors in the UI
-try {
-  main();
-} catch (err) {
-  if (err === CLOSE_PLUGIN_MSG) {
-    figma.closePlugin();
-  } else {
-    // If we caught any other kind of exception,
-    // it's a real error and should be passed along.
-    throw err;
-  }
-}
+// run main as default
+main();
