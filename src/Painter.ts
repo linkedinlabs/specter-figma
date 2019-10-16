@@ -2,6 +2,7 @@ import {
   findFrame,
   getLayerSettings,
   hexToDecimalRgb,
+  isInternal,
   updateArray,
 } from './Tools';
 import {
@@ -1551,14 +1552,17 @@ export default class Painter {
   addSpacingAnnotation(spacingPosition) {
     // set up some information
     const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
-    const spacingValue = retrieveSpacingValue(measurementToUse);
+    const spacingValue: number = isInternal()
+      ? retrieveSpacingValue(measurementToUse) : measurementToUse;
+    const spacingPrefix: string = isInternal() ? 'IS-' : '';
+    const spacingSuffix: string = isInternal() ? '' : 'dp';
 
     // if there is no `spacingValue`, the measurement is above an `IS-9` and isn’t considered valid
     if (!spacingValue) {
       return null;
     }
 
-    const annotationText: string = `IS-${spacingValue}`;
+    const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
     const annotationType = 'spacing';
     const layerName: string = this.layer.name;
     const groupName: string = `Spacing for ${layerName} (${spacingPosition.direction})`;
