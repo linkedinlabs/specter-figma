@@ -1,10 +1,6 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
-import {
-  CLOSE_PLUGIN_MSG,
-  GUI_SETTINGS,
-  TYPEFACES,
-} from './constants';
+import { GUI_SETTINGS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
 
