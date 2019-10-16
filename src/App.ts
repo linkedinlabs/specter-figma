@@ -150,7 +150,7 @@ export default class App {
 
               // close the GUI if it started closed
               if (this.shouldTerminate && !shouldTerminateLocal) {
-                this.closeGUI(false);
+                this.closeGUI();
               }
             };
 
@@ -173,7 +173,7 @@ export default class App {
     });
 
     if (shouldTerminateLocal) {
-      this.closeGUI(false);
+      this.closeGUI();
     }
     return null;
   }
@@ -246,7 +246,7 @@ export default class App {
       }
 
       if (this.shouldTerminate) {
-        this.closeGUI(false);
+        this.closeGUI();
       }
 
       return null;
@@ -311,7 +311,7 @@ export default class App {
     messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
-      this.closeGUI(false);
+      this.closeGUI();
     }
     return null;
   }
@@ -365,7 +365,7 @@ export default class App {
     messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
-      this.closeGUI(false);
+      this.closeGUI();
     }
     return null;
   }
