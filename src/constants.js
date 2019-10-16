@@ -85,17 +85,7 @@ const GUI_SETTINGS = {
   },
 };
 
-/**
- * @description A unique message that will cause the plugin to shut-down.
- *
- * @kind constant
- * @name CLOSE_PLUGIN_MSG
- * @type {string}
- */
-const CLOSE_PLUGIN_MSG = '_CLOSE_PLUGIN_';
-
 export {
-  CLOSE_PLUGIN_MSG,
   COLORS,
   FRAME_TYPES,
   GUI_SETTINGS,
