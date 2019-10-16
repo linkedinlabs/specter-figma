@@ -1,5 +1,6 @@
 import {
   getLayerSettings,
+  isInternal,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
@@ -81,22 +82,25 @@ const isLegacyByName = (name: string): boolean => {
 const checkNameForType = (name: string): 'component' | 'style' => {
   let annotationType: 'component' | 'style' = 'component';
 
-  // name substrings, exclusive to Foundations
-  const foundations: Array<string> = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
-  let libraryName: string = name;
+  // only appy type-check to internal builds
+  if (isInternal()) {
+    // name substrings, exclusive to Foundations
+    const foundations: Array<string> = ['Divider', 'Flood', 'Icons', 'Illustration', 'Logos'];
+    let libraryName: string = name;
 
-  // process checks based on whether or not the source is from a legacy or new library
-  if (isLegacyByName(name)) {
-    // grab the first segment of the name (before the first “/”) – top-level Kit name
-    libraryName = name.split('/')[0]; // eslint-disable-line prefer-destructuring
+    // process checks based on whether or not the source is from a legacy or new library
+    if (isLegacyByName(name)) {
+      // grab the first segment of the name (before the first “/”) – top-level Kit name
+      libraryName = name.split('/')[0]; // eslint-disable-line prefer-destructuring
 
-    // set up some known exceptions (remove the text that would trigger a type change)
-    libraryName = libraryName.replace('(Dual Icons)', '');
-  }
+      // set up some known exceptions (remove the text that would trigger a type change)
+      libraryName = libraryName.replace('(Dual Icons)', '');
+    }
 
-  // check if one of the foundation substrings exists in the `libraryName`
-  if (foundations.some(foundation => libraryName.indexOf(foundation) >= 0)) {
-    annotationType = 'style';
+    // check if one of the foundation substrings exists in the `libraryName`
+    if (foundations.some(foundation => libraryName.indexOf(foundation) >= 0)) {
+      annotationType = 'style';
+    }
   }
 
   return annotationType;
@@ -115,17 +119,21 @@ const checkNameForType = (name: string): 'component' | 'style' => {
 const cleanName = (name: string): string => {
   let cleanedName: string = name;
 
-  if (isLegacyByName(name)) {
-    // take only the last segment of the name (after a “/”, if available)
-    // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-    cleanedName = name.split(/(?:[^w])(\/)/).pop();
-  } else {
-    cleanedName = name.replace('☾ ', '');
-    cleanedName = name.replace('☼ ', '');
+  // only apply changes to internal builds
+  if (isInternal()) {
+    if (isLegacyByName(name)) {
+      // take only the last segment of the name (after a “/”, if available)
+      // ignore segments that begin with a “w” as-in “…Something w/ Icon”
+      cleanedName = name.split(/(?:[^w])(\/)/).pop();
+    } else {
+      cleanedName = name.replace('☾ ', '');
+      cleanedName = name.replace('☼ ', '');
+    }
+
+    // otherwise, fall back to the full layer name
+    cleanedName = !cleanedName ? name : cleanedName;
   }
 
-  // otherwise, fall back to the full layer name
-  cleanedName = !cleanedName ? name : cleanedName;
   return cleanedName;
 };
 
@@ -314,13 +322,17 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
     }
   });
 
+  // compiles overrides into `setOverridesText` string
+  // only apply label to internal builds
   let setOverridesText: string = null;
-  if (overridesText.length > 0) {
+  if (isInternal() && overridesText.length > 0) {
     let label: string = 'Override';
     if (overridesText.length > 1) {
       label = 'Overrides';
     }
     setOverridesText = `${label}: ${overridesText.join(', ')}`;
+  } else if (!isInternal() && overridesText.length > 0) {
+    setOverridesText = overridesText.join(', ');
   }
 
   return setOverridesText;
