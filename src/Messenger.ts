@@ -1,3 +1,4 @@
+import { isInternal } from './Tools';
 import { PLUGIN_NAME } from './constants';
 
 /**
@@ -36,7 +37,7 @@ export default class Messenger {
     const logType = type === 'error' ? '👻🆘' : '👻';
     const pageIdString = this.page ? ` ${this.page.id} :` : '';
     const eventTypeString = this.event && this.event.action ? ` ${this.event.action} :` : ' Invoked :';
-    const featureSet = process.env.FEATURESET === 'internal' ? 'Internal' : 'Public';
+    const featureSet = isInternal() ? 'Internal' : 'Public';
 
     if (process.env.NODE_ENV === 'development') {
       console.log(`${PLUGIN_NAME} : ${featureSet} ${logType}${pageIdString}${eventTypeString} ${message}`); // eslint-disable-line no-console
