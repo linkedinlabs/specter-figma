@@ -199,17 +199,17 @@ const setStyleText = (options: {
 
   // set type
   if (textStyle && textStyle.remote) {
-    textToSet = textStyle.name;
+    textToSet = cleanName(textStyle.name);
 
     // set effect, fill, and stroke as override(s)
-    if (effectStyle && effectStyle.remote) { subtextToSetArray.push(effectStyle.name); }
+    if (effectStyle && effectStyle.remote) { subtextToSetArray.push(cleanName(effectStyle.name)); }
     if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
     if (fillStyle && fillStyle.remote) { subtextToSetArray.push(cleanColorName(fillStyle.name)); }
   }
 
   if (!textToSet && effectStyle && effectStyle.remote) {
     // set effect name as main text
-    textToSet = effectStyle.name;
+    textToSet = cleanName(effectStyle.name);
 
     // set fill and stroke color(s) as override(s)
     if (strokeStyle && strokeStyle.remote) { subtextToSetArray.push(`Stroke: ${cleanColorName(strokeStyle.name)}`); }
