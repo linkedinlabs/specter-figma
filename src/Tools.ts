@@ -252,11 +252,26 @@ const resizeGUI = (
   return null;
 };
 
+/**
+ * @description Checks the `FEATURESET` environment variable from webpack and
+ * determines if the featureset build should be `internal` or not.
+ *
+ * @kind function
+ * @name isInternal
+ *
+ * @returns {boolean} `true` if the build is internal, `false` if it is not.
+ */
+const isInternal = (): boolean => {
+  const buildIsInternal: boolean = process.env.FEATURESET === 'internal';
+  return buildIsInternal;
+};
+
 export {
   findFrame,
   getLayerSettings,
   getRelativeIndex,
   hexToDecimalRgb,
+  isInternal,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
