@@ -6,7 +6,7 @@
 body {
   margin: 0;
   padding: 0;
-  font: 12px sans-serif;
+  font: normal 400 11px/16px Inter, Roboto, sans-serif; /* default stack from Figma */
   text-align: center;
 }
 
