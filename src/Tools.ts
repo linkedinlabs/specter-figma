@@ -7,7 +7,6 @@ import {
 const hexRgb = require('hex-rgb');
 
 // --- helper functions
-
 /**
  * @description A reusable helper function to take an array and add or remove data from it
  * based on a top-level key and a defined action.
@@ -127,6 +126,42 @@ const findFrame = (layer: any) => {
     }
   }
   return parent;
+};
+
+/**
+ * @description Takes an array of typefaces (`FontName`), iterates through the array, checking
+ * the system available of each typeface and loading the first available.
+ *
+ * @kind function
+ * @name loadFirstAvailableFontAsync
+ * @param {array} typefaces Array of typefaces in the `FontName` format.
+ *
+ * @returns {Object} Returns the first successfully-loaded `FontName`.
+ */
+const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
+  let typefaceToUse = null;
+  const availableFonts: Array<Font> = await figma.listAvailableFontsAsync();
+
+  // check if a `typeface` is listed in `availableFonts`
+  // family AND style must match
+  const isAvailable = (typeface: FontName) => availableFonts.filter(
+    font => (
+      (font.fontName.family === typeface.family)
+      && (font.fontName.style === typeface.style)
+    ),
+  );
+
+  // iterate through `typefaces` array and find the first available
+  typefaces.forEach((typeface) => {
+    if (!typefaceToUse && isAvailable(typeface).length > 0) {
+      typefaceToUse = typeface;
+    }
+  });
+
+  // load the typeface
+  await figma.loadFontAsync(typefaceToUse);
+
+  return typefaceToUse;
 };
 
 /**
@@ -268,6 +303,7 @@ const isInternal = (): boolean => {
 
 export {
   findFrame,
+  loadFirstAvailableFontAsync,
   getLayerSettings,
   getRelativeIndex,
   hexToDecimalRgb,
