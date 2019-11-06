@@ -35,8 +35,12 @@ module.exports = (env, argv) => ({
     path: path.resolve(__dirname, 'dist'), // Compile into a folder called "dist"
   },
 
+  // Adds the FEATURESET env variable from the command-line
   // Tells Webpack to generate "webview.html" and to inline "webview.ts" into it
   plugins: [
+    new webpack.EnvironmentPlugin({
+      FEATURESET: (env && env.featureset ? 'public' : 'internal'),
+    }),
     new HtmlWebpackPlugin({
       template: './src/views/webview.html',
       filename: 'webview.html',
@@ -44,8 +48,5 @@ module.exports = (env, argv) => ({
       chunks: ['ui'],
     }),
     new HtmlWebpackInlineSourcePlugin(),
-    new webpack.EnvironmentPlugin({
-      FEATURESET: (env && env.featureset ? 'public' : 'internal'),
-    }),
   ],
 });
