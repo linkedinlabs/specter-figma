@@ -1,5 +1,6 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
+import { loadFirstAvailableFontAsync } from './Tools';
 import { GUI_SETTINGS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
@@ -100,7 +101,14 @@ const dispatcher = (action: {
   // load the typeface and then run the action
   const runActionWithTypefaces = async (actionType: string) => {
     // typefaces should be loaded before running action
-    await figma.loadFontAsync(TYPEFACES.primary);
+    const typefaceToUse: FontName = await loadFirstAvailableFontAsync(TYPEFACES);
+
+    // set the currently-loaded typeface in page settings
+    if (typefaceToUse) {
+      figma.currentPage.setPluginData('typefaceToUse', JSON.stringify(typefaceToUse));
+    }
+
+    // run the action
     await runAction(actionType);
   };
   runActionWithTypefaces(action.type);
