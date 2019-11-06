@@ -47,6 +47,10 @@ const COLORS = {
  */
 const TYPEFACES: Array<FontName> = [
   {
+    family: 'Inconsolata',
+    style: 'Bold',
+  },
+  {
     family: 'Helvetica Neue',
     style: 'Regular',
   },
