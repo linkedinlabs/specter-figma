@@ -134,7 +134,7 @@ const findFrame = (layer: any) => {
  *
  * @kind function
  * @name loadFirstAvailableFontAsync
- * @param {array} typefaces Array of typefaces in the `FontName` format.
+ * @param {Array} typefaces Array of typefaces in the `FontName` format.
  *
  * @returns {Object} Returns the first successfully-loaded `FontName`.
  */
