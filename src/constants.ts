@@ -37,22 +37,36 @@ const COLORS = {
 };
 
 /**
- * @description An object containing the sets of typefaces in-use by the plugin.
+ * @description An array containing the possible typefaces to use for annotations.
+ * Place the highest-priority typefaces first. Typefaces will be checked for availability
+ * and loaded top-down.
  *
  * @kind constant
  * @name TYPEFACES
- * @type {Object}
+ * @type {Array}
  */
-const TYPEFACES = {
-  primary: {
+const TYPEFACES: Array<FontName> = [
+  {
+    family: 'Inconsolata',
+    style: 'Bold',
+  },
+  {
     family: 'Helvetica Neue',
     style: 'Regular',
   },
-  secondary: {
+  {
+    family: 'Inter',
+    style: 'Regular',
+  },
+  {
     family: 'Roboto',
     style: 'Regular',
   },
-};
+  {
+    family: 'Verdana',
+    style: 'Regular',
+  },
+];
 
 /**
  * @description An object containing the current string constants the Figma API returns for

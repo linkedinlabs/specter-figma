@@ -9,7 +9,6 @@ import {
   COLORS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
-  TYPEFACES,
 } from './constants';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -285,8 +284,11 @@ const buildAnnotation = (options: {
   // create empty text layer
   const text: TextNode = figma.createText();
 
+  // detect/retrieve last-loaded typeface
+  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+
   // style text layer
-  text.fontName = TYPEFACES.primary;
+  text.fontName = typefaceToUse;
   text.fontSize = 12;
   text.lineHeight = { value: 18, unit: 'PIXELS' };
   text.fills = [{
