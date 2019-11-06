@@ -43,7 +43,7 @@ const COLORS = {
  *
  * @kind constant
  * @name TYPEFACES
- * @type {array}
+ * @type {Array}
  */
 const TYPEFACES: Array<FontName> = [
   {
