@@ -91,7 +91,7 @@ const FRAME_TYPES = {
 const GUI_SETTINGS = {
   default: {
     width: 140,
-    height: 180,
+    height: 132,
   },
   input: {
     width: 440,
