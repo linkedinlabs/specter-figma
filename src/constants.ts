@@ -97,6 +97,10 @@ const GUI_SETTINGS = {
     width: 440,
     height: 145,
   },
+  info: {
+    width: 200,
+    height: 324,
+  },
 };
 
 export {

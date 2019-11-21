@@ -3,10 +3,10 @@
  */
 import './views/webview.css';
 
-/* watch Navigation action buttons */
-const actionsElement = (<HTMLInputElement> document.getElementById('actions'));
+/* watch Navigation main buttons */
+const mainElement = (<HTMLInputElement> document.getElementById('main'));
 
-if (actionsElement) {
+if (mainElement) {
   const onClick = (e: MouseEvent) => {
     const target = e.target as HTMLTextAreaElement;
     const button = target.closest('button');
@@ -24,7 +24,7 @@ if (actionsElement) {
     }
   };
 
-  actionsElement.addEventListener('click', onClick);
+  mainElement.addEventListener('click', onClick);
 }
 
 /* watch User Input action buttons */
@@ -45,6 +45,30 @@ if (userInputElement) {
         pluginMessage: {
           inputType: action,
           inputValue: inputElement.value,
+        },
+      }, '*');
+    }
+  };
+
+  userInputElement.addEventListener('click', onClick);
+}
+
+/* watch Info Panel action buttons WIP */
+const infoPanelElement = (<HTMLInputElement> document.getElementById('infoPanel'));
+
+if (infoPanelElement) {
+  const onClick = (e: MouseEvent) => {
+    const target = e.target as HTMLTextAreaElement;
+    const button = target.closest('button');
+
+    if (button) {
+      // find action by element id
+      const action = button.id.replace('infoPanel-', '');
+
+      // bubble action to main
+      parent.postMessage({
+        pluginMessage: {
+          inputType: action,
         },
       }, '*');
     }
@@ -80,7 +104,7 @@ const showHideInput = (
 
   if (action === 'show') {
     containerElement.classList.add('wide');
-    actionsElement.parentElement.style.display = 'none';
+    mainElement.style.display = 'none';
     userInputElement.removeAttribute('style');
 
     // focus on input and set initial value
@@ -91,8 +115,21 @@ const showHideInput = (
     inputElement.select();
   } else {
     containerElement.classList.remove('wide');
-    actionsElement.parentElement.removeAttribute('style');
+    mainElement.removeAttribute('style');
     userInputElement.style.display = 'none';
+  }
+};
+
+const showHideInfo = (action: 'show' | 'hide') => {
+  const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
+
+  if (action === 'show') {
+    mainElement.style.display = 'none';
+    infoPanelElement.removeAttribute('style');
+  } else {
+    containerElement.classList.remove('wide');
+    mainElement.removeAttribute('style');
+    infoPanelElement.style.display = 'none';
   }
 };
 
@@ -115,6 +152,12 @@ onmessage = ( // eslint-disable-line no-undef
       break;
     case 'hideInput':
       showHideInput('hide');
+      break;
+    case 'showInfo':
+      showHideInfo('show');
+      break;
+    case 'hideInfo':
+      showHideInfo('hide');
       break;
     default:
       return null;
