@@ -80,7 +80,7 @@ const showHideInput = (
 
   if (action === 'show') {
     containerElement.classList.add('wide');
-    actionsElement.style.display = 'none';
+    actionsElement.parentElement.style.display = 'none';
     userInputElement.removeAttribute('style');
 
     // focus on input and set initial value
@@ -91,7 +91,7 @@ const showHideInput = (
     inputElement.select();
   } else {
     containerElement.classList.remove('wide');
-    actionsElement.removeAttribute('style');
+    actionsElement.parentElement.removeAttribute('style');
     userInputElement.style.display = 'none';
   }
 };
