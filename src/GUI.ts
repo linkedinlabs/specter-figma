@@ -3,28 +3,41 @@
  */
 import './views/webview.css';
 
+// process action
+const processActionClick = (e) => {
+  const target = e.target as HTMLTextAreaElement;
+  const button = target.closest('button');
+
+  if (button) {
+    // find action by element id
+    let action = button.id;
+    if (target.classList.contains('hide')) {
+      action = `${action}-hide`;
+    }
+
+    // bubble action to main
+    parent.postMessage({
+      pluginMessage: {
+        navType: action,
+      },
+    }, '*');
+  }
+};
+
 /* watch Navigation main buttons */
 const mainElement = (<HTMLInputElement> document.getElementById('main'));
 
 if (mainElement) {
-  const onClick = (e: MouseEvent) => {
-    const target = e.target as HTMLTextAreaElement;
-    const button = target.closest('button');
-
-    if (button) {
-      // find action by element id
-      const action = button.id;
-
-      // bubble action to main
-      parent.postMessage({
-        pluginMessage: {
-          navType: action,
-        },
-      }, '*');
-    }
-  };
-
+  const onClick = (e: MouseEvent) => processActionClick(e);
   mainElement.addEventListener('click', onClick);
+}
+
+/* watch Info panel trigger */
+const infoButtonElement = (<HTMLInputElement> document.getElementById('info'));
+
+if (infoButtonElement) {
+  const onClick = (e: MouseEvent) => processActionClick(e);
+  infoButtonElement.addEventListener('click', onClick);
 }
 
 /* watch User Input action buttons */
@@ -124,10 +137,13 @@ const showHideInfo = (action: 'show' | 'hide') => {
   const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
 
   if (action === 'show') {
+    containerElement.classList.add('info-open');
+    infoButtonElement.classList.add('hide');
     mainElement.style.display = 'none';
     infoPanelElement.removeAttribute('style');
   } else {
-    containerElement.classList.remove('wide');
+    containerElement.classList.remove('info-open');
+    infoButtonElement.classList.remove('hide');
     mainElement.removeAttribute('style');
     infoPanelElement.style.display = 'none';
   }

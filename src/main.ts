@@ -99,6 +99,12 @@ const dispatcher = (action: {
           action: 'showInfo',
         });
         break;
+      case 'info-hide':
+        resizeGUI('default', figma.ui);
+        figma.ui.postMessage({
+          action: 'hideInfo',
+        });
+        break;
       default:
         showGUI();
     }
