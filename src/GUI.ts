@@ -32,12 +32,18 @@ if (mainElement) {
   mainElement.addEventListener('click', onClick);
 }
 
-/* watch Info panel trigger */
+/* watch Info panel triggers */
 const infoButtonElement = (<HTMLInputElement> document.getElementById('info'));
+const infoBackButtonElement = (<HTMLInputElement> document.getElementById('info-hide'));
 
 if (infoButtonElement) {
   const onClick = (e: MouseEvent) => processActionClick(e);
   infoButtonElement.addEventListener('click', onClick);
+}
+
+if (infoBackButtonElement) {
+  const onClick = (e: MouseEvent) => processActionClick(e);
+  infoBackButtonElement.addEventListener('click', onClick);
 }
 
 /* watch User Input action buttons */
