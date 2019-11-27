@@ -11,7 +11,7 @@ const processActionClick = (e) => {
   if (button) {
     // find action by element id
     let action = button.id;
-    if (target.classList.contains('hide')) {
+    if (button.classList.contains('hide')) {
       action = `${action}-hide`;
     }
 
