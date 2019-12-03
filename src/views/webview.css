@@ -75,13 +75,11 @@ svg {
 }
 
 .info-trigger:hover .icon {
-  background: #18a0fb;
   transition-delay: 200ms;
 }
 
 .info-trigger:hover .icon::before {
   transform: translateY(-4px);
-  border-bottom-color: #18a0fb;
   transition-delay: 200ms;
 }
 
@@ -109,7 +107,6 @@ svg {
 
 .info-open .info-trigger:hover .icon::before {
   transform: translateY(4px);
-  border-top-color: #18a0fb;
 }
 
 #infoPanel {
