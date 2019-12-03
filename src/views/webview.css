@@ -63,9 +63,9 @@ svg {
   margin-top: -4px;
   width: 0;
   height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-bottom: 4px solid black;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid black;
   transition: all 100ms cubic-bezier(0.2, 0, 0.4, 1);
   transition-delay: 0ms;
 }
@@ -102,9 +102,9 @@ svg {
 .info-open .info-trigger .icon::before {
   right: auto;
   left: 16px;
-  margin-top: 6px;
+  margin-top: 2px;
   border-bottom: 0;
-  border-top: 4px solid black;
+  border-top: 8px solid black;
 }
 
 .info-open .info-trigger:hover .icon::before {
