@@ -94,13 +94,17 @@ const dispatcher = (action: {
         app.annotateMeasurement();
         break;
       case 'info':
-        resizeGUI('info', figma.ui);
+        setTimeout(() => {
+          resizeGUI('info', figma.ui);
+        }, 190);
         figma.ui.postMessage({
           action: 'showInfo',
         });
         break;
       case 'info-hide':
-        resizeGUI('default', figma.ui);
+        setTimeout(() => {
+          resizeGUI('default', figma.ui);
+        }, 180);
         figma.ui.postMessage({
           action: 'hideInfo',
         });

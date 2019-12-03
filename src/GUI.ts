@@ -141,17 +141,34 @@ const showHideInput = (
 
 const showHideInfo = (action: 'show' | 'hide') => {
   const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
+  const transitionMaskElement = (<HTMLDivElement> containerElement.getElementsByClassName('transition-mask')[0]);
 
   if (action === 'show') {
-    containerElement.classList.add('info-open');
-    infoButtonElement.classList.add('hide');
-    mainElement.style.display = 'none';
-    infoPanelElement.removeAttribute('style');
+    containerElement.classList.add('info-transition');
+    setTimeout(() => {
+      transitionMaskElement.classList.add('visible');
+      setTimeout(() => {
+        containerElement.classList.add('info-open');
+        infoButtonElement.classList.add('hide');
+        mainElement.style.display = 'none';
+        infoPanelElement.removeAttribute('style');
+        transitionMaskElement.classList.remove('visible');
+        setTimeout(() => containerElement.classList.remove('info-transition'), 175);
+      }, 175);
+    }, 15);
   } else {
-    containerElement.classList.remove('info-open');
-    infoButtonElement.classList.remove('hide');
-    mainElement.removeAttribute('style');
-    infoPanelElement.style.display = 'none';
+    containerElement.classList.add('info-transition');
+    setTimeout(() => {
+      transitionMaskElement.classList.add('visible');
+      setTimeout(() => {
+        containerElement.classList.remove('info-open');
+        infoButtonElement.classList.remove('hide');
+        mainElement.removeAttribute('style');
+        infoPanelElement.style.display = 'none';
+        transitionMaskElement.classList.remove('visible');
+        setTimeout(() => containerElement.classList.remove('info-transition'), 175);
+      }, 175);
+    }, 15);
   }
 };
 

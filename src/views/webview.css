@@ -41,6 +41,7 @@ svg {
   background: none;
   border: 0;
   outline: none;
+  z-index: 1;
 }
 
 .info-trigger .icon {
@@ -278,6 +279,29 @@ svg {
   flex-flow: row;
   padding-right: 6px;
   width: 100%;
+}
+
+/* transition mask */
+
+.transition-mask {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  transition: opacity 175ms cubic-bezier(0.2, 0, 0.4, 1);
+  opacity: 0;
+  z-index: 2;
+}
+
+.info-transition .transition-mask {
+  display: block;
+}
+
+.transition-mask.visible {
+  opacity: 1;
 }
 
 /*
