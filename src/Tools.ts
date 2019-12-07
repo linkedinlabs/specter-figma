@@ -301,6 +301,30 @@ const isInternal = (): boolean => {
   return buildIsInternal;
 };
 
+/**
+ * @description Check if a node (or any of its parents) are hidden and returns false if they are.
+ *
+ * @kind function
+ * @name isVisible
+ *
+ * @param {Object} node A Figma `SceneNode` object.
+ *
+ * @returns {boolean} `true` if the build is internal, `false` if it is not.
+ */
+const isVisible = (node: SceneNode): boolean => {
+  // if original node is hidden, no need to proceed
+  if (!node.visible) { return false; }
+
+  if (
+    node.parent.type !== 'PAGE'
+    && node.parent.type !== 'DOCUMENT'
+  ) {
+    return isVisible(node.parent);
+  }
+
+  return true;
+};
+
 export {
   findFrame,
   loadFirstAvailableFontAsync,
@@ -308,6 +332,7 @@ export {
   getRelativeIndex,
   hexToDecimalRgb,
   isInternal,
+  isVisible,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
