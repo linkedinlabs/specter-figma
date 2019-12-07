@@ -1,6 +1,7 @@
 import {
   getLayerSettings,
   isInternal,
+  isVisible,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
@@ -289,7 +290,7 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
 
   // iterate available inner layers - based on legacy Lingo naming schemes and may break.
   layer.findOne((node) => {
-    if (node.visible) {
+    if (isVisible(node)) {
       // current override full name
       const overrideTypeName: string = node.name;
 
