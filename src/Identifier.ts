@@ -127,10 +127,10 @@ const cleanName = (name: string): string => {
     if (isLegacyByName(name)) {
       // take only the last segment of the name (after a “/”, if available)
       // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-      cleanedName = name.split(/(?:[^w])(\/)/).pop();
+      cleanedName = cleanedName.split(/(?:[^w])(\/)/).pop();
     } else {
-      cleanedName = name.replace('☾ ', '');
-      cleanedName = name.replace('☼ ', '');
+      cleanedName = cleanedName.replace('☾ ', '');
+      cleanedName = cleanedName.replace('☼ ', '');
     }
 
     // otherwise, fall back to the full layer name
