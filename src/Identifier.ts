@@ -300,9 +300,11 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
       const overrideName: string = cleanName(node.name);
 
       if (overrideName) {
+        let overrideValueName: string = null;
         // look for Icon overrides - based on parsing the text of an `overrideTypeName` and
         // making some comparisons and exceptions – if the override name exists in the
         // master component, we ignore it as it’s likely not an actual override
+        // these are mainly legacy checks from the Sketch / Lingo (Art Deco) system
         if (
           overrideTypeName.toLowerCase().includes('icon')
           && !overrideTypeName.toLowerCase().includes('color')
@@ -312,9 +314,22 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
           && !layer.masterComponent.findOne(mcNode => mcNode.name === overrideTypeName)
         ) {
           // default icon name (usually last element of the name, separated by “/”)
-          let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
+          overrideValueName = overrideName.split(/(?:[^w])(\/)/).pop();
           overrideValueName = overrideValueName.replace(`${workingName}`, '');
+        }
 
+        // newer check for Placeholder parent container
+        if (!overrideValueName) {
+          if (
+            node.parent
+            && cleanName(node.parent.name).toLowerCase().includes('placeholder')
+            && !cleanName(node.name).toLowerCase().includes('placeholder')
+          ) {
+            overrideValueName = cleanName(node.name);
+          }
+        }
+
+        if (overrideValueName) {
           // update `overridesText`
           const existingIndex: number = overridesText.findIndex(text => text === overrideValueName);
           if (existingIndex < 0) {
