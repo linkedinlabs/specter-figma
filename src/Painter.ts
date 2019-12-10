@@ -150,7 +150,7 @@ const buildMeasureIcon = (
   // create the icon frame
   const icon = figma.createFrame();
   icon.name = 'Icon';
-  icon.backgrounds = [];
+  icon.fills = [];
   icon.resize(initialWidth, initialHeight);
   iconArray.forEach((line) => { icon.appendChild(line); });
 
@@ -448,7 +448,7 @@ const positionAnnotation = (
   if (text) { groupArray.push(text); }
   if (icon) { groupArray.push(icon); }
 
-  const group: FrameNode = figma.group(groupArray, frame);
+  const group: GroupNode = figma.group(groupArray, frame);
   group.name = groupName;
 
   // ------- position the group within the frame, above the layer receiving the annotation
@@ -867,7 +867,7 @@ const drawContainerGroup = (groupSettings: {
   parent: any,
   child: any,
   locked: boolean,
-}): FrameNode => {
+}): GroupNode => {
   const {
     name,
     position,
@@ -877,7 +877,7 @@ const drawContainerGroup = (groupSettings: {
   } = groupSettings;
 
   // set new group
-  const containerGroup: FrameNode = figma.group([child], parent);
+  const containerGroup: GroupNode = figma.group([child], parent);
 
   // position, name, and lock new group
   containerGroup.x = position.x;
@@ -925,7 +925,7 @@ export const createContainerGroup = (
   frame: FrameNode,
   layer: SceneNode,
 ): {
-  newInnerGroup: FrameNode,
+  newInnerGroup: GroupNode,
   updatedContainerSet: {
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
@@ -940,7 +940,7 @@ export const createContainerGroup = (
   const locked: boolean = groupType === 'topLevel';
 
   // set up new container group layer on the frame
-  const newInnerGroup: FrameNode = drawContainerGroup({
+  const newInnerGroup: GroupNode = drawContainerGroup({
     name: groupName,
     position: { x: layer.x, y: layer.y },
     parent: frame,
