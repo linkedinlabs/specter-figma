@@ -118,6 +118,8 @@ const checkNameForType = (name: string): 'component' | 'style' => {
  * @private
  */
 const cleanName = (name: string): string => {
+  if (!name.trim()) { return 'Unknown'; }
+
   let cleanedName: string = name;
 
   // only apply changes to internal builds
@@ -132,7 +134,7 @@ const cleanName = (name: string): string => {
     }
 
     // otherwise, fall back to the full layer name
-    cleanedName = !cleanedName ? name : cleanedName;
+    cleanedName = !cleanedName.trim() ? name : cleanedName;
   }
 
   return cleanedName;
