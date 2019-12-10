@@ -1,6 +1,7 @@
 import {
   getLayerSettings,
   isInternal,
+  isVisible,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
@@ -117,6 +118,8 @@ const checkNameForType = (name: string): 'component' | 'style' => {
  * @private
  */
 const cleanName = (name: string): string => {
+  if (!name.trim()) { return 'Unknown'; }
+
   let cleanedName: string = name;
 
   // only apply changes to internal builds
@@ -124,14 +127,14 @@ const cleanName = (name: string): string => {
     if (isLegacyByName(name)) {
       // take only the last segment of the name (after a “/”, if available)
       // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-      cleanedName = name.split(/(?:[^w])(\/)/).pop();
+      cleanedName = cleanedName.split(/(?:[^w|^\s])(\/)/).pop();
     } else {
-      cleanedName = name.replace('☾ ', '');
-      cleanedName = name.replace('☼ ', '');
+      cleanedName = cleanedName.replace('☾ ', '');
+      cleanedName = cleanedName.replace('☼ ', '');
     }
 
     // otherwise, fall back to the full layer name
-    cleanedName = !cleanedName ? name : cleanedName;
+    cleanedName = !cleanedName.trim() ? name : cleanedName;
   }
 
   return cleanedName;
@@ -289,7 +292,7 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
 
   // iterate available inner layers - based on legacy Lingo naming schemes and may break.
   layer.findOne((node) => {
-    if (node.visible) {
+    if (isVisible(node)) {
       // current override full name
       const overrideTypeName: string = node.name;
 
@@ -297,9 +300,11 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
       const overrideName: string = cleanName(node.name);
 
       if (overrideName) {
+        let overrideValueName: string = null;
         // look for Icon overrides - based on parsing the text of an `overrideTypeName` and
         // making some comparisons and exceptions – if the override name exists in the
         // master component, we ignore it as it’s likely not an actual override
+        // these are mainly legacy checks from the Sketch / Lingo (Art Deco) system
         if (
           overrideTypeName.toLowerCase().includes('icon')
           && !overrideTypeName.toLowerCase().includes('color')
@@ -309,9 +314,22 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
           && !layer.masterComponent.findOne(mcNode => mcNode.name === overrideTypeName)
         ) {
           // default icon name (usually last element of the name, separated by “/”)
-          let overrideValueName: string = overrideName.split(/(?:[^w])(\/)/).pop();
+          overrideValueName = overrideName.split(/(?:[^w])(\/)/).pop();
           overrideValueName = overrideValueName.replace(`${workingName}`, '');
+        }
 
+        // newer check for Placeholder parent container
+        if (!overrideValueName) {
+          if (
+            node.parent
+            && cleanName(node.parent.name).toLowerCase().includes('placeholder')
+            && !cleanName(node.name).toLowerCase().includes('placeholder')
+          ) {
+            overrideValueName = cleanName(node.name);
+          }
+        }
+
+        if (overrideValueName) {
           // update `overridesText`
           const existingIndex: number = overridesText.findIndex(text => text === overrideValueName);
           if (existingIndex < 0) {
