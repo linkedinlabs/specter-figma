@@ -127,7 +127,7 @@ const cleanName = (name: string): string => {
     if (isLegacyByName(name)) {
       // take only the last segment of the name (after a “/”, if available)
       // ignore segments that begin with a “w” as-in “…Something w/ Icon”
-      cleanedName = cleanedName.split(/(?:[^w])(\/)/).pop();
+      cleanedName = cleanedName.split(/(?:[^w|^\s])(\/)/).pop();
     } else {
       cleanedName = cleanedName.replace('☾ ', '');
       cleanedName = cleanedName.replace('☼ ', '');
