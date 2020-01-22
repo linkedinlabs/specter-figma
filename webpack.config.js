@@ -39,7 +39,7 @@ module.exports = (env, argv) => ({
   // Tells Webpack to generate "webview.html" and to inline "webview.ts" into it
   plugins: [
     new webpack.EnvironmentPlugin({
-      FEATURESET: (env && env.featureset === 'public' ? 'public' : 'internal'),
+      FEATURESET: (env && env.featureset && env.featureset === 'public' ? 'public' : 'internal'),
     }),
     new HtmlWebpackPlugin({
       template: './src/views/webview.html',
