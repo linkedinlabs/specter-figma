@@ -1,4 +1,4 @@
-// Figma Plugin API version 1, update 8
+// Figma Plugin API version 1, update 10
 
 declare global {
 // Global variable with Figma's plugin API.
@@ -419,6 +419,14 @@ interface Easing {
 
 type OverflowDirection = "NONE" | "HORIZONTAL" | "VERTICAL" | "BOTH"
 
+type OverlayPositionType = "CENTER" | "TOP_LEFT" | "TOP_CENTER" | "TOP_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_CENTER" | "BOTTOM_RIGHT" | "MANUAL"
+
+type OverlayBackground =
+  { readonly type: "NONE" } |
+  { readonly type: "SOLID_COLOR", readonly color: RGBA }
+
+type OverlayBackgroundInteraction = "NONE" | "CLOSE_ON_CLICK_OUTSIDE"
+
 ////////////////////////////////////////////////////////////////////////////////
 // Mixins
 
@@ -467,6 +475,8 @@ interface LayoutMixin {
 
   readonly width: number
   readonly height: number
+
+  layoutAlign: "MIN" | "CENTER" | "MAX" // applicable only inside auto-layout frames
 
   resize(width: number, height: number): void
   resizeWithoutConstraints(width: number, height: number): void
@@ -523,7 +533,7 @@ interface ExportMixin {
 }
 
 interface ReactionMixin {
-  readonly reactions: ReadonlyArray<Reaction> // PROPOSED API ONLY
+  readonly reactions: ReadonlyArray<Reaction>
 }
 
 interface DefaultShapeMixin extends
@@ -537,8 +547,18 @@ interface DefaultFrameMixin extends
   GeometryMixin, CornerMixin, RectangleCornerMixin,
   BlendMixin, ConstraintMixin, LayoutMixin, ExportMixin {
 
-  overflowDirection: OverflowDirection // PROPOSED API ONLY
-  numberOfFixedChildren: number // PROPOSED API ONLY
+  layoutMode: "NONE" | "HORIZONTAL" | "VERTICAL"
+  counterAxisSizingMode: "FIXED" | "AUTO" // applicable only if layoutMode != "NONE"
+  horizontalPadding: number // applicable only if layoutMode != "NONE"
+  verticalPadding: number // applicable only if layoutMode != "NONE"
+  itemSpacing: number // applicable only if layoutMode != "NONE"
+
+  overflowDirection: OverflowDirection
+  numberOfFixedChildren: number
+
+  readonly overlayPositionType: OverlayPositionType
+  readonly overlayBackground: OverlayBackground
+  readonly overlayBackgroundInteraction: OverlayBackgroundInteraction
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -565,7 +585,7 @@ interface PageNode extends BaseNodeMixin, ChildrenMixin, ExportMixin {
 
   backgrounds: ReadonlyArray<Paint>
 
-  readonly prototypeStartNode: FrameNode | GroupNode | ComponentNode | InstanceNode | null // PROPOSED API ONLY
+  readonly prototypeStartNode: FrameNode | GroupNode | ComponentNode | InstanceNode | null
 }
 
 interface FrameNode extends DefaultFrameMixin {
