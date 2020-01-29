@@ -114,14 +114,19 @@ const toSentenceCase = (anyString: string): string => {
  * @name findFrame
  * @param {Object} layer A Figma layer object.
  *
- * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ * @returns {Object} The top-level `FRAME` layer.
  */
 const findFrame = (layer: any) => {
   let { parent } = layer;
 
-  // loop through each parent and adjust the coordinates
+  // if the parent is a page, we're done
+  if (parent && parent.type === 'PAGE') {
+    return parent;
+  }
+
+  // loop through each parent until we find the outermost FRAME
   if (parent) {
-    while (parent.type !== FRAME_TYPES.main) {
+    while (parent && parent.parent.type !== 'PAGE') {
       parent = parent.parent;
     }
   }
