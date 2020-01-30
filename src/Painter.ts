@@ -1137,11 +1137,11 @@ const removeAnnotation = (existingItemData: { id: string }): void => {
  */
 export default class Painter {
   layer: SceneNode;
-  frame: FrameNode;
+  frame: FrameNode | PageNode;
   page: PageNode;
   constructor({ for: layer, in: page }) {
     this.layer = layer;
-    this.frame = findFrame(this.layer);
+    this.frame = findFrame(this.layer, true);
     this.page = page;
   }
 
@@ -1177,11 +1177,11 @@ export default class Painter {
       return result;
     }
 
-    // return an error if the selection is not placed on an frame
-    if (!this.frame) {
+    // return an error if the selection is not placed in a frame
+    if (this.frame.type === 'PAGE') {
       result.status = 'error';
       result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be on an frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
@@ -1372,8 +1372,8 @@ export default class Painter {
       },
     };
 
-    // return an error if the selection is not placed on an frame
-    if (!this.frame) {
+    // return an error if the selection is not placed in a frame
+    if (this.frame.type === 'PAGE') {
       result.status = 'error';
       result.messages.log = 'Selection not on frame';
       result.messages.toast = 'Your selection needs to be in a frame';
@@ -1774,7 +1774,7 @@ export default class Painter {
     };
 
     // return an error if the selection is not placed in a frame
-    if (!this.frame) {
+    if (this.frame.type === 'PAGE') {
       result.status = 'error';
       result.messages.log = 'Selection not on artboard';
       result.messages.toast = 'Your selection needs to be in a frame';
