@@ -1141,7 +1141,7 @@ export default class Painter {
   page: PageNode;
   constructor({ for: layer, in: page }) {
     this.layer = layer;
-    this.frame = findFrame(this.layer, true);
+    this.frame = findFrame(this.layer);
     this.page = page;
   }
 

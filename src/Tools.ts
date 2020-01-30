@@ -113,21 +113,14 @@ const toSentenceCase = (anyString: string): string => {
  * @kind function
  * @name findFrame
  * @param {Object} node A Figma node object.
- * @param {boolean} allowPage Allow a `PageNode` as the top-level frame?
  *
  * @returns {Object} The top-level node.
  */
-const findFrame = (
-  node: any,
-  allowPage: boolean = false,
-) => {
+const findFrame = (node: any): FrameNode => {
   let { parent } = node;
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
-    if (allowPage) {
-      return parent;
-    }
     return null;
   }
 
