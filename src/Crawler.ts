@@ -147,7 +147,7 @@ export default class Crawler {
     // iterate through the selected layers and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
     selection.forEach((layer) => {
-      const topFrame = findFrame(layer);
+      const topFrame = findFrame(layer, true);
       const relativePosition = getRelativePosition(layer, topFrame);
       const layerX: number = relativePosition.x;
       const layerY: number = relativePosition.y;

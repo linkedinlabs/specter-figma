@@ -113,14 +113,21 @@ const toSentenceCase = (anyString: string): string => {
  * @kind function
  * @name findFrame
  * @param {Object} layer A Figma layer object.
+ * @param {boolean} allowPage Allow a `PageNode` as the top-level frame?
  *
  * @returns {Object} The top-level `FRAME` layer.
  */
-const findFrame = (layer: any) => {
+const findFrame = (
+  layer: any,
+  allowPage: boolean = false,
+) => {
   let { parent } = layer;
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
+    if (allowPage) {
+      return parent;
+    }
     return null;
   }
 
@@ -225,8 +232,17 @@ const getRelativePosition = (
   node: SceneNode,
   parentNode: SceneNode,
 ) => {
-  const relativeX: number = node.absoluteTransform[0][2] - parentNode.absoluteTransform[0][2];
-  const relativeY: number = node.absoluteTransform[1][2] - parentNode.absoluteTransform[1][2];
+  let parentX = 0;
+  let parentY = 0;
+
+  // cannot assume `parentNode` has `absoluteTransform` – `PageNode`’s do not, for example
+  if (parentNode.absoluteTransform) {
+    parentX = parentNode.absoluteTransform[0][2];
+    parentY = parentNode.absoluteTransform[1][2];
+  }
+
+  const relativeX: number = node.absoluteTransform[0][2] - parentX;
+  const relativeY: number = node.absoluteTransform[1][2] - parentY;
 
   const relativePosition: {
     x: number,
