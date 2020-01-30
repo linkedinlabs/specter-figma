@@ -107,21 +107,21 @@ const toSentenceCase = (anyString: string): string => {
 };
 
 /**
- * @description Takes a layer object and traverses parent relationships until the top-level
- * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+ * @description Takes a node object and traverses parent relationships until the top-level
+ * `FrameNode` (or `PageNode`) is found. Returns the node.
  *
  * @kind function
  * @name findFrame
- * @param {Object} layer A Figma layer object.
+ * @param {Object} node A Figma node object.
  * @param {boolean} allowPage Allow a `PageNode` as the top-level frame?
  *
- * @returns {Object} The top-level `FRAME` layer.
+ * @returns {Object} The top-level node.
  */
 const findFrame = (
-  layer: any,
+  node: any,
   allowPage: boolean = false,
 ) => {
-  let { parent } = layer;
+  let { parent } = node;
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
