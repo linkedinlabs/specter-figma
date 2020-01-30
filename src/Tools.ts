@@ -107,21 +107,26 @@ const toSentenceCase = (anyString: string): string => {
 };
 
 /**
- * @description Takes a layer object and traverses parent relationships until the top-level
- * `FRAME_TYPES.main` layer is found. Returns the frame layer.
+ * @description Takes a node object and traverses parent relationships until the top-level
+ * `FrameNode` (or `PageNode`) is found. Returns the node.
  *
  * @kind function
  * @name findFrame
- * @param {Object} layer A Figma layer object.
+ * @param {Object} node A Figma node object.
  *
- * @returns {Object} The top-level `FRAME_TYPES.main` layer.
+ * @returns {Object} The top-level node.
  */
-const findFrame = (layer: any) => {
-  let { parent } = layer;
+const findFrame = (node: any): FrameNode => {
+  let { parent } = node;
 
-  // loop through each parent and adjust the coordinates
+  // if the parent is a page, we're done
+  if (parent && parent.type === 'PAGE') {
+    return null;
+  }
+
+  // loop through each parent until we find the outermost FRAME
   if (parent) {
-    while (parent.type !== FRAME_TYPES.main) {
+    while (parent && parent.parent.type !== 'PAGE') {
       parent = parent.parent;
     }
   }
@@ -202,6 +207,45 @@ const getRelativeIndex = (layer): number => {
   }
 
   return layerIndex;
+};
+
+/**
+ * @description Takes a node and a parent node (does not need to be a direct parent) and
+ * calculates the relative `x`/`y` from the child to parent using `absoluteTransform`.
+ *
+ * @kind function
+ * @name getRelativePosition
+ * @param {Object} node A SceneNode layer object that is a child of `parentNode`.
+ * @param {Object} parentNode A SceneNode layer object that is a parent of the `node`. It
+ * does not need to be a direct parent.
+ *
+ * @returns {Object} A `relativePosition` object containing `x` and `y`.
+ */
+const getRelativePosition = (
+  node: SceneNode,
+  parentNode: SceneNode,
+) => {
+  let parentX = 0;
+  let parentY = 0;
+
+  // cannot assume `parentNode` has `absoluteTransform` – `PageNode`’s do not, for example
+  if (parentNode.absoluteTransform) {
+    parentX = parentNode.absoluteTransform[0][2];
+    parentY = parentNode.absoluteTransform[1][2];
+  }
+
+  const relativeX: number = node.absoluteTransform[0][2] - parentX;
+  const relativeY: number = node.absoluteTransform[1][2] - parentY;
+
+  const relativePosition: {
+    x: number,
+    y: number,
+  } = {
+    x: relativeX,
+    y: relativeY,
+  };
+
+  return relativePosition;
 };
 
 /**
@@ -330,6 +374,7 @@ export {
   loadFirstAvailableFontAsync,
   getLayerSettings,
   getRelativeIndex,
+  getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   isVisible,

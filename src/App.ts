@@ -199,7 +199,7 @@ export default class App {
       return messenger.toast('A layer must be selected');
     }
 
-    // need a selected layer to annotate it
+    // need a single selected layer to annotate it
     if (selection.length > 1) {
       return messenger.toast('Only one layer may be selected');
     }
@@ -276,9 +276,9 @@ export default class App {
       page,
       selection,
     } = assemble(figma);
-
-    // need a selected layer to annotate it
-    if (selection === null || selection.length > 2) {
+    // need one or two selected layers
+    if (selection === null || selection.length === 0 || selection.length > 2) {
+      messenger.log(`Annotate measurement: ${selection.length} layer(s) selected`);
       return messenger.toast('One or two layers must be selected');
     }
 
@@ -293,13 +293,24 @@ export default class App {
     // (if gap position exists or layers are overlapped)
     let paintResult = null;
     if (selection.length === 2) {
-      const gapPosition = crawler.gapPosition();
-      let overlapPositions = null;
-      if (gapPosition) {
+      const gapPositionResult = crawler.gapPosition();
+
+      // read the response from Crawler; log and display message(s)
+      messenger.handleResult(gapPositionResult);
+
+      if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
+        const gapPosition = gapPositionResult.payload;
         paintResult = painter.addGapMeasurement(gapPosition);
       } else {
-        overlapPositions = crawler.overlapPositions();
-        paintResult = painter.addOverlapMeasurements(overlapPositions);
+        const overlapPositionsResult = crawler.overlapPositions();
+
+        // read the response from Crawler; log and display message(s)
+        messenger.handleResult(overlapPositionsResult);
+
+        if (overlapPositionsResult.status === 'success' && overlapPositionsResult.payload) {
+          const overlapPositions = overlapPositionsResult.payload;
+          paintResult = painter.addOverlapMeasurements(overlapPositions);
+        }
       }
     }
 
@@ -308,7 +319,9 @@ export default class App {
     }
 
     // read the response from Painter; log and display message(s)
-    messenger.handleResult(paintResult);
+    if (paintResult) {
+      messenger.handleResult(paintResult);
+    }
 
     if (this.shouldTerminate) {
       this.closeGUI();
@@ -351,18 +364,26 @@ export default class App {
     // (if gap position exists or layers are overlapped)
     let paintResult = null;
     if (selection.length === 2) {
-      const overlapPositions = crawler.overlapPositions();
+      const overlapPositionsResult = crawler.overlapPositions();
 
-      if (overlapPositions) {
-        const directions = [direction];
-        paintResult = painter.addOverlapMeasurements(overlapPositions, directions);
+      // read the response from Crawler; log and display message(s)
+      messenger.handleResult(overlapPositionsResult);
+
+      if (overlapPositionsResult.status === 'success' && overlapPositionsResult.payload) {
+        const overlapPositions = overlapPositionsResult.payload;
+        if (overlapPositions) {
+          const directions = [direction];
+          paintResult = painter.addOverlapMeasurements(overlapPositions, directions);
+
+          // read the response from Painter; log and display message(s)
+          messenger.handleResult(paintResult);
+        } else {
+          messenger.toast('The selected layers need to overlap');
+        }
       } else {
-        return messenger.toast('The selected layers need to overlap');
+        messenger.toast('The selected layers need to overlap');
       }
     }
-
-    // read the response from Painter; log and display message(s)
-    messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
       this.closeGUI();
@@ -394,17 +415,24 @@ export default class App {
     // grab the position from the selection
     const crawler = new Crawler({ for: selection });
     const layer = crawler.first();
-    const position = crawler.position();
-    const painter = new Painter({ for: layer, in: page });
+    const positionResult = crawler.position();
 
-    // draw the bounding box (if position exists)
-    let paintResult = null;
-    if (position) {
-      paintResult = painter.addBoundingBox(position);
+    // read the response from Crawler; log and display message(s)
+    messenger.handleResult(positionResult);
+
+    if (positionResult.status === 'success' && positionResult.payload) {
+      const position = positionResult.payload;
+      const painter = new Painter({ for: layer, in: page });
+
+      // draw the bounding box (if position exists)
+      let paintResult = null;
+      if (position) {
+        paintResult = painter.addBoundingBox(position);
+      }
+
+      // read the response from Painter; log and display message(s)
+      messenger.handleResult(paintResult);
     }
-
-    // read the response from Painter; log and display message(s)
-    messenger.handleResult(paintResult);
 
     if (this.shouldTerminate) {
       this.closeGUI();
