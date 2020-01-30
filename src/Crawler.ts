@@ -1,5 +1,9 @@
 import { FRAME_TYPES } from './constants';
-import { getRelativeIndex } from './Tools';
+import {
+  findFrame,
+  getRelativeIndex,
+  getRelativePosition,
+} from './Tools';
 
 /**
  * @description A class to handle traversing an array of selected items and return useful items
@@ -139,8 +143,10 @@ export default class Crawler {
     // iterate through the selected layers and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
     this.all().forEach((layer) => {
-      const layerX: number = layer.x;
-      const layerY: number = layer.y;
+      const topFrame = findFrame(layer);
+      const relativePosition = getRelativePosition(layer, topFrame);
+      const layerX: number = relativePosition.x;
+      const layerY: number = relativePosition.y;
       const layerW: number = layer.width;
       const layerH: number = layer.height;
       const layerOuterX: number = layerX + layerW;
