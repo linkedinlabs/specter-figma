@@ -121,7 +121,7 @@ const findFrame = (layer: any) => {
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
-    return parent;
+    return null;
   }
 
   // loop through each parent until we find the outermost FRAME
