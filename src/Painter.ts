@@ -1,6 +1,7 @@
 import {
   findFrame,
   getLayerSettings,
+  getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   updateArray,
@@ -1176,11 +1177,11 @@ export default class Painter {
       return result;
     }
 
-    // return an error if the selection is not placed on an frame
+    // return an error if the selection is not placed in a frame
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be on an frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
@@ -1231,6 +1232,7 @@ export default class Painter {
 
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1244,10 +1246,11 @@ export default class Painter {
       frameHeight: this.frame.height,
       width: this.layer.width,
       height: this.layer.height,
-      x: this.layer.x,
-      y: this.layer.y,
+      x: relativePosition.x,
+      y: relativePosition.y,
       index: layerIndex,
     };
+
     const group = positionAnnotation(
       this.frame,
       groupName,
@@ -1369,11 +1372,11 @@ export default class Painter {
       },
     };
 
-    // return an error if the selection is not placed on an frame
+    // return an error if the selection is not placed in a frame
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be on a frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
@@ -1412,6 +1415,7 @@ export default class Painter {
 
     // group and position the annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1425,8 +1429,8 @@ export default class Painter {
       frameHeight: this.frame.height,
       width: this.layer.width,
       height: this.layer.height,
-      x: this.layer.x,
-      y: this.layer.y,
+      x: relativePosition.x,
+      y: relativePosition.y,
       index: layerIndex,
     };
 
@@ -1706,15 +1710,15 @@ export default class Painter {
       },
     };
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on artboard';
-      result.messages.toast = 'Your selection needs to be on an artboard';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!spacingPosition) {
       result.status = 'error';
       result.messages.log = 'spacingPosition is missing';
@@ -1769,15 +1773,15 @@ export default class Painter {
       },
     };
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on artboard';
-      result.messages.toast = 'Your selection needs to be on an artboard';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!overlapFrames) {
       result.status = 'error';
       result.messages.log = 'overlapFrames is missing';
