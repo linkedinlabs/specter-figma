@@ -1376,7 +1376,7 @@ export default class Painter {
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be on a frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
@@ -1710,15 +1710,15 @@ export default class Painter {
       },
     };
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on artboard';
-      result.messages.toast = 'Your selection needs to be on an artboard';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!spacingPosition) {
       result.status = 'error';
       result.messages.log = 'spacingPosition is missing';
@@ -1773,15 +1773,15 @@ export default class Painter {
       },
     };
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!this.frame) {
       result.status = 'error';
       result.messages.log = 'Selection not on artboard';
-      result.messages.toast = 'Your selection needs to be on an artboard';
+      result.messages.toast = 'Your selection needs to be in a frame';
       return result;
     }
 
-    // return an error if the selection is not placed on an artboard
+    // return an error if the selection is not placed in a frame
     if (!overlapFrames) {
       result.status = 'error';
       result.messages.log = 'overlapFrames is missing';
