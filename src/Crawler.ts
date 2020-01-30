@@ -140,9 +140,13 @@ export default class Crawler {
     let outerX: number = 0;
     let outerY: number = 0;
 
+    // a flat seleciton from .all() is not needed for the outer position/dimensions
+    // of an entire selection
+    const selection = this.array;
+
     // iterate through the selected layers and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
-    this.all().forEach((layer) => {
+    selection.forEach((layer) => {
       const topFrame = findFrame(layer);
       const relativePosition = getRelativePosition(layer, topFrame);
       const layerX: number = relativePosition.x;
