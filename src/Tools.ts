@@ -210,6 +210,36 @@ const getRelativeIndex = (layer): number => {
 };
 
 /**
+ * @description Takes a node and a parent node (does not need to be a direct parent) and
+ * calculates the relative `x`/`y` from the child to parent using `absoluteTransform`.
+ *
+ * @kind function
+ * @name getRelativePosition
+ * @param {Object} node A SceneNode layer object that is a child of `parentNode`.
+ * @param {Object} parentNode A SceneNode layer object that is a parent of the `node`. It
+ * does not need to be a direct parent.
+ *
+ * @returns {Object} A `relativePosition` object containing `x` and `y`.
+ */
+const getRelativePosition = (
+  node: SceneNode,
+  parentNode: SceneNode,
+) => {
+  const relativeX: number = node.absoluteTransform[0][2] - parentNode.absoluteTransform[0][2];
+  const relativeY: number = node.absoluteTransform[1][2] - parentNode.absoluteTransform[1][2];
+
+  const relativePosition: {
+    x: number,
+    y: number,
+  } = {
+    x: relativeX,
+    y: relativeY,
+  };
+
+  return relativePosition;
+};
+
+/**
  * @description Takes a Figma page object and a `layerId` and uses the Figma API’s
  * `getPluginData` to extract and return a specific layer’s settings.
  *
@@ -335,6 +365,7 @@ export {
   loadFirstAvailableFontAsync,
   getLayerSettings,
   getRelativeIndex,
+  getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   isVisible,
