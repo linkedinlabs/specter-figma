@@ -124,6 +124,22 @@ export default class Crawler {
    * @returns {Object} The `x`, `y` coordinates and `width` and `height` of an entire selection.
    */
   position() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+      payload: any,
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+      payload: null,
+    };
+
     const thePosition: {
       x: number,
       y: number,
@@ -140,14 +156,30 @@ export default class Crawler {
     let outerX: number = 0;
     let outerY: number = 0;
 
-    // a flat seleciton from .all() is not needed for the outer position/dimensions
+    // a flat selection from .all() is not needed for the outer position/dimensions
     // of an entire selection
     const selection = this.array;
+
+    // check for top frames
+    let allHaveTopFrames = true;
+    selection.forEach((layer) => {
+      const topFrame = findFrame(layer);
+      if (!topFrame) {
+        allHaveTopFrames = false;
+      }
+    });
+
+    if (!allHaveTopFrames) {
+      result.status = 'error';
+      result.messages.log = 'One or more nodes not inside a frame';
+      result.messages.toast = 'All layers must be inside a frame';
+      return result;
+    }
 
     // iterate through the selected layers and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
     selection.forEach((layer) => {
-      const topFrame = findFrame(layer, true);
+      const topFrame = findFrame(layer);
       const relativePosition = getRelativePosition(layer, topFrame);
       const layerX: number = relativePosition.x;
       const layerY: number = relativePosition.y;
@@ -191,7 +223,11 @@ export default class Crawler {
     thePosition.width = width;
     thePosition.height = height;
 
-    return thePosition;
+    // set the payload and deliver
+    result.status = 'success';
+    result.messages.log = 'Selection position calculated';
+    result.payload = thePosition;
+    return result;
   }
 
   /**
@@ -207,6 +243,22 @@ export default class Crawler {
    * for the two layers used to calculated the gap position.
    */
   gapPosition() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+      payload: any,
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+      payload: null,
+    };
+
     const thePosition: {
       x: number,
       y: number,
@@ -225,6 +277,8 @@ export default class Crawler {
       layerBId: null,
     };
 
+    // a flat selection from .all() is not needed for the outer position/dimensions
+    // of an entire selection
     const selection = this.array;
 
     // set the layers to a default for comparisons
@@ -233,9 +287,16 @@ export default class Crawler {
     let layerB = selection[firstIndex];
 
     let layerATopFrame = findFrame(layerA);
-    let layerAPosition = getRelativePosition(layerA, layerATopFrame);
-
     let layerBTopFrame = findFrame(layerB);
+
+    if (!layerATopFrame || !layerBTopFrame) {
+      result.status = 'error';
+      result.messages.log = 'One or more nodes not inside a frame';
+      result.messages.toast = 'All layers must be inside a frame';
+      return result;
+    }
+
+    let layerAPosition = getRelativePosition(layerA, layerATopFrame);
     let layerBPosition = getRelativePosition(layerB, layerBTopFrame);
 
     // assume the gap orientation is vertical
@@ -420,12 +481,19 @@ export default class Crawler {
       }
     }
 
+    // return a successful result
+    result.status = 'success';
+
     // no gap exists
     if (!thePosition.x) {
-      return null;
+      result.messages.log = 'A gap positioning was not found';
+      return result;
     }
 
-    return thePosition;
+    // set the payload
+    result.messages.log = 'Gap positioning calculated';
+    result.payload = thePosition;
+    return result;
   }
 
   /**
@@ -443,12 +511,30 @@ export default class Crawler {
    * for the two layers used to calculated the overlapped areas.
    */
   overlapPositions() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+      payload: any,
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+      payload: null,
+    };
+
     // use `gapPosition` to first ensure that the items do actually overlap
-    const gapPosition = this.gapPosition();
+    const gapPositionResult = this.gapPosition();
 
     // if items do not overlap, cannot create an `overlapPosition`
-    if (gapPosition) {
-      return null;
+    if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
+      result.status = 'error';
+      result.messages.log = 'Gap positioning was found; cannot continue';
+      return result;
     }
 
     // set the selection
@@ -460,9 +546,16 @@ export default class Crawler {
     let layerB = selection[selection.length - 1];
 
     let layerATopFrame = findFrame(layerA);
-    let layerAPosition = getRelativePosition(layerA, layerATopFrame);
-
     let layerBTopFrame = findFrame(layerB);
+
+    if (!layerATopFrame || !layerBTopFrame) {
+      result.status = 'error';
+      result.messages.log = 'One or more nodes not inside a frame';
+      result.messages.toast = 'All layers must be inside a frame';
+      return result;
+    }
+
+    let layerAPosition = getRelativePosition(layerA, layerATopFrame);
     let layerBPosition = getRelativePosition(layerB, layerBTopFrame);
 
     // find bottom (`layerA`) and top (`layerB`) layers
@@ -493,7 +586,10 @@ export default class Crawler {
     // if both layers are exactly the same index, we cannot assume dominance.
     // this should not happen, but layers might be selected from multiple artboards.
     if (layerAIndex === layerBIndex) {
-      return null;
+      result.status = 'error';
+      result.messages.log = 'Layers are the same index';
+      result.messages.toast = 'Select layers inside the same frame';
+      return result;
     }
 
     // -------- set positions - essentially defining rectangles in the overapped spaces
@@ -584,7 +680,10 @@ export default class Crawler {
       layerBId: layerB.id,
     };
 
-    // deliver the result
-    return thePositions;
+    // set the payload and deliver
+    result.status = 'success';
+    result.messages.log = 'Overlap positions calculated';
+    result.payload = thePositions;
+    return result;
   }
 }
