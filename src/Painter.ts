@@ -1,6 +1,7 @@
 import {
   findFrame,
   getLayerSettings,
+  getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   updateArray,
@@ -1231,6 +1232,7 @@ export default class Painter {
 
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1244,10 +1246,11 @@ export default class Painter {
       frameHeight: this.frame.height,
       width: this.layer.width,
       height: this.layer.height,
-      x: this.layer.x,
-      y: this.layer.y,
+      x: relativePosition.x,
+      y: relativePosition.y,
       index: layerIndex,
     };
+
     const group = positionAnnotation(
       this.frame,
       groupName,
@@ -1412,6 +1415,7 @@ export default class Painter {
 
     // group and position the annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
+    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1425,8 +1429,8 @@ export default class Painter {
       frameHeight: this.frame.height,
       width: this.layer.width,
       height: this.layer.height,
-      x: this.layer.x,
-      y: this.layer.y,
+      x: relativePosition.x,
+      y: relativePosition.y,
       index: layerIndex,
     };
 
