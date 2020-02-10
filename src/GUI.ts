@@ -70,6 +70,22 @@ const cmdAHelper = (inputElement: HTMLInputElement) => {
   inputElement.addEventListener('keydown', onKeydown);
 };
 
+const watchKeyboardActions = (e: KeyboardEvent) => {
+  let button: HTMLButtonElement = null;
+
+  if ((e.which === 13) || (e.code === 'Enter') || (e.code === 'NumpadEnter')) {
+    button = document.getElementById('userInput-submit') as HTMLButtonElement;
+  }
+
+  if ((e.which === 27) || (e.code === 'Escape')) {
+    button = document.getElementById('userInput-cancel') as HTMLButtonElement;
+  }
+
+  if (button) {
+    button.click();
+  }
+};
+
 const showHideInput = (
   action: 'show' | 'hide',
   data?: {
@@ -89,6 +105,7 @@ const showHideInput = (
     inputElement.value = data.initialValue;
     inputElement.focus();
     inputElement.select();
+    inputElement.addEventListener('keyup', watchKeyboardActions);
   } else {
     containerElement.classList.remove('wide');
     actionsElement.removeAttribute('style');
