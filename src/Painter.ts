@@ -1555,7 +1555,7 @@ export default class Painter {
    *
    * @returns {null}
    */
-  addSpacingAnnotation(spacingPosition) {
+  addSpacingAnnotation(spacingPosition): boolean {
     // set up some information
     const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
     const spacingValue: number = isInternal()
@@ -1565,7 +1565,7 @@ export default class Painter {
 
     // if there is no `spacingValue`, the measurement is above an `IS-9` and isn’t considered valid
     if (!spacingValue) {
-      return null;
+      return false;
     }
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
@@ -1679,7 +1679,7 @@ export default class Painter {
       JSON.stringify(newPageSettings),
     );
 
-    return null;
+    return true;
   }
 
   /**
@@ -1730,7 +1730,15 @@ export default class Painter {
     spacingPosition.direction = 'gap'; // eslint-disable-line no-param-reassign
 
     // add the annotation
-    this.addSpacingAnnotation(spacingPosition);
+    const annotationCompleted = this.addSpacingAnnotation(spacingPosition);
+
+    // raise a toast/error if the build is internal and the spacing is more than IS-9
+    if (isInternal() && !annotationCompleted) {
+      result.status = 'error';
+      result.messages.log = 'spacingPosition is greater than IS-9';
+      result.messages.toast = 'This selection is more than IS-9';
+      return result;
+    }
 
     // return a successful result
     result.status = 'success';
