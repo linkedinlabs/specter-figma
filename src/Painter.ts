@@ -178,7 +178,7 @@ const buildAnnotation = (options: {
   secondaryText?: string,
   type: 'component' | 'custom' | 'dimension' | 'spacing' | 'style',
 }): {
-  diamond: RectangleNode,
+  diamond: PolygonNode,
   rectangle: RectangleNode,
   text: TextNode,
   icon: FrameNode,
@@ -267,14 +267,15 @@ const buildAnnotation = (options: {
 
   // build the dangling diamond
   const diamondOffset: number = (isMeasurement ? 18 : 30);
-  const diamond: RectangleNode = figma.createRectangle();
+  const diamond: PolygonNode = figma.createPolygon();
   diamond.name = 'Diamond';
 
   // position and size the diamond
   diamond.x = 0;
   diamond.y = diamondOffset + textBuffer;
-  diamond.resize(6, 6);
-  diamond.rotation = 45;
+  diamond.resize(10, 6);
+  diamond.rotation = -180;
+  diamond.pointCount = 3;
 
   // style it – set the diamond type, color, and opacity
   diamond.fills = [{
@@ -404,7 +405,7 @@ const positionAnnotation = (
   frame: FrameNode,
   groupName: string,
   annotation: {
-    diamond: RectangleNode,
+    diamond: PolygonNode,
     rectangle: RectangleNode,
     text: TextNode,
     icon: FrameNode,
