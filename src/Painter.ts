@@ -249,14 +249,15 @@ const buildAnnotation = (options: {
   rectangle.name = 'Box / Text';
   rectangle.layoutMode = 'HORIZONTAL';
   rectangle.counterAxisSizingMode = 'AUTO';
+  rectangle.layoutAlign = 'CENTER';
   rectangle.horizontalPadding = 16;
-  rectangle.verticalPadding = 10;
+  rectangle.verticalPadding = 6;
   rectangle.itemSpacing = 0;
 
   // position and size the rectangle
   rectangle.x = 0;
   rectangle.y = 0;
-  rectangle.resize(200, rectHeight);
+  // rectangle.resize(200, rectHeight);
 
   // style it – set the rectangle type, color, and opacity
   rectangle.fills = [{
@@ -265,10 +266,7 @@ const buildAnnotation = (options: {
   }];
 
   // set rounded corners of the rectangle
-  rectangle.topLeftRadius = 2;
-  rectangle.topRightRadius = 2;
-  rectangle.bottomLeftRadius = 2;
-  rectangle.bottomRightRadius = 2;
+  rectangle.cornerRadius = 2;
 
   // build the dangling diamond
   const diamondOffset: number = (isMeasurement ? 18 : 30);
@@ -459,9 +457,11 @@ const positionAnnotation = (
   group.name = groupName;
   group.layoutMode = 'VERTICAL';
   group.counterAxisSizingMode = 'AUTO';
+  group.layoutAlign = 'CENTER';
   group.horizontalPadding = 0;
   group.verticalPadding = 0;
   group.itemSpacing = 0;
+  group.fills = [];
 
   if (rectangle) { group.appendChild(rectangle); }
   if (diamond) {
