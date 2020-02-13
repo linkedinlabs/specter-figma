@@ -152,6 +152,7 @@ const buildMeasureIcon = (
   const icon = figma.createFrame();
   icon.name = 'Icon';
   icon.fills = [];
+  icon.layoutAlign = 'STRETCH';
   icon.resize(initialWidth, initialHeight);
   iconArray.forEach((line) => { icon.appendChild(line); });
 
@@ -230,13 +231,9 @@ const buildAnnotation = (options: {
   rectangle.layoutMode = 'HORIZONTAL';
   rectangle.counterAxisSizingMode = 'AUTO';
   rectangle.layoutAlign = 'CENTER';
-  rectangle.horizontalPadding = 16;
-  rectangle.verticalPadding = 6;
+  rectangle.horizontalPadding = isMeasurement ? 3 : 16;
+  rectangle.verticalPadding = isMeasurement ? 0 : 6;
   rectangle.itemSpacing = 0;
-
-  // position and size the rectangle
-  rectangle.x = 0;
-  rectangle.y = 0;
 
   // style it – set the rectangle type, color, and opacity
   rectangle.fills = [{
@@ -407,28 +404,49 @@ const positionAnnotation = (
     isMeasurement = true;
   }
 
-  // create the banner frame
+  // add text to box frame
   if (rectangle && text) {
     rectangle.appendChild(text);
   }
 
   // create the annotation frame
-  const group: FrameNode = figma.createFrame();
-  group.name = groupName;
-  group.layoutMode = 'VERTICAL';
-  group.counterAxisSizingMode = 'AUTO';
-  group.layoutAlign = 'CENTER';
-  group.fills = [];
+  let group: FrameNode = null;
 
-  if (rectangle) { group.appendChild(rectangle); }
+  const bannerGroup: FrameNode = figma.createFrame();
+  bannerGroup.name = isMeasurement ? 'Banner' : groupName;
+  bannerGroup.layoutMode = 'VERTICAL';
+  bannerGroup.counterAxisSizingMode = 'AUTO';
+  bannerGroup.layoutAlign = 'CENTER';
+  bannerGroup.fills = [];
+
+  if (rectangle) { bannerGroup.appendChild(rectangle); }
   if (diamond) {
     // flatten it and conver to vector
     const diamondVector: VectorNode = figma.flatten([diamond]);
     diamondVector.layoutAlign = 'CENTER';
 
-    group.appendChild(diamondVector);
+    bannerGroup.appendChild(diamondVector);
   }
-  if (icon) { group.appendChild(icon); }
+
+  // set up spacing / measurement
+  if (isMeasurement && icon) {
+    const measurementGroup: FrameNode = figma.createFrame();
+    measurementGroup.name = groupName;
+    measurementGroup.layoutMode = 'VERTICAL';
+    measurementGroup.counterAxisSizingMode = 'AUTO';
+    measurementGroup.layoutAlign = 'CENTER';
+    measurementGroup.itemSpacing = 4;
+    measurementGroup.fills = [];
+
+    // append children
+    measurementGroup.appendChild(bannerGroup);
+    measurementGroup.appendChild(icon);
+
+    // set top level
+    group = measurementGroup;
+  } else {
+    group = bannerGroup;
+  }
 
   // ------- position the group within the frame, above the layer receiving the annotation
   let frameEdge: string = null;
