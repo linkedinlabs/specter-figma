@@ -220,31 +220,11 @@ const buildAnnotation = (options: {
     isMeasurement = true;
   }
 
-  // build the text box
-  const textPosition: {
-    x: number,
-    y: number,
-  } = {
-    x: 16,
-    y: 0,
-  };
-
-  if (isMeasurement) {
-    textPosition.x = 3;
-  }
-
-  // adjustment for two-line annotations
-  let textBuffer: number = 0;
-  if (secondaryText) {
-    textBuffer = 18;
-  }
-
   // set up the color object
   // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
-  // build the rounded rectangle
-  const rectHeight: number = (isMeasurement ? 18 : 30) + textBuffer;
+  // build the rounded rectangle with auto-layout properties
   const rectangle: FrameNode = figma.createFrame();
   rectangle.name = 'Box / Text';
   rectangle.layoutMode = 'HORIZONTAL';
@@ -257,7 +237,6 @@ const buildAnnotation = (options: {
   // position and size the rectangle
   rectangle.x = 0;
   rectangle.y = 0;
-  // rectangle.resize(200, rectHeight);
 
   // style it – set the rectangle type, color, and opacity
   rectangle.fills = [{
@@ -269,15 +248,12 @@ const buildAnnotation = (options: {
   rectangle.cornerRadius = 2;
 
   // build the dangling diamond
-  const diamondOffset: number = (isMeasurement ? 18 : 30);
   const diamond: PolygonNode = figma.createPolygon();
   diamond.name = 'Diamond';
 
   // position and size the diamond
-  diamond.x = 0;
-  diamond.y = diamondOffset + textBuffer;
   diamond.resize(10, 6);
-  diamond.rotation = -180;
+  diamond.rotation = 180;
   diamond.pointCount = 3;
 
   // style it – set the diamond type, color, and opacity
@@ -305,26 +281,10 @@ const buildAnnotation = (options: {
   // set text – cannot do this before defining `fontName`
   text.characters = setText;
 
-  // position and size the text
-  text.x = textPosition.x;
-  text.y = textPosition.y;
+  // position the text in auto-layout
   text.textAlignVertical = 'CENTER';
   text.textAlignHorizontal = 'CENTER';
-  text.resize(text.width, rectHeight);
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
-
-  // adjust rectangle width based on text width
-  const textWidth: number = text.width;
-  const textPadding: number = (isMeasurement ? 6 : 32);
-  const rectangleWidth: number = textWidth + textPadding;
-  rectangle.resize(rectangleWidth, rectangle.height);
-
-  // move the text to the mid-point of the rectangle
-  text.x = rectangle.x + (textPadding / 2);
-
-  // move the diamond to the mid-point of the rectangle
-  const diamondMidX: number = ((rectangleWidth - 9) / 2);
-  diamond.x = diamondMidX;
 
   // create icon
   let icon: FrameNode = null;
@@ -458,23 +418,17 @@ const positionAnnotation = (
   group.layoutMode = 'VERTICAL';
   group.counterAxisSizingMode = 'AUTO';
   group.layoutAlign = 'CENTER';
-  group.horizontalPadding = 0;
-  group.verticalPadding = 0;
-  group.itemSpacing = 0;
   group.fills = [];
 
   if (rectangle) { group.appendChild(rectangle); }
   if (diamond) {
     // flatten it and conver to vector
-    const poly: VectorNode = figma.flatten([diamond]);
-    poly.layoutAlign = 'CENTER';
+    const diamondVector: VectorNode = figma.flatten([diamond]);
+    diamondVector.layoutAlign = 'CENTER';
 
-    group.appendChild(poly);
+    group.appendChild(diamondVector);
   }
   if (icon) { group.appendChild(icon); }
-
-  // const group: GroupNode = figma.group(groupArray, frame);
-  // group.name = groupName;
 
   // ------- position the group within the frame, above the layer receiving the annotation
   let frameEdge: string = null;
