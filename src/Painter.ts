@@ -179,7 +179,7 @@ const buildAnnotation = (options: {
   type: 'component' | 'custom' | 'dimension' | 'spacing' | 'style',
 }): {
   diamond: PolygonNode,
-  rectangle: RectangleNode,
+  rectangle: FrameNode,
   text: TextNode,
   icon: FrameNode,
 } => {
@@ -245,8 +245,13 @@ const buildAnnotation = (options: {
 
   // build the rounded rectangle
   const rectHeight: number = (isMeasurement ? 18 : 30) + textBuffer;
-  const rectangle: RectangleNode = figma.createRectangle();
-  rectangle.name = 'Rectangle';
+  const rectangle: FrameNode = figma.createFrame();
+  rectangle.name = 'Box / Text';
+  rectangle.layoutMode = 'HORIZONTAL';
+  rectangle.counterAxisSizingMode = 'AUTO';
+  rectangle.horizontalPadding = 16;
+  rectangle.verticalPadding = 10;
+  rectangle.itemSpacing = 0;
 
   // position and size the rectangle
   rectangle.x = 0;
@@ -297,6 +302,7 @@ const buildAnnotation = (options: {
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
   }];
+  text.layoutAlign = 'CENTER';
 
   // set text – cannot do this before defining `fontName`
   text.characters = setText;
@@ -406,7 +412,7 @@ const positionAnnotation = (
   groupName: string,
   annotation: {
     diamond: PolygonNode,
-    rectangle: RectangleNode,
+    rectangle: FrameNode,
     text: TextNode,
     icon: FrameNode,
   },
@@ -443,15 +449,32 @@ const positionAnnotation = (
     isMeasurement = true;
   }
 
-  // create the annotation group
-  const groupArray: Array<any> = [];
-  if (rectangle) { groupArray.push(rectangle); }
-  if (diamond) { groupArray.push(diamond); }
-  if (text) { groupArray.push(text); }
-  if (icon) { groupArray.push(icon); }
+  // create the banner frame
+  if (rectangle && text) {
+    rectangle.appendChild(text);
+  }
 
-  const group: GroupNode = figma.group(groupArray, frame);
+  // create the annotation frame
+  const group: FrameNode = figma.createFrame();
   group.name = groupName;
+  group.layoutMode = 'VERTICAL';
+  group.counterAxisSizingMode = 'AUTO';
+  group.horizontalPadding = 0;
+  group.verticalPadding = 0;
+  group.itemSpacing = 0;
+
+  if (rectangle) { group.appendChild(rectangle); }
+  if (diamond) {
+    // flatten it and conver to vector
+    const poly: VectorNode = figma.flatten([diamond]);
+    poly.layoutAlign = 'CENTER';
+
+    group.appendChild(poly);
+  }
+  if (icon) { group.appendChild(icon); }
+
+  // const group: GroupNode = figma.group(groupArray, frame);
+  // group.name = groupName;
 
   // ------- position the group within the frame, above the layer receiving the annotation
   let frameEdge: string = null;
