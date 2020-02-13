@@ -411,6 +411,7 @@ const positionAnnotation = (
 
   // create the annotation frame
   let group: FrameNode = null;
+  let diamondVector: VectorNode = null;
 
   const bannerGroup: FrameNode = figma.createFrame();
   bannerGroup.name = isMeasurement ? 'Banner' : groupName;
@@ -422,7 +423,7 @@ const positionAnnotation = (
   if (rectangle) { bannerGroup.appendChild(rectangle); }
   if (diamond) {
     // flatten it and conver to vector
-    const diamondVector: VectorNode = figma.flatten([diamond]);
+    diamondVector = figma.flatten([diamond]);
     diamondVector.layoutAlign = 'CENTER';
 
     bannerGroup.appendChild(diamondVector);
@@ -435,7 +436,7 @@ const positionAnnotation = (
     measurementGroup.layoutMode = 'VERTICAL';
     measurementGroup.counterAxisSizingMode = 'AUTO';
     measurementGroup.layoutAlign = 'CENTER';
-    measurementGroup.itemSpacing = 4;
+    measurementGroup.itemSpacing = 3;
     measurementGroup.fills = [];
 
     // append children
@@ -447,6 +448,9 @@ const positionAnnotation = (
   } else {
     group = bannerGroup;
   }
+
+  // set outer clipping
+  group.clipsContent = false;
 
   // ------- position the group within the frame, above the layer receiving the annotation
   let frameEdge: string = null;
@@ -555,42 +559,45 @@ const positionAnnotation = (
 
   // move diamond to left/right edge, if necessary
   if (orientation === 'left' || orientation === 'right') {
-    const diamondNewY: number = rectangle.y + (rectangle.height / 2);
-    let diamondNewX: number = null;
+    bannerGroup.layoutMode = 'HORIZONTAL';
 
-    if (orientation === 'left') {
-      // move the diamond to the left mid-point of the layer to annotate
-      diamondNewX = rectangle.x + rectangle.width - 4;
+    if (orientation === 'right') {
+      bannerGroup.appendChild(rectangle);
+      diamondVector.rotation = 270;
     } else {
-      // move the diamond to the right mid-point of the layer to annotate
-      diamondNewX = rectangle.x - 4;
+      bannerGroup.appendChild(diamondVector);
+      diamondVector.rotation = 90;
     }
+    // const diamondNewY: number = rectangle.y + (rectangle.height / 2);
+    // let diamondNewX: number = null;
 
-    // re-position diamond
-    diamond.x = diamondNewX;
-    diamond.y = diamondNewY;
+    // if (orientation === 'left') {
+    //   // move the diamond to the left mid-point of the layer to annotate
+    //   diamondNewX = rectangle.x + rectangle.width - 4;
+    // } else {
+    //   // move the diamond to the right mid-point of the layer to annotate
+    //   diamondNewX = rectangle.x - 4;
+    // }
+
+    // // re-position diamond
+    // diamond.x = diamondNewX;
+    // diamond.y = diamondNewY;
   }
 
   // adjust the measure icon width for top-oriented annotations
   if (orientation === 'top' && icon) {
-    icon.y += 26;
-    icon.resize(layerWidth, icon.height);
-
-    if (iconOffsetX > 0) {
-      if (frameEdge === 'left') {
-        icon.x -= icon.x;
-      } else {
-        icon.x = frameWidth - icon.width;
-      }
-    } else {
-      icon.x += (rectangle.width - layerWidth) / 2;
-    }
+    console.log('yup')
+    group.resize(layerWidth, group.height);
+    group.x = layerX;
   }
 
   // adjust the measure icon height for left-/right-oriented annotations
   if (orientation !== 'top') {
     // remove horizontal icon (easier to re-draw)
     icon.remove();
+
+    // re-orient main group
+    group.layoutMode = 'HORIZONTAL';
 
     // redraw icon in vertical orientation
     const measureIconColor: string = (annotationType === 'spacing' ? COLORS.spacing : COLORS.dimension);
@@ -599,26 +606,34 @@ const positionAnnotation = (
     // add back into group
     group.appendChild(iconNew);
 
+    if (orientation === 'right') {
+      group.appendChild(bannerGroup);
+    }
+
     // resize icon based on gap/layer height
-    iconNew.resize(iconNew.width, layerHeight);
+    group.resize(group.width, layerHeight);
 
     // position icon on `y`
-    if (iconOffsetY !== null) {
-      if (iconOffsetY > 0) {
-        // move the icon back to the top of the frame
-        iconNew.y -= iconNew.y;
-      } else {
-        iconNew.y = layerPosition.y;
-      }
-    } else {
-      iconNew.y = group.height - iconNew.height;
-    }
+    // if (iconOffsetY !== null) {
+    //   if (iconOffsetY > 0) {
+    //     // move the icon back to the top of the frame
+    //     iconNew.y -= iconNew.y;
+    //   } else {
+    //     iconNew.y = layerPosition.y;
+    //   }
+    // } else {
+    //   iconNew.y = group.height - iconNew.height;
+    // }
+    group.y = layerY;
 
     // position icon on `x` based on orientation
     if (orientation === 'right') {
-      iconNew.x = rectangle.x - 10;
+      // iconNew.x = rectangle.x - 10;
+      group.x = layerWidth + group.width - 8;
+
     } else {
-      iconNew.x = rectangle.x + rectangle.width + 4;
+      // group.x = rectangle.x + rectangle.width;
+      group.x = layerX + ((group.width - layerWidth) / 2)
     }
   }
 
