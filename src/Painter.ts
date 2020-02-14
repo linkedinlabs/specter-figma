@@ -449,6 +449,12 @@ const positionAnnotation = (
     group = bannerGroup;
   }
 
+  // set outer constraints
+  group.constraints = {
+    horizontal: 'CENTER',
+    vertical: 'MAX',
+  };
+
   // set outer clipping
   group.clipsContent = false;
 
@@ -540,22 +546,25 @@ const positionAnnotation = (
   group.x = placementX;
   group.y = placementY;
 
+  console.log(`placementY ${placementY}; placementX ${placementX}`);
+
   // adjust diamond on horizonal placement, if necessary
-  if (frameEdge) {
-    // move the diamond to the mid-point of the layer to annotate
-    let diamondLayerMidX: number = null;
-    switch (frameEdge) {
-      case 'left':
-        diamondLayerMidX = ((layerX - group.x) + ((layerWidth + diamond.width + 6) / 2));
-        break;
-      case 'right':
-        diamondLayerMidX = layerX - ((diamond.width + 6) / 2);
-        break;
-      default:
-        diamondLayerMidX = diamond.x;
-    }
-    diamond.x = diamondLayerMidX;
-  }
+  console.log(`frameEdge ${frameEdge}`)
+  // if (frameEdge) {
+  //   // move the diamond to the mid-point of the layer to annotate
+  //   let diamondLayerMidX: number = null;
+  //   switch (frameEdge) {
+  //     case 'left':
+  //       diamondLayerMidX = ((layerX - group.x) + ((layerWidth + diamond.width + 6) / 2));
+  //       break;
+  //     case 'right':
+  //       diamondLayerMidX = layerX - ((diamond.width + 6) / 2);
+  //       break;
+  //     default:
+  //       diamondLayerMidX = diamond.x;
+  //   }
+  //   diamond.x = diamondLayerMidX;
+  // }
 
   // move diamond to left/right edge, if necessary
   if (orientation === 'left' || orientation === 'right') {
@@ -589,6 +598,7 @@ const positionAnnotation = (
     console.log('yup')
     group.resize(layerWidth, group.height);
     group.x = layerX;
+    console.log(`layerY ${layerY}`)
   }
 
   // adjust the measure icon height for left-/right-oriented annotations
