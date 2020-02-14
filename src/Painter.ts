@@ -535,9 +535,21 @@ const positionAnnotation = (
     if (orientation === 'right') {
       bannerGroup.appendChild(rectangle);
       diamondVector.rotation = 270;
+
+      // update outer constraints
+      group.constraints = {
+        horizontal: 'MIN',
+        vertical: 'CENTER',
+      };
     } else {
       bannerGroup.appendChild(diamondVector);
       diamondVector.rotation = 90;
+
+      // update outer constraints
+      group.constraints = {
+        horizontal: 'MAX',
+        vertical: 'CENTER',
+      };
     }
   }
 
@@ -593,12 +605,34 @@ const positionAnnotation = (
         case 'left':
           diamondVector.layoutAlign = 'MIN';
           rectangle.bottomLeftRadius = 0;
-          // rectangle.cornerRadius = 0;
+
+          // update outer constraints
+          group.constraints = {
+            horizontal: 'MIN',
+            vertical: 'MAX',
+          };
           break;
         case 'right':
           diamondVector.layoutAlign = 'MAX';
           rectangle.bottomRightRadius = 0;
-          // rectangle.cornerRadius = 0;
+
+          // update outer constraints
+          group.constraints = {
+            horizontal: 'MAX',
+            vertical: 'MAX',
+          };
+          break;
+        case 'top':
+          // group.appendChild(bannerGroup);
+          bannerGroup.appendChild(rectangle);
+          diamondVector.rotation = 180;
+          group.y = layerY + layerHeight + 4;
+
+          // update outer constraints
+          group.constraints = {
+            horizontal: 'CENTER',
+            vertical: 'MIN',
+          };
           break;
         default:
           diamondVector.layoutAlign = 'CENTER';
@@ -609,6 +643,12 @@ const positionAnnotation = (
         group.appendChild(bannerGroup);
         bannerGroup.appendChild(rectangle);
         diamondVector.rotation = 180;
+
+        // update outer constraints
+        group.constraints = {
+          horizontal: 'CENTER',
+          vertical: 'MIN',
+        };
 
         // adjust position against midpoint
         if (layerY > 0) {
@@ -634,6 +674,12 @@ const positionAnnotation = (
         bannerGroup.appendChild(diamondVector);
         diamondVector.rotation = 90;
         group.x = (layerX - group.width - 4);
+
+        // update outer constraints
+        group.constraints = {
+          horizontal: 'MAX',
+          vertical: 'CENTER',
+        };
       }
 
       // move left-side annotation to the right side
@@ -641,6 +687,12 @@ const positionAnnotation = (
         group.appendChild(bannerGroup);
         bannerGroup.appendChild(rectangle);
         diamondVector.rotation = 270;
+
+        // update outer constraints
+        group.constraints = {
+          horizontal: 'MIN',
+          vertical: 'CENTER',
+        };
 
         // adjust position against midpoint
         if (layerX < 0) {
