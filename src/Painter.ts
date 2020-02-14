@@ -547,6 +547,7 @@ const positionAnnotation = (
   group.y = placementY;
 
   console.log(`placementY ${placementY}; placementX ${placementX}`);
+  console.log(`layerX ${layerX}; layerY ${layerY}`);
 
   // adjust diamond on horizonal placement, if necessary
   console.log(`frameEdge ${frameEdge}`)
@@ -565,6 +566,7 @@ const positionAnnotation = (
   //   }
   //   diamond.x = diamondLayerMidX;
   // }
+      console.log(orientation)
 
   // move diamond to left/right edge, if necessary
   if (orientation === 'left' || orientation === 'right') {
@@ -595,10 +597,14 @@ const positionAnnotation = (
 
   // adjust the measure icon width for top-oriented annotations
   if (orientation === 'top' && icon) {
-    console.log('yup')
     group.resize(layerWidth, group.height);
     group.x = layerX;
-    console.log(`layerY ${layerY}`)
+
+    if (annotationType === 'dimension') {
+      group.y = layerY - group.height - 4;
+    } else {
+      group.y = layerY - group.height + 2;
+    }
   }
 
   // adjust the measure icon height for left-/right-oriented annotations
@@ -639,11 +645,13 @@ const positionAnnotation = (
     // position icon on `x` based on orientation
     if (orientation === 'right') {
       // iconNew.x = rectangle.x - 10;
-      group.x = layerWidth + group.width - 8;
+      // group.x = layerWidth + group.width - 8;
+      group.x = layerX + layerWidth + 4;
 
     } else {
       // group.x = rectangle.x + rectangle.width;
-      group.x = layerX + ((group.width - layerWidth) / 2)
+      // group.x = layerX + ((group.width - layerWidth) / 2);
+      group.x = layerX - group.width + 2;
     }
   }
 
