@@ -496,12 +496,12 @@ const positionAnnotation = (
   }
 
   // detect left edge
-  if (placementX < 0) {
+  if ((placementX - 5) < 0) {
     frameEdgeX = 'left';
   }
 
   // detect right edge
-  if ((placementX + group.width) > frameWidth) {
+  if (((placementX + 5) + group.width) > frameWidth) {
     frameEdgeX = 'right';
     // placementX = frameWidth - group.width - 3;
   }
@@ -593,88 +593,63 @@ const positionAnnotation = (
   // adjust placement, if necessary
   if (frameEdgeX || frameEdgeY) {
     if (!isMeasurement) {
-      if (frameEdgeX && frameEdgeY) {
-        // move to bottom
-        if (
-          (frameEdgeX === 'left' && frameEdgeY === 'top')
-          || (frameEdgeX === 'right' && frameEdgeY === 'top')
-        ) {
-          group.appendChild(rectangle);
-          diamondVector.rotation = 180;
+      // move to right of layer, right orientation
+      if (frameEdgeX === 'left') {
+        group.layoutMode = 'HORIZONTAL';
+        group.appendChild(rectangle);
+        diamondVector.layoutAlign = 'CENTER';
+        diamondVector.rotation = 270;
 
-          // move to left edge
-          if (frameEdgeX === 'left') {
-            diamondVector.layoutAlign = 'MIN';
-            rectangle.topLeftRadius = 0;
+        // update outer constraints
+        group.constraints = {
+          horizontal: 'MIN',
+          vertical: 'CENTER',
+        };
 
-            // update outer constraints
-            group.constraints = {
-              horizontal: 'MIN',
-              vertical: 'MIN',
-            };
+        // update position
+        group.x = layerWidth - (0 - layerX) + 5;
+        group.y = layerY + ((layerHeight - group.height) / 2);
+      }
 
-            // update position
-            group.x = 5;
-            group.y = layerY + layerHeight + 5;
-          } else {
-            // move to right edge
-            diamondVector.layoutAlign = 'MAX';
-            rectangle.topRightRadius = 0;
+      // move to left of layer, left orientation
+      if (frameEdgeX === 'right') {
+        group.layoutMode = 'HORIZONTAL';
+        diamondVector.layoutAlign = 'CENTER';
+        diamondVector.rotation = 90;
 
-            // update outer constraints
-            group.constraints = {
-              horizontal: 'MAX',
-              vertical: 'MIN',
-            };
+        // update outer constraints
+        group.constraints = {
+          horizontal: 'MAX',
+          vertical: 'CENTER',
+        };
 
-            // update position
-            group.x = frameWidth - group.width - 5;
-            group.y = layerY + layerHeight + 5;
-          }
-        }
-      } else {
-        // move to left edge
-        if (frameEdgeX === 'left') {
-          diamondVector.layoutAlign = 'MIN';
-          rectangle.bottomLeftRadius = 0;
+        // update position
+        group.x = layerX - group.width - 5;
+        group.y = layerY + ((layerHeight - group.height) / 2);
+      }
 
-          // update outer constraints
-          group.constraints = {
-            horizontal: 'MIN',
-            vertical: 'MAX',
-          };
+      // bottom-align annotation
+      if (!frameEdgeX && frameEdgeY === 'top') {
+        bannerGroup.appendChild(rectangle);
+        diamondVector.rotation = 180;
+        group.y = layerY + layerHeight + 4;
 
-          // update position
-          group.x = 5;
-        }
+        // update outer constraints
+        group.constraints = {
+          horizontal: 'CENTER',
+          vertical: 'MIN',
+        };
+      }
 
-        // move to right edge
-        if (frameEdgeX === 'right') {
-          diamondVector.layoutAlign = 'MAX';
-          rectangle.bottomRightRadius = 0;
+      // adjustments for top/bottom edges
+      // top adjust
+      if (group.y < 5) {
+        group.y = 5;
+      }
 
-          // update outer constraints
-          group.constraints = {
-            horizontal: 'MAX',
-            vertical: 'MAX',
-          };
-
-          // update position
-          group.x = frameWidth - group.width - 5;
-        }
-
-        // bottom-align annotation
-        if (frameEdgeY === 'top') {
-          bannerGroup.appendChild(rectangle);
-          diamondVector.rotation = 180;
-          group.y = layerY + layerHeight + 4;
-
-          // update outer constraints
-          group.constraints = {
-            horizontal: 'CENTER',
-            vertical: 'MIN',
-          };
-        }
+      // bottom adjust
+      if (group.y > (frameHeight - group.height - 5)) {
+        group.y = frameHeight - group.height - 5;
       }
     } else {
       // move top-oriented measurement dimensions to the bottom
@@ -708,7 +683,10 @@ const positionAnnotation = (
       }
 
       // move right-side annotation to the left side
-      if ((frameEdgeX === 'right' && orientation === 'right') || (frameEdgeY === 'bottom' && orientation === 'right')) {
+      if (
+        (frameEdgeX === 'right' && orientation === 'right')
+        || (frameEdgeY === 'bottom' && orientation === 'right')
+      ) {
         group.appendChild(iconNew);
         bannerGroup.appendChild(diamondVector);
         diamondVector.rotation = 90;
