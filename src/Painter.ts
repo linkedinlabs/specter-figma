@@ -343,7 +343,8 @@ const buildBoundingBox = (position: {
 
 /**
  * @description Takes the individual annotation elements, the specs for the layer(s) receiving
- * the annotation, and adds the annotation to the container group in the proper position.
+ * the annotation, and adds the annotation to the container group in the proper position,
+ * orientation, and with the correct auto-layout settings and constraints.
  *
  * @kind function
  * @name positionAnnotation
