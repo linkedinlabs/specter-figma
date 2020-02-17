@@ -160,7 +160,8 @@ const buildMeasureIcon = (
 };
 
 /**
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text).
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
  *
  * @kind function
  * @name buildAnnotation
