@@ -460,7 +460,8 @@ const positionAnnotation = (
   group.clipsContent = false;
 
   // ------- position the group within the frame, above the layer receiving the annotation
-  let frameEdge: string = null;
+  let frameEdgeY: string = null;
+  let frameEdgeX: string = null;
 
   // initial placement based on layer to annotate
   // for top
@@ -494,34 +495,25 @@ const positionAnnotation = (
       placementY = layerY - rectangle.height - offsetY;
   }
 
-  // correct for left bleed
+  // detect left edge
   if (placementX < 0) {
-    frameEdge = 'left';
-    placementX = 5;
+    frameEdgeX = 'left';
   }
 
-  // correct for right bleed
+  // detect right edge
   if ((placementX + group.width) > frameWidth) {
-    frameEdge = 'right';
-    placementX = frameWidth - group.width - 3;
+    frameEdgeX = 'right';
+    // placementX = frameWidth - group.width - 3;
   }
 
-  // correct for top bleed
-  if (placementY < 0) {
-    frameEdge = 'top';
-    placementY = 5;
-
-    // dimension/spacing annotations get their own special correction
-    if (icon) {
-      placementY = 2;
-    }
+  // detect top edge
+  if ((placementY - 5) < 0) {
+    frameEdgeY = 'top';
   }
 
-  // correct for bottom bleed
-  if (placementY > (frameHeight - group.height)) {
-    frameEdge = 'bottom';
-    offsetY = icon ? 2 : 5;
-    placementY = (frameHeight - group.height - offsetY);
+  // detect bottom edge
+  if ((placementY + 5) > (frameHeight - group.height)) {
+    frameEdgeY = 'bottom';
   }
 
   // set annotation group placement, relative to container group
@@ -599,10 +591,50 @@ const positionAnnotation = (
   }
 
   // adjust placement, if necessary
-  if (frameEdge) {
+  if (frameEdgeX || frameEdgeY) {
     if (!isMeasurement) {
-      switch (frameEdge) {
-        case 'left':
+      if (frameEdgeX && frameEdgeY) {
+        // move to bottom
+        if (
+          (frameEdgeX === 'left' && frameEdgeY === 'top')
+          || (frameEdgeX === 'right' && frameEdgeY === 'top')
+        ) {
+          group.appendChild(rectangle);
+          diamondVector.rotation = 180;
+
+          // move to left edge
+          if (frameEdgeX === 'left') {
+            diamondVector.layoutAlign = 'MIN';
+            rectangle.topLeftRadius = 0;
+
+            // update outer constraints
+            group.constraints = {
+              horizontal: 'MIN',
+              vertical: 'MIN',
+            };
+
+            // update position
+            group.x = 5;
+            group.y = layerY + layerHeight + 5;
+          } else {
+            // move to right edge
+            diamondVector.layoutAlign = 'MAX';
+            rectangle.topRightRadius = 0;
+
+            // update outer constraints
+            group.constraints = {
+              horizontal: 'MAX',
+              vertical: 'MIN',
+            };
+
+            // update position
+            group.x = frameWidth - group.width - 5;
+            group.y = layerY + layerHeight + 5;
+          }
+        }
+      } else {
+        // move to left edge
+        if (frameEdgeX === 'left') {
           diamondVector.layoutAlign = 'MIN';
           rectangle.bottomLeftRadius = 0;
 
@@ -611,8 +643,13 @@ const positionAnnotation = (
             horizontal: 'MIN',
             vertical: 'MAX',
           };
-          break;
-        case 'right':
+
+          // update position
+          group.x = 5;
+        }
+
+        // move to right edge
+        if (frameEdgeX === 'right') {
           diamondVector.layoutAlign = 'MAX';
           rectangle.bottomRightRadius = 0;
 
@@ -621,9 +658,13 @@ const positionAnnotation = (
             horizontal: 'MAX',
             vertical: 'MAX',
           };
-          break;
-        case 'top':
-          // group.appendChild(bannerGroup);
+
+          // update position
+          group.x = frameWidth - group.width - 5;
+        }
+
+        // bottom-align annotation
+        if (frameEdgeY === 'top') {
           bannerGroup.appendChild(rectangle);
           diamondVector.rotation = 180;
           group.y = layerY + layerHeight + 4;
@@ -633,13 +674,11 @@ const positionAnnotation = (
             horizontal: 'CENTER',
             vertical: 'MIN',
           };
-          break;
-        default:
-          diamondVector.layoutAlign = 'CENTER';
+        }
       }
     } else {
       // move top-oriented measurement dimensions to the bottom
-      if (frameEdge === 'top' && orientation === 'top') {
+      if (frameEdgeY === 'top' && orientation === 'top') {
         group.appendChild(bannerGroup);
         bannerGroup.appendChild(rectangle);
         diamondVector.rotation = 180;
@@ -664,12 +703,12 @@ const positionAnnotation = (
       }
 
       // adjust position against midpoint
-      if (frameEdge === 'bottom' && orientation === 'top') {
+      if (frameEdgeY === 'bottom' && orientation === 'top') {
         group.y = frame.height - group.height - 4;
       }
 
       // move right-side annotation to the left side
-      if (frameEdge === 'right' && orientation === 'right') {
+      if ((frameEdgeX === 'right' && orientation === 'right') || (frameEdgeY === 'bottom' && orientation === 'right')) {
         group.appendChild(iconNew);
         bannerGroup.appendChild(diamondVector);
         diamondVector.rotation = 90;
@@ -683,7 +722,7 @@ const positionAnnotation = (
       }
 
       // move left-side annotation to the right side
-      if (frameEdge === 'left' && orientation === 'left') {
+      if (frameEdgeX === 'left' && orientation === 'left') {
         group.appendChild(bannerGroup);
         bannerGroup.appendChild(rectangle);
         diamondVector.rotation = 270;
@@ -703,7 +742,7 @@ const positionAnnotation = (
       }
 
       // adjust position against edge of frame
-      if (frameEdge === 'right' && orientation === 'left') {
+      if (frameEdgeX === 'right' && orientation === 'left') {
         if (layerX > frameWidth) {
           group.x = frameWidth - group.width - 4;
         }
