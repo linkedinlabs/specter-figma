@@ -13,7 +13,7 @@ Responsible Disclosure of Security Vulnerabilities
 
 Please do not file reports on Github for security issues. If the
 security issue is related to Figma or their Plugin API and not
-the implementation of this plugin, please report it [to Figma]().
+the implementation of this plugin, please report it [to Figma](https://www.figma.com/security/).
 Reports related to this plugin implementation should be sent to
 security@linkedin.com preferably with the title “Github
 linkedinlabs/specter-figma - <short summary>”.
