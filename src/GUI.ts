@@ -1,6 +1,7 @@
 /**
  * @description A set of functions to operate the plugin GUI.
  */
+import { isInternal } from './Tools';
 import './views/webview.css';
 
 // process action
@@ -160,8 +161,24 @@ const showHideInfo = (action: 'show' | 'hide') => {
   const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
   const transitionMaskElement = (<HTMLDivElement> containerElement.getElementsByClassName('transition-mask')[0]);
 
+  const setInternalInfo = () => {
+    const internalElements: HTMLCollection = document.getElementsByClassName('internal');
+    const externalElements: HTMLCollection = document.getElementsByClassName('external');
+
+    for (let i = 0; i < internalElements.length; i += 1) {
+      const internalElement: HTMLElement = internalElements[i] as HTMLElement;
+      internalElement.style.display = 'block';
+    }
+
+    for (let i = 0; i < externalElements.length; i += 1) {
+      const externalElement: HTMLElement = externalElements[i] as HTMLElement;
+      externalElement.style.display = 'none';
+    }
+  };
+
   if (action === 'show') {
     containerElement.classList.add('info-transition');
+    if (isInternal()) { setInternalInfo(); }
     setTimeout(() => {
       transitionMaskElement.classList.add('visible');
       setTimeout(() => {
