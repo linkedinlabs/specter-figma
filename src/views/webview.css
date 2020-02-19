@@ -10,6 +10,16 @@ body {
   text-align: center;
 }
 
+::-moz-selection {
+  color: #fff;
+  background: #f39;
+}
+
+::selection {
+  color: #fff;
+  background: #f39;
+}
+
 svg {
   display: block;
   width: 100%;
@@ -119,7 +129,7 @@ svg {
   justify-content: center;
   flex-direction: column;
   flex-wrap: wrap;
-  padding: 44px;
+  padding: 40px 20px 14px 20px;
   width: 100%;
 }
 
@@ -142,6 +152,38 @@ svg {
   font-family: "Inter", sans-serif;
   font-weight: 400;
   color: #9e9e9e;
+}
+
+#infoPanel article p,
+#infoPanel article ul {
+  margin: 0 0 14px 0;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+#infoPanel article p a,
+#infoPanel article ul a {
+  color: #39f;
+  text-decoration: none;
+}
+
+#infoPanel article p a:active,
+#infoPanel article ul a:active {
+  color: #000;
+  text-decoration: none;
+}
+
+#infoPanel article ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+#infoPanel article ul li {
+  margin: 0;
+  padding: 0;
 }
 
 #infoPanel footer {
