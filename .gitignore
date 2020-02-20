@@ -7,5 +7,5 @@ node_modules
 npm-debug.log
 
 # plugin
-.env
+.plugin-id
 manifest.json
