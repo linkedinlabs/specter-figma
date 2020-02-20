@@ -1,6 +1,6 @@
 {
   "name": "Specter",
-  "id": "741784072267500042",
+  "id": "PLUGIN_ID",
   "api": "1.0.0",
   "main": "dist/main.js",
   "ui": "dist/webview.html",
