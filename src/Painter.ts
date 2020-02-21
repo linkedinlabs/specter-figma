@@ -1837,10 +1837,9 @@ export default class Painter {
     const annotationCompleted = this.addSpacingAnnotation(spacingPosition);
 
     // raise a toast/error if the build is internal and the spacing is more than IS-9
-    if (isInternal() && !annotationCompleted) {
+    if (!annotationCompleted) {
       result.status = 'error';
-      result.messages.log = 'spacingPosition is greater than IS-9';
-      result.messages.toast = 'This selection is more than IS-9';
+      result.messages.log = 'The spacing annotation could not be added.';
       return result;
     }
 
