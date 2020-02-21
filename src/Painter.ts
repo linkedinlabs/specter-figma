@@ -852,7 +852,7 @@ const retrieveSpacingValue = (length: number): number => {
   // ignore anything so large that it’s above `IS-9`
   switch (true) {
     case (length >= 128): // based on 160 – IS-10 (not actually specc'd in Art Deco)
-      return itemSpacingValue;
+      return length; // return the actual length
     case (length >= 80): // 96 – IS-9
       itemSpacingValue = 9;
       break;
@@ -1648,7 +1648,7 @@ export default class Painter {
   /**
    * @description Takes a `spacingPosition` object and creates a spacing measurement annotation
    * with the correct spacing number (“IS-X”). If the calculated spacing number is larger
-   * than “IS-9”, the annotation is not created.
+   * than “IS-9”, the annotation is created with digital points/pixels.
    *
    * @kind function
    * @name addSpacingAnnotation
@@ -1664,8 +1664,8 @@ export default class Painter {
     const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
     const spacingValue: number = isInternal()
       ? retrieveSpacingValue(measurementToUse) : measurementToUse;
-    const spacingPrefix: string = isInternal() ? 'IS-' : '';
-    const spacingSuffix: string = isInternal() ? '' : 'dp';
+    const spacingPrefix: string = isInternal() && spacingValue < 10 ? 'IS-' : '';
+    const spacingSuffix: string = isInternal() && spacingValue < 10 ? '' : 'dp';
 
     // if there is no `spacingValue`, the measurement is above an `IS-9` and isn’t considered valid
     if (!spacingValue) {
@@ -1837,10 +1837,9 @@ export default class Painter {
     const annotationCompleted = this.addSpacingAnnotation(spacingPosition);
 
     // raise a toast/error if the build is internal and the spacing is more than IS-9
-    if (isInternal() && !annotationCompleted) {
+    if (!annotationCompleted) {
       result.status = 'error';
-      result.messages.log = 'spacingPosition is greater than IS-9';
-      result.messages.toast = 'This selection is more than IS-9';
+      result.messages.log = 'The spacing annotation could not be added.';
       return result;
     }
 
