@@ -286,8 +286,8 @@ svg {
   display: flex;
   align-items: flex-end;
   flex-flow: column;
-  padding: 16px 24px 20px 0;
-  width: calc(100% - 60px);
+  padding: 16px 24px 20px 24px;
+  width: 100%;
 }
 
 #userInput p,
