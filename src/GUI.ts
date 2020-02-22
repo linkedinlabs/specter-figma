@@ -141,6 +141,7 @@ const showHideInput = (
   if (action === 'show') {
     containerElement.classList.add('wide');
     mainElement.style.display = 'none';
+    infoButtonElement.style.display = 'none';
     userInputElement.removeAttribute('style');
 
     // focus on input and set initial value
@@ -153,6 +154,7 @@ const showHideInput = (
   } else {
     containerElement.classList.remove('wide');
     mainElement.removeAttribute('style');
+    infoButtonElement.removeAttribute('style');
     userInputElement.style.display = 'none';
   }
 };
