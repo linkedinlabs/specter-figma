@@ -6,6 +6,6 @@ node_modules
 .npm
 npm-debug.log
 
-# plugin
+# plugin config
 .plugin-id
 manifest.json
