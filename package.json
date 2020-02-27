@@ -20,7 +20,7 @@
     "start:internal": "npm run watch:internal",
     "genmanifest": "cp manifest.example.json manifest.json && plugin_id=$(cat '.plugin-id') && sed -i.tmp s/PLUGIN_ID/$plugin_id/ manifest.json && rm manifest.json.tmp",
     "postinstall": "npm run build",
-    "lint": "npm run lint:js",
+    "lint": "npm run lint:js && npm run lint:css",
     "lint:eslint": "eslint . --ext .js,.tsx,.ts",
     "lint:stylelint": "stylelint './src/assets/css/**/*.scss'",
     "lint:js": "npm run lint:eslint",

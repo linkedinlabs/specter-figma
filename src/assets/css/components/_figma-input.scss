@@ -1,97 +1,74 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++ figma input
 // a figma-style input (tries to match Figma’s UI with few modifications)
 // original source: https://www.figma.com/plugin-docs/figma-components/
-.input {
-  font-weight: 400;
-  font-size: 11px;
-  line-height: 16px;
-  letter-spacing: 0.005em;
+
+@mixin figma-input {
   position: relative;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
   overflow: visible;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
+  align-items: center;
+  margin: em(1) 0 em(1) 0;
+  padding: em(8) em(4) em(8) em(7);
   width: 100%;
-  height: 30px;
-  margin: 1px 0 1px 0;
-  padding: 8px 4px 8px 7px;
-  color: rgba(0, 0, 0, 0.8);
+  height: em(30);
+  @include type-01;
+  letter-spacing: 0.005em;
   border: 1px solid transparent;
   border-radius: 2px;
+  background-color: $wl-ctrl-secondary;
   outline: none;
-  background-color: #ffffff;
+
+  @include hover {
+    color: rgba($wl-ctrl-primary, 0.8);
+    border: 1px solid rgba($wl-ctrl-primary, 0.1);
+  }
+
+  &::selection {
+    color: $wl-ctrl-primary;
+    background-color: rgba($wl-action-primary, 0.25);
+  }
+
+  &::placeholder {
+    color: rgba($wl-ctrl-primary, 0.3);
+    border: 1px solid transparent;
+  }
+
+  &:not(:disabled):not(:hover):placeholder-shown {
+    border: 1px solid transparent;
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcAAAAABCAYAAABJ5n7WAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAgSURBVHgB7cMBCQAACMTAiR3sX1TQHr+DK2B+I0lSjj29qAEYlIbeBgAAAABJRU5ErkJggg==");
+    background-repeat: no-repeat;
+    background-position: center bottom -0.9px;
+    background-size: calc(100% - 10px) 1px;
+  }
+
+  &:not(:disabled):focus:placeholder-shown {
+    border: 2px solid $wl-action-primary;
+  }
+
+  &:not(:disabled):focus:not(:placeholder-shown) {
+    padding-left: em(6);
+  }
+
+  &:active,
+  &:focus {
+    padding: em(8) em(4) em(8) em(6);
+    color: $wl-ctrl-primary;
+    border: 2px solid $wl-action-primary;
+    border-radius: 2px;
+  }
+
+  &:disabled {
+    position: relative;
+    color: rgba($wl-ctrl-primary, 0.3);
+
+    @include hover {
+      border: 1px solid transparent;
+    }
+
+    &:active {
+      padding: em(8) em(4) em(8) em(7);
+    }
+  }
 }
 
-.input:hover {
-  color: rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.input::-moz-selection {
-  color: #000000;
-  background-color: rgba(24, 145, 251, 0.3);
-}
-
-.input::selection {
-  color: #000000;
-  background-color: rgba(24, 145, 251, 0.3);
-}
-
-.input::-webkit-input-placeholder {
-  color: rgba(0, 0, 0, 0.3);
-  border: 1px solid transparent;
-}
-
-.input:-ms-input-placeholder {
-  color: rgba(0, 0, 0, 0.3);
-  border: 1px solid transparent;
-}
-
-.input::-ms-input-placeholder {
-  color: rgba(0, 0, 0, 0.3);
-  border: 1px solid transparent;
-}
-
-.input::placeholder {
-  color: rgba(0, 0, 0, 0.3);
-  border: 1px solid transparent;
-}
-
-.input:not(:disabled):not(:hover):placeholder-shown {
-  border: 1px solid transparent;
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcAAAAABCAYAAABJ5n7WAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAgSURBVHgB7cMBCQAACMTAiR3sX1TQHr+DK2B+I0lSjj29qAEYlIbeBgAAAABJRU5ErkJggg==");
-  background-repeat: no-repeat;
-  background-position: center bottom -0.9px;
-  background-size: calc(100% - 10px) 1px;
-}
-
-.input:not(:disabled):focus:placeholder-shown {
-  border: 2px solid #18a0fb;
-}
-
-.input:not(:disabled):focus:not(:placeholder-shown) {
-  padding-left: 6px;
-}
-
-.input:disabled:hover {
-  border: 1px solid transparent;
-}
-
-.input:active, .input:focus {
-  padding: 8px 4px 8px 6px;
-  color: #000000;
-  border: 2px solid #18a0fb;
-  border-radius: 2px;
-}
-
-.input:disabled {
-  position: relative;
-  color: rgba(0, 0, 0, 0.3);
-}
-
-.input:disabled:active {
-  padding: 8px 4px 8px 7px;
-}
+.input { @include figma-input; }
