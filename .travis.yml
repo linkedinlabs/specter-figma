@@ -6,6 +6,7 @@ before_install:
   - cp .plugin-id.example .plugin-id && sed -i.tmp s/PLUGIN_ID/$PLUGIN_ID/ .plugin-id
 install:
   - npm install --ignore-scripts
+  - npm rebuild node-sass
 script:
   - npm run lint
   - npm run build

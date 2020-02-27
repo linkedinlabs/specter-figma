@@ -2,7 +2,7 @@
  * @description A set of functions to operate the plugin GUI.
  */
 import { isInternal } from './Tools';
-import './views/webview.css';
+import './assets/css/main.scss';
 
 // process action
 const processActionClick = (e) => {
