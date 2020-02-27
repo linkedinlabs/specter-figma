@@ -1,5 +1,6 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++ layout
 
+// some defaults
 * {
   box-sizing: border-box;
 }
@@ -17,6 +18,19 @@ svg {
   width: 100%;
 }
 
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  width: 100%;
+
+  li {
+    margin: 0;
+    width: 100%;
+  }
+}
+
+// main container
 .container {
   display: flex;
   align-items: flex-start;
@@ -28,6 +42,7 @@ svg {
   flex-direction: row;
 }
 
+// logo mark header
 header {
   display: flex;
   align-items: flex-start;
@@ -42,6 +57,7 @@ header {
   }
 }
 
+// action buttons
 nav {
   display: flex;
   align-items: center;
@@ -102,20 +118,7 @@ nav {
   }
 }
 
-ul {
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
-  width: 100%;
-
-  li {
-    margin: 0;
-    width: 100%;
-  }
-}
-
 // user input layout
-
 #userInput {
   display: flex;
   align-items: flex-end;
