@@ -1,0 +1,153 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ layout
+
+* {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font: normal 400 11px/16px Inter, Roboto, sans-serif; /* default stack from Figma */
+  text-align: center;
+}
+
+svg {
+  display: block;
+  width: 100%;
+}
+
+.container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.container.wide {
+  flex-direction: row;
+}
+
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 16px 16px 12px 16px;
+  width: 58px;
+  height: 58px;
+}
+
+header svg {
+  display: block;
+  width: 24px;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  flex-flow: column;
+  width: 100%;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  width: 100%;
+}
+
+ul li {
+  margin: 0;
+  width: 100%;
+}
+
+nav button {
+  display: flex;
+  flex-flow: row;
+  justify-content: space-between;
+  padding: 6px 16px;
+  width: 100%;
+  height: 36px;
+  color: black;
+  border: none;
+  background: white;
+  outline: none;
+}
+
+nav button:hover {
+  cursor: pointer;
+  background-color: #f6f6f6;
+}
+
+nav button:active,
+nav button:focus {
+  box-shadow: inset 0 0 0 2px #18a0fb;
+}
+
+nav button span {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: 24px;
+}
+
+nav button .icon {
+  justify-content: center;
+  width: 24px;
+}
+
+nav button .text {
+  width: calc(100% - 36px);
+  text-align: left;
+  line-height: 0.8;
+}
+
+nav button svg.icons-bounding rect {
+  fill: rgba(255, 102, 85, 0.3);
+}
+
+nav button svg.icons-measure {
+  width: 95%;
+}
+
+/* user input */
+
+#userInput {
+  display: flex;
+  align-items: flex-end;
+  flex-flow: column;
+  padding: 16px 24px 20px 0;
+  width: calc(100% - 60px);
+}
+
+#userInput p,
+#userInput h3 {
+  margin: 0;
+  padding: 0;
+  padding-bottom: 12px;
+  width: 100%;
+}
+
+#userInput p:last-child {
+  padding-bottom: 0;
+}
+
+#userInput h3 {
+  padding-top: 8px;
+  padding-left: 8px;
+  text-align: left;
+}
+
+#userInput p .button {
+  cursor: pointer;
+  width: 68px;
+}
+
+#userInput p.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-flow: row;
+  padding-right: 6px;
+  width: 100%;
+}
