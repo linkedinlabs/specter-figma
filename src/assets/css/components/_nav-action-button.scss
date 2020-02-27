@@ -1,0 +1,54 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ nav button
+
+@mixin nav-action-button {
+  display: flex;
+  flex-flow: row;
+  justify-content: space-between;
+  padding: em(6) em(16);
+  width: 100%;
+  height: em(36);
+  color: $wl-ctrl-primary;
+  border: none;
+  background: $wl-ctrl-primary-invert;
+  outline: none;
+
+  @include hover {
+    cursor: pointer;
+    background-color: rgba($wl-accent-tertiary, 0.5);
+  }
+
+  &:active,
+  &:focus {
+    box-shadow: inset 0 0 0 2px $wl-action-primary;
+  }
+
+  span {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: em(24);
+  }
+
+  .icon {
+    justify-content: center;
+    width: em(24);
+  }
+
+  .text {
+    width: calc(100% - #{em(36)});
+    text-align: left;
+    line-height: 0.8;
+  }
+
+  svg {
+    &.icons-bounding {
+      rect {
+        fill: rgba(255, 102, 85, 0.3); // custom color for bounding box icon
+      }
+    }
+
+    &.icons-measure {
+      width: 95%;
+    }
+  }
+}
