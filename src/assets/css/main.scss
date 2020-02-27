@@ -1,0 +1,17 @@
+/*
+  ++++++++++++++++++++++++++++++++++++++++++++++ main
+*/
+
+// vendor
+@import "bourbon"; // added via devDependencies
+@import url("https://rsms.me/inter/inter.css"); // loads the Inter typeface for us
+
+// shared
+@import "shared/mixins";
+@import "shared/colors";
+@import "shared/typography";
+@import "shared/layout";
+
+// components
+@import "components/figma-button";
+@import "components/figma-input";
