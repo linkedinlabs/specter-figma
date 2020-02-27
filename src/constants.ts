@@ -95,7 +95,7 @@ const GUI_SETTINGS = {
   },
   input: {
     width: 440,
-    height: 145,
+    height: 152,
   },
   info: {
     width: 200,
