@@ -1,0 +1,74 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ figma input
+// a figma-style input (tries to match Figma’s UI with few modifications)
+// original source: https://www.figma.com/plugin-docs/figma-components/
+
+@mixin figma-input {
+  position: relative;
+  display: flex;
+  overflow: visible;
+  align-items: center;
+  margin: em(1) 0 em(1) 0;
+  padding: em(8) em(4) em(8) em(7);
+  width: 100%;
+  height: em(30);
+  @include type-01;
+  letter-spacing: 0.005em;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background-color: $wl-ctrl-secondary;
+  outline: none;
+
+  @include hover {
+    color: rgba($wl-ctrl-primary, 0.8);
+    border: 1px solid rgba($wl-ctrl-primary, 0.1);
+  }
+
+  &::selection {
+    color: $wl-ctrl-primary;
+    background-color: rgba($wl-action-primary, 0.25);
+  }
+
+  &::placeholder {
+    color: rgba($wl-ctrl-primary, 0.3);
+    border: 1px solid transparent;
+  }
+
+  &:not(:disabled):not(:hover):placeholder-shown {
+    border: 1px solid transparent;
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcAAAAABCAYAAABJ5n7WAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAgSURBVHgB7cMBCQAACMTAiR3sX1TQHr+DK2B+I0lSjj29qAEYlIbeBgAAAABJRU5ErkJggg==");
+    background-repeat: no-repeat;
+    background-position: center bottom -0.9px;
+    background-size: calc(100% - 10px) 1px;
+  }
+
+  &:not(:disabled):focus:placeholder-shown {
+    border: 2px solid $wl-action-primary;
+  }
+
+  &:not(:disabled):focus:not(:placeholder-shown) {
+    padding-left: em(6);
+  }
+
+  &:active,
+  &:focus {
+    padding: em(8) em(4) em(8) em(6);
+    color: $wl-ctrl-primary;
+    border: 2px solid $wl-action-primary;
+    border-radius: 2px;
+  }
+
+  &:disabled {
+    position: relative;
+    color: rgba($wl-ctrl-primary, 0.3);
+
+    @include hover {
+      border: 1px solid transparent;
+    }
+
+    &:active {
+      padding: em(8) em(4) em(8) em(7);
+    }
+  }
+}
+
+.input { @include figma-input; }

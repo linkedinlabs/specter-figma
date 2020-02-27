@@ -1,0 +1,82 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ figma button
+// a figma-style button (tries to match Figma’s UI with few modifications)
+// original source: https://www.figma.com/plugin-docs/figma-components/
+
+@mixin figma-button {
+  display: inline-block;
+  flex-shrink: 0;
+  margin: em(1) 0 em(1) 0;
+  padding: em(5) em(16) em(5) em(16);
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  outline: none;
+  @include type-01(500);
+
+  &.button--margin-right {
+    margin-right: em(8);
+  }
+}
+
+@mixin figma-button--primary {
+  @include figma-button;
+  color: $wl-type-01-invert;
+  letter-spacing: 0.01em;
+  background-color: $wl-action-primary;
+
+  &:enabled:active,
+  &:enabled:focus {
+    border: 2px solid rgba($wl-ctrl-primary, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+  }
+}
+
+@mixin figma-button--primary-destructive {
+  @include figma-button--primary;
+  background-color: $wl-action-destructive;
+}
+
+@mixin figma-button--secondary {
+  @include figma-button;
+  padding: em(6) em(16) em(6) em(16);
+  color: rgba($wl-type-01, 0.8);
+  border: 1px solid rgba($wl-ctrl-primary, 0.8);
+  background-color: $wl-ctrl-secondary;
+  letter-spacing: 0.005em;
+
+  &:enabled:active,
+  &:enabled:focus {
+    padding: em(5) em(15) em(5) em(15);
+    border: 2px solid $wl-action-primary;
+  }
+
+  &:disabled {
+    color: rgba($wl-type-01, 0.3);
+    border-color: rgba($wl-ctrl-primary, 0.3);
+  }
+}
+
+@mixin figma-button--secondary-destructive {
+  @include figma-button--secondary;
+  color: $wl-type-03;
+  border: 1px solid $wl-action-destructive;
+
+  &:enabled:active,
+  &:enabled:focus {
+    border-color: $wl-action-destructive;
+  }
+
+  &:disabled {
+    color: rgba($wl-type-03, 0.3);
+    border-color: rgba($wl-action-destructive, 0.3);
+  }
+}
+
+.button--primary { @include figma-button--primary; }
+.button--primary-destructive { @include figma-button--primary-destructive; }
+
+.button--secondary { @include figma-button--secondary; }
+.button--secondary-destructive { @include figma-button--secondary-destructive; }

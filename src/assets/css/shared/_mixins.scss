@@ -1,0 +1,18 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ mixins + defaults
+
+// check Bourbon docs before adding here
+// https://www.bourbon.io/docs/latest
+
+// converts `px` to `em`
+@function em($pxInt) {
+  @return (strip-unit($pxInt) / 16) + 0rem; // stylelint-disable-line length-zero-no-unit
+}
+
+// only uses `:hover` when the device supports it
+@mixin hover {
+  @media (any-hover) {
+    &:hover {
+      @content;
+    }
+  }
+}

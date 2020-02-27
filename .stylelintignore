@@ -2,7 +2,7 @@
 .*
 
 # ignore specific directories
-src/assets/*
+src/assets/css/vendor/*
 dist/*
 
 # ignore specific files

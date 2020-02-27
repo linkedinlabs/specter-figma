@@ -1,0 +1,37 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ typography
+// The Inter typeface is loaded remotely via @import in main.scss
+// Link: https://github.com/rsms/inter
+// License Link: https://github.com/rsms/inter/blob/master/LICENSE.txt
+
+@mixin type-01($weight: 400) {
+  font-family: Inter, Roboto, sans-serif; // default stack from Figma
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: $weight;
+  color: rgba($wl-type-01, 0.8);
+}
+
+@mixin type-02 {
+  @include type-01;
+  color: $wl-type-02;
+}
+
+// force some other weights to pre-load (prevents the flout effect)
+#font-preload {
+  @include hide-visually;
+  @include type-01(400);
+
+  em {
+    font-style: normal;
+    @include type-01(300);
+  }
+
+  strong {
+    @include type-01(700);
+  }
+}
+
+h2, h3, p, ul {
+  margin: 0 0 12px 0;
+  padding: 0;
+}
