@@ -10,8 +10,12 @@
 @import "shared/mixins";
 @import "shared/colors";
 @import "shared/typography";
-@import "shared/layout";
 
 // components
 @import "components/figma-button";
 @import "components/figma-input";
+@import "components/info-panel";
+@import "components/nav-action-button";
+
+// base
+@import "shared/layout";
