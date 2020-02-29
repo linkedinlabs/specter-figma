@@ -1,5 +1,5 @@
 import {
-  FRAME_TYPES,
+  CONTAINER_NODE_TYPES,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
 } from './constants';
@@ -195,7 +195,7 @@ const getRelativeIndex = (layer): number => {
   let { parent } = layer;
   // loop through each parent and adjust the coordinates
   if (parent) {
-    while (parent.type === FRAME_TYPES.group) {
+    while (parent.type === CONTAINER_NODE_TYPES.group) {
       const parentParentChildren = parent.parent.children;
       parentGroupIndex = getIndex(parentParentChildren, parent);
       parent = parent.parent; // eslint-disable-line prefer-destructuring
@@ -371,13 +371,13 @@ const isVisible = (node: SceneNode): boolean => {
 
 export {
   findFrame,
-  loadFirstAvailableFontAsync,
   getLayerSettings,
   getRelativeIndex,
   getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   isVisible,
+  loadFirstAvailableFontAsync,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
