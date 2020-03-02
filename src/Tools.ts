@@ -165,11 +165,11 @@ const findParentInstance = (node: any) => {
     // iterate until the parent is an instance
     while (parent && parent.type !== CONTAINER_NODE_TYPES.instance) {
       currentNode = parent;
-      if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
-        // update the top-most master component with the current one
-        currentTopInstance = currentNode;
+      if (currentNode.parent.type === CONTAINER_NODE_TYPES.instance) {
+        // update the top-most instance component with the current one
+        currentTopInstance = currentNode.parent;
       }
-      parent = parent.parent;
+      parent = currentNode.parent;
     }
   }
 
