@@ -304,37 +304,43 @@ const parseOverrides = (layer: any): string => {
        * component instance that matches the naming scheme of an icon.
        *
        * @kind function
-       * @name isIconNode
+       * @name isOverrideableIconNode
        *
        * @param {Object} innerNode A Figma node object (`SceneNode`).
        *
        * @returns {boolean} Set to `true` if `innerNode` is an icon.
        * @private
        */
-      const isIconNode = (innerNode) => {
+      const isOverrideableIconNode = (innerNode) => {
         let { parent } = innerNode;
         let currentNode = innerNode;
-        let isIcon: boolean = false;
+        let isOverrideableIcon: boolean = false;
 
-        if (parent) {
-          // iterate until the parent is a page
+        if (
+          !currentNode.name.toLowerCase().includes('button')
+          && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
+        ) {
+          isOverrideableIcon = true;
+        }
+
+        if (!isOverrideableIcon && parent) {
+          // iterate until the parent id matches queried layer id
           while (parent && parent.id !== layer.id) {
             currentNode = parent;
 
             // look for Icon overrides – based on finding a container (parent) layer
             // that includes “icon” in the name, but not also “button”
             if (
-              currentNode.name.toLowerCase().includes('icon')
-              && !currentNode.name.toLowerCase().includes('button')
+              !currentNode.name.toLowerCase().includes('button')
+              && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
             ) {
-              // update the top-most master component with the current one
-              isIcon = true;
+              isOverrideableIcon = true;
             }
             parent = currentNode.parent;
           }
         }
 
-        return isIcon;
+        return isOverrideableIcon;
       };
 
       // finds the first component instance above the low-level node
@@ -342,15 +348,15 @@ const parseOverrides = (layer: any): string => {
 
       if (parentInstanceNode) {
         // check if parentInstanceNode is an icon
-        const isIcon: boolean = isIconNode(parentInstanceNode);
+        const isOverrideableIcon: boolean = isOverrideableIconNode(parentInstanceNode);
 
-        if (isIcon) {
+        if (isOverrideableIcon) {
           // grab cleaned name (last portion)
           const overrideName: string = cleanName(parentInstanceNode.name);
 
           // ignore placeholder/provisional (not overrides)
           if (
-            overrideName.replace(/\s+/g, '').toLowerCase() !== 'placeholder'
+            !overrideName.toLowerCase().includes('placeholder')
             && !overrideName.toLowerCase().includes('provisional')
           ) {
             // set the icon name as an override
@@ -363,15 +369,16 @@ const parseOverrides = (layer: any): string => {
 
   // compiles overrides into `setOverridesText` string
   // only apply label to internal builds
+  const uniqueOverridesText = Array.from(new Set(overridesText));
   let setOverridesText: string = null;
-  if (isInternal() && overridesText.length > 0) {
+  if (isInternal() && uniqueOverridesText.length > 0) {
     let label: string = 'Override';
-    if (overridesText.length > 1) {
+    if (uniqueOverridesText.length > 1) {
       label = 'Overrides';
     }
-    setOverridesText = `${label}: ${overridesText.join(', ')}`;
-  } else if (!isInternal() && overridesText.length > 0) {
-    setOverridesText = overridesText.join(', ');
+    setOverridesText = `${label}: ${uniqueOverridesText.join(', ')}`;
+  } else if (!isInternal() && uniqueOverridesText.length > 0) {
+    setOverridesText = uniqueOverridesText.join(', ');
   }
 
   return setOverridesText;
