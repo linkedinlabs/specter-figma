@@ -1,5 +1,5 @@
 import {
-  FRAME_TYPES,
+  CONTAINER_NODE_TYPES,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
 } from './constants';
@@ -134,6 +134,49 @@ const findFrame = (node: any): FrameNode => {
 };
 
 /**
+ * @description Reverse iterates the node tree to determine the immediate parent component instance
+ * (if one exists) for the node.
+ *
+ * @kind function
+ * @name findParentInstance
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
+ */
+const findParentInstance = (node: any) => {
+  let { parent } = node;
+  let currentNode = node;
+  let currentTopInstance: InstanceNode = null;
+
+  // return self if already typed as instance
+  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+    currentTopInstance = currentNode;
+    return currentTopInstance;
+  }
+
+  if (parent) {
+    // return immediate parent if already typed as instance
+    if (parent.type === CONTAINER_NODE_TYPES.instance) {
+      currentTopInstance = parent;
+      return currentTopInstance;
+    }
+
+    // iterate until the parent is an instance
+    while (parent && parent.type !== CONTAINER_NODE_TYPES.instance) {
+      currentNode = parent;
+      if (currentNode.parent.type === CONTAINER_NODE_TYPES.instance) {
+        // update the top-most instance component with the current one
+        currentTopInstance = currentNode.parent;
+      }
+      parent = currentNode.parent;
+    }
+  }
+
+  return currentTopInstance;
+};
+
+/**
  * @description Takes an array of typefaces (`FontName`), iterates through the array, checking
  * the system available of each typeface and loading the first available.
  *
@@ -195,7 +238,7 @@ const getRelativeIndex = (layer): number => {
   let { parent } = layer;
   // loop through each parent and adjust the coordinates
   if (parent) {
-    while (parent.type === FRAME_TYPES.group) {
+    while (parent.type === CONTAINER_NODE_TYPES.group) {
       const parentParentChildren = parent.parent.children;
       parentGroupIndex = getIndex(parentParentChildren, parent);
       parent = parent.parent; // eslint-disable-line prefer-destructuring
@@ -371,13 +414,14 @@ const isVisible = (node: SceneNode): boolean => {
 
 export {
   findFrame,
-  loadFirstAvailableFontAsync,
+  findParentInstance,
   getLayerSettings,
   getRelativeIndex,
   getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   isVisible,
+  loadFirstAvailableFontAsync,
   resizeGUI,
   setLayerSettings,
   toSentenceCase,
