@@ -267,7 +267,6 @@ const setStyleText = (options: {
  */
 const parseOverrides = (layer: any): string => {
   const overridesText: Array<string> = [];
-
   // check for styles
   const {
     effectStyleId,
@@ -295,77 +294,81 @@ const parseOverrides = (layer: any): string => {
 
   // find base-level inner layers and check if they are icon overrides
   // `layer.children` only gives us immediate children; `layer.findOne(…` gives us
-  // all children, flattened, and iterates
-  layer.findOne((node) => {
-    // lowest-level, visible layer in a branch
-    if (isVisible(node) && !node.children) {
-      /**
-       * @description Given a node inside of a component instance, find a parent
-       * component instance that matches the naming scheme of an icon.
-       *
-       * @kind function
-       * @name isOverrideableIconNode
-       *
-       * @param {Object} innerNode A Figma node object (`SceneNode`).
-       *
-       * @returns {boolean} Set to `true` if `innerNode` is an icon.
-       * @private
-       */
-      const isOverrideableIconNode = (innerNode) => {
-        let { parent } = innerNode;
-        let currentNode = innerNode;
-        let isOverrideableIcon: boolean = false;
+  // all children, flattened, and iterates.
+  //
+  // only check for icon overrides if the top-level component has “button” in its name
+  if (layer.name.toLowerCase().includes('button') || layer.name.includes('FAB')) {
+    layer.findOne((node) => {
+      // lowest-level, visible layer in a branch
+      if (isVisible(node) && !node.children) {
+        /**
+         * @description Given a node inside of a component instance, find a parent
+         * component instance that matches the naming scheme of an icon.
+         *
+         * @kind function
+         * @name isOverrideableIconNode
+         *
+         * @param {Object} innerNode A Figma node object (`SceneNode`).
+         *
+         * @returns {boolean} Set to `true` if `innerNode` is an icon.
+         * @private
+         */
+        const isOverrideableIconNode = (innerNode) => {
+          let { parent } = innerNode;
+          let currentNode = innerNode;
+          let isOverrideableIcon: boolean = false;
 
-        if (
-          !currentNode.name.toLowerCase().includes('button')
-          && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
-        ) {
-          isOverrideableIcon = true;
-        }
-
-        if (!isOverrideableIcon && parent) {
-          // iterate until the parent id matches queried layer id
-          while (parent && parent.id !== layer.id) {
-            currentNode = parent;
-
-            // look for Icon overrides – based on finding a container (parent) layer
-            // that includes “icon” in the name, but not also “button”
-            if (
-              !currentNode.name.toLowerCase().includes('button')
-              && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
-            ) {
-              isOverrideableIcon = true;
-            }
-            parent = currentNode.parent;
-          }
-        }
-
-        return isOverrideableIcon;
-      };
-
-      // finds the first component instance above the low-level node
-      const parentInstanceNode = findParentInstance(node);
-
-      if (parentInstanceNode) {
-        // check if parentInstanceNode is an icon
-        const isOverrideableIcon: boolean = isOverrideableIconNode(parentInstanceNode);
-
-        if (isOverrideableIcon) {
-          // grab cleaned name (last portion)
-          const overrideName: string = cleanName(parentInstanceNode.name);
-
-          // ignore placeholder/provisional (not overrides)
           if (
-            !overrideName.toLowerCase().includes('placeholder')
-            && !overrideName.toLowerCase().includes('provisional')
+            !currentNode.name.toLowerCase().includes('button')
+            && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
           ) {
-            // set the icon name as an override
-            overridesText.push(overrideName);
+            isOverrideableIcon = true;
+          }
+
+          if (!isOverrideableIcon && parent) {
+            // iterate until the parent id matches queried layer id
+            while (parent && parent.id !== layer.id) {
+              currentNode = parent;
+
+              // look for Icon overrides – based on finding a container (parent) layer
+              // that includes “icon” in the name, but not also “button”
+              if (
+                !currentNode.name.toLowerCase().includes('button')
+                && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
+              ) {
+                isOverrideableIcon = true;
+              }
+              parent = currentNode.parent;
+            }
+          }
+
+          return isOverrideableIcon;
+        };
+
+        // finds the first component instance above the low-level node
+        const parentInstanceNode = findParentInstance(node);
+
+        if (parentInstanceNode) {
+          // check if parentInstanceNode is an icon
+          const isOverrideableIcon: boolean = isOverrideableIconNode(parentInstanceNode);
+
+          if (isOverrideableIcon) {
+            // grab cleaned name (last portion)
+            const overrideName: string = cleanName(parentInstanceNode.name);
+
+            // ignore placeholder/provisional (not overrides)
+            if (
+              !overrideName.toLowerCase().includes('placeholder')
+              && !overrideName.toLowerCase().includes('provisional')
+            ) {
+              // set the icon name as an override
+              overridesText.push(overrideName);
+            }
           }
         }
       }
-    }
-  });
+    });
+  }
 
   // compiles overrides into `setOverridesText` string
   // only apply label to internal builds
