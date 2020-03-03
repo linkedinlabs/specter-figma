@@ -73,12 +73,15 @@ const TYPEFACES: Array<FontName> = [
  * top-level (`main`) layer and `group` layer types.
  *
  * @kind constant
- * @name FRAME_TYPES
+ * @name CONTAINER_NODE_TYPES
  * @type {Object}
  */
-const FRAME_TYPES = {
-  main: 'FRAME',
+const CONTAINER_NODE_TYPES = {
+  component: 'COMPONENT',
+  frame: 'FRAME',
   group: 'GROUP',
+  instance: 'INSTANCE',
+  mask: 'BOOLEAN_OPERATION',
 };
 
 /**
@@ -101,7 +104,7 @@ const GUI_SETTINGS = {
 
 export {
   COLORS,
-  FRAME_TYPES,
+  CONTAINER_NODE_TYPES,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,

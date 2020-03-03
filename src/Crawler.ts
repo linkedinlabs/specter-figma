@@ -1,4 +1,4 @@
-import { FRAME_TYPES } from './constants';
+import { CONTAINER_NODE_TYPES } from './constants';
 import {
   findFrame,
   getRelativeIndex,
@@ -49,8 +49,8 @@ export default class Crawler {
     // iterate through initial selection
     initialSelection.forEach((layer: any) => {
       if (
-        layer.type !== FRAME_TYPES.group
-        && layer.type !== FRAME_TYPES.main
+        layer.type !== CONTAINER_NODE_TYPES.group
+        && layer.type !== CONTAINER_NODE_TYPES.frame
       ) {
         // non-frame or -group layers get added to the final selection
         flatSelection.push(layer);
@@ -79,11 +79,13 @@ export default class Crawler {
               children: any,
               id: string,
               type: string,
+              visible: boolean,
             },
           ) => {
             if (
-              innerLayer.type !== FRAME_TYPES.group
-              && innerLayer.type !== FRAME_TYPES.main
+              innerLayer.type !== CONTAINER_NODE_TYPES.group
+              && innerLayer.type !== CONTAINER_NODE_TYPES.frame
+              && innerLayer.visible
             ) {
               // non-frame or -group layers get added to the final selection
               flatSelection.push(innerLayer);

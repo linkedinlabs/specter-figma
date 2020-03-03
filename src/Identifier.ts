@@ -1,4 +1,5 @@
 import {
+  findParentInstance,
   getLayerSettings,
   isInternal,
   isVisible,
@@ -13,11 +14,13 @@ import {
  *
  * @kind function
  * @name setAnnotationTextSettings
+ ()
  * @param {string} annotationText The text to add to the layer’s settings.
  * @param {string} annotationSecondaryText Optional text to add to the layer’s settings.
  * @param {string} annotationType The type of annotation (`custom`, `component`, `style`).
  * @param {Object} layerId The `id` for the Figma layer receiving the settings update.
  * @param {Object} page The page containing the layer to be annotated.
+ *
  * @private
  */
 const setAnnotationTextSettings = (
@@ -55,9 +58,11 @@ const setAnnotationTextSettings = (
  *
  * @kind function
  * @name isLegacyByName
+ *
  * @param {string} name The full name of the Layer.
  *
  * @returns {boolean} Bool declaring `true` for legacy component and `false` for newer component.
+ *
  * @private
  */
 const isLegacyByName = (name: string): boolean => {
@@ -75,9 +80,11 @@ const isLegacyByName = (name: string): boolean => {
  *
  * @kind function
  * @name checkNameForType
+ *
  * @param {string} name The full name of the Layer.
  *
  * @returns {string} The `annotationType` – either `component` or `style`.
+ *
  * @private
  */
 const checkNameForType = (name: string): 'component' | 'style' => {
@@ -108,13 +115,15 @@ const checkNameForType = (name: string): 'component' | 'style' => {
 };
 
 /**
- * @description Removes any library/grouping names from the layer name
+ * @description Removes any library/grouping names from the layer name.
  *
  * @kind function
  * @name cleanName
+ *
  * @param {string} name The full name of the Layer.
  *
  * @returns {string} The last segment of the layer name as a string.
+ *
  * @private
  */
 const cleanName = (name: string): string => {
@@ -131,6 +140,8 @@ const cleanName = (name: string): string => {
     } else {
       cleanedName = cleanedName.replace('☾ ', '');
       cleanedName = cleanedName.replace('☼ ', '');
+      cleanedName = cleanedName.replace('☾', '');
+      cleanedName = cleanedName.replace('☼', '');
     }
 
     // otherwise, fall back to the full layer name
@@ -141,15 +152,17 @@ const cleanName = (name: string): string => {
 };
 
 /**
- * @description Color names in the library contain more information than necessary for speccing
- * (i.e. “Blue / Blue-60”) – only use the bit after the last “/”, and change any hyphens to
+ * @description Color names in the library contain more information than necessary for
+ * speccing (i.e. “Blue / Blue-60”)—only use the bit after the last “/”, and change any hyphens to
  * spaces for easier reading.
  *
  * @kind function
  * @name cleanColorName
+ *
  * @param {string} name The original name of the color
  *
  * @returns {string} The cleaned name of the color for the annotation.
+ *
  * @private
  */
 const cleanColorName = (name: string): string => {
@@ -166,9 +179,11 @@ const cleanColorName = (name: string): string => {
  *
  * @kind function
  * @name setStyleText
+ *
  * @param {Object} options Object containing the lookup IDs for effect and/or fill.
  *
  * @returns {string} The cleaned name of the color for the annotation.
+ *
  * @private
  */
 const setStyleText = (options: {
@@ -257,14 +272,13 @@ const setStyleText = (options: {
  * @name parseOverrides
  *
  * @param {Object} layer The Figma layer object.
- * @param {Object} workingName The top-level layer name.
  *
  * @returns {string} Text containing information about the override(s).
+ *
  * @private
  */
-const parseOverrides = (layer: any, workingName: string = null): string => {
+const parseOverrides = (layer: any): string => {
   const overridesText: Array<string> = [];
-
   // check for styles
   const {
     effectStyleId,
@@ -290,67 +304,97 @@ const parseOverrides = (layer: any, workingName: string = null): string => {
   if (textToSet) { overridesText.push(textToSet); }
   if (subtextToSet) { overridesText.push(subtextToSet); }
 
-  // iterate available inner layers - based on legacy Lingo naming schemes and may break.
-  layer.findOne((node) => {
-    if (isVisible(node)) {
-      // current override full name
-      const overrideTypeName: string = node.name;
+  // find base-level inner layers and check if they are icon overrides
+  // `layer.children` only gives us immediate children; `layer.findOne(…` gives us
+  // all children, flattened, and iterates.
+  //
+  // only check for icon overrides if the top-level component has “button” in its name
+  if (layer.name.toLowerCase().includes('button') || layer.name.includes('FAB')) {
+    layer.findOne((node) => {
+      // lowest-level, visible layer in a branch
+      if (isVisible(node) && !node.children) {
+        /**
+         * @description Given a node inside of a component instance, find a parent
+         * component instance that matches the naming scheme of an icon.
+         *
+         * @kind function
+         * @name isOverrideableIconNode
+         *
+         * @param {Object} innerNode A Figma node object (`SceneNode`).
+         *
+         * @returns {boolean} Set to `true` if `innerNode` is an icon.
+         *
+         * @private
+         */
+        const isOverrideableIconNode = (innerNode) => {
+          let { parent } = innerNode;
+          let currentNode = innerNode;
+          let isOverrideableIcon: boolean = false;
 
-      // grab cleanned name (last portion)
-      const overrideName: string = cleanName(node.name);
-
-      if (overrideName) {
-        let overrideValueName: string = null;
-        // look for Icon overrides - based on parsing the text of an `overrideTypeName` and
-        // making some comparisons and exceptions – if the override name exists in the
-        // master component, we ignore it as it’s likely not an actual override
-        // these are mainly legacy checks from the Sketch / Lingo (Art Deco) system
-        if (
-          overrideTypeName.toLowerCase().includes('icon')
-          && !overrideTypeName.toLowerCase().includes('color')
-          && !overrideTypeName.toLowerCase().includes('🎨')
-          && !overrideTypeName.toLowerCase().includes('button')
-          && overrideTypeName.toLowerCase() !== 'icon'
-          && !layer.masterComponent.findOne(mcNode => mcNode.name === overrideTypeName)
-        ) {
-          // default icon name (usually last element of the name, separated by “/”)
-          overrideValueName = overrideName.split(/(?:[^w])(\/)/).pop();
-          overrideValueName = overrideValueName.replace(`${workingName}`, '');
-        }
-
-        // newer check for Placeholder parent container
-        if (!overrideValueName) {
           if (
-            node.parent
-            && cleanName(node.parent.name).toLowerCase().includes('placeholder')
-            && !cleanName(node.name).toLowerCase().includes('placeholder')
+            !currentNode.name.toLowerCase().includes('button')
+            && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
           ) {
-            overrideValueName = cleanName(node.name);
+            isOverrideableIcon = true;
           }
-        }
 
-        if (overrideValueName) {
-          // update `overridesText`
-          const existingIndex: number = overridesText.findIndex(text => text === overrideValueName);
-          if (existingIndex < 0) {
-            overridesText.push(overrideValueName);
+          if (!isOverrideableIcon && parent) {
+            // iterate until the parent id matches queried layer id
+            while (parent && parent.id !== layer.id) {
+              currentNode = parent;
+
+              // look for Icon overrides – based on finding a container (parent) layer
+              // that includes “icon” in the name, but not also “button”
+              if (
+                !currentNode.name.toLowerCase().includes('button')
+                && (currentNode.name.toLowerCase().includes('provisional') || currentNode.name.toLowerCase().includes('placeholder'))
+              ) {
+                isOverrideableIcon = true;
+              }
+              parent = currentNode.parent;
+            }
+          }
+
+          return isOverrideableIcon;
+        };
+
+        // finds the first component instance above the low-level node
+        const parentInstanceNode = findParentInstance(node);
+
+        if (parentInstanceNode) {
+          // check if parentInstanceNode is an icon
+          const isOverrideableIcon: boolean = isOverrideableIconNode(parentInstanceNode);
+
+          if (isOverrideableIcon) {
+            // grab cleaned name (last portion)
+            const overrideName: string = cleanName(parentInstanceNode.name);
+
+            // ignore placeholder/provisional (not overrides)
+            if (
+              !overrideName.toLowerCase().includes('placeholder')
+              && !overrideName.toLowerCase().includes('provisional')
+            ) {
+              // set the icon name as an override
+              overridesText.push(overrideName);
+            }
           }
         }
       }
-    }
-  });
+    });
+  }
 
   // compiles overrides into `setOverridesText` string
   // only apply label to internal builds
+  const uniqueOverridesText = Array.from(new Set(overridesText));
   let setOverridesText: string = null;
-  if (isInternal() && overridesText.length > 0) {
+  if (isInternal() && uniqueOverridesText.length > 0) {
     let label: string = 'Override';
-    if (overridesText.length > 1) {
+    if (uniqueOverridesText.length > 1) {
       label = 'Overrides';
     }
-    setOverridesText = `${label}: ${overridesText.join(', ')}`;
-  } else if (!isInternal() && overridesText.length > 0) {
-    setOverridesText = overridesText.join(', ');
+    setOverridesText = `${label}: ${uniqueOverridesText.join(', ')}`;
+  } else if (!isInternal() && uniqueOverridesText.length > 0) {
+    setOverridesText = uniqueOverridesText.join(', ');
   }
 
   return setOverridesText;
@@ -401,6 +445,7 @@ export default class Identifier {
    *
    * @kind function
    * @name getLibraryName
+   *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   getLibraryName() {
@@ -445,7 +490,7 @@ export default class Identifier {
       const symbolType: string = checkNameForType(masterComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       const textToSet: string = cleanName(masterComponent.name);
-      const subtextToSet = parseOverrides(this.layer, textToSet);
+      const subtextToSet = parseOverrides(this.layer);
 
       // set `textToSet` on the layer settings as the component name
       // set optional `subtextToSet` on the layer settings based on existing overrides
@@ -509,6 +554,7 @@ export default class Identifier {
    *
    * @kind function
    * @name hasCustomText
+   *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   hasCustomText() {
@@ -551,6 +597,7 @@ export default class Identifier {
    *
    * @kind function
    * @name setText
+   *
    * @param {Function} callbackMain A callback function.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
