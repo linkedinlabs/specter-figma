@@ -1,7 +1,7 @@
+import Crawler from './Crawler';
 import {
   findFrame,
   getLayerSettings,
-  getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   updateArray,
@@ -1334,9 +1334,13 @@ export default class Painter {
       type: annotationType,
     });
 
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.layer] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1348,8 +1352,8 @@ export default class Painter {
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
-      width: this.layer.width,
-      height: this.layer.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
       index: layerIndex,
@@ -1517,9 +1521,13 @@ export default class Painter {
       });
     }
 
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.layer] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
     // group and position the annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1531,8 +1539,8 @@ export default class Painter {
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
-      width: this.layer.width,
-      height: this.layer.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
       index: layerIndex,
