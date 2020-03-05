@@ -117,12 +117,86 @@ export default class Crawler {
   }
 
   /**
+   * @description Creates an object containing `x`, `y` coordinates, outer-edge x/y coordinates,
+   * and `width` and `height` for the outside bounding area of a supplied node, keeping the
+   * coordinates relative to the frame. The bounding area is the edge-to-edge surface area
+   * encompassing rotation.
+   *
+   * @kind function
+   * @name position
+   *
+   * @param {Object} node The node (`SceneNode`) to retrieve bounding position on.
+   *
+   * @returns {Object} The `x`, `y`, `xOuter`, `yOuter` coordinates, `width`, and `height`
+   * of bounding area.
+   */
+  static getBoundingPositition(node) {
+    // find out top node
+    const topFrame: SceneNode = findFrame(node);
+
+    // clone the node that will need positioning coordinates
+    const newLayer: SceneNode = node.clone();
+
+    // set the cloned node’s positioning by comparing `absoluteTransform` values between
+    // the original node and the top-level frame node.
+    const newTransformMatrix: [
+      [number, number, number],
+      [number, number, number]
+    ] = [
+      [
+        node.absoluteTransform[0][0],
+        node.absoluteTransform[0][1],
+        node.absoluteTransform[0][2] - topFrame.absoluteTransform[0][2],
+      ],
+      [
+        node.absoluteTransform[1][0],
+        node.absoluteTransform[1][1],
+        node.absoluteTransform[1][2] - topFrame.absoluteTransform[1][2],
+      ],
+    ];
+    newLayer.relativeTransform = newTransformMatrix;
+
+    // add the clone to the first level of top node; group it for further evaluation.
+    // grouping a node creates a new node that is not rotated and covers the entire bounds
+    // of the original node (in case it is rotated). we will use the group for the final
+    // positioning coordinates
+    topFrame.appendChild(newLayer);
+    const newLayerGroupArray = [newLayer];
+    const newLayerGroup = figma.group(newLayerGroupArray, topFrame);
+    const relativePosition = getRelativePosition(newLayerGroup, topFrame);
+
+    // set up the bounds positioning based on the group, not the original or cloned nodes
+    const nodeBoundingPosition: {
+      x: number,
+      y: number,
+      xOuter: number,
+      yOuter: number,
+      width: number,
+      height: number,
+    } = {
+      x: relativePosition.x,
+      y: relativePosition.y,
+      xOuter: relativePosition.x + newLayerGroup.width,
+      yOuter: relativePosition.y + newLayerGroup.height,
+      width: newLayerGroup.width,
+      height: newLayerGroup.height,
+    };
+
+    // remove the cloned node (this will also remove the group)
+    newLayer.remove();
+
+    // return the coordinates
+    return nodeBoundingPosition;
+  }
+
+  /**
    * @description Creates an object containing `x`, `y` coordinates and `width` and `height`
    * an entire selection, keeping the coordinates relative to the frame, ignoring if some
    * items are grouped inside other layers.
    *
    * @kind function
    * @name position
+   *
    * @returns {Object} The `x`, `y` coordinates and `width` and `height` of an entire selection.
    */
   position() {
@@ -155,8 +229,8 @@ export default class Crawler {
     };
 
     // set some intitial outer values to compare to
-    let outerX: number = 0;
-    let outerY: number = 0;
+    let xOuter: number = 0;
+    let yOuter: number = 0;
 
     // a flat selection from .all() is not needed for the outer position/dimensions
     // of an entire selection
@@ -181,45 +255,38 @@ export default class Crawler {
     // iterate through the selected layers and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
     selection.forEach((layer) => {
-      const topFrame = findFrame(layer);
-      const relativePosition = getRelativePosition(layer, topFrame);
-      const layerX: number = relativePosition.x;
-      const layerY: number = relativePosition.y;
-      const layerW: number = layer.width;
-      const layerH: number = layer.height;
-      const layerOuterX: number = layerX + layerW;
-      const layerOuterY: number = layerY + layerH;
+      const nodeBoundingPosition = Crawler.getBoundingPositition(layer);
 
       // set upper-left x
       if (
         (!thePosition.x)
-        || (thePosition.x > layerX)
+        || (thePosition.x > nodeBoundingPosition.x)
       ) {
-        thePosition.x = layerX;
+        thePosition.x = nodeBoundingPosition.x;
       }
 
-      // set outerX
-      if (layerOuterX > outerX) {
-        outerX = layerOuterX;
+      // set xOuter
+      if (nodeBoundingPosition.xOuter > xOuter) {
+        xOuter = nodeBoundingPosition.xOuter;
       }
 
       // set upper-left y
       if (
         (!thePosition.y)
-        || (thePosition.y > layerY)
+        || (thePosition.y > nodeBoundingPosition.y)
       ) {
-        thePosition.y = layerY;
+        thePosition.y = nodeBoundingPosition.y;
       }
 
-      // set outerY
-      if (layerOuterY > outerY) {
-        outerY = layerOuterY;
+      // set yOuter
+      if (nodeBoundingPosition.yOuter > yOuter) {
+        yOuter = nodeBoundingPosition.yOuter;
       }
     });
 
     // calculate the full `width`/`height` based on the inner and outer `x`/`y` values
-    const width: number = outerX - thePosition.x;
-    const height: number = outerY - thePosition.y;
+    const width: number = xOuter - thePosition.x;
+    const height: number = yOuter - thePosition.y;
 
     // set the new `width`/`height` values
     thePosition.width = width;
@@ -288,8 +355,8 @@ export default class Crawler {
     let layerA = selection[firstIndex];
     let layerB = selection[firstIndex];
 
-    let layerATopFrame = findFrame(layerA);
-    let layerBTopFrame = findFrame(layerB);
+    const layerATopFrame = findFrame(layerA);
+    const layerBTopFrame = findFrame(layerB);
 
     if (!layerATopFrame || !layerBTopFrame) {
       result.status = 'error';
@@ -298,27 +365,24 @@ export default class Crawler {
       return result;
     }
 
-    let layerAPosition = getRelativePosition(layerA, layerATopFrame);
-    let layerBPosition = getRelativePosition(layerB, layerBTopFrame);
+    let layerAPosition = Crawler.getBoundingPositition(layerA);
+    let layerBPosition = Crawler.getBoundingPositition(layerB);
 
     // assume the gap orientation is vertical
     let horizontalGap = false;
 
     // find left-most (`layerA`) and right-most (`layerB`) layers
     selection.forEach((layer) => {
-      const layerTopFrame = findFrame(layer);
-      const layerPosition = getRelativePosition(layer, layerTopFrame);
+      const layerPosition = Crawler.getBoundingPositition(layer);
 
       if (layerPosition.x < layerAPosition.x) {
         layerA = layer;
-        layerATopFrame = findFrame(layerA);
-        layerAPosition = getRelativePosition(layerA, layerATopFrame);
+        layerAPosition = Crawler.getBoundingPositition(layerA);
       }
 
       if (layerPosition.x > layerBPosition.x) {
         layerB = layer;
-        layerBTopFrame = findFrame(layerB);
-        layerBPosition = getRelativePosition(layerB, layerBTopFrame);
+        layerBPosition = Crawler.getBoundingPositition(layerB);
       }
     });
 
@@ -330,15 +394,15 @@ export default class Crawler {
       let positionHeight = null;
 
       // make sure the layers are not overlapped (a gap exists)
-      if ((layerAPosition.x + layerA.width) < layerBPosition.x) {
+      if ((layerAPosition.x + layerAPosition.width) < layerBPosition.x) {
         // set the left/right edges of the gap
-        leftEdgeX = layerAPosition.x + layerA.width; // lowest x within gap
+        leftEdgeX = layerAPosition.x + layerAPosition.width; // lowest x within gap
         rightEdgeX = layerBPosition.x; // highest x within gap
 
         const layerATopY = layerAPosition.y;
-        const layerABottomY = layerAPosition.y + layerA.height;
+        const layerABottomY = layerAPosition.y + layerAPosition.height;
         const layerBTopY = layerBPosition.y;
-        const layerBBottomY = layerBPosition.y + layerB.height;
+        const layerBBottomY = layerBPosition.y + layerBPosition.height;
 
         if (layerBTopY >= layerATopY) {
           // top of A is higher than top of B
@@ -397,19 +461,16 @@ export default class Crawler {
     if (horizontalGap) {
       // find top-most (`layerA`) and bottom-most (`layerB`) layers
       selection.forEach((layer) => {
-        const layerTopFrame = findFrame(layer);
-        const layerPosition = getRelativePosition(layer, layerTopFrame);
+        const layerPosition = Crawler.getBoundingPositition(layer);
 
         if (layerPosition.y < layerAPosition.y) {
           layerA = layer;
-          layerATopFrame = findFrame(layerA);
-          layerAPosition = getRelativePosition(layerA, layerATopFrame);
+          layerAPosition = Crawler.getBoundingPositition(layerA);
         }
 
         if (layerPosition.y > layerBPosition.y) {
           layerB = layer;
-          layerBTopFrame = findFrame(layerB);
-          layerBPosition = getRelativePosition(layerB, layerBTopFrame);
+          layerBPosition = Crawler.getBoundingPositition(layerB);
         }
       });
 
@@ -420,16 +481,16 @@ export default class Crawler {
       let positionWidth = null;
 
       // make sure the layers are not overlapped (a gap exists)
-      if ((layerAPosition.y + layerA.height) < layerBPosition.y) {
+      if ((layerAPosition.y + layerAPosition.height) < layerBPosition.y) {
         // set the top/bottom edges of the gap
-        topEdgeY = layerAPosition.y + layerA.height; // lowest y within gap
+        topEdgeY = layerAPosition.y + layerAPosition.height; // lowest y within gap
         bottomEdgeY = layerBPosition.y; // highest y within gap
 
         // set initial layer values for comparison
         const layerALeftX = layerAPosition.x;
-        const layerARightX = layerAPosition.x + layerA.width;
+        const layerARightX = layerAPosition.x + layerAPosition.width;
         const layerBLeftX = layerBPosition.x;
-        const layerBRightX = layerBPosition.x + layerB.width;
+        const layerBRightX = layerBPosition.x + layerBPosition.width;
 
         if (layerBLeftX >= layerALeftX) {
           // left-most of A is to the left of left-most of B
@@ -547,8 +608,8 @@ export default class Crawler {
     let layerA = selection[firstIndex];
     let layerB = selection[selection.length - 1];
 
-    let layerATopFrame = findFrame(layerA);
-    let layerBTopFrame = findFrame(layerB);
+    const layerATopFrame = findFrame(layerA);
+    const layerBTopFrame = findFrame(layerB);
 
     if (!layerATopFrame || !layerBTopFrame) {
       result.status = 'error';
@@ -557,8 +618,8 @@ export default class Crawler {
       return result;
     }
 
-    let layerAPosition = getRelativePosition(layerA, layerATopFrame);
-    let layerBPosition = getRelativePosition(layerB, layerBTopFrame);
+    let layerAPosition = Crawler.getBoundingPositition(layerA);
+    let layerBPosition = Crawler.getBoundingPositition(layerB);
 
     // find bottom (`layerA`) and top (`layerB`) layers
     let layerAIndex = getRelativeIndex(layerA);
@@ -572,15 +633,13 @@ export default class Crawler {
       if (layerIndex > layerBIndex) {
         layerB = layer;
         layerBIndex = layerIndex;
-        layerBTopFrame = findFrame(layerB);
-        layerBPosition = getRelativePosition(layerB, layerBTopFrame);
+        layerBPosition = Crawler.getBoundingPositition(layerB);
       }
 
       if (layerIndex < layerAIndex) {
         layerA = layer;
         layerAIndex = layerIndex;
-        layerATopFrame = findFrame(layerA);
-        layerAPosition = getRelativePosition(layerA, layerATopFrame);
+        layerAPosition = Crawler.getBoundingPositition(layerA);
       }
     });
 
@@ -597,24 +656,27 @@ export default class Crawler {
     // -------- set positions - essentially defining rectangles in the overapped spaces
     // between the two layers
     // top
-    const topWidth = layerB.width;
+    const topWidth = layerBPosition.width;
     const topHeight = layerBPosition.y - layerAPosition.y;
     const topX = layerBPosition.x;
     const topY = layerAPosition.y;
+
     // bottom
-    const bottomWidth = layerB.width;
-    const bottomHeight = layerA.height - topHeight - layerB.height;
+    const bottomWidth = layerBPosition.width;
+    const bottomHeight = layerAPosition.height - topHeight - layerBPosition.height;
     const bottomX = layerBPosition.x;
-    const bottomY = layerAPosition.y + topHeight + layerB.height;
+    const bottomY = layerAPosition.y + topHeight + layerBPosition.height;
+
     // left
     const leftWidth = layerBPosition.x - layerAPosition.x;
-    const leftHeight = layerB.height;
+    const leftHeight = layerBPosition.height;
     const leftX = layerAPosition.x;
     const leftY = layerBPosition.y;
+
     // right
-    const rightWidth = layerA.width - layerB.width - leftWidth;
-    const rightHeight = layerB.height;
-    const rightX = layerBPosition.x + layerB.width;
+    const rightWidth = layerAPosition.width - layerBPosition.width - leftWidth;
+    const rightHeight = layerBPosition.height;
+    const rightX = layerBPosition.x + layerBPosition.width;
     const rightY = layerBPosition.y;
 
     // set the positions
