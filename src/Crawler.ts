@@ -123,6 +123,7 @@ export default class Crawler {
    *
    * @kind function
    * @name position
+   *
    * @returns {Object} The `x`, `y` coordinates and `width` and `height` of an entire selection.
    */
   position() {
@@ -181,14 +182,50 @@ export default class Crawler {
     // iterate through the selected layers and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
     selection.forEach((layer) => {
-      const topFrame = findFrame(layer);
-      const relativePosition = getRelativePosition(layer, topFrame);
+      // find out top node
+      const topFrame: SceneNode = findFrame(layer);
+
+      // clone the layer that will need positioning coordinates
+      const newLayer: SceneNode = layer.clone();
+
+      // set the cloned node’s positioning by comparing `absoluteTransform` values between
+      // the original node and the top-level frame node.
+      const newTransformMatrix: [
+        [number, number, number],
+        [number, number, number]
+      ] = [
+        [
+          layer.absoluteTransform[0][0],
+          layer.absoluteTransform[0][1],
+          layer.absoluteTransform[0][2] - topFrame.absoluteTransform[0][2],
+        ],
+        [
+          layer.absoluteTransform[1][0],
+          layer.absoluteTransform[1][1],
+          layer.absoluteTransform[1][2] - topFrame.absoluteTransform[1][2],
+        ],
+      ];
+      newLayer.relativeTransform = newTransformMatrix;
+
+      // add the clone to the first level of top node; group it for further evaluation.
+      // grouping a node creates a new node that is not rotated and covers the entire bounds
+      // of the original node (in case it is rotated). we will use the group for the final
+      // positioning coordinates
+      topFrame.appendChild(newLayer);
+      const newLayerGroupArray = [newLayer];
+      const newLayerGroup = figma.group(newLayerGroupArray, topFrame);
+      const relativePosition = getRelativePosition(newLayerGroup, topFrame);
+
+      // set up the positioning based on the group, not the original or cloned nodes
       const layerX: number = relativePosition.x;
       const layerY: number = relativePosition.y;
-      const layerW: number = layer.width;
-      const layerH: number = layer.height;
+      const layerW: number = newLayerGroup.width;
+      const layerH: number = newLayerGroup.height;
       const layerOuterX: number = layerX + layerW;
       const layerOuterY: number = layerY + layerH;
+
+      // remove the cloned node (this will also remove the group)
+      newLayer.remove();
 
       // set upper-left x
       if (
