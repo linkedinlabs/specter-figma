@@ -1548,7 +1548,10 @@ export default class Painter {
 
     // ------------------------
     // construct the width annotation elements
-    const annotationTextWidth: string = `${this.layer.width}dp`;
+    const roundedWidthNumber: number = Math.round(
+      (this.layer.width + Number.EPSILON) * 100,
+    ) / 100;
+    const annotationTextWidth: string = `${roundedWidthNumber}dp`;
     const groupNameWidth: string = `Dimension Width for layer ${layerName}`;
     const annotationWidth = buildAnnotation({
       mainText: annotationTextWidth,
@@ -1595,7 +1598,10 @@ export default class Painter {
 
     // ------------------------
     // construct the height annotation elements
-    const annotationTextHeight: string = `${this.layer.height}dp`;
+    const roundedHeightNumber: number = Math.round(
+      (this.layer.height + Number.EPSILON) * 100,
+    ) / 100;
+    const annotationTextHeight: string = `${roundedHeightNumber}dp`;
     const groupNameHeight: string = `Dimension Height for layer ${layerName}`;
     const annotationHeight = buildAnnotation({
       mainText: annotationTextHeight,
@@ -1669,16 +1675,15 @@ export default class Painter {
    */
   addSpacingAnnotation(spacingPosition): boolean {
     // set up some information
-    const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
+    const measurementToUse: number = spacingPosition.orientation === 'vertical'
+      ? spacingPosition.width : spacingPosition.height;
+    const measurementToUseRounded: number = Math.round(
+      (measurementToUse + Number.EPSILON) * 100,
+    ) / 100;
     const spacingValue: number = isInternal()
-      ? retrieveSpacingValue(measurementToUse) : measurementToUse;
+      ? retrieveSpacingValue(measurementToUseRounded) : measurementToUseRounded;
     const spacingPrefix: string = isInternal() && spacingValue < 10 ? 'IS-' : '';
     const spacingSuffix: string = isInternal() && spacingValue < 10 ? '' : 'dp';
-
-    // if there is no `spacingValue`, the measurement is above an `IS-9` and isn’t considered valid
-    if (!spacingValue) {
-      return false;
-    }
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
     const annotationType = 'spacing';
