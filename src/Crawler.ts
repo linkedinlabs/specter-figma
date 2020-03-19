@@ -750,4 +750,143 @@ export default class Crawler {
     result.payload = thePositions;
     return result;
   }
+
+  /**
+   * @description Creates four separate positions for the spaces around an auto-layout
+   * node that contains padding. It keeps the coordinates relative to the artboard.
+   * It also adds an orientation `horizontal` or `vertical` based on the padding orientation.
+   * Assumes only 1 node is selected.
+   *
+   * @kind function
+   * @name paddingPositions
+   *
+   * @returns {Object} The `top`, `bottom`, `right`, and `left` positions. Each position
+   * contains `x`, `y` coordinates, `width`, `height`, and `orientation`. The object also
+   * includes the node ID (`layerId`) for the node evaluated.
+   */
+  paddingPositions() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+      payload: any,
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+      payload: null,
+    };
+
+    // set the node
+    const node: FrameNode = this.first() as FrameNode;
+
+    const nodeTopFrame = findFrame(node);
+
+    if (!nodeTopFrame) {
+      result.status = 'error';
+      result.messages.log = 'Node not inside a frame';
+      result.messages.toast = 'The layer must be inside a frame';
+      return result;
+    }
+
+    const nodePosition = Crawler.getBoundingPositition(node);
+
+    // -------- set positions - essentially defining rectangles in the padded spaces
+    // top
+    const topWidth = nodePosition.width - (node.horizontalPadding * 2);
+    const topHeight = node.verticalPadding;
+    const topX = nodePosition.x + node.horizontalPadding;
+    const topY = nodePosition.y;
+
+    // bottom
+    const bottomWidth = topWidth;
+    const bottomHeight = topHeight;
+    const bottomX = topX;
+    const bottomY = nodePosition.y + nodePosition.height - topHeight;
+
+    // left
+    const leftWidth = node.horizontalPadding;
+    const leftHeight = nodePosition.height - topHeight - bottomHeight;
+    const leftX = nodePosition.x;
+    const leftY = nodePosition.y + topHeight;
+
+    // right
+    const rightWidth = leftWidth;
+    const rightHeight = leftHeight;
+    const rightX = topX + topWidth;
+    const rightY = leftY;
+
+    // set the positions
+    const thePositions: {
+      top: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      bottom: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      right: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      left: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      layerId: string,
+    } = {
+      top: {
+        x: topX,
+        y: topY,
+        width: topWidth,
+        height: topHeight,
+        orientation: 'horizontal',
+      },
+      bottom: {
+        x: bottomX,
+        y: bottomY,
+        width: bottomWidth,
+        height: bottomHeight,
+        orientation: 'horizontal',
+      },
+      right: {
+        x: rightX,
+        y: rightY,
+        width: rightWidth,
+        height: rightHeight,
+        orientation: 'vertical',
+      },
+      left: {
+        x: leftX,
+        y: leftY,
+        width: leftWidth,
+        height: leftHeight,
+        orientation: 'vertical',
+      },
+      layerId: node.id,
+    };
+
+    // set the payload and deliver
+    result.status = 'success';
+    result.messages.log = 'Padding positions calculated';
+    result.payload = thePositions;
+    return result;
+  }
 }
