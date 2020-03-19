@@ -50,6 +50,13 @@
           {
             "name": "Set Spacing: ↓ Bottom",
             "command": "annotate-spacing-bottom"
+          },
+          {
+            "separator": true
+          },
+          {
+            "name": "Set Spacing: Auto-layout Padding",
+            "command": "annotate-spacing-al-padding"
           }
         ]
     },
