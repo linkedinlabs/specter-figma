@@ -533,7 +533,7 @@ export default class Crawler {
         positionWidth = rightEdgeX - leftEdgeX;
 
         // set the final position params
-        // cut final `x` in half by width to position annotation at mid-point
+        // move final `x` to position annotation at mid-point
         thePosition.x = leftEdgeX + (positionWidth / 2);
         thePosition.y = topEdgeY;
         thePosition.width = positionWidth;
@@ -541,6 +541,73 @@ export default class Crawler {
         thePosition.orientation = 'horizontal';
         thePosition.layerAId = layerA.id;
         thePosition.layerBId = layerB.id;
+      }
+
+      // check to see if the two layers are touching, rather than gapped or overlapped
+      if ((layerAPosition.y + layerAPosition.height) === layerBPosition.y) {
+        // determine padding here
+
+        if (
+          (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
+          || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
+        ) {
+          const topNode = layerA as FrameNode;
+          const bottomNode = layerB as FrameNode;
+
+          const layerALeftX = layerAPosition.x + topNode.horizontalPadding;
+          const layerARightX = layerAPosition.x + layerAPosition.width - topNode.horizontalPadding;
+          const layerBLeftX = layerBPosition.x + bottomNode.horizontalPadding;
+          const layerBRightX = layerBPosition.x
+            + layerBPosition.width - bottomNode.horizontalPadding;
+          if (layerBLeftX >= layerALeftX) {
+            // left-most of A is to the left of left-most of B
+            if (layerARightX >= layerBLeftX) {
+              // left-most of B is to the left of right-most of A
+              if (layerBRightX >= layerARightX) {
+                // right-most of A is to the left of right-most of B
+                // decision: left-most edge is left-most of B; right-most edge is right-most of A
+                leftEdgeX = layerBLeftX;
+                rightEdgeX = layerARightX;
+              } else {
+                // decision: left-most edge is left-most of B; right-most edge is right-most of B
+                leftEdgeX = layerBLeftX;
+                rightEdgeX = layerBRightX;
+              }
+            } else {
+              // decision: left-most edge is right-most of A; right-most edge is left-most of B
+              leftEdgeX = layerARightX;
+              rightEdgeX = layerBLeftX;
+            }
+          } else if (layerBRightX >= layerALeftX) {
+            // left-most of A is to the left of right-most of B
+            if (layerARightX >= layerBRightX) {
+              // right-most of B is to the left of right-most of A
+              // decision: left-most edge is left-most of A; right-most edge is right-most of B
+              leftEdgeX = layerALeftX;
+              rightEdgeX = layerBRightX;
+            } else {
+              // decision: left-most edge is left-most of A; right-most edge is right-most of A
+              leftEdgeX = layerALeftX;
+              rightEdgeX = layerARightX;
+            }
+          } else {
+            // decision: left-most edge is right-most of B; right-most edge is left-most of A
+            leftEdgeX = layerBRightX;
+            rightEdgeX = layerALeftX;
+          }
+
+          positionWidth = rightEdgeX - leftEdgeX;
+
+          // set a `thePosition` in the padded area to simulate the gap
+          // move final `x` to position annotation at mid-point
+          thePosition.x = leftEdgeX + (positionWidth / 2);
+          thePosition.y = layerAPosition.y + layerAPosition.height;
+          thePosition.width = positionWidth;
+          thePosition.height = topNode.verticalPadding + bottomNode.verticalPadding;
+          thePosition.orientation = 'horizontal';
+          thePosition.layerAId = layerA.id;
+          thePosition.layerBId = layerB.id;
+        }
       }
     }
 

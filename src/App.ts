@@ -297,7 +297,6 @@ export default class App {
 
       // read the response from Crawler; log and display message(s)
       messenger.handleResult(gapPositionResult);
-
       if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
         const gapPosition = gapPositionResult.payload;
         paintResult = painter.addGapMeasurement(gapPosition);
