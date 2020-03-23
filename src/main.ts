@@ -88,7 +88,10 @@ const dispatcher = (action: {
         app.annotateSpacingOnly('bottom');
         break;
       case 'bounding':
-        app.drawBoundingBox();
+        app.drawBoundingBoxes();
+        break;
+      case 'bounding-multi':
+        app.drawBoundingBoxes('multiple');
         break;
       case 'measure':
         app.annotateMeasurement();
