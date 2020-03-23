@@ -453,14 +453,19 @@ export default class App {
   }
 
   /**
-   * @description Draws a semi-transparent “Bounding Box” around any selected elements.
+   * @description Draws semi-transparent “Bounding Box(es)” around any selected nodes.
+   * The `type` parameter determines if a single box is drawn, incorporating all selected
+   * nodes (`single`), or if a box is drawn around each individual node (`multiple`).
    *
    * @kind function
-   * @name drawBoundingBox
+   * @name drawBoundingBoxes
+   *
+   * @param {string} type Use `single` for a box around the entire selection or `multiple`
+   * for individual boxes around each selected node.
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  drawBoundingBox() {
+  drawBoundingBoxes(type: 'single' | 'multiple' = 'single') {
     const {
       messenger,
       page,
@@ -473,26 +478,39 @@ export default class App {
       return messenger.toast('At least one layer must be selected');
     }
 
-    // grab the position from the selection
-    const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
-    const positionResult = crawler.position();
+    const drawSingleBox = (nodes) => {
+      // grab the position from the selection
+      const crawler = new Crawler({ for: nodes });
 
-    // read the response from Crawler; log and display message(s)
-    messenger.handleResult(positionResult);
+      const layer = crawler.first();
+      const positionResult = crawler.position();
 
-    if (positionResult.status === 'success' && positionResult.payload) {
-      const position = positionResult.payload;
-      const painter = new Painter({ for: layer, in: page });
+      // read the response from Crawler; log and display message(s)
+      messenger.handleResult(positionResult);
 
-      // draw the bounding box (if position exists)
-      let paintResult = null;
-      if (position) {
-        paintResult = painter.addBoundingBox(position);
+      if (positionResult.status === 'success' && positionResult.payload) {
+        const position = positionResult.payload;
+        const painter = new Painter({ for: layer, in: page });
+
+        // draw the bounding box (if position exists)
+        let paintResult = null;
+        if (position) {
+          paintResult = painter.addBoundingBox(position);
+        }
+
+        // read the response from Painter; log and display message(s)
+        messenger.handleResult(paintResult);
       }
+    };
 
-      // read the response from Painter; log and display message(s)
-      messenger.handleResult(paintResult);
+    // set individual boxes for each selected node or set a single box
+    // that covers all nodes in the selection
+    if (type === 'multiple') {
+      selection.forEach((node: SceneNode) => {
+        drawSingleBox([node]); // expects an array
+      });
+    } else {
+      drawSingleBox(selection);
     }
 
     if (this.shouldTerminate) {

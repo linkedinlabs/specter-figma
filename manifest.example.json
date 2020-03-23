@@ -61,8 +61,17 @@
         ]
     },
     {
-      "name": "Draw Bounding Box",
-      "command": "bounding"
+      "name": "Bounding Boxes",
+        "menu": [
+          {
+            "name": "Draw Bounding Box",
+            "command": "bounding"
+          },
+          {
+            "name": "Draw Multiple Bounding Boxes",
+            "command": "bounding-multi"
+          }
+        ]
     }
   ]
 }
