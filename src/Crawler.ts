@@ -479,6 +479,7 @@ export default class Crawler {
       let leftEdgeX = null;
       let rightEdgeX = null;
       let positionWidth = null;
+      let positionHeight = null;
 
       // make sure the layers are not overlapped (a gap exists)
       if ((layerAPosition.y + layerAPosition.height) < layerBPosition.y) {
@@ -530,7 +531,7 @@ export default class Crawler {
         }
 
         // set position height
-        positionWidth = rightEdgeX - leftEdgeX;
+        positionHeight = bottomEdgeY - topEdgeY;
 
         // set the final position params
         // move final `x` to position annotation at mid-point
@@ -545,7 +546,7 @@ export default class Crawler {
 
       // check to see if the two layers are touching, rather than gapped or overlapped
       if ((layerAPosition.y + layerAPosition.height) === layerBPosition.y) {
-        // determine auto-layout padding here
+        // determine vertical auto-layout padding affects here
         if (
           (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
           || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
@@ -605,6 +606,76 @@ export default class Crawler {
           thePosition.width = positionWidth;
           thePosition.height = topNode.verticalPadding + bottomNode.verticalPadding;
           thePosition.orientation = 'horizontal';
+          thePosition.layerAId = layerA.id;
+          thePosition.layerBId = layerB.id;
+        }
+      } else if ((layerAPosition.x + layerAPosition.width) === layerBPosition.x) {
+        // determine horizontal auto-layout padding affects here
+        if (
+          (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
+          || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
+        ) {
+          const leftNode = layerA as FrameNode;
+          const rightNode = layerB as FrameNode;
+
+          // set the left/right edges of the gap
+          leftEdgeX = layerAPosition.x + layerAPosition.width; // lowest x within gap
+          rightEdgeX = layerBPosition.x; // highest x within gap
+
+          const layerATopY = layerAPosition.y + leftNode.verticalPadding;
+          const layerABottomY = layerAPosition.y + layerAPosition.height - leftNode.verticalPadding;
+          const layerBTopY = layerBPosition.y + rightNode.verticalPadding;
+          const layerBBottomY = layerBPosition.y
+            + layerBPosition.height - rightNode.verticalPadding;
+
+          if (layerBTopY >= layerATopY) {
+            // top of A is higher than top of B
+            if (layerABottomY >= layerBTopY) {
+              // top of B is higher than bottom of A
+              if (layerBBottomY >= layerABottomY) {
+                // bottom of A is higher than bottom of B
+                // decision: top edge is top of B; bottom edge is bottom of A
+                topEdgeY = layerBTopY;
+                bottomEdgeY = layerABottomY;
+              } else {
+                // decision: top edge is top of B; bottom edge is bottom of B
+                topEdgeY = layerBTopY;
+                bottomEdgeY = layerBBottomY;
+              }
+            } else {
+              // decision: top edge is bottom of A; bottom edge is top of B
+              topEdgeY = layerABottomY;
+              bottomEdgeY = layerBTopY;
+            }
+          } else if (layerBBottomY >= layerATopY) {
+            // top of A is higher than bottom of B
+            if (layerABottomY >= layerBBottomY) {
+              // bottom of B is higher than bottom of A
+              // decision: top edge is top of A; bottom edge is bottom of B
+              topEdgeY = layerATopY;
+              bottomEdgeY = layerBBottomY;
+            } else {
+              // decision: top edge is top of A; bottom edge is bottom of A
+              topEdgeY = layerATopY;
+              bottomEdgeY = layerABottomY;
+            }
+          } else {
+            // decision: top edge is bottom of B; bottom edge is top of A
+            topEdgeY = layerBBottomY;
+            bottomEdgeY = layerATopY;
+          }
+
+          // set position height
+          positionHeight = bottomEdgeY - topEdgeY;
+
+          // set a `thePosition` in the padded area to simulate the gap
+          // move final `y` to position annotation at mid-point
+          thePosition.x = leftEdgeX - leftNode.horizontalPadding;
+          thePosition.y = topEdgeY + (positionHeight / 2);
+          thePosition.width = rightEdgeX - leftEdgeX
+            + leftNode.horizontalPadding + rightNode.horizontalPadding;
+          thePosition.height = positionHeight;
+          thePosition.orientation = 'vertical';
           thePosition.layerAId = layerA.id;
           thePosition.layerBId = layerB.id;
         }
