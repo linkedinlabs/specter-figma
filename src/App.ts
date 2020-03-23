@@ -399,7 +399,7 @@ export default class App {
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  drawBoundingBox() {
+  drawBoundingBox(type: 'single' | 'multiple' = 'single') {
     const {
       messenger,
       page,

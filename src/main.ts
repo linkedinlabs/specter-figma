@@ -90,6 +90,9 @@ const dispatcher = (action: {
       case 'bounding':
         app.drawBoundingBox();
         break;
+      case 'bounding-multi':
+        app.drawBoundingBox('multiple');
+        break;
       case 'measure':
         app.annotateMeasurement();
         break;
