@@ -412,26 +412,39 @@ export default class App {
       return messenger.toast('At least one layer must be selected');
     }
 
-    // grab the position from the selection
-    const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
-    const positionResult = crawler.position();
+    const drawSingleBox = (nodes) => {
+      // grab the position from the selection
+      const crawler = new Crawler({ for: nodes });
 
-    // read the response from Crawler; log and display message(s)
-    messenger.handleResult(positionResult);
+      const layer = crawler.first();
+      const positionResult = crawler.position();
 
-    if (positionResult.status === 'success' && positionResult.payload) {
-      const position = positionResult.payload;
-      const painter = new Painter({ for: layer, in: page });
+      // read the response from Crawler; log and display message(s)
+      messenger.handleResult(positionResult);
 
-      // draw the bounding box (if position exists)
-      let paintResult = null;
-      if (position) {
-        paintResult = painter.addBoundingBox(position);
+      if (positionResult.status === 'success' && positionResult.payload) {
+        const position = positionResult.payload;
+        const painter = new Painter({ for: layer, in: page });
+
+        // draw the bounding box (if position exists)
+        let paintResult = null;
+        if (position) {
+          paintResult = painter.addBoundingBox(position);
+        }
+
+        // read the response from Painter; log and display message(s)
+        messenger.handleResult(paintResult);
       }
+    };
 
-      // read the response from Painter; log and display message(s)
-      messenger.handleResult(paintResult);
+    // set individual boxes for each selected node or set a single box
+    // that covers all nodes in the selection
+    if (type === 'multiple') {
+      selection.forEach((node: SceneNode) => {
+        drawSingleBox([node]); // expects an array
+      });
+    } else {
+      drawSingleBox(selection);
     }
 
     if (this.shouldTerminate) {
