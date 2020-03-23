@@ -530,8 +530,8 @@ export default class Crawler {
           rightEdgeX = layerALeftX;
         }
 
-        // set position height
-        positionHeight = bottomEdgeY - topEdgeY;
+        // set position width
+        positionWidth = rightEdgeX - leftEdgeX;
 
         // set the final position params
         // move final `x` to position annotation at mid-point
