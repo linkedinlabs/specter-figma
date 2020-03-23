@@ -545,8 +545,7 @@ export default class Crawler {
 
       // check to see if the two layers are touching, rather than gapped or overlapped
       if ((layerAPosition.y + layerAPosition.height) === layerBPosition.y) {
-        // determine padding here
-
+        // determine auto-layout padding here
         if (
           (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
           || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
@@ -559,6 +558,7 @@ export default class Crawler {
           const layerBLeftX = layerBPosition.x + bottomNode.horizontalPadding;
           const layerBRightX = layerBPosition.x
             + layerBPosition.width - bottomNode.horizontalPadding;
+
           if (layerBLeftX >= layerALeftX) {
             // left-most of A is to the left of left-most of B
             if (layerARightX >= layerBLeftX) {
@@ -601,7 +601,7 @@ export default class Crawler {
           // set a `thePosition` in the padded area to simulate the gap
           // move final `x` to position annotation at mid-point
           thePosition.x = leftEdgeX + (positionWidth / 2);
-          thePosition.y = layerAPosition.y + layerAPosition.height;
+          thePosition.y = layerAPosition.y + layerAPosition.height - topNode.verticalPadding;
           thePosition.width = positionWidth;
           thePosition.height = topNode.verticalPadding + bottomNode.verticalPadding;
           thePosition.orientation = 'horizontal';
@@ -615,7 +615,7 @@ export default class Crawler {
     result.status = 'success';
 
     // no gap exists
-    if (!thePosition.x) {
+    if (!thePosition.x || (thePosition.height <= 0) || (thePosition.width <= 0)) {
       result.messages.log = 'A gap positioning was not found';
       return result;
     }
