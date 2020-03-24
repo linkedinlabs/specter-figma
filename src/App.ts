@@ -297,7 +297,6 @@ export default class App {
 
       // read the response from Crawler; log and display message(s)
       messenger.handleResult(gapPositionResult);
-
       if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
         const gapPosition = gapPositionResult.payload;
         paintResult = painter.addGapMeasurement(gapPosition);
@@ -383,6 +382,68 @@ export default class App {
       } else {
         messenger.toast('The selected layers need to overlap');
       }
+    }
+
+    if (this.shouldTerminate) {
+      this.closeGUI();
+    }
+    return null;
+  }
+
+  /**
+   * @description Annotates the selection with the spacing number (“IS-X”) based on the
+   * surrounding padding (top, bottom, right, and left). The selection must be a
+   * node with auto-layout enabled.
+   *
+   * @kind function
+   * @name annotateSpacingALPadding
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected, if more than one node
+   * is selected, or if the wrong type of node is selected.
+   */
+  annotateSpacingALPadding() {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected layer to annotate it
+    if (selection === null || selection.length > 1) {
+      return messenger.toast('One layer must be selected');
+    }
+
+    // grab the gap position from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
+
+    // need a node with auto-layout to annotate it
+    if (layer.type !== 'FRAME' || (layer.type === 'FRAME' && layer.layoutMode === 'NONE')) {
+      return messenger.toast('A layer with auto-layout enabled must be selected');
+    }
+
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
+
+    // draw the spacing annotations based on auto-layout padding settings
+    let paintResult = null;
+    const paddingPositionsResult = crawler.paddingPositions();
+
+    // read the response from Crawler; log and display message(s)
+    messenger.handleResult(paddingPositionsResult);
+
+    if (paddingPositionsResult.status === 'success' && paddingPositionsResult.payload) {
+      const paddingPositions = paddingPositionsResult.payload;
+      if (paddingPositions) {
+        paintResult = painter.addOverlapMeasurements(paddingPositions);
+
+        // read the response from Painter; log and display message(s)
+        messenger.handleResult(paintResult);
+      } else {
+        messenger.toast('The selected layers need to overlap');
+      }
+    } else {
+      messenger.toast('The selected layers need to overlap');
     }
 
     if (this.shouldTerminate) {
