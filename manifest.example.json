@@ -50,12 +50,28 @@
           {
             "name": "Set Spacing: ↓ Bottom",
             "command": "annotate-spacing-bottom"
+          },
+          {
+            "separator": true
+          },
+          {
+            "name": "Set Spacing: Auto-layout Padding",
+            "command": "annotate-spacing-al-padding"
           }
         ]
     },
     {
-      "name": "Draw Bounding Box",
-      "command": "bounding"
+      "name": "Bounding Boxes",
+        "menu": [
+          {
+            "name": "Draw Bounding Box",
+            "command": "bounding"
+          },
+          {
+            "name": "Draw Multiple Bounding Boxes",
+            "command": "bounding-multi"
+          }
+        ]
     }
   ]
 }

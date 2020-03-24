@@ -479,6 +479,7 @@ export default class Crawler {
       let leftEdgeX = null;
       let rightEdgeX = null;
       let positionWidth = null;
+      let positionHeight = null;
 
       // make sure the layers are not overlapped (a gap exists)
       if ((layerAPosition.y + layerAPosition.height) < layerBPosition.y) {
@@ -529,11 +530,11 @@ export default class Crawler {
           rightEdgeX = layerALeftX;
         }
 
-        // set position height
+        // set position width
         positionWidth = rightEdgeX - leftEdgeX;
 
         // set the final position params
-        // cut final `x` in half by width to position annotation at mid-point
+        // move final `x` to position annotation at mid-point
         thePosition.x = leftEdgeX + (positionWidth / 2);
         thePosition.y = topEdgeY;
         thePosition.width = positionWidth;
@@ -542,13 +543,150 @@ export default class Crawler {
         thePosition.layerAId = layerA.id;
         thePosition.layerBId = layerB.id;
       }
+
+      // check to see if the two layers are touching, rather than gapped or overlapped
+      if ((layerAPosition.y + layerAPosition.height) === layerBPosition.y) {
+        // determine vertical auto-layout padding affects here
+        if (
+          (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
+          || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
+        ) {
+          const topNode = layerA as FrameNode;
+          const bottomNode = layerB as FrameNode;
+
+          const layerALeftX = layerAPosition.x + topNode.horizontalPadding;
+          const layerARightX = layerAPosition.x + layerAPosition.width - topNode.horizontalPadding;
+          const layerBLeftX = layerBPosition.x + bottomNode.horizontalPadding;
+          const layerBRightX = layerBPosition.x
+            + layerBPosition.width - bottomNode.horizontalPadding;
+
+          if (layerBLeftX >= layerALeftX) {
+            // left-most of A is to the left of left-most of B
+            if (layerARightX >= layerBLeftX) {
+              // left-most of B is to the left of right-most of A
+              if (layerBRightX >= layerARightX) {
+                // right-most of A is to the left of right-most of B
+                // decision: left-most edge is left-most of B; right-most edge is right-most of A
+                leftEdgeX = layerBLeftX;
+                rightEdgeX = layerARightX;
+              } else {
+                // decision: left-most edge is left-most of B; right-most edge is right-most of B
+                leftEdgeX = layerBLeftX;
+                rightEdgeX = layerBRightX;
+              }
+            } else {
+              // decision: left-most edge is right-most of A; right-most edge is left-most of B
+              leftEdgeX = layerARightX;
+              rightEdgeX = layerBLeftX;
+            }
+          } else if (layerBRightX >= layerALeftX) {
+            // left-most of A is to the left of right-most of B
+            if (layerARightX >= layerBRightX) {
+              // right-most of B is to the left of right-most of A
+              // decision: left-most edge is left-most of A; right-most edge is right-most of B
+              leftEdgeX = layerALeftX;
+              rightEdgeX = layerBRightX;
+            } else {
+              // decision: left-most edge is left-most of A; right-most edge is right-most of A
+              leftEdgeX = layerALeftX;
+              rightEdgeX = layerARightX;
+            }
+          } else {
+            // decision: left-most edge is right-most of B; right-most edge is left-most of A
+            leftEdgeX = layerBRightX;
+            rightEdgeX = layerALeftX;
+          }
+
+          positionWidth = rightEdgeX - leftEdgeX;
+
+          // set a `thePosition` in the padded area to simulate the gap
+          // move final `x` to position annotation at mid-point
+          thePosition.x = leftEdgeX + (positionWidth / 2);
+          thePosition.y = layerAPosition.y + layerAPosition.height - topNode.verticalPadding;
+          thePosition.width = positionWidth;
+          thePosition.height = topNode.verticalPadding + bottomNode.verticalPadding;
+          thePosition.orientation = 'horizontal';
+          thePosition.layerAId = layerA.id;
+          thePosition.layerBId = layerB.id;
+        }
+      } else if ((layerAPosition.x + layerAPosition.width) === layerBPosition.x) {
+        // determine horizontal auto-layout padding affects here
+        if (
+          (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
+          || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
+        ) {
+          const leftNode = layerA as FrameNode;
+          const rightNode = layerB as FrameNode;
+
+          // set the left/right edges of the gap
+          leftEdgeX = layerAPosition.x + layerAPosition.width; // lowest x within gap
+          rightEdgeX = layerBPosition.x; // highest x within gap
+
+          const layerATopY = layerAPosition.y + leftNode.verticalPadding;
+          const layerABottomY = layerAPosition.y + layerAPosition.height - leftNode.verticalPadding;
+          const layerBTopY = layerBPosition.y + rightNode.verticalPadding;
+          const layerBBottomY = layerBPosition.y
+            + layerBPosition.height - rightNode.verticalPadding;
+
+          if (layerBTopY >= layerATopY) {
+            // top of A is higher than top of B
+            if (layerABottomY >= layerBTopY) {
+              // top of B is higher than bottom of A
+              if (layerBBottomY >= layerABottomY) {
+                // bottom of A is higher than bottom of B
+                // decision: top edge is top of B; bottom edge is bottom of A
+                topEdgeY = layerBTopY;
+                bottomEdgeY = layerABottomY;
+              } else {
+                // decision: top edge is top of B; bottom edge is bottom of B
+                topEdgeY = layerBTopY;
+                bottomEdgeY = layerBBottomY;
+              }
+            } else {
+              // decision: top edge is bottom of A; bottom edge is top of B
+              topEdgeY = layerABottomY;
+              bottomEdgeY = layerBTopY;
+            }
+          } else if (layerBBottomY >= layerATopY) {
+            // top of A is higher than bottom of B
+            if (layerABottomY >= layerBBottomY) {
+              // bottom of B is higher than bottom of A
+              // decision: top edge is top of A; bottom edge is bottom of B
+              topEdgeY = layerATopY;
+              bottomEdgeY = layerBBottomY;
+            } else {
+              // decision: top edge is top of A; bottom edge is bottom of A
+              topEdgeY = layerATopY;
+              bottomEdgeY = layerABottomY;
+            }
+          } else {
+            // decision: top edge is bottom of B; bottom edge is top of A
+            topEdgeY = layerBBottomY;
+            bottomEdgeY = layerATopY;
+          }
+
+          // set position height
+          positionHeight = bottomEdgeY - topEdgeY;
+
+          // set a `thePosition` in the padded area to simulate the gap
+          // move final `y` to position annotation at mid-point
+          thePosition.x = leftEdgeX - leftNode.horizontalPadding;
+          thePosition.y = topEdgeY + (positionHeight / 2);
+          thePosition.width = rightEdgeX - leftEdgeX
+            + leftNode.horizontalPadding + rightNode.horizontalPadding;
+          thePosition.height = positionHeight;
+          thePosition.orientation = 'vertical';
+          thePosition.layerAId = layerA.id;
+          thePosition.layerBId = layerB.id;
+        }
+      }
     }
 
     // return a successful result
     result.status = 'success';
 
     // no gap exists
-    if (!thePosition.x) {
+    if (!thePosition.x || (thePosition.height <= 0) || (thePosition.width <= 0)) {
       result.messages.log = 'A gap positioning was not found';
       return result;
     }
@@ -747,6 +885,145 @@ export default class Crawler {
     // set the payload and deliver
     result.status = 'success';
     result.messages.log = 'Overlap positions calculated';
+    result.payload = thePositions;
+    return result;
+  }
+
+  /**
+   * @description Creates four separate positions for the spaces around an auto-layout
+   * node that contains padding. It keeps the coordinates relative to the artboard.
+   * It also adds an orientation `horizontal` or `vertical` based on the padding orientation.
+   * Assumes only 1 node is selected.
+   *
+   * @kind function
+   * @name paddingPositions
+   *
+   * @returns {Object} The `top`, `bottom`, `right`, and `left` positions. Each position
+   * contains `x`, `y` coordinates, `width`, `height`, and `orientation`. The object also
+   * includes the node ID (`layerId`) for the node evaluated.
+   */
+  paddingPositions() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+      payload: any,
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+      payload: null,
+    };
+
+    // set the node
+    const node: FrameNode = this.first() as FrameNode;
+
+    const nodeTopFrame = findFrame(node);
+
+    if (!nodeTopFrame) {
+      result.status = 'error';
+      result.messages.log = 'Node not inside a frame';
+      result.messages.toast = 'The layer must be inside a frame';
+      return result;
+    }
+
+    const nodePosition = Crawler.getBoundingPositition(node);
+
+    // -------- set positions - essentially defining rectangles in the padded spaces
+    // top
+    const topWidth = nodePosition.width - (node.horizontalPadding * 2);
+    const topHeight = node.verticalPadding;
+    const topX = nodePosition.x + node.horizontalPadding;
+    const topY = nodePosition.y;
+
+    // bottom
+    const bottomWidth = topWidth;
+    const bottomHeight = topHeight;
+    const bottomX = topX;
+    const bottomY = nodePosition.y + nodePosition.height - topHeight;
+
+    // left
+    const leftWidth = node.horizontalPadding;
+    const leftHeight = nodePosition.height - topHeight - bottomHeight;
+    const leftX = nodePosition.x;
+    const leftY = nodePosition.y + topHeight;
+
+    // right
+    const rightWidth = leftWidth;
+    const rightHeight = leftHeight;
+    const rightX = topX + topWidth;
+    const rightY = leftY;
+
+    // set the positions
+    const thePositions: {
+      top: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      bottom: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      right: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      left: {
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        orientation: 'horizontal' | 'vertical',
+      },
+      layerId: string,
+    } = {
+      top: {
+        x: topX,
+        y: topY,
+        width: topWidth,
+        height: topHeight,
+        orientation: 'horizontal',
+      },
+      bottom: {
+        x: bottomX,
+        y: bottomY,
+        width: bottomWidth,
+        height: bottomHeight,
+        orientation: 'horizontal',
+      },
+      right: {
+        x: rightX,
+        y: rightY,
+        width: rightWidth,
+        height: rightHeight,
+        orientation: 'vertical',
+      },
+      left: {
+        x: leftX,
+        y: leftY,
+        width: leftWidth,
+        height: leftHeight,
+        orientation: 'vertical',
+      },
+      layerId: node.id,
+    };
+
+    // set the payload and deliver
+    result.status = 'success';
+    result.messages.log = 'Padding positions calculated';
     result.payload = thePositions;
     return result;
   }

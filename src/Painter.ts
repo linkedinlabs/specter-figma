@@ -1669,7 +1669,8 @@ export default class Painter {
    *
    * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
    * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
-   * for the two layers used to calculated the gap.
+   * for the two layers used to calculated the gap OR `layerId` for the single node in the
+   * case of an auto-layout, padded node.
    *
    * @returns {null}
    */
@@ -1700,6 +1701,7 @@ export default class Painter {
         if (
           layerSet.layerAId === spacingPosition.layerAId
           && layerSet.layerBId === spacingPosition.layerBId
+          && layerSet.layerId === spacingPosition.layerId
           && layerSet.direction === spacingPosition.direction
         ) {
           removeAnnotation(layerSet);
@@ -1770,12 +1772,14 @@ export default class Painter {
     const newAnnotatedSpacingSet: {
       containerGroupId: string,
       id: string,
-      layerAId: string,
-      layerBId: string,
+      layerId?: string,
+      layerAId?: string,
+      layerBId?: string,
       direction: 'top' | 'bottom' | 'right' | 'left',
     } = {
       containerGroupId: containerSet.componentInnerGroupId,
       id: group.id,
+      layerId: spacingPosition.layerId,
       layerAId: spacingPosition.layerAId,
       layerBId: spacingPosition.layerBId,
       direction: spacingPosition.direction,
@@ -1935,8 +1939,9 @@ export default class Painter {
         width: number,
         height: number,
         orientation: 'horizontal' | 'vertical',
-        layerAId: string,
-        layerBId: string,
+        layerId?: string,
+        layerAId?: string,
+        layerBId?: string,
         direction: 'top' | 'bottom' | 'right' | 'left',
       } = {
         x: frameX,
@@ -1944,6 +1949,7 @@ export default class Painter {
         width: overlapFrames[direction].width,
         height: overlapFrames[direction].height,
         orientation: overlapFrames[direction].orientation,
+        layerId: overlapFrames.layerId,
         layerAId: overlapFrames.layerAId,
         layerBId: overlapFrames.layerBId,
         direction,
