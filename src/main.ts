@@ -87,8 +87,14 @@ const dispatcher = (action: {
       case 'annotate-spacing-bottom':
         app.annotateSpacingOnly('bottom');
         break;
+      case 'annotate-spacing-al-padding':
+        app.annotateSpacingALPadding();
+        break;
       case 'bounding':
-        app.drawBoundingBox();
+        app.drawBoundingBoxes();
+        break;
+      case 'bounding-multi':
+        app.drawBoundingBoxes('multiple');
         break;
       case 'measure':
         app.annotateMeasurement();

@@ -297,7 +297,6 @@ export default class App {
 
       // read the response from Crawler; log and display message(s)
       messenger.handleResult(gapPositionResult);
-
       if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
         const gapPosition = gapPositionResult.payload;
         paintResult = painter.addGapMeasurement(gapPosition);
@@ -392,14 +391,81 @@ export default class App {
   }
 
   /**
-   * @description Draws a semi-transparent “Bounding Box” around any selected elements.
+   * @description Annotates the selection with the spacing number (“IS-X”) based on the
+   * surrounding padding (top, bottom, right, and left). The selection must be a
+   * node with auto-layout enabled.
    *
    * @kind function
-   * @name drawBoundingBox
+   * @name annotateSpacingALPadding
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected, if more than one node
+   * is selected, or if the wrong type of node is selected.
+   */
+  annotateSpacingALPadding() {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected layer to annotate it
+    if (selection === null || selection.length > 1) {
+      return messenger.toast('One layer must be selected');
+    }
+
+    // grab the gap position from the selection
+    const crawler = new Crawler({ for: selection });
+    const layer = crawler.first();
+
+    // need a node with auto-layout to annotate it
+    if (layer.type !== 'FRAME' || (layer.type === 'FRAME' && layer.layoutMode === 'NONE')) {
+      return messenger.toast('A layer with auto-layout enabled must be selected');
+    }
+
+    // set up Painter instance for the reference layer
+    const painter = new Painter({ for: layer, in: page });
+
+    // draw the spacing annotations based on auto-layout padding settings
+    let paintResult = null;
+    const paddingPositionsResult = crawler.paddingPositions();
+
+    // read the response from Crawler; log and display message(s)
+    messenger.handleResult(paddingPositionsResult);
+
+    if (paddingPositionsResult.status === 'success' && paddingPositionsResult.payload) {
+      const paddingPositions = paddingPositionsResult.payload;
+      if (paddingPositions) {
+        paintResult = painter.addOverlapMeasurements(paddingPositions);
+
+        // read the response from Painter; log and display message(s)
+        messenger.handleResult(paintResult);
+      } else {
+        messenger.toast('The selected layers need to overlap');
+      }
+    } else {
+      messenger.toast('The selected layers need to overlap');
+    }
+
+    if (this.shouldTerminate) {
+      this.closeGUI();
+    }
+    return null;
+  }
+
+  /**
+   * @description Draws semi-transparent “Bounding Box(es)” around any selected nodes.
+   * The `type` parameter determines if a single box is drawn, incorporating all selected
+   * nodes (`single`), or if a box is drawn around each individual node (`multiple`).
+   *
+   * @kind function
+   * @name drawBoundingBoxes
+   *
+   * @param {string} type Use `single` for a box around the entire selection or `multiple`
+   * for individual boxes around each selected node.
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  drawBoundingBox() {
+  drawBoundingBoxes(type: 'single' | 'multiple' = 'single') {
     const {
       messenger,
       page,
@@ -412,26 +478,39 @@ export default class App {
       return messenger.toast('At least one layer must be selected');
     }
 
-    // grab the position from the selection
-    const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
-    const positionResult = crawler.position();
+    const drawSingleBox = (nodes) => {
+      // grab the position from the selection
+      const crawler = new Crawler({ for: nodes });
 
-    // read the response from Crawler; log and display message(s)
-    messenger.handleResult(positionResult);
+      const layer = crawler.first();
+      const positionResult = crawler.position();
 
-    if (positionResult.status === 'success' && positionResult.payload) {
-      const position = positionResult.payload;
-      const painter = new Painter({ for: layer, in: page });
+      // read the response from Crawler; log and display message(s)
+      messenger.handleResult(positionResult);
 
-      // draw the bounding box (if position exists)
-      let paintResult = null;
-      if (position) {
-        paintResult = painter.addBoundingBox(position);
+      if (positionResult.status === 'success' && positionResult.payload) {
+        const position = positionResult.payload;
+        const painter = new Painter({ for: layer, in: page });
+
+        // draw the bounding box (if position exists)
+        let paintResult = null;
+        if (position) {
+          paintResult = painter.addBoundingBox(position);
+        }
+
+        // read the response from Painter; log and display message(s)
+        messenger.handleResult(paintResult);
       }
+    };
 
-      // read the response from Painter; log and display message(s)
-      messenger.handleResult(paintResult);
+    // set individual boxes for each selected node or set a single box
+    // that covers all nodes in the selection
+    if (type === 'multiple') {
+      selection.forEach((node: SceneNode) => {
+        drawSingleBox([node]); // expects an array
+      });
+    } else {
+      drawSingleBox(selection);
     }
 
     if (this.shouldTerminate) {

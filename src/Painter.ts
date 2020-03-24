@@ -1,7 +1,7 @@
+import Crawler from './Crawler';
 import {
   findFrame,
   getLayerSettings,
-  getRelativePosition,
   hexToDecimalRgb,
   isInternal,
   updateArray,
@@ -1334,9 +1334,13 @@ export default class Painter {
       type: annotationType,
     });
 
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.layer] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
     // group and position the base annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1348,8 +1352,8 @@ export default class Painter {
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
-      width: this.layer.width,
-      height: this.layer.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
       index: layerIndex,
@@ -1517,9 +1521,13 @@ export default class Painter {
       });
     }
 
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.layer] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
     // group and position the annotation elements
     const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const relativePosition = getRelativePosition(this.layer, this.frame);
     const layerPosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1531,8 +1539,8 @@ export default class Painter {
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
-      width: this.layer.width,
-      height: this.layer.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
       index: layerIndex,
@@ -1540,7 +1548,10 @@ export default class Painter {
 
     // ------------------------
     // construct the width annotation elements
-    const annotationTextWidth: string = `${this.layer.width}dp`;
+    const roundedWidthNumber: number = Math.round(
+      (this.layer.width + Number.EPSILON) * 100,
+    ) / 100;
+    const annotationTextWidth: string = `${roundedWidthNumber}dp`;
     const groupNameWidth: string = `Dimension Width for layer ${layerName}`;
     const annotationWidth = buildAnnotation({
       mainText: annotationTextWidth,
@@ -1587,7 +1598,10 @@ export default class Painter {
 
     // ------------------------
     // construct the height annotation elements
-    const annotationTextHeight: string = `${this.layer.height}dp`;
+    const roundedHeightNumber: number = Math.round(
+      (this.layer.height + Number.EPSILON) * 100,
+    ) / 100;
+    const annotationTextHeight: string = `${roundedHeightNumber}dp`;
     const groupNameHeight: string = `Dimension Height for layer ${layerName}`;
     const annotationHeight = buildAnnotation({
       mainText: annotationTextHeight,
@@ -1655,22 +1669,22 @@ export default class Painter {
    *
    * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
    * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
-   * for the two layers used to calculated the gap.
+   * for the two layers used to calculated the gap OR `layerId` for the single node in the
+   * case of an auto-layout, padded node.
    *
    * @returns {null}
    */
   addSpacingAnnotation(spacingPosition): boolean {
     // set up some information
-    const measurementToUse = spacingPosition.orientation === 'vertical' ? spacingPosition.width : spacingPosition.height;
+    const measurementToUse: number = spacingPosition.orientation === 'vertical'
+      ? spacingPosition.width : spacingPosition.height;
+    const measurementToUseRounded: number = Math.round(
+      (measurementToUse + Number.EPSILON) * 100,
+    ) / 100;
     const spacingValue: number = isInternal()
-      ? retrieveSpacingValue(measurementToUse) : measurementToUse;
+      ? retrieveSpacingValue(measurementToUseRounded) : measurementToUseRounded;
     const spacingPrefix: string = isInternal() && spacingValue < 10 ? 'IS-' : '';
     const spacingSuffix: string = isInternal() && spacingValue < 10 ? '' : 'dp';
-
-    // if there is no `spacingValue`, the measurement is above an `IS-9` and isn’t considered valid
-    if (!spacingValue) {
-      return false;
-    }
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
     const annotationType = 'spacing';
@@ -1687,6 +1701,7 @@ export default class Painter {
         if (
           layerSet.layerAId === spacingPosition.layerAId
           && layerSet.layerBId === spacingPosition.layerBId
+          && layerSet.layerId === spacingPosition.layerId
           && layerSet.direction === spacingPosition.direction
         ) {
           removeAnnotation(layerSet);
@@ -1757,12 +1772,14 @@ export default class Painter {
     const newAnnotatedSpacingSet: {
       containerGroupId: string,
       id: string,
-      layerAId: string,
-      layerBId: string,
+      layerId?: string,
+      layerAId?: string,
+      layerBId?: string,
       direction: 'top' | 'bottom' | 'right' | 'left',
     } = {
       containerGroupId: containerSet.componentInnerGroupId,
       id: group.id,
+      layerId: spacingPosition.layerId,
       layerAId: spacingPosition.layerAId,
       layerBId: spacingPosition.layerBId,
       direction: spacingPosition.direction,
@@ -1922,8 +1939,9 @@ export default class Painter {
         width: number,
         height: number,
         orientation: 'horizontal' | 'vertical',
-        layerAId: string,
-        layerBId: string,
+        layerId?: string,
+        layerAId?: string,
+        layerBId?: string,
         direction: 'top' | 'bottom' | 'right' | 'left',
       } = {
         x: frameX,
@@ -1931,6 +1949,7 @@ export default class Painter {
         width: overlapFrames[direction].width,
         height: overlapFrames[direction].height,
         orientation: overlapFrames[direction].orientation,
+        layerId: overlapFrames.layerId,
         layerAId: overlapFrames.layerAId,
         layerBId: overlapFrames.layerBId,
         direction,
