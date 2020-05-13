@@ -1,30 +1,50 @@
 /**
  * @description A set of functions to operate the plugin GUI.
  */
+import { isInternal } from './Tools';
 import './assets/css/main.scss';
 
-/* watch Navigation action buttons */
-const actionsElement = (<HTMLInputElement> document.getElementById('actions'));
+// process action
+const processActionClick = (e) => {
+  const target = e.target as HTMLTextAreaElement;
+  const button = target.closest('button');
 
-if (actionsElement) {
-  const onClick = (e: MouseEvent) => {
-    const target = e.target as HTMLTextAreaElement;
-    const button = target.closest('button');
-
-    if (button) {
-      // find action by element id
-      const action = button.id;
-
-      // bubble action to main
-      parent.postMessage({
-        pluginMessage: {
-          navType: action,
-        },
-      }, '*');
+  if (button) {
+    // find action by element id
+    let action = button.id;
+    if (button.classList.contains('hide')) {
+      action = `${action}-hide`;
     }
-  };
 
-  actionsElement.addEventListener('click', onClick);
+    // bubble action to main
+    parent.postMessage({
+      pluginMessage: {
+        navType: action,
+      },
+    }, '*');
+  }
+};
+
+/* watch Navigation main buttons */
+const mainElement = (<HTMLInputElement> document.getElementById('main'));
+
+if (mainElement) {
+  const onClick = (e: MouseEvent) => processActionClick(e);
+  mainElement.addEventListener('click', onClick);
+}
+
+/* watch Info panel triggers */
+const infoButtonElement = (<HTMLInputElement> document.getElementById('info'));
+const infoBackButtonElement = (<HTMLInputElement> document.getElementById('info-hide'));
+
+if (infoButtonElement) {
+  const onClick = (e: MouseEvent) => processActionClick(e);
+  infoButtonElement.addEventListener('click', onClick);
+}
+
+if (infoBackButtonElement) {
+  const onClick = (e: MouseEvent) => processActionClick(e);
+  infoBackButtonElement.addEventListener('click', onClick);
 }
 
 /* watch User Input action buttons */
@@ -45,6 +65,30 @@ if (userInputElement) {
         pluginMessage: {
           inputType: action,
           inputValue: inputElement.value,
+        },
+      }, '*');
+    }
+  };
+
+  userInputElement.addEventListener('click', onClick);
+}
+
+/* watch Info Panel action buttons WIP */
+const infoPanelElement = (<HTMLInputElement> document.getElementById('infoPanel'));
+
+if (infoPanelElement) {
+  const onClick = (e: MouseEvent) => {
+    const target = e.target as HTMLTextAreaElement;
+    const button = target.closest('button');
+
+    if (button) {
+      // find action by element id
+      const action = button.id.replace('infoPanel-', '');
+
+      // bubble action to main
+      parent.postMessage({
+        pluginMessage: {
+          inputType: action,
         },
       }, '*');
     }
@@ -96,7 +140,8 @@ const showHideInput = (
 
   if (action === 'show') {
     containerElement.classList.add('wide');
-    actionsElement.style.display = 'none';
+    mainElement.style.display = 'none';
+    infoButtonElement.style.display = 'none';
     userInputElement.removeAttribute('style');
 
     // focus on input and set initial value
@@ -108,8 +153,58 @@ const showHideInput = (
     inputElement.addEventListener('keyup', watchKeyboardActions);
   } else {
     containerElement.classList.remove('wide');
-    actionsElement.removeAttribute('style');
+    mainElement.removeAttribute('style');
+    infoButtonElement.removeAttribute('style');
     userInputElement.style.display = 'none';
+  }
+};
+
+const showHideInfo = (action: 'show' | 'hide') => {
+  const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
+  const transitionMaskElement = (<HTMLDivElement> containerElement.getElementsByClassName('transition-mask')[0]);
+
+  const setInternalInfo = () => {
+    const internalElements: HTMLCollection = document.getElementsByClassName('internal');
+    const externalElements: HTMLCollection = document.getElementsByClassName('external');
+
+    for (let i = 0; i < internalElements.length; i += 1) {
+      const internalElement: HTMLElement = internalElements[i] as HTMLElement;
+      internalElement.style.display = 'block';
+    }
+
+    for (let i = 0; i < externalElements.length; i += 1) {
+      const externalElement: HTMLElement = externalElements[i] as HTMLElement;
+      externalElement.style.display = 'none';
+    }
+  };
+
+  if (action === 'show') {
+    containerElement.classList.add('info-transition');
+    if (isInternal()) { setInternalInfo(); }
+    setTimeout(() => {
+      transitionMaskElement.classList.add('visible');
+      setTimeout(() => {
+        containerElement.classList.add('info-open');
+        infoButtonElement.classList.add('hide');
+        mainElement.style.display = 'none';
+        infoPanelElement.removeAttribute('style');
+        transitionMaskElement.classList.remove('visible');
+        setTimeout(() => containerElement.classList.remove('info-transition'), 175);
+      }, 175);
+    }, 15);
+  } else {
+    containerElement.classList.add('info-transition');
+    setTimeout(() => {
+      transitionMaskElement.classList.add('visible');
+      setTimeout(() => {
+        containerElement.classList.remove('info-open');
+        infoButtonElement.classList.remove('hide');
+        mainElement.removeAttribute('style');
+        infoPanelElement.style.display = 'none';
+        transitionMaskElement.classList.remove('visible');
+        setTimeout(() => containerElement.classList.remove('info-transition'), 175);
+      }, 175);
+    }, 15);
   }
 };
 
@@ -132,6 +227,12 @@ onmessage = ( // eslint-disable-line no-undef
       break;
     case 'hideInput':
       showHideInput('hide');
+      break;
+    case 'showInfo':
+      showHideInfo('show');
+      break;
+    case 'hideInfo':
+      showHideInfo('hide');
       break;
     default:
       return null;

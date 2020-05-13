@@ -1,6 +1,6 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
-import { loadFirstAvailableFontAsync } from './Tools';
+import { loadFirstAvailableFontAsync, resizeGUI } from './Tools';
 import { GUI_SETTINGS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
@@ -98,6 +98,22 @@ const dispatcher = (action: {
         break;
       case 'measure':
         app.annotateMeasurement();
+        break;
+      case 'info':
+        setTimeout(() => {
+          resizeGUI('info', figma.ui);
+        }, 190);
+        figma.ui.postMessage({
+          action: 'showInfo',
+        });
+        break;
+      case 'info-hide':
+        setTimeout(() => {
+          resizeGUI('default', figma.ui);
+        }, 180);
+        figma.ui.postMessage({
+          action: 'hideInfo',
+        });
         break;
       default:
         showGUI();

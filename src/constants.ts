@@ -29,11 +29,11 @@ const PLUGIN_NAME = 'Specter';
  * @type {Object}
  */
 const COLORS = {
-  component: '#9966ff',
-  custom: '#ff3399',
-  dimension: '#99cc00',
-  spacing: '#00cc99',
-  style: '#ff6655',
+  component: '#7c6bff',
+  custom: '#fa0085',
+  dimension: '#618e00',
+  spacing: '#009281',
+  style: '#ed4400',
 };
 
 /**
@@ -94,11 +94,15 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   default: {
     width: 140,
-    height: 180,
+    height: 132,
   },
   input: {
     width: 440,
-    height: 145,
+    height: 152,
+  },
+  info: {
+    width: 200,
+    height: 324,
   },
 };
 
