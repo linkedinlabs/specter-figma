@@ -317,7 +317,7 @@ const buildBoundingBox = (position: {
   height: number,
 }): RectangleNode => {
   const colorHex: string = COLORS.style;
-  const colorOpactiy: number = 0.3; // 30% opacity
+  const colorOpactiy: number = 0.25; // 25% opacity
 
   // build and name the initial rectangle object
   const boundingBox: RectangleNode = figma.createRectangle();
