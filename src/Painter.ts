@@ -233,7 +233,7 @@ const buildAnnotation = (options: {
   rectangle.counterAxisSizingMode = 'AUTO';
   rectangle.layoutAlign = 'CENTER';
   rectangle.horizontalPadding = isMeasurement ? 3 : 16;
-  rectangle.verticalPadding = isMeasurement ? 0 : 6;
+  rectangle.verticalPadding = isMeasurement ? 0.5 : 4.5;
   rectangle.itemSpacing = 0;
 
   // style it – set the rectangle type, color, and opacity
@@ -269,7 +269,7 @@ const buildAnnotation = (options: {
   // style text layer
   text.fontName = typefaceToUse;
   text.fontSize = 12;
-  text.lineHeight = { value: 18, unit: 'PIXELS' };
+  text.lineHeight = { value: 125, unit: 'PERCENT' };
   text.fills = [{
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
