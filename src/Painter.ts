@@ -269,7 +269,7 @@ const buildAnnotation = (options: {
   // style text layer
   text.fontName = typefaceToUse;
   text.fontSize = 12;
-  text.lineHeight = { value: 18, unit: 'PIXELS' };
+  text.lineHeight = { value: 125, unit: 'PERCENT' };
   text.fills = [{
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
