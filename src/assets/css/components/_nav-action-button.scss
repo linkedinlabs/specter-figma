@@ -44,7 +44,7 @@
   svg {
     &.icons-bounding {
       rect {
-        fill: rgba(255, 102, 85, 0.3); // custom color for bounding box icon
+        fill: rgba($bounding-box, 0.25); // custom color for bounding box icon
       }
     }
 
