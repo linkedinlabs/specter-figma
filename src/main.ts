@@ -51,10 +51,10 @@ const showGUI = (): void => {
  * command came from the GUI or the menu.
  * @returns {null}
  */
-const dispatcher = (action: {
+const dispatcher = async (action: {
   type: string,
   visual: boolean,
-}): void => {
+}): => {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
@@ -67,7 +67,7 @@ const dispatcher = (action: {
   });
 
   // run the action in the App class based on type
-  const runAction = (actionType: string) => {
+  const runAction = async (actionType: string) => {
     switch (actionType) {
       case 'annotate':
         app.annotateLayer();
@@ -151,7 +151,7 @@ export default dispatcher;
  *
  * @returns {null}
  */
-const main = (): void => {
+const main = async () => {
   // watch menu commands -------------------------------------------------
   if (figma.command) {
     dispatcher({
