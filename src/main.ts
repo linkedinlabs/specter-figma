@@ -115,6 +115,9 @@ const dispatcher = (action: {
           action: 'hideInfo',
         });
         break;
+      case 'mvp-mode-toggle':
+        App.toggleMvpMode();
+        break;
       default:
         showGUI();
     }
