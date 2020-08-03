@@ -1,7 +1,16 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
-import { loadFirstAvailableFontAsync, resizeGUI } from './Tools';
-import { GUI_SETTINGS, TYPEFACES } from './constants';
+import Messenger from './Messenger';
+import {
+  awaitUIReadiness,
+  loadFirstAvailableFontAsync,
+  resizeGUI,
+} from './Tools';
+import {
+  DATA_KEYS,
+  GUI_SETTINGS,
+  TYPEFACES,
+} from './constants';
 
 // GUI management -------------------------------------------------
 
@@ -27,12 +36,19 @@ const closeGUI = (): void => {
  *
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
-const showGUI = (): void => {
+const showGUI = (isMercadoMode?: boolean): void => {
   // show UI – command: tools
-  figma.showUI(__html__, { // eslint-disable-line no-undef
-    width: GUI_SETTINGS.default.width,
-    height: GUI_SETTINGS.default.height,
-  });
+  let size = 'default';
+
+  if (isMercadoMode) {
+    size = 'mercadoDefault';
+  }
+
+  // set UI panel size
+  resizeGUI(size, figma.ui);
+
+  // show UI
+  figma.ui.show();
 
   return null;
 };
@@ -58,10 +74,23 @@ const dispatcher = async (action: {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
+  // retrieve existing options
+  console.log(`DATA_KEYS.options ${DATA_KEYS.options}`)
+  const lastUsedOptions: {
+    isMercadoMode: boolean,
+  } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+  let isMercadoMode: boolean = false;
+  if (lastUsedOptions && lastUsedOptions.isMercadoMode) {
+    isMercadoMode = lastUsedOptions.isMercadoMode;
+  }
+  console.log(lastUsedOptions)
+
   // pass along some GUI management and navigation functions to the App class
   const app = new App({
     closeGUI,
     dispatcher,
+    isMercadoMode,
     shouldTerminate,
     showGUI,
   });
@@ -116,10 +145,10 @@ const dispatcher = async (action: {
         });
         break;
       case 'mercado-mode-toggle':
-        App.toggleMercadoMode();
-        break;
+        await App.toggleMercadoMode();
       default:
-        showGUI();
+        console.log(`isMercadoMode ${isMercadoMode}`);
+        showGUI(isMercadoMode);
     }
   };
 
@@ -152,6 +181,15 @@ export default dispatcher;
  * @returns {null}
  */
 const main = async () => {
+  // set up logging
+  const messenger = new Messenger({ for: figma, in: figma.currentPage });
+
+  // set up the UI, hidden by default -----------------------------------------
+  figma.showUI(__html__, { visible: false }); // eslint-disable-line no-undef
+
+  // make sure UI has finished setting up
+  await awaitUIReadiness(messenger);
+
   // watch menu commands -------------------------------------------------
   if (figma.command) {
     dispatcher({

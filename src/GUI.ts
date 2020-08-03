@@ -4,6 +4,22 @@
 import { isInternal } from './Tools';
 import './assets/css/main.scss';
 
+/**
+ * @description Posts a message to the main thread with `loaded` set to `true`. Used in the
+ * main thread to indicate the GUI is listening.
+ *
+ * @kind function
+ * @name sendLoadedMsg
+ *
+ * @returns {null}
+ */
+const sendLoadedMsg = (): void => {
+  // send message to main thread indicating UI has loaded
+  parent.postMessage({ pluginMessage: { loaded: true } }, '*');
+
+  return null;
+};
+
 // process action
 const processActionClick = (e) => {
   const target = e.target as HTMLTextAreaElement;
@@ -240,3 +256,6 @@ onmessage = ( // eslint-disable-line no-undef
 
   return null;
 };
+
+// init GUI
+sendLoadedMsg();

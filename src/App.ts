@@ -2,6 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
+import { DATA_KEYS } from './constants';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -41,17 +42,20 @@ const assemble = (context: any = null) => {
 export default class App {
   closeGUI: Function;
   dispatcher: Function;
+  isMercadoMode: boolean;
   shouldTerminate: boolean;
   showGUI: Function;
 
   constructor({
     closeGUI,
     dispatcher,
+    isMercadoMode,
     shouldTerminate,
     showGUI,
   }) {
     this.closeGUI = closeGUI;
     this.dispatcher = dispatcher;
+    this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
     this.showGUI = showGUI;
   }
@@ -127,7 +131,7 @@ export default class App {
             // show the GUI if we are annotating a single custom layer
             if (shouldTerminateLocal) {
               shouldTerminateLocal = false;
-              this.showGUI();
+              this.showGUI(this.isMercadoMode);
             }
 
             // present the option to set custom text
@@ -205,7 +209,7 @@ export default class App {
     }
 
     if (this.shouldTerminate) {
-      this.showGUI();
+      this.showGUI(this.isMercadoMode);
     }
 
     // grab the layer form the selection
@@ -532,7 +536,32 @@ export default class App {
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  static toggleMercadoMode() {
-    console.log('toggle mercado mode'); // eslint-disable-line no-console
+  static async toggleMercadoMode() {
+    // retrieve existing options
+    const lastUsedOptions: {
+      isMercadoMode: boolean,
+    } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+    // set preliminary mercado mode
+    let currentIsMercadoMode: boolean = false;
+    if (lastUsedOptions && lastUsedOptions.isMercadoMode) {
+      currentIsMercadoMode = lastUsedOptions.isMercadoMode;
+    }
+
+    console.log(`is mercado mode: ${currentIsMercadoMode}`); // eslint-disable-line no-console
+
+    // set new mercado
+    const options: {
+      isMercadoMode: boolean
+    } = {
+      isMercadoMode: !currentIsMercadoMode,
+    }
+    console.log(options);
+    await figma.clientStorage.setAsync(DATA_KEYS.options, options);
+    console.log('regroup')
+    const reCheck: {
+      isMercadoMode: boolean,
+    } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    console.log(reCheck)
   }
 }

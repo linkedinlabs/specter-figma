@@ -22,6 +22,19 @@ const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
 const PLUGIN_NAME = 'Specter';
 
 /**
+ * @description An object containing the current string constants used as keys in plugin data.
+ * Changing one of these keys will break data retrieval or reset data in any
+ * `xPluginData` getters/setters and potentially elsewhere.
+ *
+ * @kind constant
+ * @name DATA_KEYS
+ * @type {Object}
+ */
+const DATA_KEYS = {
+  options: `${PLUGIN_IDENTIFIER}.options-001`,
+};
+
+/**
  * @description An object containing the set of colors in-use by the plugin.
  *
  * @kind constant
@@ -113,6 +126,7 @@ const GUI_SETTINGS = {
 export {
   COLORS,
   CONTAINER_NODE_TYPES,
+  DATA_KEYS,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,

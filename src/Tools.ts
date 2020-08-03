@@ -8,6 +8,42 @@ const hexRgb = require('hex-rgb');
 
 // --- helper functions
 /**
+ * @description An approximation of `setTimeout` but run in an async manner
+ * with logging to Messenger.
+ *
+ * @kind function
+ * @name pollWithPromise
+ *
+ * @param {Function} externalCheck The external function to run a check against.
+ * The function should resolve to `true`.
+ * @param {Object} messenger An initialized instance of the Messenger class for logging (optional).
+ * @param {string} name The name of the check for logging purposes (optional).
+ *
+ * @returns {Promise} Returns a promise for resolution.
+ */
+const pollWithPromise = (
+  externalCheck: Function,
+  messenger?: { log: Function },
+  name?: string,
+): Promise<Function> => {
+  const isReady: Function = externalCheck;
+  const checkName = name || externalCheck.name;
+
+  const checkIsReady = (resolve) => {
+    if (messenger) { messenger.log(`Checking: ${checkName} 🤔`); }
+
+    if (isReady()) {
+      if (messenger) { messenger.log(`Resolve ${checkName} 🙏`); }
+
+      resolve(true);
+    } else {
+      setTimeout(checkIsReady, 25, resolve);
+    }
+  };
+  return new Promise(checkIsReady);
+};
+
+/**
  * @description A reusable helper function to take an array and add or remove data from it
  * based on a top-level key and a defined action.
  * an action (`add` or `remove`).
@@ -174,6 +210,23 @@ const findParentInstance = (node: any) => {
   }
 
   return currentTopInstance;
+};
+
+// we need to wait for the UI to be ready:
+// network calls are made through the UI iframe
+const awaitUIReadiness = async (messenger?) => {
+  // set UI readiness check to falsey
+  let ready = false;
+
+  // simple function to check truthiness of `ready`
+  const isUIReady = () => ready;
+
+  // set a one-time use listener
+  figma.ui.once('message', (msg) => {
+    if (msg && msg.loaded) { ready = true; }
+  });
+
+  await pollWithPromise(isUIReady, messenger);
 };
 
 /**
@@ -413,6 +466,7 @@ const isVisible = (node: SceneNode): boolean => {
 };
 
 export {
+  awaitUIReadiness,
   findFrame,
   findParentInstance,
   getLayerSettings,
