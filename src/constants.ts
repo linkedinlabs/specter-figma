@@ -104,6 +104,10 @@ const GUI_SETTINGS = {
     width: 200,
     height: 324,
   },
+  mercadoDefault: {
+    width: 140,
+    height: 152,
+  },
 };
 
 export {
