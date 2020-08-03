@@ -54,7 +54,7 @@ const showGUI = (): void => {
 const dispatcher = async (action: {
   type: string,
   visual: boolean,
-}): => {
+}) => {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
@@ -115,8 +115,8 @@ const dispatcher = async (action: {
           action: 'hideInfo',
         });
         break;
-      case 'mvp-mode-toggle':
-        App.toggleMvpMode();
+      case 'mercado-mode-toggle':
+        App.toggleMercadoMode();
         break;
       default:
         showGUI();

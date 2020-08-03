@@ -77,8 +77,8 @@
       "separator": true
     },
     {
-      "name": "Toggle MVP Mode",
-      "command": "mvp-mode-toggle"
+      "name": "Toggle Mercado Mode",
+      "command": "mercado-mode-toggle"
     }
   ]
 }

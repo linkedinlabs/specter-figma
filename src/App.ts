@@ -525,14 +525,14 @@ export default class App {
    * nodes (`single`), or if a box is drawn around each individual node (`multiple`).
    *
    * @kind function
-   * @name toggleMvpMode
+   * @name toggleMercadoMode
    *
    * @param {string} type Use `single` for a box around the entire selection or `multiple`
    * for individual boxes around each selected node.
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  static toggleMvpMode() {
-    console.log('toggle MVP mode');
+  static toggleMercadoMode() {
+    console.log('toggle mercado mode'); // eslint-disable-line no-console
   }
 }
