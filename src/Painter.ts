@@ -10,6 +10,7 @@ import {
   COLORS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  SPACING_MATRIX,
 } from './constants';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -1693,23 +1694,29 @@ export default class Painter {
     const measurementToUseRounded: number = Math.round(
       (measurementToUse + Number.EPSILON) * 100,
     ) / 100;
-    const spacingValue: number = isInternal()
+    let spacingValue: number | string = isInternal()
       ? retrieveSpacingValue(measurementToUseRounded, this.isMercadoMode) : measurementToUseRounded;
 
     // set prefix
     let spacingPrefix: string = '';
     if (isInternal() && spacingValue < 100) {
       if (this.isMercadoMode) {
-        spacingPrefix = 'merc-';
+        const spacingItem = SPACING_MATRIX.find(spacing => spacing.unit === spacingValue);
+        if (spacingItem) {
+          spacingValue = spacingItem.token;
+        }
       } else if (spacingValue < 10) {
         spacingPrefix = 'IS-';
       }
     }
 
     // set suffix
-    let spacingSuffix: string = '';
-    if (isInternal() && !this.isMercadoMode && (spacingValue < 10)) {
-      spacingSuffix = 'dp';
+    let spacingSuffix: string = 'dp';
+    if (
+      isInternal()
+      && ((!this.isMercadoMode && (spacingValue < 10)) || this.isMercadoMode)
+    ) {
+      spacingSuffix = '';
     }
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
