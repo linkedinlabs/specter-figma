@@ -33,15 +33,19 @@ const closeGUI = (): void => {
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const showGUI = (isMercadoMode?: boolean): void => {
-  // show UI – command: tools
+  // set UI size
   let size = 'default';
 
   if (isMercadoMode) {
     size = 'mercadoDefault';
   }
-
-  // set UI panel size
   resizeGUI(size, figma.ui);
+
+  // set mercado mode banner
+  figma.ui.postMessage({
+    action: 'setMercadoMode',
+    payload: isMercadoMode,
+  });
 
   // show UI
   figma.ui.show();
@@ -131,14 +135,23 @@ const dispatcher = async (action: {
           action: 'showInfo',
         });
         break;
-      case 'info-hide':
+      case 'info-hide': {
         setTimeout(() => {
-          resizeGUI('default', figma.ui);
+          // set UI size
+          let size = 'default';
+
+          if (isMercadoMode) {
+            size = 'mercadoDefault';
+          }
+          resizeGUI(size, figma.ui);
         }, 180);
+
+        // switch views
         figma.ui.postMessage({
           action: 'hideInfo',
         });
         break;
+      }
       case 'mercado-mode-toggle': {
         await App.toggleMercadoMode();
 

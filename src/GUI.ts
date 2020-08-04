@@ -224,6 +224,18 @@ const showHideInfo = (action: 'show' | 'hide') => {
   }
 };
 
+const showHideMercadoMode = (isMercadoMode: boolean) => {
+  const bannerElement: HTMLElement = document.querySelector('.mercado-banner');
+
+  if (bannerElement) {
+    if (isMercadoMode) {
+      bannerElement.removeAttribute('style');
+    } else {
+      bannerElement.style.display = 'none';
+    }
+  }
+};
+
 /* watch for Messages from the plugin */
 onmessage = ( // eslint-disable-line no-undef
   event: {
@@ -249,6 +261,9 @@ onmessage = ( // eslint-disable-line no-undef
       break;
     case 'hideInfo':
       showHideInfo('hide');
+      break;
+    case 'setMercadoMode':
+      showHideMercadoMode(pluginMessage.payload);
       break;
     default:
       return null;

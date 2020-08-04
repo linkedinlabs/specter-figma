@@ -92,8 +92,9 @@ export default class App {
       const layerToAnnotate = new Identifier({
         for: layer,
         data: page,
-        messenger,
         dispatcher: this.dispatcher,
+        isMercadoMode: this.isMercadoMode,
+        messenger,
       });
 
       // set up Painter instance for the layer
@@ -219,8 +220,9 @@ export default class App {
     const layerToAnnotate = new Identifier({
       for: layer,
       data: page,
-      messenger,
       dispatcher: this.dispatcher,
+      isMercadoMode: this.isMercadoMode,
+      messenger,
       shouldTerminate: this.shouldTerminate,
     });
 
