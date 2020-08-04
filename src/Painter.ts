@@ -1707,7 +1707,10 @@ export default class Painter {
     }
 
     // set suffix
-    const spacingSuffix: string = isInternal() && spacingValue < 10 ? '' : 'dp';
+    let spacingSuffix: string = '';
+    if (isInternal() && !this.isMercadoMode && (spacingValue < 10)) {
+      spacingSuffix = 'dp';
+    }
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
     const annotationType = 'spacing';
