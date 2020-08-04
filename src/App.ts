@@ -544,24 +544,18 @@ export default class App {
 
     // set preliminary mercado mode
     let currentIsMercadoMode: boolean = false;
-    if (lastUsedOptions && lastUsedOptions.isMercadoMode) {
+    if (lastUsedOptions && lastUsedOptions.isMercadoMode !== undefined) {
       currentIsMercadoMode = lastUsedOptions.isMercadoMode;
     }
 
-    console.log(`is mercado mode: ${currentIsMercadoMode}`); // eslint-disable-line no-console
-
-    // set new mercado
+    // set new mercado mode flag
     const options: {
       isMercadoMode: boolean
     } = {
       isMercadoMode: !currentIsMercadoMode,
-    }
-    console.log(options);
+    };
+
+    // save new options to storage
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);
-    console.log('regroup')
-    const reCheck: {
-      isMercadoMode: boolean,
-    } = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    console.log(reCheck)
   }
 }

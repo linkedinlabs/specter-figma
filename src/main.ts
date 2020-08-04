@@ -6,11 +6,7 @@ import {
   loadFirstAvailableFontAsync,
   resizeGUI,
 } from './Tools';
-import {
-  DATA_KEYS,
-  GUI_SETTINGS,
-  TYPEFACES,
-} from './constants';
+import { DATA_KEYS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
 
@@ -75,16 +71,15 @@ const dispatcher = async (action: {
   const shouldTerminate: boolean = !action.visual;
 
   // retrieve existing options
-  console.log(`DATA_KEYS.options ${DATA_KEYS.options}`)
   const lastUsedOptions: {
     isMercadoMode: boolean,
   } = await figma.clientStorage.getAsync(DATA_KEYS.options);
 
+  // set mercado mode flag
   let isMercadoMode: boolean = false;
-  if (lastUsedOptions && lastUsedOptions.isMercadoMode) {
+  if (lastUsedOptions && lastUsedOptions.isMercadoMode !== undefined) {
     isMercadoMode = lastUsedOptions.isMercadoMode;
   }
-  console.log(lastUsedOptions)
 
   // pass along some GUI management and navigation functions to the App class
   const app = new App({
@@ -144,10 +139,22 @@ const dispatcher = async (action: {
           action: 'hideInfo',
         });
         break;
-      case 'mercado-mode-toggle':
+      case 'mercado-mode-toggle': {
         await App.toggleMercadoMode();
+
+        // refresh options since they have changed
+        const refreshedOptions: {
+          isMercadoMode: boolean,
+        } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+        if (refreshedOptions && refreshedOptions.isMercadoMode !== undefined) {
+          isMercadoMode = refreshedOptions.isMercadoMode;
+        }
+
+        showGUI(isMercadoMode);
+        break;
+      }
       default:
-        console.log(`isMercadoMode ${isMercadoMode}`);
         showGUI(isMercadoMode);
     }
   };
@@ -165,7 +172,7 @@ const dispatcher = async (action: {
     // run the action
     await runAction(actionType);
   };
-  runActionWithTypefaces(action.type);
+  await runActionWithTypefaces(action.type);
 
   return null;
 };
