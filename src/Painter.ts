@@ -844,35 +844,41 @@ const setGroupName = (
  * @returns {string} A text label based on the spacing value.
  * @private
  */
-const retrieveSpacingValue = (length: number): number => {
+const retrieveSpacingValue = (length: number, isMercadoMode: boolean): number => {
   let itemSpacingValue: number = null;
 
-  // IS-X spacing is not an even scale
+  // Mercado and Art Deco spacing are not an even scales
   // set some breakpoints and “round” `length` to the nearest proper IS-X number
   // ignore anything so large that it’s above `IS-9`
   switch (true) {
     case (length >= 128): // based on 160 – IS-10 (not actually specc'd in Art Deco)
       return length; // return the actual length
     case (length >= 80): // 96 – IS-9
-      itemSpacingValue = 9;
+      itemSpacingValue = isMercadoMode ? 96 : 9;
       break;
     case (length >= 56): // 64 – IS-8
-      itemSpacingValue = 8;
+      itemSpacingValue = isMercadoMode ? 64 : 8;
       break;
     case (length >= 40): // 48 – IS-7
-      itemSpacingValue = 7;
+      itemSpacingValue = isMercadoMode ? 48 : 7;
       break;
     case (length >= 28): // 32 – IS-6
-      itemSpacingValue = 6;
+      itemSpacingValue = isMercadoMode ? 32 : 6;
       break;
     case (length >= 20): // 24 – IS-5
-      itemSpacingValue = 5;
+      itemSpacingValue = isMercadoMode ? 24 : 5;
       break;
-    case (length >= 16): // 16 – IS-4
-      itemSpacingValue = 4;
+    case (length >= 15): // 16 – IS-4
+      itemSpacingValue = isMercadoMode ? 16 : 4;
+      break;
+    case (length >= 11): // 12 – IS-3
+      itemSpacingValue = isMercadoMode ? 12 : 3;
+      break;
+    case (length >= 7): // 8 – IS-2
+      itemSpacingValue = isMercadoMode ? 8 : 2;
       break;
     default:
-      itemSpacingValue = Math.round(length / 4);
+      itemSpacingValue = isMercadoMode ? 4 : 1; // 4 – IS-1
   }
 
   return itemSpacingValue;
@@ -1688,14 +1694,14 @@ export default class Painter {
       (measurementToUse + Number.EPSILON) * 100,
     ) / 100;
     const spacingValue: number = isInternal()
-      ? retrieveSpacingValue(measurementToUseRounded) : measurementToUseRounded;
+      ? retrieveSpacingValue(measurementToUseRounded, this.isMercadoMode) : measurementToUseRounded;
 
     // set prefix
     let spacingPrefix: string = '';
-    if (isInternal() && spacingValue < 10) {
+    if (isInternal() && spacingValue < 100) {
       if (this.isMercadoMode) {
         spacingPrefix = 'merc-';
-      } else {
+      } else if (spacingValue < 10) {
         spacingPrefix = 'IS-';
       }
     }
