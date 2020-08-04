@@ -98,7 +98,11 @@ export default class App {
       });
 
       // set up Painter instance for the layer
-      const painter = new Painter({ for: layer, in: page });
+      const painter = new Painter({
+        for: layer,
+        in: page,
+        isMercadoMode: this.isMercadoMode,
+      });
 
       // set up function to draw annotations
       const drawAnnotation = (hasText: boolean) => {
@@ -227,7 +231,11 @@ export default class App {
     });
 
     // set up Painter instance for the layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // determine the annotation text
     const setText = (callback: Function) => layerToAnnotate.setText(callback);
@@ -293,7 +301,11 @@ export default class App {
     const layer = crawler.first();
 
     // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // draw the spacing annotation
     // (if gap position exists or layers are overlapped)
@@ -363,7 +375,11 @@ export default class App {
     const layer = crawler.first();
 
     // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // draw the spacing annotation
     // (if gap position exists or layers are overlapped)
@@ -429,7 +445,11 @@ export default class App {
     }
 
     // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // draw the spacing annotations based on auto-layout padding settings
     let paintResult = null;
@@ -496,7 +516,11 @@ export default class App {
 
       if (positionResult.status === 'success' && positionResult.payload) {
         const position = positionResult.payload;
-        const painter = new Painter({ for: layer, in: page });
+        const painter = new Painter({
+          for: layer,
+          in: page,
+          isMercadoMode: this.isMercadoMode,
+        });
 
         // draw the bounding box (if position exists)
         let paintResult = null;

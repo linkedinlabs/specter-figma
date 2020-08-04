@@ -1240,12 +1240,18 @@ const removeAnnotation = (existingItemData: { id: string }): void => {
  * @property page The PageNode in the Figma file containing the corresponding `frame` and `layer`.
  */
 export default class Painter {
-  layer: SceneNode;
   frame: FrameNode;
+  isMercadoMode: boolean;
+  layer: SceneNode;
   page: PageNode;
-  constructor({ for: layer, in: page }) {
+  constructor({
+    for: layer,
+    in: page,
+    isMercadoMode,
+  }) {
+    this.isMercadoMode = isMercadoMode;
+    this.frame = findFrame(layer);
     this.layer = layer;
-    this.frame = findFrame(this.layer);
     this.page = page;
   }
 
@@ -1683,7 +1689,18 @@ export default class Painter {
     ) / 100;
     const spacingValue: number = isInternal()
       ? retrieveSpacingValue(measurementToUseRounded) : measurementToUseRounded;
-    const spacingPrefix: string = isInternal() && spacingValue < 10 ? 'IS-' : '';
+
+    // set prefix
+    let spacingPrefix: string = '';
+    if (isInternal() && spacingValue < 10) {
+      if (this.isMercadoMode) {
+        spacingPrefix = 'merc-';
+      } else {
+        spacingPrefix = 'IS-';
+      }
+    }
+
+    // set suffix
     const spacingSuffix: string = isInternal() && spacingValue < 10 ? '' : 'dp';
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
