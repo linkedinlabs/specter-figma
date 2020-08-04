@@ -50,6 +50,55 @@ const COLORS = {
 };
 
 /**
+ * @description A matrix for converting spacing numbers into Mercado-style tokens.
+ *
+ * @kind constant
+ * @name SPACING_MATRIX
+ * @type {Array}
+ */
+const SPACING_MATRIX: Array<{
+  unit: number,
+  token: string,
+}> = [
+  {
+    unit: 4,
+    token: 'spacing-half-x',
+  },
+  {
+    unit: 8,
+    token: 'spacing-one-x',
+  },
+  {
+    unit: 12,
+    token: 'spacing-one-and-a-half-x',
+  },
+  {
+    unit: 16,
+    token: 'spacing-two-x',
+  },
+  {
+    unit: 24,
+    token: 'spacing-three-x',
+  },
+  {
+    unit: 32,
+    token: 'spacing-four-x',
+  },
+  {
+    unit: 48,
+    token: 'spacing-six-x',
+  },
+  {
+    unit: 64,
+    token: 'spacing-eight-x',
+  },
+  {
+    unit: 96,
+    token: 'spacing-twelve-x',
+  },
+];
+
+/**
  * @description An array containing the possible typefaces to use for annotations.
  * Place the highest-priority typefaces first. Typefaces will be checked for availability
  * and loaded top-down.
@@ -130,6 +179,7 @@ export {
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  SPACING_MATRIX,
   TYPEFACES,
 };
 /* eslint-enable import/prefer-default-export */
