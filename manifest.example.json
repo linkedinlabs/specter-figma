@@ -79,6 +79,13 @@
     {
       "name": "Toggle Mercado Mode",
       "command": "mercado-mode-toggle"
+    },
+    {
+      "separator": true
+    },
+    {
+      "name": "Annotate Mercado Corners",
+      "command": "corners"
     }
   ]
 }
