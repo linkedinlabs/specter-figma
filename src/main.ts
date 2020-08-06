@@ -125,8 +125,7 @@ const dispatcher = async (action: {
         app.drawBoundingBoxes('multiple');
         break;
       case 'corners':
-        // app.annotateMeasurement();
-        console.log('measure corners 📐'); // eslint-disable-line no-console
+        app.annotateCorners();
         break;
       case 'measure':
         app.annotateMeasurement();

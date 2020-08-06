@@ -60,6 +60,119 @@ export default class App {
     this.showGUI = showGUI;
   }
 
+
+  /** WIP
+   * @description If two layers are selected: annotates the selection with the
+   * spacing number (“IS-X”) based on either the gap between the two layers or, if they
+   * are overlapping, the 4 directions of overlap (top, bottom, right, and left). If
+   * one layer is selected: annotates the height and width of the selected layer
+   * in “dp” (digital points) units.
+   *
+   * @kind function
+   * @name annotateCorners
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected or
+   * if more than two layers are selected.
+   */
+  annotateCorners() {
+    const {
+      messenger,
+      // page,
+      selection,
+    } = assemble(figma);
+    // need one or two selected layers
+    if (selection === null || selection.length === 0) {
+      messenger.log(`Annotate corners: ${selection.length} layer(s) selected`);
+      return messenger.toast('At least one layer must be selected');
+    }
+
+    // set up selection array
+    const crawler = new Crawler({ for: selection });
+    const flattenedNodes = crawler.all();
+
+    // combine direct selection with flattened selection
+    // (gives us both Frames and inner content)
+    const combinedNodesArray = selection.concat(flattenedNodes);
+
+    // ensure no nodes are repeated
+    const nodes = [...new Set(combinedNodesArray)];
+
+    // set initial flag
+    let applicableNodes = false;
+
+    // iterate direct selection and annotate corners
+    nodes.forEach((node: SceneNode) => {
+      // check that the node is the correct type
+      if (
+        (node.type === 'FRAME')
+        || (node.type === 'RECTANGLE')
+      ) {
+        const shapeNode = node as FrameNode | RectangleNode;
+
+        // check that the node has a single value for `cornerRadius`
+        if (
+          (shapeNode.topLeftRadius > 0)
+          && (shapeNode.topRightRadius > 0)
+          && (shapeNode.bottomLeftRadius > 0)
+          && (shapeNode.bottomRightRadius > 0)
+        ) {
+          console.log('figure me out'); // eslint-disable-line no-console
+          applicableNodes = true;
+        }
+      }
+    });
+
+    if (!applicableNodes) {
+      messenger.log('Annotate corners: No layers have matching corners');
+      return messenger.toast('At least one layer with matching corners must be selected');
+    }
+
+    // // set up Painter instance for the reference layer
+    // const painter = new Painter({
+    //   for: layer,
+    //   in: page,
+    //   isMercadoMode: this.isMercadoMode,
+    // });
+
+    // // draw the spacing annotation
+    // // (if gap position exists or layers are overlapped)
+    // let paintResult = null;
+    // if (selection.length === 2) {
+    //   const gapPositionResult = crawler.gapPosition();
+
+    //   // read the response from Crawler; log and display message(s)
+    //   messenger.handleResult(gapPositionResult);
+    //   if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
+    //     const gapPosition = gapPositionResult.payload;
+    //     paintResult = painter.addGapMeasurement(gapPosition);
+    //   } else {
+    //     const overlapPositionsResult = crawler.overlapPositions();
+
+    //     // read the response from Crawler; log and display message(s)
+    //     messenger.handleResult(overlapPositionsResult);
+
+    //     if (overlapPositionsResult.status === 'success' && overlapPositionsResult.payload) {
+    //       const overlapPositions = overlapPositionsResult.payload;
+    //       paintResult = painter.addOverlapMeasurements(overlapPositions);
+    //     }
+    //   }
+    // }
+
+    // if (selection.length === 1) {
+    //   paintResult = painter.addDimMeasurement();
+    // }
+
+    // // read the response from Painter; log and display message(s)
+    // if (paintResult) {
+    //   messenger.handleResult(paintResult);
+    // }
+
+    if (this.shouldTerminate) {
+      this.closeGUI();
+    }
+    return null;
+  }
+
   /**
    * @description Identifies and annotates a selected layer or multiple layers in a Figma file.
    *

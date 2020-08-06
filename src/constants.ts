@@ -50,6 +50,35 @@ const COLORS = {
 };
 
 /**
+ * @description A matrix for converting border radius numbers into Mercado-style tokens.
+ *
+ * @kind constant
+ * @name RADIUS_MATRIX
+ * @type {Array}
+ */
+const RADIUS_MATRIX: Array<{
+  unit: number,
+  token: string,
+}> = [
+  {
+    unit: 4,
+    token: 'corner-radius-small',
+  },
+  {
+    unit: 8,
+    token: 'corner-radius-medium',
+  },
+  {
+    unit: 16,
+    token: 'corner-radius-large',
+  },
+  {
+    unit: 24,
+    token: 'corner-radius-xlarge',
+  },
+];
+
+/**
  * @description A matrix for converting spacing numbers into Mercado-style tokens.
  *
  * @kind constant
@@ -179,6 +208,7 @@ export {
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  RADIUS_MATRIX,
   SPACING_MATRIX,
   TYPEFACES,
 };
