@@ -77,7 +77,7 @@ export default class App {
   annotateCorners() {
     const {
       messenger,
-      // page,
+      page,
       selection,
     } = assemble(figma);
     // need one or two selected layers
@@ -116,7 +116,21 @@ export default class App {
           && (shapeNode.bottomLeftRadius > 0)
           && (shapeNode.bottomRightRadius > 0)
         ) {
-          console.log('figure me out'); // eslint-disable-line no-console
+          // set up Painter instance for the node
+          const painter = new Painter({
+            for: node,
+            in: page,
+            isMercadoMode: this.isMercadoMode,
+          });
+
+          let paintResult = null;
+          paintResult = painter.addCornerAnnotation();
+
+          if (paintResult) {
+            messenger.handleResult(paintResult);
+          }
+
+          // set selection feedback flag
           applicableNodes = true;
         }
       }

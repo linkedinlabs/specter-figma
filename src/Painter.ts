@@ -10,6 +10,7 @@ import {
   COLORS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  RADIUS_MATRIX,
   SPACING_MATRIX,
 } from './constants';
 
@@ -1465,6 +1466,94 @@ export default class Painter {
 
     result.status = 'success';
     result.messages.log = `Bounding box drawn on “${this.frame.name}”`;
+
+    return result;
+  }
+
+  /**
+   * @description Locates annotation text in a layer’s Settings object and
+   * builds the visual annotation on the Figma frame.
+   *
+   * @kind function
+   * @name addCornerAnnotation
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addCornerAnnotation() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // return an error if the selection is not placed in a frame
+    if (!this.frame) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
+      return result;
+    }
+
+    // check that all radii are the same
+    let radiiIsUnified = false;
+    const node = this.layer as FrameNode | RectangleNode;
+    if (
+      (node.topLeftRadius === node.topRightRadius)
+      && (node.topRightRadius === node.bottomLeftRadius)
+      && (node.bottomLeftRadius === node.bottomRightRadius)
+    ) {
+      radiiIsUnified = true;
+    }
+
+    // return an error if the selection is not placed in a frame
+    if (!radiiIsUnified) {
+      result.status = 'error';
+      result.messages.log = 'Radii are not the same';
+      result.messages.toast = 'Each corner radius must be the same ⏹';
+      return result;
+    }
+
+    // corners are the same, so set to one of them
+    let cornerValue = node.topLeftRadius;
+
+    // set cornerValue to valid Mercado Base Unit values
+    if (cornerValue < 5) {
+      cornerValue = 4;
+    } else if (cornerValue < 10) {
+      cornerValue = 8;
+    } else if (cornerValue < 20) {
+      cornerValue = 16;
+    } else if (cornerValue < 30) {
+      cornerValue = 24;
+    }
+
+    // throw back a radius that is too large
+    if (cornerValue > 24) {
+      result.status = 'error';
+      result.messages.log = 'Radius too big';
+      result.messages.toast = 'Each corner radius must be under 30';
+      return result;
+    }
+
+    // retrive the token based on the corner value
+    const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
+    if (radiusItem) {
+      console.log(`${cornerValue}: ${radiusItem.token}`); // eslint-disable-line no-console
+
+      result.status = 'success';
+      result.messages.log = `Set annotation for “${radiusItem.token}” token`;
+    } else {
+      result.status = 'error';
+      result.messages.log = 'Could not find a matching token';
+    }
 
     return result;
   }
