@@ -168,7 +168,7 @@ const GUI_SETTINGS = {
   },
   mercadoDefault: {
     width: 140,
-    height: 155,
+    height: 190,
   },
 };
 
