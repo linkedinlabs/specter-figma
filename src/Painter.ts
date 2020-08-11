@@ -1546,7 +1546,116 @@ export default class Painter {
     // retrive the token based on the corner value
     const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
     if (radiusItem) {
-      console.log(`${cornerValue}: ${radiusItem.token}`); // eslint-disable-line no-console
+      // set up some information
+      const annotationType = 'style';
+      const layerName = this.layer.name;
+      const layerId = this.layer.id;
+
+      // ------------------------
+      // retrieve document settings
+      const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+
+      // check if we have already annotated this element and remove the old annotation
+      if (pageSettings && pageSettings.annotatedLayers) {
+        // remove the old ID pair(s) from the `pageSettings` array
+        pageSettings.annotatedLayers.forEach((layerSet) => {
+          if (layerSet.originalId === layerId) {
+            removeAnnotation(layerSet);
+
+            // remove the layerSet from the `pageSettings` array
+            let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
+            newPageSettings = updateArray(
+              'annotatedLayers',
+              { id: layerSet.id },
+              newPageSettings,
+              'remove',
+            );
+
+            // commit the settings update
+            this.page.setPluginData(
+              PLUGIN_IDENTIFIER,
+              JSON.stringify(newPageSettings),
+            );
+          }
+        });
+      }
+
+      // grab the position from crawler
+      const crawler = new Crawler({ for: [this.layer] });
+      const positionResult = crawler.position();
+      const relativePosition = positionResult.payload;
+
+      // group and position the base annotation elements
+      const layerIndex: number = this.layer.parent.children.findIndex(
+        childNode => childNode === this.layer,
+      );
+      const layerPosition: {
+        frameWidth: number,
+        frameHeight: number,
+        width: number,
+        height: number,
+        x: number,
+        y: number,
+        index: number,
+      } = {
+        frameWidth: this.frame.width,
+        frameHeight: this.frame.height,
+        width: relativePosition.width,
+        height: relativePosition.height,
+        x: relativePosition.x,
+        y: relativePosition.y,
+        index: layerIndex,
+      };
+
+      const groupName: string = `Annotation for layer ${layerName}`;
+      const annotation = buildAnnotation({
+        mainText: radiusItem.token,
+        type: annotationType,
+      });
+
+      const annotationOrientation = 'top';
+      const group = positionAnnotation(
+        this.frame,
+        groupName,
+        annotation,
+        layerPosition,
+        annotationType,
+        annotationOrientation,
+      );
+
+      // set it in the correct containers
+      const containerSet = setLayerInContainers({
+        layer: group,
+        frame: this.frame,
+        page: this.page,
+        type: annotationType,
+      });
+
+      // new object with IDs to add to settings
+      const newAnnotatedLayerSet: {
+        containerGroupId: string,
+        id: string,
+        originalId: string,
+      } = {
+        containerGroupId: containerSet.componentInnerGroupId,
+        id: group.id,
+        originalId: layerId,
+      };
+
+      // update the `newPageSettings` array
+      let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+      newPageSettings = updateArray(
+        'annotatedLayers',
+        newAnnotatedLayerSet,
+        newPageSettings,
+        'add',
+      );
+
+      // commit the `Settings` update
+      this.page.setPluginData(
+        PLUGIN_IDENTIFIER,
+        JSON.stringify(newPageSettings),
+      );
 
       result.status = 'success';
       result.messages.log = `Set annotation for “${radiusItem.token}” token`;
