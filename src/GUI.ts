@@ -226,12 +226,21 @@ const showHideInfo = (action: 'show' | 'hide') => {
 
 const showHideMercadoMode = (isMercadoMode: boolean) => {
   const bannerElement: HTMLElement = document.querySelector('.mercado-banner');
+  const cornersElement: HTMLElement = document.querySelector('#corners');
 
   if (bannerElement) {
     if (isMercadoMode) {
       bannerElement.removeAttribute('style');
     } else {
       bannerElement.style.display = 'none';
+    }
+  }
+
+  if (cornersElement) {
+    if (isMercadoMode) {
+      cornersElement.removeAttribute('style');
+    } else {
+      cornersElement.style.display = 'none';
     }
   }
 };

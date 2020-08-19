@@ -124,6 +124,9 @@ const dispatcher = async (action: {
       case 'bounding-multi':
         app.drawBoundingBoxes('multiple');
         break;
+      case 'corners':
+        app.annotateCorners();
+        break;
       case 'measure':
         app.annotateMeasurement();
         break;

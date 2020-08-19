@@ -60,6 +60,90 @@ export default class App {
     this.showGUI = showGUI;
   }
 
+
+  /**
+   * @description Matches corner radius of a node (or inner-child node) with a matrix
+   * of tokens from Mercado that represent the corner radii. An annotation is drawn
+   * with the matching token.
+   *
+   * @kind function
+   * @name annotateCorners
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   */
+  annotateCorners() {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+    // need one or two selected layers
+    if (selection === null || selection.length === 0) {
+      messenger.log(`Annotate corners: ${selection.length} layer(s) selected`);
+      return messenger.toast('At least one layer must be selected');
+    }
+
+    // set up selection array
+    const crawler = new Crawler({ for: selection });
+    const flattenedNodes = crawler.all();
+
+    // combine direct selection with flattened selection
+    // (gives us both Frames and inner content)
+    const combinedNodesArray = selection.concat(flattenedNodes);
+
+    // ensure no nodes are repeated
+    const nodes = [...new Set(combinedNodesArray)];
+
+    // set initial flag
+    let applicableNodes = false;
+
+    // iterate direct selection and annotate corners
+    nodes.forEach((node: SceneNode) => {
+      // check that the node is the correct type
+      if (
+        (node.type === 'FRAME')
+        || (node.type === 'RECTANGLE')
+      ) {
+        const shapeNode = node as FrameNode | RectangleNode;
+
+        // check that the node has a single value for `cornerRadius`
+        if (
+          (shapeNode.topLeftRadius > 0)
+          && (shapeNode.topRightRadius > 0)
+          && (shapeNode.bottomLeftRadius > 0)
+          && (shapeNode.bottomRightRadius > 0)
+        ) {
+          // set up Painter instance for the node
+          const painter = new Painter({
+            for: node,
+            in: page,
+            isMercadoMode: this.isMercadoMode,
+          });
+
+          let paintResult = null;
+          paintResult = painter.addCornerAnnotation();
+
+          if (paintResult) {
+            messenger.handleResult(paintResult);
+          }
+
+          // set selection feedback flag
+          applicableNodes = true;
+        }
+      }
+    });
+
+    if (!applicableNodes) {
+      messenger.log('Annotate corners: No layers have matching corners');
+      return messenger.toast('At least one layer with matching corners must be selected');
+    }
+
+    if (this.shouldTerminate) {
+      this.closeGUI();
+    }
+    return null;
+  }
+
   /**
    * @description Identifies and annotates a selected layer or multiple layers in a Figma file.
    *
@@ -549,18 +633,15 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Draws semi-transparent “Bounding Box(es)” around any selected nodes.
-   * The `type` parameter determines if a single box is drawn, incorporating all selected
-   * nodes (`single`), or if a box is drawn around each individual node (`multiple`).
+  /**
+   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
+   * features specific to the Mercado Design Library. The flag is saved to local
+   * storage so that it persists across files.
    *
    * @kind function
    * @name toggleMercadoMode
    *
-   * @param {string} type Use `single` for a box around the entire selection or `multiple`
-   * for individual boxes around each selected node.
-   *
-   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   * @returns {Promise} Returns a promise for resolution.
    */
   static async toggleMercadoMode() {
     // retrieve existing options

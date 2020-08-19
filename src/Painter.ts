@@ -10,6 +10,7 @@ import {
   COLORS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  RADIUS_MATRIX,
   SPACING_MATRIX,
 } from './constants';
 
@@ -1465,6 +1466,203 @@ export default class Painter {
 
     result.status = 'success';
     result.messages.log = `Bounding box drawn on “${this.frame.name}”`;
+
+    return result;
+  }
+
+  /**
+   * @description Locates annotation text in a layer’s Settings object and
+   * builds the visual annotation on the Figma frame.
+   *
+   * @kind function
+   * @name addCornerAnnotation
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addCornerAnnotation() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // return an error if the selection is not placed in a frame
+    if (!this.frame) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
+      return result;
+    }
+
+    // check that all radii are the same
+    let radiiIsUnified = false;
+    const node = this.layer as FrameNode | RectangleNode;
+    if (
+      (node.topLeftRadius === node.topRightRadius)
+      && (node.topRightRadius === node.bottomLeftRadius)
+      && (node.bottomLeftRadius === node.bottomRightRadius)
+    ) {
+      radiiIsUnified = true;
+    }
+
+    // return an error if the selection is not placed in a frame
+    if (!radiiIsUnified) {
+      result.status = 'error';
+      result.messages.log = 'Radii are not the same';
+      result.messages.toast = 'Each corner radius must be the same ⏹';
+      return result;
+    }
+
+    // corners are the same, so set to one of them
+    let cornerValue = node.topLeftRadius;
+
+    // set cornerValue to valid Mercado Base Unit values
+    if (cornerValue < 5) {
+      cornerValue = 4;
+    } else if (cornerValue < 10) {
+      cornerValue = 8;
+    } else if (cornerValue < 20) {
+      cornerValue = 16;
+    } else if (cornerValue < 30) {
+      cornerValue = 24;
+    }
+
+    // throw back a radius that is too large
+    if (cornerValue > 24) {
+      result.status = 'error';
+      result.messages.log = 'Radius too big';
+      result.messages.toast = 'Each corner radius must be under 30';
+      return result;
+    }
+
+    // retrive the token based on the corner value
+    const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
+    if (radiusItem) {
+      // set up some information
+      const annotationType = 'style';
+      const layerName = this.layer.name;
+      const layerId = this.layer.id;
+
+      // ------------------------
+      // retrieve document settings
+      const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+
+      // check if we have already annotated this element and remove the old annotation
+      if (pageSettings && pageSettings.annotatedLayers) {
+        // remove the old ID pair(s) from the `pageSettings` array
+        pageSettings.annotatedLayers.forEach((layerSet) => {
+          if (layerSet.originalId === layerId) {
+            removeAnnotation(layerSet);
+
+            // remove the layerSet from the `pageSettings` array
+            let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
+            newPageSettings = updateArray(
+              'annotatedLayers',
+              { id: layerSet.id },
+              newPageSettings,
+              'remove',
+            );
+
+            // commit the settings update
+            this.page.setPluginData(
+              PLUGIN_IDENTIFIER,
+              JSON.stringify(newPageSettings),
+            );
+          }
+        });
+      }
+
+      // grab the position from crawler
+      const crawler = new Crawler({ for: [this.layer] });
+      const positionResult = crawler.position();
+      const relativePosition = positionResult.payload;
+
+      // group and position the base annotation elements
+      const layerIndex: number = this.layer.parent.children.findIndex(
+        childNode => childNode === this.layer,
+      );
+      const layerPosition: {
+        frameWidth: number,
+        frameHeight: number,
+        width: number,
+        height: number,
+        x: number,
+        y: number,
+        index: number,
+      } = {
+        frameWidth: this.frame.width,
+        frameHeight: this.frame.height,
+        width: relativePosition.width,
+        height: relativePosition.height,
+        x: relativePosition.x,
+        y: relativePosition.y,
+        index: layerIndex,
+      };
+
+      const groupName: string = `Annotation for layer ${layerName}`;
+      const annotation = buildAnnotation({
+        mainText: radiusItem.token,
+        type: annotationType,
+      });
+
+      const annotationOrientation = 'top';
+      const group = positionAnnotation(
+        this.frame,
+        groupName,
+        annotation,
+        layerPosition,
+        annotationType,
+        annotationOrientation,
+      );
+
+      // set it in the correct containers
+      const containerSet = setLayerInContainers({
+        layer: group,
+        frame: this.frame,
+        page: this.page,
+        type: annotationType,
+      });
+
+      // new object with IDs to add to settings
+      const newAnnotatedLayerSet: {
+        containerGroupId: string,
+        id: string,
+        originalId: string,
+      } = {
+        containerGroupId: containerSet.componentInnerGroupId,
+        id: group.id,
+        originalId: layerId,
+      };
+
+      // update the `newPageSettings` array
+      let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+      newPageSettings = updateArray(
+        'annotatedLayers',
+        newAnnotatedLayerSet,
+        newPageSettings,
+        'add',
+      );
+
+      // commit the `Settings` update
+      this.page.setPluginData(
+        PLUGIN_IDENTIFIER,
+        JSON.stringify(newPageSettings),
+      );
+
+      result.status = 'success';
+      result.messages.log = `Set annotation for “${radiusItem.token}” token`;
+    } else {
+      result.status = 'error';
+      result.messages.log = 'Could not find a matching token';
+    }
 
     return result;
   }
