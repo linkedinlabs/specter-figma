@@ -676,18 +676,15 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Draws semi-transparent “Bounding Box(es)” around any selected nodes.
-   * The `type` parameter determines if a single box is drawn, incorporating all selected
-   * nodes (`single`), or if a box is drawn around each individual node (`multiple`).
+  /**
+   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
+   * features specific to the Mercado Design Library. The flag is saved to local
+   * storage so that it persists across files.
    *
    * @kind function
    * @name toggleMercadoMode
    *
-   * @param {string} type Use `single` for a box around the entire selection or `multiple`
-   * for individual boxes around each selected node.
-   *
-   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   * @returns {Promise} Returns a promise for resolution.
    */
   static async toggleMercadoMode() {
     // retrieve existing options
