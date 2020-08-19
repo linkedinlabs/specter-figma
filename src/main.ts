@@ -1,7 +1,12 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
-import { loadFirstAvailableFontAsync, resizeGUI } from './Tools';
-import { GUI_SETTINGS, TYPEFACES } from './constants';
+import Messenger from './Messenger';
+import {
+  awaitUIReadiness,
+  loadFirstAvailableFontAsync,
+  resizeGUI,
+} from './Tools';
+import { DATA_KEYS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
 
@@ -27,12 +32,23 @@ const closeGUI = (): void => {
  *
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
-const showGUI = (): void => {
-  // show UI – command: tools
-  figma.showUI(__html__, { // eslint-disable-line no-undef
-    width: GUI_SETTINGS.default.width,
-    height: GUI_SETTINGS.default.height,
+const showGUI = (isMercadoMode?: boolean): void => {
+  // set UI size
+  let size = 'default';
+
+  if (isMercadoMode) {
+    size = 'mercadoDefault';
+  }
+  resizeGUI(size, figma.ui);
+
+  // set mercado mode banner
+  figma.ui.postMessage({
+    action: 'setMercadoMode',
+    payload: isMercadoMode,
   });
+
+  // show UI
+  figma.ui.show();
 
   return null;
 };
@@ -51,23 +67,35 @@ const showGUI = (): void => {
  * command came from the GUI or the menu.
  * @returns {null}
  */
-const dispatcher = (action: {
+const dispatcher = async (action: {
   type: string,
   visual: boolean,
-}): void => {
+}) => {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
+
+  // retrieve existing options
+  const lastUsedOptions: {
+    isMercadoMode: boolean,
+  } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+  // set mercado mode flag
+  let isMercadoMode: boolean = false;
+  if (lastUsedOptions && lastUsedOptions.isMercadoMode !== undefined) {
+    isMercadoMode = lastUsedOptions.isMercadoMode;
+  }
 
   // pass along some GUI management and navigation functions to the App class
   const app = new App({
     closeGUI,
     dispatcher,
+    isMercadoMode,
     shouldTerminate,
     showGUI,
   });
 
   // run the action in the App class based on type
-  const runAction = (actionType: string) => {
+  const runAction = async (actionType: string) => {
     switch (actionType) {
       case 'annotate':
         app.annotateLayer();
@@ -96,6 +124,9 @@ const dispatcher = (action: {
       case 'bounding-multi':
         app.drawBoundingBoxes('multiple');
         break;
+      case 'corners':
+        app.annotateCorners();
+        break;
       case 'measure':
         app.annotateMeasurement();
         break;
@@ -107,16 +138,40 @@ const dispatcher = (action: {
           action: 'showInfo',
         });
         break;
-      case 'info-hide':
+      case 'info-hide': {
         setTimeout(() => {
-          resizeGUI('default', figma.ui);
+          // set UI size
+          let size = 'default';
+
+          if (isMercadoMode) {
+            size = 'mercadoDefault';
+          }
+          resizeGUI(size, figma.ui);
         }, 180);
+
+        // switch views
         figma.ui.postMessage({
           action: 'hideInfo',
         });
         break;
+      }
+      case 'mercado-mode-toggle': {
+        await App.toggleMercadoMode();
+
+        // refresh options since they have changed
+        const refreshedOptions: {
+          isMercadoMode: boolean,
+        } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+        if (refreshedOptions && refreshedOptions.isMercadoMode !== undefined) {
+          isMercadoMode = refreshedOptions.isMercadoMode;
+        }
+
+        showGUI(isMercadoMode);
+        break;
+      }
       default:
-        showGUI();
+        showGUI(isMercadoMode);
     }
   };
 
@@ -133,7 +188,7 @@ const dispatcher = (action: {
     // run the action
     await runAction(actionType);
   };
-  runActionWithTypefaces(action.type);
+  await runActionWithTypefaces(action.type);
 
   return null;
 };
@@ -148,7 +203,16 @@ export default dispatcher;
  *
  * @returns {null}
  */
-const main = (): void => {
+const main = async () => {
+  // set up logging
+  const messenger = new Messenger({ for: figma, in: figma.currentPage });
+
+  // set up the UI, hidden by default -----------------------------------------
+  figma.showUI(__html__, { visible: false }); // eslint-disable-line no-undef
+
+  // make sure UI has finished setting up
+  await awaitUIReadiness(messenger);
+
   // watch menu commands -------------------------------------------------
   if (figma.command) {
     dispatcher({

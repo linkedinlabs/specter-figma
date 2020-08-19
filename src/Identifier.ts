@@ -415,20 +415,23 @@ const parseOverrides = (layer: any): string => {
  * @property dispatcher An optional instance of the `dispatcher` function from `main.ts`.
  */
 export default class Identifier {
-  layer: any;
-  page: PageNode;
-  messenger: any;
   dispatcher?: Function;
+  isMercadoMode: boolean;
+  layer: any;
+  messenger: any;
+  page: PageNode;
   shouldTerminate: boolean;
 
   constructor({
     for: layer,
     data: page,
     dispatcher,
+    isMercadoMode,
     messenger,
     shouldTerminate = false,
   }) {
     this.dispatcher = dispatcher;
+    this.isMercadoMode = isMercadoMode;
     this.layer = layer;
     this.messenger = messenger;
     this.page = page;
@@ -647,8 +650,14 @@ export default class Identifier {
         const resetGUI = (): void => {
           if (!this.shouldTerminate) {
             // switch plugin UI to navigation state
+            let size = 'default';
+
+            if (this.isMercadoMode) {
+              size = 'mercadoDefault';
+            }
+
             figma.ui.postMessage({ action: 'hideInput' });
-            resizeGUI('default', figma.ui);
+            resizeGUI(size, figma.ui);
           }
         };
 
