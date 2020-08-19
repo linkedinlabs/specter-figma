@@ -22,6 +22,19 @@ const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
 const PLUGIN_NAME = 'Specter';
 
 /**
+ * @description An object containing the current string constants used as keys in plugin data.
+ * Changing one of these keys will break data retrieval or reset data in any
+ * `xPluginData` getters/setters and potentially elsewhere.
+ *
+ * @kind constant
+ * @name DATA_KEYS
+ * @type {Object}
+ */
+const DATA_KEYS = {
+  options: `${PLUGIN_IDENTIFIER}.options-001`,
+};
+
+/**
  * @description An object containing the set of colors in-use by the plugin.
  *
  * @kind constant
@@ -35,6 +48,84 @@ const COLORS = {
   spacing: '#007373',
   style: '#bc3600',
 };
+
+/**
+ * @description A matrix for converting border radius numbers into Mercado-style tokens.
+ *
+ * @kind constant
+ * @name RADIUS_MATRIX
+ * @type {Array}
+ */
+const RADIUS_MATRIX: Array<{
+  unit: number,
+  token: string,
+}> = [
+  {
+    unit: 4,
+    token: 'corner-radius-small',
+  },
+  {
+    unit: 8,
+    token: 'corner-radius-medium',
+  },
+  {
+    unit: 16,
+    token: 'corner-radius-large',
+  },
+  {
+    unit: 24,
+    token: 'corner-radius-xlarge',
+  },
+];
+
+/**
+ * @description A matrix for converting spacing numbers into Mercado-style tokens.
+ *
+ * @kind constant
+ * @name SPACING_MATRIX
+ * @type {Array}
+ */
+const SPACING_MATRIX: Array<{
+  unit: number,
+  token: string,
+}> = [
+  {
+    unit: 4,
+    token: 'spacing-half-x',
+  },
+  {
+    unit: 8,
+    token: 'spacing-one-x',
+  },
+  {
+    unit: 12,
+    token: 'spacing-one-and-a-half-x',
+  },
+  {
+    unit: 16,
+    token: 'spacing-two-x',
+  },
+  {
+    unit: 24,
+    token: 'spacing-three-x',
+  },
+  {
+    unit: 32,
+    token: 'spacing-four-x',
+  },
+  {
+    unit: 48,
+    token: 'spacing-six-x',
+  },
+  {
+    unit: 64,
+    token: 'spacing-eight-x',
+  },
+  {
+    unit: 96,
+    token: 'spacing-twelve-x',
+  },
+];
 
 /**
  * @description An array containing the possible typefaces to use for annotations.
@@ -104,14 +195,21 @@ const GUI_SETTINGS = {
     width: 200,
     height: 324,
   },
+  mercadoDefault: {
+    width: 140,
+    height: 190,
+  },
 };
 
 export {
   COLORS,
   CONTAINER_NODE_TYPES,
+  DATA_KEYS,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  RADIUS_MATRIX,
+  SPACING_MATRIX,
   TYPEFACES,
 };
 /* eslint-enable import/prefer-default-export */

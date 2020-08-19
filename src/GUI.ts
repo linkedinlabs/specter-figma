@@ -4,6 +4,22 @@
 import { isInternal } from './Tools';
 import './assets/css/main.scss';
 
+/**
+ * @description Posts a message to the main thread with `loaded` set to `true`. Used in the
+ * main thread to indicate the GUI is listening.
+ *
+ * @kind function
+ * @name sendLoadedMsg
+ *
+ * @returns {null}
+ */
+const sendLoadedMsg = (): void => {
+  // send message to main thread indicating UI has loaded
+  parent.postMessage({ pluginMessage: { loaded: true } }, '*');
+
+  return null;
+};
+
 // process action
 const processActionClick = (e) => {
   const target = e.target as HTMLTextAreaElement;
@@ -208,6 +224,27 @@ const showHideInfo = (action: 'show' | 'hide') => {
   }
 };
 
+const showHideMercadoMode = (isMercadoMode: boolean) => {
+  const bannerElement: HTMLElement = document.querySelector('.mercado-banner');
+  const cornersElement: HTMLElement = document.querySelector('#corners');
+
+  if (bannerElement) {
+    if (isMercadoMode) {
+      bannerElement.removeAttribute('style');
+    } else {
+      bannerElement.style.display = 'none';
+    }
+  }
+
+  if (cornersElement) {
+    if (isMercadoMode) {
+      cornersElement.removeAttribute('style');
+    } else {
+      cornersElement.style.display = 'none';
+    }
+  }
+};
+
 /* watch for Messages from the plugin */
 onmessage = ( // eslint-disable-line no-undef
   event: {
@@ -234,9 +271,15 @@ onmessage = ( // eslint-disable-line no-undef
     case 'hideInfo':
       showHideInfo('hide');
       break;
+    case 'setMercadoMode':
+      showHideMercadoMode(pluginMessage.payload);
+      break;
     default:
       return null;
   }
 
   return null;
 };
+
+// init GUI
+sendLoadedMsg();

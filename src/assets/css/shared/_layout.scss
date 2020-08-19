@@ -45,6 +45,19 @@ ul {
 #main {
   width: 100%;
 
+  // mercado / art-deco mode banner
+  .mercado-banner {
+    background: $wl-action-primary;
+
+    h2 {
+      @include type-01;
+      margin: 0;
+      padding: em(6) 0;
+      line-height: 1;
+      color: $wl-type-01-invert;
+    }
+  }
+
   // action buttons
   nav {
     display: flex;

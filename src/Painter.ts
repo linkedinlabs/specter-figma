@@ -10,6 +10,8 @@ import {
   COLORS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
+  RADIUS_MATRIX,
+  SPACING_MATRIX,
 } from './constants';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -844,35 +846,41 @@ const setGroupName = (
  * @returns {string} A text label based on the spacing value.
  * @private
  */
-const retrieveSpacingValue = (length: number): number => {
+const retrieveSpacingValue = (length: number, isMercadoMode: boolean): number => {
   let itemSpacingValue: number = null;
 
-  // IS-X spacing is not an even scale
+  // Mercado and Art Deco spacing are not an even scales
   // set some breakpoints and “round” `length` to the nearest proper IS-X number
   // ignore anything so large that it’s above `IS-9`
   switch (true) {
     case (length >= 128): // based on 160 – IS-10 (not actually specc'd in Art Deco)
       return length; // return the actual length
     case (length >= 80): // 96 – IS-9
-      itemSpacingValue = 9;
+      itemSpacingValue = isMercadoMode ? 96 : 9;
       break;
     case (length >= 56): // 64 – IS-8
-      itemSpacingValue = 8;
+      itemSpacingValue = isMercadoMode ? 64 : 8;
       break;
     case (length >= 40): // 48 – IS-7
-      itemSpacingValue = 7;
+      itemSpacingValue = isMercadoMode ? 48 : 7;
       break;
     case (length >= 28): // 32 – IS-6
-      itemSpacingValue = 6;
+      itemSpacingValue = isMercadoMode ? 32 : 6;
       break;
     case (length >= 20): // 24 – IS-5
-      itemSpacingValue = 5;
+      itemSpacingValue = isMercadoMode ? 24 : 5;
       break;
-    case (length >= 16): // 16 – IS-4
-      itemSpacingValue = 4;
+    case (length >= 15): // 16 – IS-4
+      itemSpacingValue = isMercadoMode ? 16 : 4;
+      break;
+    case (length >= 11): // 12 – IS-3
+      itemSpacingValue = isMercadoMode ? 12 : 3;
+      break;
+    case (length >= 7): // 8 – IS-2
+      itemSpacingValue = isMercadoMode ? 8 : 2;
       break;
     default:
-      itemSpacingValue = Math.round(length / 4);
+      itemSpacingValue = isMercadoMode ? 4 : 1; // 4 – IS-1
   }
 
   return itemSpacingValue;
@@ -1240,12 +1248,18 @@ const removeAnnotation = (existingItemData: { id: string }): void => {
  * @property page The PageNode in the Figma file containing the corresponding `frame` and `layer`.
  */
 export default class Painter {
-  layer: SceneNode;
   frame: FrameNode;
+  isMercadoMode: boolean;
+  layer: SceneNode;
   page: PageNode;
-  constructor({ for: layer, in: page }) {
+  constructor({
+    for: layer,
+    in: page,
+    isMercadoMode,
+  }) {
+    this.isMercadoMode = isMercadoMode;
+    this.frame = findFrame(layer);
     this.layer = layer;
-    this.frame = findFrame(this.layer);
     this.page = page;
   }
 
@@ -1452,6 +1466,203 @@ export default class Painter {
 
     result.status = 'success';
     result.messages.log = `Bounding box drawn on “${this.frame.name}”`;
+
+    return result;
+  }
+
+  /**
+   * @description Locates annotation text in a layer’s Settings object and
+   * builds the visual annotation on the Figma frame.
+   *
+   * @kind function
+   * @name addCornerAnnotation
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addCornerAnnotation() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // return an error if the selection is not placed in a frame
+    if (!this.frame) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in a frame';
+      return result;
+    }
+
+    // check that all radii are the same
+    let radiiIsUnified = false;
+    const node = this.layer as FrameNode | RectangleNode;
+    if (
+      (node.topLeftRadius === node.topRightRadius)
+      && (node.topRightRadius === node.bottomLeftRadius)
+      && (node.bottomLeftRadius === node.bottomRightRadius)
+    ) {
+      radiiIsUnified = true;
+    }
+
+    // return an error if the selection is not placed in a frame
+    if (!radiiIsUnified) {
+      result.status = 'error';
+      result.messages.log = 'Radii are not the same';
+      result.messages.toast = 'Each corner radius must be the same ⏹';
+      return result;
+    }
+
+    // corners are the same, so set to one of them
+    let cornerValue = node.topLeftRadius;
+
+    // set cornerValue to valid Mercado Base Unit values
+    if (cornerValue < 5) {
+      cornerValue = 4;
+    } else if (cornerValue < 10) {
+      cornerValue = 8;
+    } else if (cornerValue < 20) {
+      cornerValue = 16;
+    } else if (cornerValue < 30) {
+      cornerValue = 24;
+    }
+
+    // throw back a radius that is too large
+    if (cornerValue > 24) {
+      result.status = 'error';
+      result.messages.log = 'Radius too big';
+      result.messages.toast = 'Each corner radius must be under 30';
+      return result;
+    }
+
+    // retrive the token based on the corner value
+    const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
+    if (radiusItem) {
+      // set up some information
+      const annotationType = 'style';
+      const layerName = this.layer.name;
+      const layerId = this.layer.id;
+
+      // ------------------------
+      // retrieve document settings
+      const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+
+      // check if we have already annotated this element and remove the old annotation
+      if (pageSettings && pageSettings.annotatedLayers) {
+        // remove the old ID pair(s) from the `pageSettings` array
+        pageSettings.annotatedLayers.forEach((layerSet) => {
+          if (layerSet.originalId === layerId) {
+            removeAnnotation(layerSet);
+
+            // remove the layerSet from the `pageSettings` array
+            let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
+            newPageSettings = updateArray(
+              'annotatedLayers',
+              { id: layerSet.id },
+              newPageSettings,
+              'remove',
+            );
+
+            // commit the settings update
+            this.page.setPluginData(
+              PLUGIN_IDENTIFIER,
+              JSON.stringify(newPageSettings),
+            );
+          }
+        });
+      }
+
+      // grab the position from crawler
+      const crawler = new Crawler({ for: [this.layer] });
+      const positionResult = crawler.position();
+      const relativePosition = positionResult.payload;
+
+      // group and position the base annotation elements
+      const layerIndex: number = this.layer.parent.children.findIndex(
+        childNode => childNode === this.layer,
+      );
+      const layerPosition: {
+        frameWidth: number,
+        frameHeight: number,
+        width: number,
+        height: number,
+        x: number,
+        y: number,
+        index: number,
+      } = {
+        frameWidth: this.frame.width,
+        frameHeight: this.frame.height,
+        width: relativePosition.width,
+        height: relativePosition.height,
+        x: relativePosition.x,
+        y: relativePosition.y,
+        index: layerIndex,
+      };
+
+      const groupName: string = `Annotation for layer ${layerName}`;
+      const annotation = buildAnnotation({
+        mainText: radiusItem.token,
+        type: annotationType,
+      });
+
+      const annotationOrientation = 'top';
+      const group = positionAnnotation(
+        this.frame,
+        groupName,
+        annotation,
+        layerPosition,
+        annotationType,
+        annotationOrientation,
+      );
+
+      // set it in the correct containers
+      const containerSet = setLayerInContainers({
+        layer: group,
+        frame: this.frame,
+        page: this.page,
+        type: annotationType,
+      });
+
+      // new object with IDs to add to settings
+      const newAnnotatedLayerSet: {
+        containerGroupId: string,
+        id: string,
+        originalId: string,
+      } = {
+        containerGroupId: containerSet.componentInnerGroupId,
+        id: group.id,
+        originalId: layerId,
+      };
+
+      // update the `newPageSettings` array
+      let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+      newPageSettings = updateArray(
+        'annotatedLayers',
+        newAnnotatedLayerSet,
+        newPageSettings,
+        'add',
+      );
+
+      // commit the `Settings` update
+      this.page.setPluginData(
+        PLUGIN_IDENTIFIER,
+        JSON.stringify(newPageSettings),
+      );
+
+      result.status = 'success';
+      result.messages.log = `Set annotation for “${radiusItem.token}” token`;
+    } else {
+      result.status = 'error';
+      result.messages.log = 'Could not find a matching token';
+    }
 
     return result;
   }
@@ -1681,10 +1892,30 @@ export default class Painter {
     const measurementToUseRounded: number = Math.round(
       (measurementToUse + Number.EPSILON) * 100,
     ) / 100;
-    const spacingValue: number = isInternal()
-      ? retrieveSpacingValue(measurementToUseRounded) : measurementToUseRounded;
-    const spacingPrefix: string = isInternal() && spacingValue < 10 ? 'IS-' : '';
-    const spacingSuffix: string = isInternal() && spacingValue < 10 ? '' : 'dp';
+    let spacingValue: number | string = isInternal()
+      ? retrieveSpacingValue(measurementToUseRounded, this.isMercadoMode) : measurementToUseRounded;
+
+    // set prefix
+    let spacingPrefix: string = '';
+    if (isInternal() && spacingValue < 100) {
+      if (this.isMercadoMode) {
+        const spacingItem = SPACING_MATRIX.find(spacing => spacing.unit === spacingValue);
+        if (spacingItem) {
+          spacingValue = spacingItem.token;
+        }
+      } else if (spacingValue < 10) {
+        spacingPrefix = 'IS-';
+      }
+    }
+
+    // set suffix
+    let spacingSuffix: string = 'dp';
+    if (
+      isInternal()
+      && ((!this.isMercadoMode && (spacingValue < 10)) || this.isMercadoMode)
+    ) {
+      spacingSuffix = '';
+    }
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
     const annotationType = 'spacing';

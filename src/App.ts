@@ -2,6 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
+import { DATA_KEYS } from './constants';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -41,19 +42,106 @@ const assemble = (context: any = null) => {
 export default class App {
   closeGUI: Function;
   dispatcher: Function;
+  isMercadoMode: boolean;
   shouldTerminate: boolean;
   showGUI: Function;
 
   constructor({
     closeGUI,
     dispatcher,
+    isMercadoMode,
     shouldTerminate,
     showGUI,
   }) {
     this.closeGUI = closeGUI;
     this.dispatcher = dispatcher;
+    this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
     this.showGUI = showGUI;
+  }
+
+
+  /**
+   * @description Matches corner radius of a node (or inner-child node) with a matrix
+   * of tokens from Mercado that represent the corner radii. An annotation is drawn
+   * with the matching token.
+   *
+   * @kind function
+   * @name annotateCorners
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   */
+  annotateCorners() {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+    // need one or two selected layers
+    if (selection === null || selection.length === 0) {
+      messenger.log(`Annotate corners: ${selection.length} layer(s) selected`);
+      return messenger.toast('At least one layer must be selected');
+    }
+
+    // set up selection array
+    const crawler = new Crawler({ for: selection });
+    const flattenedNodes = crawler.all();
+
+    // combine direct selection with flattened selection
+    // (gives us both Frames and inner content)
+    const combinedNodesArray = selection.concat(flattenedNodes);
+
+    // ensure no nodes are repeated
+    const nodes = [...new Set(combinedNodesArray)];
+
+    // set initial flag
+    let applicableNodes = false;
+
+    // iterate direct selection and annotate corners
+    nodes.forEach((node: SceneNode) => {
+      // check that the node is the correct type
+      if (
+        (node.type === 'FRAME')
+        || (node.type === 'RECTANGLE')
+      ) {
+        const shapeNode = node as FrameNode | RectangleNode;
+
+        // check that the node has a single value for `cornerRadius`
+        if (
+          (shapeNode.topLeftRadius > 0)
+          && (shapeNode.topRightRadius > 0)
+          && (shapeNode.bottomLeftRadius > 0)
+          && (shapeNode.bottomRightRadius > 0)
+        ) {
+          // set up Painter instance for the node
+          const painter = new Painter({
+            for: node,
+            in: page,
+            isMercadoMode: this.isMercadoMode,
+          });
+
+          let paintResult = null;
+          paintResult = painter.addCornerAnnotation();
+
+          if (paintResult) {
+            messenger.handleResult(paintResult);
+          }
+
+          // set selection feedback flag
+          applicableNodes = true;
+        }
+      }
+    });
+
+    if (!applicableNodes) {
+      messenger.log('Annotate corners: No layers have matching corners');
+      return messenger.toast('At least one layer with matching corners must be selected');
+    }
+
+    if (this.shouldTerminate) {
+      this.closeGUI();
+    }
+    return null;
   }
 
   /**
@@ -88,12 +176,17 @@ export default class App {
       const layerToAnnotate = new Identifier({
         for: layer,
         data: page,
-        messenger,
         dispatcher: this.dispatcher,
+        isMercadoMode: this.isMercadoMode,
+        messenger,
       });
 
       // set up Painter instance for the layer
-      const painter = new Painter({ for: layer, in: page });
+      const painter = new Painter({
+        for: layer,
+        in: page,
+        isMercadoMode: this.isMercadoMode,
+      });
 
       // set up function to draw annotations
       const drawAnnotation = (hasText: boolean) => {
@@ -127,7 +220,7 @@ export default class App {
             // show the GUI if we are annotating a single custom layer
             if (shouldTerminateLocal) {
               shouldTerminateLocal = false;
-              this.showGUI();
+              this.showGUI(this.isMercadoMode);
             }
 
             // present the option to set custom text
@@ -205,7 +298,7 @@ export default class App {
     }
 
     if (this.shouldTerminate) {
-      this.showGUI();
+      this.showGUI(this.isMercadoMode);
     }
 
     // grab the layer form the selection
@@ -215,13 +308,18 @@ export default class App {
     const layerToAnnotate = new Identifier({
       for: layer,
       data: page,
-      messenger,
       dispatcher: this.dispatcher,
+      isMercadoMode: this.isMercadoMode,
+      messenger,
       shouldTerminate: this.shouldTerminate,
     });
 
     // set up Painter instance for the layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // determine the annotation text
     const setText = (callback: Function) => layerToAnnotate.setText(callback);
@@ -287,7 +385,11 @@ export default class App {
     const layer = crawler.first();
 
     // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // draw the spacing annotation
     // (if gap position exists or layers are overlapped)
@@ -357,7 +459,11 @@ export default class App {
     const layer = crawler.first();
 
     // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // draw the spacing annotation
     // (if gap position exists or layers are overlapped)
@@ -423,7 +529,11 @@ export default class App {
     }
 
     // set up Painter instance for the reference layer
-    const painter = new Painter({ for: layer, in: page });
+    const painter = new Painter({
+      for: layer,
+      in: page,
+      isMercadoMode: this.isMercadoMode,
+    });
 
     // draw the spacing annotations based on auto-layout padding settings
     let paintResult = null;
@@ -490,7 +600,11 @@ export default class App {
 
       if (positionResult.status === 'success' && positionResult.payload) {
         const position = positionResult.payload;
-        const painter = new Painter({ for: layer, in: page });
+        const painter = new Painter({
+          for: layer,
+          in: page,
+          isMercadoMode: this.isMercadoMode,
+        });
 
         // draw the bounding box (if position exists)
         let paintResult = null;
@@ -517,5 +631,38 @@ export default class App {
       this.closeGUI();
     }
     return null;
+  }
+
+  /**
+   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
+   * features specific to the Mercado Design Library. The flag is saved to local
+   * storage so that it persists across files.
+   *
+   * @kind function
+   * @name toggleMercadoMode
+   *
+   * @returns {Promise} Returns a promise for resolution.
+   */
+  static async toggleMercadoMode() {
+    // retrieve existing options
+    const lastUsedOptions: {
+      isMercadoMode: boolean,
+    } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+    // set preliminary mercado mode
+    let currentIsMercadoMode: boolean = false;
+    if (lastUsedOptions && lastUsedOptions.isMercadoMode !== undefined) {
+      currentIsMercadoMode = lastUsedOptions.isMercadoMode;
+    }
+
+    // set new mercado mode flag
+    const options: {
+      isMercadoMode: boolean
+    } = {
+      isMercadoMode: !currentIsMercadoMode,
+    };
+
+    // save new options to storage
+    await figma.clientStorage.setAsync(DATA_KEYS.options, options);
   }
 }
