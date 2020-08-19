@@ -61,18 +61,15 @@ export default class App {
   }
 
 
-  /** WIP
-   * @description If two layers are selected: annotates the selection with the
-   * spacing number (“IS-X”) based on either the gap between the two layers or, if they
-   * are overlapping, the 4 directions of overlap (top, bottom, right, and left). If
-   * one layer is selected: annotates the height and width of the selected layer
-   * in “dp” (digital points) units.
+  /**
+   * @description Matches corner radius of a node (or inner-child node) with a matrix
+   * of tokens from Mercado that represent the corner radii. An annotation is drawn
+   * with the matching token.
    *
    * @kind function
    * @name annotateCorners
    *
-   * @returns {null} Shows a Toast in the UI if nothing is selected or
-   * if more than two layers are selected.
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
   annotateCorners() {
     const {
@@ -140,46 +137,6 @@ export default class App {
       messenger.log('Annotate corners: No layers have matching corners');
       return messenger.toast('At least one layer with matching corners must be selected');
     }
-
-    // // set up Painter instance for the reference layer
-    // const painter = new Painter({
-    //   for: layer,
-    //   in: page,
-    //   isMercadoMode: this.isMercadoMode,
-    // });
-
-    // // draw the spacing annotation
-    // // (if gap position exists or layers are overlapped)
-    // let paintResult = null;
-    // if (selection.length === 2) {
-    //   const gapPositionResult = crawler.gapPosition();
-
-    //   // read the response from Crawler; log and display message(s)
-    //   messenger.handleResult(gapPositionResult);
-    //   if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
-    //     const gapPosition = gapPositionResult.payload;
-    //     paintResult = painter.addGapMeasurement(gapPosition);
-    //   } else {
-    //     const overlapPositionsResult = crawler.overlapPositions();
-
-    //     // read the response from Crawler; log and display message(s)
-    //     messenger.handleResult(overlapPositionsResult);
-
-    //     if (overlapPositionsResult.status === 'success' && overlapPositionsResult.payload) {
-    //       const overlapPositions = overlapPositionsResult.payload;
-    //       paintResult = painter.addOverlapMeasurements(overlapPositions);
-    //     }
-    //   }
-    // }
-
-    // if (selection.length === 1) {
-    //   paintResult = painter.addDimMeasurement();
-    // }
-
-    // // read the response from Painter; log and display message(s)
-    // if (paintResult) {
-    //   messenger.handleResult(paintResult);
-    // }
 
     if (this.shouldTerminate) {
       this.closeGUI();
