@@ -6,9 +6,16 @@
   //   isStyles,
   //   sessionKey,
   // } from './stores';
+  import ButtonInfoTrigger from './ButtonInfoTrigger';
   import FontPreload from './FontPreload';
+  import InfoPanel from './InfoPanel';
+  import MainPanel from './MainPanel';
+  import UserInput from './UserInput';
 
-  export const isMercadoMode = false;
+  export let isMercadoMode = false;
+  export let isInternal = false;
+  export let isUserInput = false;
+  // export let isInfoPanel = false;
 
   // const setIsStyles = (currentlyInspecting) => {
   //   const newIsStyles = currentlyInspecting === 'styles';
@@ -24,8 +31,11 @@
 <svelte:options accessors={true}/>
 
 <!-- core layout -->
-<div>
-  <FontPreload/>
-  <p>hello</p>
-  <p>Mercado mode on? #{isMercadoMode}</p>
+<FontPreload/>
+<div class="container">
+  <div class="transition-mask"></div>
+  <ButtonInfoTrigger />
+  <MainPanel isMercadoMode={isMercadoMode} />
+  <UserInput isUserInput={isUserInput} />
+  <InfoPanel isInternal={isInternal} />
 </div>

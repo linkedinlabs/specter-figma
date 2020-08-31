@@ -8,7 +8,10 @@ import App from './views/App.svelte'; // eslint-disable-line import/extensions
 const app = new App({
   target: document.body,
   props: {
+    isInternal: isInternal(),
     isMercadoMode: false,
+    isUserInput: false,
+    isInfoPanel: false,
   },
 });
 
@@ -311,12 +314,23 @@ const watchIncomingMessages = (): void => {
   ) => {
     const { pluginMessage } = event.data;
     const { payload } = pluginMessage;
-    const { isMercadoMode } = payload;
 
     switch (pluginMessage.action) {
-      case 'refreshState':
-        // tktk
-        console.log(`isMercadoMode ${isMercadoMode}`); // eslint-disable-line no-console
+      case 'showInput':
+        showHideInput('show', pluginMessage.payload);
+        break;
+      case 'hideInput':
+        showHideInput('hide');
+        break;
+      case 'showInfo':
+        showHideInfo('show');
+        break;
+      case 'hideInfo':
+        showHideInfo('hide');
+        break;
+      case 'setMercadoMode':
+        app.isMercadoMode = payload;
+        showHideMercadoMode(pluginMessage.payload);
         break;
       default:
         return null;

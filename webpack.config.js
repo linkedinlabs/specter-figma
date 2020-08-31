@@ -32,9 +32,8 @@ module.exports = (env, argv) => [{
     path: path.resolve(__dirname, 'dist'), // Compile into a folder called "dist"
   },
 
-  // Adds the FEATURESET env variable from the command-line
-  // Tells Webpack to generate "webview.html" and to inline "webview.ts" into it
   plugins: [
+    // Adds the FEATURESET env variable from the command-line
     new webpack.EnvironmentPlugin({
       FEATURESET: (env && env.featureset && env.featureset === 'public' ? 'public' : 'internal'),
     }),
@@ -50,6 +49,7 @@ module.exports = (env, argv) => [{
   entry: {
     ui: ['./src/GUI.ts'],
   },
+
   resolve: {
     alias: {
       svelte: path.resolve('node_modules', 'svelte'),
@@ -57,11 +57,13 @@ module.exports = (env, argv) => [{
     extensions: ['.mjs', '.js', '.svelte', '.ts'],
     mainFields: ['svelte', 'browser', 'module', 'main'],
   },
+
   output: {
     path: path.resolve(__dirname, 'dist'), // Compile into a folder called "dist"
     filename: '[name].js',
     chunkFilename: '[name].[id].js',
   },
+
   module: {
     rules: [
       // Converts TypeScript code to JavaScript
@@ -86,7 +88,14 @@ module.exports = (env, argv) => [{
       { test: /\.(png|jpg|gif|webp|svg)$/, loader: [{ loader: 'url-loader' }] },
     ],
   },
+
   plugins: [
+    // Adds the FEATURESET env variable from the command-line
+    new webpack.EnvironmentPlugin({
+      FEATURESET: (env && env.featureset && env.featureset === 'public' ? 'public' : 'internal'),
+    }),
+    new Dotenv(),
+    // Tells Webpack to generate "webview.html" and to inline "webview.js" into it
     new HtmlWebpackPlugin({
       template: './src/views/webview.html',
       filename: 'webview.html',
