@@ -256,42 +256,6 @@ const showHideMercadoMode = (isMercadoMode: boolean) => {
   }
 };
 
-/* watch for Messages from the plugin */
-onmessage = ( // eslint-disable-line no-undef
-  event: {
-    data: {
-      pluginMessage: {
-        action: string,
-        payload: any,
-      }
-    }
-  },
-) => {
-  const { pluginMessage } = event.data;
-
-  switch (pluginMessage.action) {
-    case 'showInput':
-      showHideInput('show', pluginMessage.payload);
-      break;
-    case 'hideInput':
-      showHideInput('hide');
-      break;
-    case 'showInfo':
-      showHideInfo('show');
-      break;
-    case 'hideInfo':
-      showHideInfo('hide');
-      break;
-    case 'setMercadoMode':
-      showHideMercadoMode(pluginMessage.payload);
-      break;
-    default:
-      return null;
-  }
-
-  return null;
-};
-
 /**
  * @description Watches for incoming messages from the plugin’s main thread and dispatches
  * them to the appropriate GUI actions.
