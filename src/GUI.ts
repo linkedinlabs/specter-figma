@@ -31,49 +31,6 @@ const sendLoadedMsg = (): void => {
   return null;
 };
 
-// process action
-const processActionClick = (e) => {
-  const target = e.target as HTMLTextAreaElement;
-  const button = target.closest('button');
-
-  if (button) {
-    // find action by element id
-    let action = button.id;
-    if (button.classList.contains('hide')) {
-      action = `${action}-hide`;
-    }
-
-    // bubble action to main
-    parent.postMessage({
-      pluginMessage: {
-        navType: action,
-      },
-    }, '*');
-  }
-};
-
-/* watch Navigation main buttons */
-const mainElement = (<HTMLInputElement> document.getElementById('main'));
-
-if (mainElement) {
-  const onClick = (e: MouseEvent) => processActionClick(e);
-  mainElement.addEventListener('click', onClick);
-}
-
-/* watch Info panel triggers */
-const infoButtonElement = (<HTMLInputElement> document.getElementById('info'));
-const infoBackButtonElement = (<HTMLInputElement> document.getElementById('info-hide'));
-
-if (infoButtonElement) {
-  const onClick = (e: MouseEvent) => processActionClick(e);
-  infoButtonElement.addEventListener('click', onClick);
-}
-
-if (infoBackButtonElement) {
-  const onClick = (e: MouseEvent) => processActionClick(e);
-  infoBackButtonElement.addEventListener('click', onClick);
-}
-
 /* watch User Input action buttons */
 const userInputElement = (<HTMLInputElement> document.getElementById('userInput'));
 
@@ -92,30 +49,6 @@ if (userInputElement) {
         pluginMessage: {
           inputType: action,
           inputValue: inputElement.value,
-        },
-      }, '*');
-    }
-  };
-
-  userInputElement.addEventListener('click', onClick);
-}
-
-/* watch Info Panel action buttons WIP */
-const infoPanelElement = (<HTMLInputElement> document.getElementById('infoPanel'));
-
-if (infoPanelElement) {
-  const onClick = (e: MouseEvent) => {
-    const target = e.target as HTMLTextAreaElement;
-    const button = target.closest('button');
-
-    if (button) {
-      // find action by element id
-      const action = button.id.replace('infoPanel-', '');
-
-      // bubble action to main
-      parent.postMessage({
-        pluginMessage: {
-          inputType: action,
         },
       }, '*');
     }
@@ -167,8 +100,6 @@ const showHideInput = (
 
   if (action === 'show') {
     containerElement.classList.add('wide');
-    mainElement.style.display = 'none';
-    infoButtonElement.style.display = 'none';
     userInputElement.removeAttribute('style');
 
     // focus on input and set initial value
@@ -180,8 +111,6 @@ const showHideInput = (
     inputElement.addEventListener('keyup', watchKeyboardActions);
   } else {
     containerElement.classList.remove('wide');
-    mainElement.removeAttribute('style');
-    infoButtonElement.removeAttribute('style');
     userInputElement.style.display = 'none';
   }
 };
@@ -190,31 +119,12 @@ const showHideInfo = (action: 'show' | 'hide') => {
   const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
   const transitionMaskElement = (<HTMLDivElement> containerElement.getElementsByClassName('transition-mask')[0]);
 
-  const setInternalInfo = () => {
-    const internalElements: HTMLCollection = document.getElementsByClassName('internal');
-    const externalElements: HTMLCollection = document.getElementsByClassName('external');
-
-    for (let i = 0; i < internalElements.length; i += 1) {
-      const internalElement: HTMLElement = internalElements[i] as HTMLElement;
-      internalElement.style.display = 'block';
-    }
-
-    for (let i = 0; i < externalElements.length; i += 1) {
-      const externalElement: HTMLElement = externalElements[i] as HTMLElement;
-      externalElement.style.display = 'none';
-    }
-  };
-
   if (action === 'show') {
     containerElement.classList.add('info-transition');
-    if (isInternal()) { setInternalInfo(); }
     setTimeout(() => {
       transitionMaskElement.classList.add('visible');
       setTimeout(() => {
-        containerElement.classList.add('info-open');
-        infoButtonElement.classList.add('hide');
-        mainElement.style.display = 'none';
-        infoPanelElement.removeAttribute('style');
+        app.isInfoPanel = true;
         transitionMaskElement.classList.remove('visible');
         setTimeout(() => containerElement.classList.remove('info-transition'), 175);
       }, 175);
@@ -224,35 +134,11 @@ const showHideInfo = (action: 'show' | 'hide') => {
     setTimeout(() => {
       transitionMaskElement.classList.add('visible');
       setTimeout(() => {
-        containerElement.classList.remove('info-open');
-        infoButtonElement.classList.remove('hide');
-        mainElement.removeAttribute('style');
-        infoPanelElement.style.display = 'none';
+        app.isInfoPanel = false;
         transitionMaskElement.classList.remove('visible');
         setTimeout(() => containerElement.classList.remove('info-transition'), 175);
       }, 175);
     }, 15);
-  }
-};
-
-const showHideMercadoMode = (isMercadoMode: boolean) => {
-  const bannerElement: HTMLElement = document.querySelector('.mercado-banner');
-  const cornersElement: HTMLElement = document.querySelector('#corners');
-
-  if (bannerElement) {
-    if (isMercadoMode) {
-      bannerElement.removeAttribute('style');
-    } else {
-      bannerElement.style.display = 'none';
-    }
-  }
-
-  if (cornersElement) {
-    if (isMercadoMode) {
-      cornersElement.removeAttribute('style');
-    } else {
-      cornersElement.style.display = 'none';
-    }
   }
 };
 
@@ -294,7 +180,6 @@ const watchIncomingMessages = (): void => {
         break;
       case 'setMercadoMode':
         app.isMercadoMode = payload;
-        showHideMercadoMode(pluginMessage.payload);
         break;
       default:
         return null;

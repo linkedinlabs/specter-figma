@@ -1,11 +1,6 @@
 <script>
-  // import { afterUpdate, beforeUpdate } from 'svelte';
-  // import {
-  //   currentFilter,
-  //   isSelection,
-  //   isStyles,
-  //   sessionKey,
-  // } from './stores';
+  import { afterUpdate } from 'svelte';
+  import { isMercadoStored } from './stores';
   import ButtonInfoTrigger from './ButtonInfoTrigger';
   import FontPreload from './FontPreload';
   import InfoPanel from './InfoPanel';
@@ -15,16 +10,24 @@
   export let isMercadoMode = false;
   export let isInternal = false;
   export let isUserInput = false;
-  // export let isInfoPanel = false;
+  export let isInfoPanel = false;
 
-  // const setIsStyles = (currentlyInspecting) => {
-  //   const newIsStyles = currentlyInspecting === 'styles';
-  //   isStyles.set(newIsStyles);
-  // };
+  const setIsMercadoMode = (currentIsMercadoMode) => {
+    const newIsMercadoMode = currentIsMercadoMode;
+    isMercadoStored.set(newIsMercadoMode);
+  };
 
-  // beforeUpdate(() => {
-  //   setIsStyles(inspect);
-  // });
+  const handleAction = (action) => {
+    parent.postMessage({
+      pluginMessage: {
+        navType: action,
+      },
+    }, '*');
+  };
+
+  afterUpdate(() => {
+    setIsMercadoMode(isMercadoMode);
+  });
 </script>
 
 <!-- compile options -->
@@ -34,8 +37,20 @@
 <FontPreload/>
 <div class="container">
   <div class="transition-mask"></div>
-  <ButtonInfoTrigger />
-  <MainPanel isMercadoMode={isMercadoMode} />
-  <UserInput isUserInput={isUserInput} />
-  <InfoPanel isInternal={isInternal} />
+
+  {#if !isUserInput && !isInfoPanel}
+    <ButtonInfoTrigger on:handleAction={customEvent => handleAction(customEvent.detail)} />
+    <MainPanel showMercadoMode={$isMercadoStored} />
+  {/if}
+
+  {#if isUserInput}
+    <UserInput />
+  {/if}
+
+  {#if isInfoPanel}
+    <InfoPanel
+      on:handleAction={customEvent => handleAction(customEvent.detail)}
+      isInternal={isInternal}
+    />
+  {/if}
 </div>

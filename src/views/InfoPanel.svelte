@@ -1,8 +1,12 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
+
   export let isInternal = false;
+
+  const dispatch = createEventDispatcher();
 </script>
 
-<section id="infoPanel" style="display: none;">
+<section id="infoPanel">
   <header>
     <svg viewBox="0 0 270 360">
       <path d="M202.645579,269.564282 L135.097052,359.419042 L67.5485262,269.564282 L1.36424205e-12,314.491662 L1.36424205e-12,269.564282 L1.36424205e-12,135.097052 C1.326683e-12,60.4850106 60.4850106,1.37060097e-14 135.097052,0 C209.709094,-1.37060097e-14 270.194105,60.4850106 270.194105,135.097052 L270.194105,269.564282 L270.194105,314.491662 L202.645579,269.564282 Z" id="Combined-Shape" fill="#3399FF"></path>
@@ -48,7 +52,12 @@
   </article>
   <footer>
     <p class="form-actions">
-      <button class="button button--secondary button--margin-right" id="info-hide">Back</button>
+      <button
+        on:click={() => dispatch('handleAction', 'info-hide')}
+        class="button button--secondary button--margin-right"
+        id="info-hide">
+          Back
+      </button>
     </p>
   </footer>
 </section>

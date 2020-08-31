@@ -1,9 +1,10 @@
 <script>
-  export let isMercadoMode = false;
+  export let showMercadoMode = false;
 </script>
+
 <section id="main">
-  {#if isMercadoMode}
-    <header class="mercado-banner" style="display: none;">
+  {#if showMercadoMode}
+    <header class="mercado-banner">
       <h2>Mercado Mode Enabled</h2>
     </header>
   {/if}
@@ -35,18 +36,20 @@
           </span>
         </button>
       </li>
-      <li>
-        <button id="corners" style="display: none;">
-          <span class="icon">
-            <svg viewBox="0 0 25 20" class="icons-corners">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M24.5 3H8.5C5.46243 3 3 5.46243 3 8.5V19.5H0.5V8.5C0.5 4.08172 4.08172 0.5 8.5 0.5H24.5V3Z" fill="black"/>
-            </svg>
-          </span>
-          <span class="text">
-            Corners
-          </span>
-        </button>
-      </li>
+      {#if showMercadoMode}
+        <li>
+          <button id="corners">
+            <span class="icon">
+              <svg viewBox="0 0 25 20" class="icons-corners">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M24.5 3H8.5C5.46243 3 3 5.46243 3 8.5V19.5H0.5V8.5C0.5 4.08172 4.08172 0.5 8.5 0.5H24.5V3Z" fill="black"/>
+              </svg>
+            </span>
+            <span class="text">
+              Corners
+            </span>
+          </button>
+        </li>
+      {/if}
       <li>
         <button id="bounding">
           <span class="icon">

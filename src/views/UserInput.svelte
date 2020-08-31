@@ -1,4 +1,4 @@
-<section id="userInput" style="display: none;">
+<section id="userInput">
   <h3>
     Set the annotation’s text…
   </h3>
