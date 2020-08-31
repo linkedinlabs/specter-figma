@@ -10,9 +10,6 @@
 
   export const isMercadoMode = false;
 
-  let bodyHeight = 0;
-  let wasBodyHeight = 0;
-
   // const setIsStyles = (currentlyInspecting) => {
   //   const newIsStyles = currentlyInspecting === 'styles';
   //   isStyles.set(newIsStyles);
@@ -30,4 +27,5 @@
 <div>
   <FontPreload/>
   <p>hello</p>
+  <p>Mercado mode on? #{isMercadoMode}</p>
 </div>
