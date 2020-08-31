@@ -1,6 +1,15 @@
 // Figma Plugin API version 1, update 14
 
 declare global {
+// Internal Declarations
+
+// Vendor Declarations
+
+// for attaching Svelte to window global
+interface Window {
+  app: Function;
+}
+
 // Global variable with Figma's plugin API.
 const figma: PluginAPI
 const __html__: string

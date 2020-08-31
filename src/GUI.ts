@@ -289,5 +289,46 @@ onmessage = ( // eslint-disable-line no-undef
   return null;
 };
 
+/**
+ * @description Watches for incoming messages from the plugin’s main thread and dispatches
+ * them to the appropriate GUI actions.
+ *
+ * @kind function
+ * @name watchIncomingMessages
+ *
+ * @returns {null}
+ */
+const watchIncomingMessages = (): void => {
+  onmessage = ( // eslint-disable-line no-undef
+    event: {
+      data: {
+        pluginMessage: {
+          action: string,
+          payload: any,
+        }
+      }
+    },
+  ) => {
+    const { pluginMessage } = event.data;
+    const { payload } = pluginMessage;
+    const { isMercadoMode } = payload;
+
+    switch (pluginMessage.action) {
+      case 'refreshState':
+        // tktk
+        console.log(`isMercadoMode ${isMercadoMode}`); // eslint-disable-line no-console
+        break;
+      default:
+        return null;
+    }
+
+    return null;
+  };
+};
+
 // init GUI
+window.app = app; // eslint-disable-line no-undef
+watchIncomingMessages();
 sendLoadedMsg();
+
+export default app;
