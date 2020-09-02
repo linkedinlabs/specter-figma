@@ -18,6 +18,7 @@
   };
 
   const handleAction = (action) => {
+    console.log('hello')
     parent.postMessage({
       pluginMessage: {
         navType: action,
@@ -40,7 +41,10 @@
 
   {#if !isUserInput && !isInfoPanel}
     <ButtonInfoTrigger on:handleAction={customEvent => handleAction(customEvent.detail)} />
-    <MainPanel showMercadoMode={$isMercadoStored} />
+    <MainPanel
+      on:handleAction={customEvent => handleAction(customEvent.detail)}
+      showMercadoMode={$isMercadoStored}
+    />
   {/if}
 
   {#if isUserInput}
