@@ -842,6 +842,7 @@ const setGroupName = (
  * @name retrieveSpacingValue
  *
  * @param {number} length A number representing length.
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
  *
  * @returns {string} A text label based on the spacing value.
  * @private

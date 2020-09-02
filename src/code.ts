@@ -30,6 +30,8 @@ const closeGUI = (): void => {
  * @kind function
  * @name showGUI
  *
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ *
  * @returns {null} Shows a Toast in the UI if nothing is selected.
  */
 const showGUI = (isMercadoMode?: boolean): void => {
