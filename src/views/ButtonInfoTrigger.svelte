@@ -7,7 +7,6 @@
 <button
   on:click={() => dispatch('handleAction', 'info')}
   class="info-trigger"
-  id="info"
 >
   <span class="icon"></span>
   <span class="text">Specter Info</span>

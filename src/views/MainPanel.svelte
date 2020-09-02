@@ -4,13 +4,13 @@
   export let showMercadoMode = false;
 </script>
 
-<section id="main">
+<section class="main-container">
   {#if showMercadoMode}
     <header class="mercado-banner">
       <h2>Mercado Mode Enabled</h2>
     </header>
   {/if}
-  <nav id="actions">
+  <nav>
     <ul>
       <li>
         <ButtonAction

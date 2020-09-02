@@ -49,7 +49,7 @@
 
 <section
   on:keyup={watchKeys}
-  id="userInput"
+  class="user.input"
 >
   <h3>
     Set the annotation’s text…
@@ -67,14 +67,12 @@
     <button
       on:click={() => dispatch('handleAction', 'cancel')}
       class="button button--secondary button--margin-right"
-      id="userInput-cancel"
     >
       Cancel
     </button>
     <button
       on:click={() => submitValue()}
       class="button button--primary"
-      id="userInput-submit"
     >
       Set
     </button>
