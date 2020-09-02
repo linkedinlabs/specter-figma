@@ -11,6 +11,7 @@
   export let isInternal = false;
   export let isUserInput = false;
   export let isInfoPanel = false;
+  export let userInputValue = null;
 
   const setIsMercadoMode = (currentIsMercadoMode) => {
     const newIsMercadoMode = currentIsMercadoMode;
@@ -18,7 +19,6 @@
   };
 
   const handleAction = (action) => {
-    console.log('hello')
     parent.postMessage({
       pluginMessage: {
         navType: action,
@@ -36,7 +36,7 @@
 
 <!-- core layout -->
 <FontPreload/>
-<div class="container">
+<div class={`container${isUserInput ? ' wide' : ''}`}>
   <div class="transition-mask"></div>
 
   {#if !isUserInput && !isInfoPanel}
@@ -48,7 +48,10 @@
   {/if}
 
   {#if isUserInput}
-    <UserInput />
+    <UserInput
+      on:handleAction={customEvent => handleAction(customEvent.detail)}
+      userInputValue={userInputValue}
+    />
   {/if}
 
   {#if isInfoPanel}

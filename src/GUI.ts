@@ -12,6 +12,7 @@ const app = new App({
     isMercadoMode: false,
     isUserInput: false,
     isInfoPanel: false,
+    userInputValue: null,
   },
 });
 
@@ -31,87 +32,16 @@ const sendLoadedMsg = (): void => {
   return null;
 };
 
-/* watch User Input action buttons */
-const userInputElement = (<HTMLInputElement> document.getElementById('userInput'));
-
-if (userInputElement) {
-  const onClick = (e: MouseEvent) => {
-    const target = e.target as HTMLTextAreaElement;
-    const button = target.closest('button');
-    const inputElement = (<HTMLInputElement> userInputElement.getElementsByClassName('input')[0]);
-
-    if (button) {
-      // find action by element id
-      const action = button.id.replace('userInput-', '');
-
-      // bubble action to main
-      parent.postMessage({
-        pluginMessage: {
-          inputType: action,
-          inputValue: inputElement.value,
-        },
-      }, '*');
-    }
-  };
-
-  userInputElement.addEventListener('click', onClick);
-}
-
 /* process Messages from the plugin */
-const cmdAHelper = (inputElement: HTMLInputElement) => {
-  const onKeydown = (e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.which === 65) {
-      e.stopPropagation();
-      e.preventDefault();
-      if (e.shiftKey) {
-        inputElement.setSelectionRange(0, 0);
-      } else {
-        inputElement.setSelectionRange(0, inputElement.value.length);
-      }
-    }
-  };
-
-  inputElement.addEventListener('keydown', onKeydown);
-};
-
-const watchKeyboardActions = (e: KeyboardEvent) => {
-  let button: HTMLButtonElement = null;
-
-  if ((e.which === 13) || (e.code === 'Enter') || (e.code === 'NumpadEnter')) {
-    button = document.getElementById('userInput-submit') as HTMLButtonElement;
-  }
-
-  if ((e.which === 27) || (e.code === 'Escape')) {
-    button = document.getElementById('userInput-cancel') as HTMLButtonElement;
-  }
-
-  if (button) {
-    button.click();
-  }
-};
-
 const showHideInput = (
   action: 'show' | 'hide',
-  data?: {
-    initialValue: string
-  },
+  initialValue?: string,
 ) => {
-  const containerElement = (<HTMLInputElement> document.getElementsByClassName('container')[0]);
-
   if (action === 'show') {
-    containerElement.classList.add('wide');
-    userInputElement.removeAttribute('style');
-
-    // focus on input and set initial value
-    const inputElement = (<HTMLInputElement> userInputElement.getElementsByClassName('input')[0]);
-    cmdAHelper(inputElement);
-    inputElement.value = data.initialValue;
-    inputElement.focus();
-    inputElement.select();
-    inputElement.addEventListener('keyup', watchKeyboardActions);
+    app.isUserInput = true;
+    app.userInputValue = initialValue;
   } else {
-    containerElement.classList.remove('wide');
-    userInputElement.style.display = 'none';
+    app.isUserInput = false;
   }
 };
 
@@ -166,9 +96,11 @@ const watchIncomingMessages = (): void => {
     const { payload } = pluginMessage;
 
     switch (pluginMessage.action) {
-      case 'showInput':
-        showHideInput('show', pluginMessage.payload);
+      case 'showInput': {
+        const { initialValue } = payload;
+        showHideInput('show', initialValue);
         break;
+      }
       case 'hideInput':
         showHideInput('hide');
         break;
