@@ -23,7 +23,7 @@
 }
 
 // force some other weights to pre-load (prevents the flout effect)
-#font-preload {
+.font-preload {
   @include hide-visually;
   @include type-01(400);
 

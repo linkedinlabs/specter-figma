@@ -162,4 +162,4 @@
 }
 
 .info-trigger { @include info-panel-trigger; }
-#infoPanel { @include info-panel-content; }
+.info-panel { @include info-panel-content; }

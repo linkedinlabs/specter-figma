@@ -42,7 +42,7 @@ ul {
   flex-direction: row;
 }
 
-#main {
+.main-container {
   width: 100%;
 
   // mercado / art-deco mode banner
@@ -85,7 +85,7 @@ ul {
 }
 
 // user input layout
-#userInput {
+.user-input {
   display: flex;
   align-items: flex-end;
   flex-flow: column;
