@@ -49,7 +49,7 @@
 
 <section
   on:keyup={watchKeys}
-  class="user.input"
+  class="user-input"
 >
   <h3>
     Set the annotation’s text…
