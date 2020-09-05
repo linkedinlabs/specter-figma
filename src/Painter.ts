@@ -507,7 +507,6 @@ const positionAnnotation = (
   // detect right edge
   if (((placementX + 5) + group.width) > frameWidth) {
     frameEdgeX = 'right';
-    // placementX = frameWidth - group.width - 3;
   }
 
   // detect top edge
@@ -1235,6 +1234,100 @@ const removeAnnotation = (existingItemData: { id: string }): void => {
   return null;
 };
 
+/** WIP
+ * @description Sets (finds or builds) the parent container group(s), places the layer in the
+ * container(s) and updates the document settings (if a new container group has been created).
+ *
+ * @kind function
+ * @name getSetLayerSettings
+ * @param {Object} layerToContain An object including the `layer` that needs placement,
+ * the `frame` and `page` the layer exists within, the `position` of the layer, and the
+ * `type` of annotation or drawing action.
+ *
+ * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
+ * @private
+ */
+const getSetLayerSettings = (
+  annotationType:
+    'annotatedDimensions'
+    | 'annotatedLayers'
+    | 'annotatedSpacings',
+  layerIdSet: {
+    layerId: string,
+    layerAId?: string,
+    layerBId?: string,
+    direction?: 'top' | 'bottom' | 'right' | 'left',
+  },
+  page: PageNode,
+): void => {
+  /** WIP
+   * @description Sets (finds or builds) the parent container group(s), places the layer in the
+   * container(s) and updates the document settings (if a new container group has been created).
+   *
+   * @kind function
+   * @name layerMatchCheck
+   * @param {Object} layerToContain An object including the `layer` that needs placement,
+   * the `frame` and `page` the layer exists within, the `position` of the layer, and the
+   * `type` of annotation or drawing action.
+   *
+   * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
+   * @private
+   */
+  const layerMatchCheck = (layerSetToMatch, layerIdSetToCheck): boolean => {
+    const {
+      layerId,
+      layerAId,
+      layerBId,
+      direction,
+    } = layerIdSetToCheck;
+
+    // if `layerAId` is present, match multiple layer IDs
+    if (layerAId) {
+      if (
+        layerSetToMatch.layerAId === layerAId
+        && layerSetToMatch.layerBId === layerBId
+        && layerSetToMatch.layerId === layerId
+        && layerSetToMatch.direction === direction
+      ) {
+        return true;
+      }
+    } else if (layerSetToMatch.originalId === layerId) {
+      // match single layer ID
+      return true;
+    }
+    // no matches, return false
+    return false;
+  };
+
+  // retrieve document settings
+  const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
+
+  // check if we have already annotated this element and remove the old annotation
+  if (pageSettings && pageSettings[annotationType]) {
+    // remove the old ID pair(s) from the `newPageSettings` array
+    pageSettings[annotationType].forEach((layerSet) => {
+      if (layerMatchCheck(layerSet, layerIdSet)) {
+        removeAnnotation(layerSet);
+
+        // remove the layerSet from the `pageSettings` array
+        let newPageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER));
+        newPageSettings = updateArray(
+          annotationType,
+          { id: layerSet.id },
+          newPageSettings,
+          'remove',
+        );
+
+        // commit the settings update
+        page.setPluginData(
+          PLUGIN_IDENTIFIER,
+          JSON.stringify(newPageSettings),
+        );
+      }
+    });
+  }
+};
+
 // --- main Painter class function
 /**
  * @description A class to add elements directly onto Figma file frames.
@@ -1314,33 +1407,8 @@ export default class Painter {
     const layerId = this.layer.id;
     const groupName = `Annotation for ${layerName}`;
 
-    // retrieve document settings
-    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-
-    // check if we have already annotated this element and remove the old annotation
-    if (pageSettings && pageSettings.annotatedLayers) {
-      // remove the old ID pair(s) from the `pageSettings` array
-      pageSettings.annotatedLayers.forEach((layerSet) => {
-        if (layerSet.originalId === layerId) {
-          removeAnnotation(layerSet);
-
-          // remove the layerSet from the `pageSettings` array
-          let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
-          newPageSettings = updateArray(
-            'annotatedLayers',
-            { id: layerSet.id },
-            newPageSettings,
-            'remove',
-          );
-
-          // commit the settings update
-          this.page.setPluginData(
-            PLUGIN_IDENTIFIER,
-            JSON.stringify(newPageSettings),
-          );
-        }
-      });
-    }
+    // set document settings to track annotation
+    getSetLayerSettings('annotatedLayers', { layerId }, this.page);
 
     // construct the base annotation elements
     const annotation = buildAnnotation({
@@ -1553,33 +1621,8 @@ export default class Painter {
       const layerId = this.layer.id;
 
       // ------------------------
-      // retrieve document settings
-      const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-
-      // check if we have already annotated this element and remove the old annotation
-      if (pageSettings && pageSettings.annotatedLayers) {
-        // remove the old ID pair(s) from the `pageSettings` array
-        pageSettings.annotatedLayers.forEach((layerSet) => {
-          if (layerSet.originalId === layerId) {
-            removeAnnotation(layerSet);
-
-            // remove the layerSet from the `pageSettings` array
-            let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
-            newPageSettings = updateArray(
-              'annotatedLayers',
-              { id: layerSet.id },
-              newPageSettings,
-              'remove',
-            );
-
-            // commit the settings update
-            this.page.setPluginData(
-              PLUGIN_IDENTIFIER,
-              JSON.stringify(newPageSettings),
-            );
-          }
-        });
-      }
+      // set document settings
+      getSetLayerSettings('annotatedLayers', { layerId }, this.page);
 
       // grab the position from crawler
       const crawler = new Crawler({ for: [this.layer] });
@@ -1705,33 +1748,8 @@ export default class Painter {
     const layerId = this.layer.id;
     const layerName = this.layer.name;
 
-    // retrieve document settings
-    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-
-    // check if we have already annotated this element and remove the old annotation
-    if (pageSettings && pageSettings.annotatedDimensions) {
-      // remove the old ID pair(s) from the `newPageSettings` array
-      pageSettings.annotatedDimensions.forEach((layerSet) => {
-        if (layerSet.originalId === layerId) {
-          removeAnnotation(layerSet);
-
-          // remove the layerSet from the `pageSettings` array
-          let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
-          newPageSettings = updateArray(
-            'annotatedDimensions',
-            { id: layerSet.id },
-            newPageSettings,
-            'remove',
-          );
-
-          // commit the settings update
-          this.page.setPluginData(
-            PLUGIN_IDENTIFIER,
-            JSON.stringify(newPageSettings),
-          );
-        }
-      });
-    }
+    // set document settings to track annotation
+    getSetLayerSettings('annotatedDimensions', { layerId }, this.page);
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.layer] });
@@ -1923,38 +1941,17 @@ export default class Painter {
     const layerName: string = this.layer.name;
     const groupName: string = `Spacing for ${layerName} (${spacingPosition.direction})`;
 
-    // retrieve document settings
-    const pageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-
-    // check if we have already annotated this element and remove the old annotation
-    if (pageSettings && pageSettings.annotatedSpacings) {
-      // remove the old ID pair(s) from the `newPageSettings` array
-      pageSettings.annotatedSpacings.forEach((layerSet) => {
-        if (
-          layerSet.layerAId === spacingPosition.layerAId
-          && layerSet.layerBId === spacingPosition.layerBId
-          && layerSet.layerId === spacingPosition.layerId
-          && layerSet.direction === spacingPosition.direction
-        ) {
-          removeAnnotation(layerSet);
-
-          // remove the layerSet from the `pageSettings` array
-          let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER));
-          newPageSettings = updateArray(
-            'annotatedSpacings',
-            { id: layerSet.id },
-            newPageSettings,
-            'remove',
-          );
-
-          // commit the settings update
-          this.page.setPluginData(
-            PLUGIN_IDENTIFIER,
-            JSON.stringify(newPageSettings),
-          );
-        }
-      });
-    }
+    // set document settings
+    getSetLayerSettings(
+      'annotatedSpacings',
+      {
+        layerId: spacingPosition.layerId,
+        layerAId: spacingPosition.layerAId,
+        layerBId: spacingPosition.layerBId,
+        direction: spacingPosition.direction,
+      },
+      this.page,
+    );
 
     // construct the base annotation elements
     const annotation = buildAnnotation({
