@@ -113,6 +113,15 @@ export default class App {
           && (shapeNode.bottomLeftRadius > 0)
           && (shapeNode.bottomRightRadius > 0)
         ) {
+          // set up Identifier instance for the node
+          const layerToAnnotate = new Identifier({
+            for: node,
+            data: page,
+            dispatcher: this.dispatcher,
+            isMercadoMode: this.isMercadoMode,
+            messenger,
+          });
+
           // set up Painter instance for the node
           const painter = new Painter({
             for: node,
@@ -120,11 +129,16 @@ export default class App {
             isMercadoMode: this.isMercadoMode,
           });
 
-          let paintResult = null;
-          paintResult = painter.addCornerAnnotation();
+          // retrieve corner token and set to node
+          const getCornerTokenResult = layerToAnnotate.getCornerToken();
+          messenger.handleResult(getCornerTokenResult);
 
-          if (paintResult) {
-            messenger.handleResult(paintResult);
+          if (getCornerTokenResult.status === 'success') {
+            // add the annotation
+            const paintResult = painter.addAnnotation();
+            if (paintResult) {
+              messenger.handleResult(paintResult);
+            }
           }
 
           // set selection feedback flag
@@ -134,7 +148,7 @@ export default class App {
     });
 
     if (!applicableNodes) {
-      messenger.log('Annotate corners: No layers have matching corners');
+      messenger.log('Annotate corners: No nodes have matching corners');
       return messenger.toast('At least one layer with matching corners must be selected');
     }
 
