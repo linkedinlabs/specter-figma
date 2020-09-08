@@ -1,7 +1,7 @@
 import Crawler from './Crawler';
 import {
   findFrame,
-  getLayerSettings,
+  getNodeSettings,
   hexToDecimalRgb,
   isInternal,
   updateArray,
@@ -1385,7 +1385,7 @@ export default class Painter {
       },
     };
 
-    const layerSettings = getLayerSettings(this.page, this.layer.id);
+    const layerSettings = getNodeSettings(this.page, this.layer.id);
 
     if (!layerSettings || (layerSettings && !layerSettings.annotationText)) {
       result.status = 'error';

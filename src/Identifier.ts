@@ -1,10 +1,10 @@
 import {
   findParentInstance,
-  getLayerSettings,
+  getNodeSettings,
   isInternal,
   isVisible,
   resizeGUI,
-  setLayerSettings,
+  setNodeSettings,
   toSentenceCase,
 } from './Tools';
 import { RADIUS_MATRIX } from './constants';
@@ -31,7 +31,7 @@ const setAnnotationTextSettings = (
   layerId: string,
   page: any,
 ): void => {
-  let layerSettings = getLayerSettings(page, layerId);
+  let layerSettings = getNodeSettings(page, layerId);
 
   // set `annotationText` on the layer settings
   if (!layerSettings) {
@@ -48,7 +48,7 @@ const setAnnotationTextSettings = (
   }
 
   // commit the settings update
-  setLayerSettings(page, layerSettings);
+  setNodeSettings(page, layerSettings);
 
   return null;
 };
@@ -667,7 +667,7 @@ export default class Identifier {
     };
 
     // get layer settings
-    const layerSettings = getLayerSettings(this.page, this.layer.id);
+    const layerSettings = getNodeSettings(this.page, this.layer.id);
 
     // check for existing `annotationText`
     if (
@@ -712,7 +712,7 @@ export default class Identifier {
     };
 
     // check settings for existing value
-    const layerSettings: any = getLayerSettings(this.page, this.layer.id);
+    const layerSettings: any = getNodeSettings(this.page, this.layer.id);
     let initialValue: string = cleanName(this.layer.name);
 
     if (layerSettings && layerSettings.annotationText) {

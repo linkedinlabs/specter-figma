@@ -267,28 +267,28 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
 
 /**
  * @description Compensates for a mix of groups and non-groups when determining a
- * layer index. Grouped layers are parsed to a decimal value that includes the final
+ * node index. Grouped nodes are parsed to a decimal value that includes the final
  * parent Group index.
  *
  * @kind function
  * @name getRelativeIndex
- * @param {Object} layer The Figma layer.
+ * @param {Object} node The Figma node.
  * @returns {number} The index.
  * @private
  */
-const getRelativeIndex = (layer): number => {
-  const getIndex = (layerSet, comparisonLayer): number => {
-    const index = layerSet.findIndex(node => node === comparisonLayer);
+const getRelativeIndex = (node): number => {
+  const getIndex = (nodeSet, comparisonNode): number => {
+    const index = nodeSet.findIndex(singleNode => singleNode === comparisonNode);
     return index;
   };
 
-  const parentChildren = layer.parent.children;
-  let layerIndex: number = getIndex(parentChildren, layer);
+  const parentChildren = node.parent.children;
+  let nodeIndex: number = getIndex(parentChildren, node);
 
-  const innerLayerIndex = layerIndex;
+  const innerNodeIndex = nodeIndex;
   let parentGroupIndex: number = null;
 
-  let { parent } = layer;
+  let { parent } = node;
   // loop through each parent and adjust the coordinates
   if (parent) {
     while (parent.type === CONTAINER_NODE_TYPES.group) {
@@ -298,11 +298,11 @@ const getRelativeIndex = (layer): number => {
     }
 
     if (parentGroupIndex !== null) {
-      layerIndex = parseFloat(`${parentGroupIndex}.${innerLayerIndex}`);
+      nodeIndex = parseFloat(`${parentGroupIndex}.${innerNodeIndex}`);
     }
   }
 
-  return layerIndex;
+  return nodeIndex;
 };
 
 /**
@@ -311,8 +311,8 @@ const getRelativeIndex = (layer): number => {
  *
  * @kind function
  * @name getRelativePosition
- * @param {Object} node A SceneNode layer object that is a child of `parentNode`.
- * @param {Object} parentNode A SceneNode layer object that is a parent of the `node`. It
+ * @param {Object} node A SceneNode object that is a child of `parentNode`.
+ * @param {Object} parentNode A SceneNode object that is a parent of the `node`. It
  * does not need to be a direct parent.
  *
  * @returns {Object} A `relativePosition` object containing `x` and `y`.
@@ -345,53 +345,53 @@ const getRelativePosition = (
 };
 
 /**
- * @description Takes a Figma page object and a `layerId` and uses the Figma API’s
- * `getPluginData` to extract and return a specific layer’s settings.
+ * @description Takes a Figma page object and a `nodeId` and uses the Figma API’s
+ * `getPluginData` to extract and return a specific node’s settings.
  *
  * @kind function
- * @name getLayerSettings
+ * @name getNodeSettings
  * @param {Object} page A Figma page object.
- * @param {string} layerId A string representing a layer ID.
+ * @param {string} nodeId A string representing a node ID.
  *
- * @returns {Object} The settings object that corresponds to the supplied `layerId`.
+ * @returns {Object} The settings object that corresponds to the supplied `nodeId`.
  */
-const getLayerSettings = (page: any, layerId: string) => {
+const getNodeSettings = (page: any, nodeId: string) => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
-  let layerSettings: any = null;
-  if (pageSettings && pageSettings.layerSettings) {
-    const settingSetIndex = pageSettings.layerSettings.findIndex(
-      settingsSet => (settingsSet.id === layerId),
+  let nodeSettings: any = null;
+  if (pageSettings && pageSettings.nodeSettings) {
+    const settingSetIndex = pageSettings.nodeSettings.findIndex(
+      settingsSet => (settingsSet.id === nodeId),
     );
-    layerSettings = pageSettings.layerSettings[settingSetIndex];
+    nodeSettings = pageSettings.nodeSettings[settingSetIndex];
   }
 
-  return layerSettings;
+  return nodeSettings;
 };
 
 /**
- * @description Takes a Figma page object, updated layer settings, and saves the updates
+ * @description Takes a Figma page object, updated node settings, and saves the updates
  * to the core page’s plugin settings using the Figma API’s `getPluginData` and
  * `setPluginData`.
  *
  * @kind function
- * @name setLayerSettings
+ * @name setNodeSettings
  * @param {Object} page A Figma page object.
- * @param {Object} newLayerSettings An object containing the settings for a specific layer.
+ * @param {Object} newNodeSettings An object containing the settings for a specific node.
  * This object will be added to (or replace) the `layerSettings` node of the plugin settings.
  *
  * @returns {null}
  */
-const setLayerSettings = (page: any, newLayerSettings: any): void => {
+const setNodeSettings = (page: any, newNodeSettings: any): void => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
   let newPageSettings: any = {};
   if (pageSettings) {
     newPageSettings = pageSettings;
   }
 
-  // update the `newPageSettings` array with `newLayerSettings`
+  // update the `newPageSettings` array with `newNodeSettings`
   newPageSettings = updateArray(
     'layerSettings',
-    newLayerSettings,
+    newNodeSettings,
     newPageSettings,
     'add',
   );
@@ -469,7 +469,7 @@ export {
   awaitUIReadiness,
   findFrame,
   findParentInstance,
-  getLayerSettings,
+  getNodeSettings,
   getRelativeIndex,
   getRelativePosition,
   hexToDecimalRgb,
@@ -477,7 +477,7 @@ export {
   isVisible,
   loadFirstAvailableFontAsync,
   resizeGUI,
-  setLayerSettings,
+  setNodeSettings,
   toSentenceCase,
   updateArray,
 };
