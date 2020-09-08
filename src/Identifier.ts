@@ -11,16 +11,16 @@ import { RADIUS_MATRIX } from './constants';
 
 // --- private functions
 /**
- * @description Sets the `annotationText` on a given layer’s settings object.
+ * @description Sets the `annotationText` on a given node’s settings object.
  *
  * @kind function
  * @name setAnnotationTextSettings
  ()
- * @param {string} annotationText The text to add to the layer’s settings.
- * @param {string} annotationSecondaryText Optional text to add to the layer’s settings.
+ * @param {string} annotationText The text to add to the node’s settings.
+ * @param {string} annotationSecondaryText Optional text to add to the node’s settings.
  * @param {string} annotationType The type of annotation (`custom`, `component`, `style`).
- * @param {Object} layerId The `id` for the Figma layer receiving the settings update.
- * @param {Object} page The page containing the layer to be annotated.
+ * @param {Object} nodeId The `id` for the Figma node receiving the settings update.
+ * @param {Object} page The page containing the node to be annotated.
  *
  * @private
  */
@@ -28,27 +28,27 @@ const setAnnotationTextSettings = (
   annotationText: string,
   annotationSecondaryText: string,
   annotationType: string,
-  layerId: string,
+  nodeId: string,
   page: any,
 ): void => {
-  let layerSettings = getNodeSettings(page, layerId);
+  let nodeSettings = getNodeSettings(page, nodeId);
 
-  // set `annotationText` on the layer settings
-  if (!layerSettings) {
-    layerSettings = {
-      id: layerId,
+  // set `annotationText` on the node settings
+  if (!nodeSettings) {
+    nodeSettings = {
+      id: nodeId,
       annotationText,
       annotationSecondaryText,
       annotationType,
     };
   } else {
-    layerSettings.annotationText = annotationText;
-    layerSettings.annotationSecondaryText = annotationSecondaryText;
-    layerSettings.annotationType = annotationType;
+    nodeSettings.annotationText = annotationText;
+    nodeSettings.annotationSecondaryText = annotationSecondaryText;
+    nodeSettings.annotationType = annotationType;
   }
 
   // commit the settings update
-  setNodeSettings(page, layerSettings);
+  setNodeSettings(page, nodeSettings);
 
   return null;
 };
@@ -116,14 +116,14 @@ const checkNameForType = (name: string): 'component' | 'style' => {
 };
 
 /**
- * @description Removes any library/grouping names from the layer name.
+ * @description Removes any library/grouping names from the node name.
  *
  * @kind function
  * @name cleanName
  *
  * @param {string} name The full name of the Layer.
  *
- * @returns {string} The last segment of the layer name as a string.
+ * @returns {string} The last segment of the node name as a string.
  *
  * @private
  */
@@ -145,7 +145,7 @@ const cleanName = (name: string): string => {
       cleanedName = cleanedName.replace('☼', '');
     }
 
-    // otherwise, fall back to the full layer name
+    // otherwise, fall back to the full node name
     cleanedName = !cleanedName.trim() ? name : cleanedName;
   }
 
@@ -265,20 +265,20 @@ const setStyleText = (options: {
 };
 
 /**
- * @description Looks through a component’s inner layers primarily for Icon layers. Checks those
- * layers for presence in the master component. If the icon layer cannot be found in the master
+ * @description Looks through a component’s inner nodes primarily for Icon nodes. Checks those
+ * nodes for presence in the master component. If the icon node cannot be found in the master
  * it is declared an override. Returns a text string based on the override(s) and context.
  *
  * @kind function
  * @name parseOverrides
  *
- * @param {Object} layer The Figma layer object.
+ * @param {Object} parentNode The Figma parentNode object.
  *
  * @returns {string} Text containing information about the override(s).
  *
  * @private
  */
-const parseOverrides = (layer: any): string => {
+const parseOverrides = (parentNode: any): string => {
   const overridesText: Array<string> = [];
   // check for styles
   const {
@@ -287,7 +287,7 @@ const parseOverrides = (layer: any): string => {
     strokeStyleId,
     textStyleId,
     textAlignHorizontal,
-  } = layer;
+  } = parentNode;
 
   // set styles text
   const {
@@ -305,14 +305,14 @@ const parseOverrides = (layer: any): string => {
   if (textToSet) { overridesText.push(textToSet); }
   if (subtextToSet) { overridesText.push(subtextToSet); }
 
-  // find base-level inner layers and check if they are icon overrides
-  // `layer.children` only gives us immediate children; `layer.findOne(…` gives us
+  // find base-level inner parentNodes and check if they are icon overrides
+  // `parentNode.children` only gives us immediate children; `parentNode.findOne(…` gives us
   // all children, flattened, and iterates.
   //
   // only check for icon overrides if the top-level component has “button” in its name
-  if (layer.name.toLowerCase().includes('button') || layer.name.includes('FAB')) {
-    layer.findOne((node) => {
-      // lowest-level, visible layer in a branch
+  if (parentNode.name.toLowerCase().includes('button') || parentNode.name.includes('FAB')) {
+    parentNode.findOne((node) => {
+      // lowest-level, visible node in a branch
       if (isVisible(node) && !node.children) {
         /**
          * @description Given a node inside of a component instance, find a parent
@@ -340,11 +340,11 @@ const parseOverrides = (layer: any): string => {
           }
 
           if (!isOverrideableIcon && parent) {
-            // iterate until the parent id matches queried layer id
-            while (parent && parent.id !== layer.id) {
+            // iterate until the parent id matches queried node id
+            while (parent && parent.id !== parentNode.id) {
               currentNode = parent;
 
-              // look for Icon overrides – based on finding a container (parent) layer
+              // look for Icon overrides – based on finding a container (parent) node
               // that includes “icon” in the name, but not also “button”
               if (
                 !currentNode.name.toLowerCase().includes('button')
@@ -403,28 +403,28 @@ const parseOverrides = (layer: any): string => {
 
 // --- main Identifier class function
 /**
- * @description A class to handle identifying a Figma layer as a valid part of the Design System.
+ * @description A class to handle identifying a Figma node as a valid part of the Design System.
  *
  * @class
  * @name Identifier
  *
  * @constructor
  *
- * @property layer The layer that needs identification.
- * @property page The Figma page that contains the layer.
+ * @property node The node that needs identification.
+ * @property page The Figma page that contains the node.
  * @property messenger An instance of the Messenger class.
  * @property dispatcher An optional instance of the `dispatcher` function from `main.ts`.
  */
 export default class Identifier {
   dispatcher?: Function;
   isMercadoMode: boolean;
-  layer: any;
+  node: any;
   messenger: any;
   page: PageNode;
   shouldTerminate: boolean;
 
   constructor({
-    for: layer,
+    for: node,
     data: page,
     dispatcher,
     isMercadoMode,
@@ -433,7 +433,7 @@ export default class Identifier {
   }) {
     this.dispatcher = dispatcher;
     this.isMercadoMode = isMercadoMode;
-    this.layer = layer;
+    this.node = node;
     this.messenger = messenger;
     this.page = page;
     this.shouldTerminate = shouldTerminate;
@@ -465,7 +465,7 @@ export default class Identifier {
 
     // check that all radii are the same
     let radiiIsUnified = false;
-    const node = this.layer as FrameNode | RectangleNode;
+    const node = this.node as FrameNode | RectangleNode;
     if (
       (node.topLeftRadius === node.topRightRadius)
       && (node.topRightRadius === node.bottomLeftRadius)
@@ -512,13 +512,13 @@ export default class Identifier {
       const textToSet: string = radiusItem.token;
       const subtextToSet = null;
 
-      // set `textToSet` on the layer settings as the component name
-      // set optional `subtextToSet` on the layer settings based on existing overrides
-      setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
+      // set `textToSet` on the node settings as the component name
+      // set optional `subtextToSet` on the node settings based on existing overrides
+      setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.node.id, this.page);
 
-      // log the official name alongside the original layer name and set as success
+      // log the official name alongside the original node name and set as success
       result.status = 'success';
-      result.messages.log = `Name in library for “${this.layer.name}” corner radius is “${textToSet}”`;
+      result.messages.log = `Name in library for “${this.node.name}” corner radius is “${textToSet}”`;
       return result;
     }
 
@@ -531,9 +531,9 @@ export default class Identifier {
 
   /**
    * @description Identifies the master name of a component OR the effect and adds the name to
-   * the layer’s `annotationText` settings object: Master Component identification is achieved
+   * the node’s `annotationText` settings object: Master Component identification is achieved
    * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
-   * `name` and `description` for additional identifying information. If a layer is not
+   * `name` and `description` for additional identifying information. If a node is not
    * attached to a Master Component, it is checked for remote style IDs. If found, the style(s)
    * are labeled as Foundation elements or overrides to the main Component.
    *
@@ -560,11 +560,11 @@ export default class Identifier {
     // check for library `masterComponent` or styling IDs
     // not much else we can do at the moment if none of it exists
     if (
-      !this.layer.masterComponent
-      && !this.layer.effectStyleId
-      && !this.layer.fillStyleId
-      && !this.layer.strokeStyleId
-      && !this.layer.textStyleId
+      !this.node.masterComponent
+      && !this.node.effectStyleId
+      && !this.node.fillStyleId
+      && !this.node.strokeStyleId
+      && !this.node.textStyleId
     ) {
       result.status = 'error';
       result.messages.log = 'Layer is not connected to a Master Component or library styles';
@@ -572,36 +572,36 @@ export default class Identifier {
       return result;
     }
 
-    this.messenger.log(`Simple name for layer: ${this.layer.name}`);
+    this.messenger.log(`Simple name for node: ${this.node.name}`);
 
     // locate a `masterComponent`
-    if (this.layer.masterComponent) {
-      const { masterComponent } = this.layer;
+    if (this.node.masterComponent) {
+      const { masterComponent } = this.node;
 
-      this.messenger.log(`Master Component name for layer: ${masterComponent.name}`);
+      this.messenger.log(`Master Component name for node: ${masterComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
       const symbolType: string = checkNameForType(masterComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       const textToSet: string = cleanName(masterComponent.name);
-      const subtextToSet = parseOverrides(this.layer);
+      const subtextToSet = parseOverrides(this.node);
 
-      // set `textToSet` on the layer settings as the component name
-      // set optional `subtextToSet` on the layer settings based on existing overrides
-      setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
+      // set `textToSet` on the node settings as the component name
+      // set optional `subtextToSet` on the node settings based on existing overrides
+      setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.node.id, this.page);
 
-      // log the official name alongside the original layer name and set as success
+      // log the official name alongside the original node name and set as success
       result.status = 'success';
-      result.messages.log = `Name in library for “${this.layer.name}” is “${textToSet}”`;
+      result.messages.log = `Name in library for “${this.node.name}” is “${textToSet}”`;
       return result;
     }
 
     // locate shared effect, fill, stroke, or type styles
     if (
-      this.layer.effectStyleId
-      || this.layer.fillStyleId
-      || this.layer.strokeStyleId
-      || this.layer.textStyleId
+      this.node.effectStyleId
+      || this.node.fillStyleId
+      || this.node.strokeStyleId
+      || this.node.textStyleId
     ) {
       const {
         effectStyleId,
@@ -609,7 +609,7 @@ export default class Identifier {
         strokeStyleId,
         textStyleId,
         textAlignHorizontal,
-      } = this.layer;
+      } = this.node;
 
       // set text
       const {
@@ -624,25 +624,25 @@ export default class Identifier {
       });
 
       if (textToSet) {
-        // set `annotationText` on the layer settings as the effect name
-        setAnnotationTextSettings(textToSet, subtextToSet, 'style', this.layer.id, this.page);
+        // set `annotationText` on the node settings as the effect name
+        setAnnotationTextSettings(textToSet, subtextToSet, 'style', this.node.id, this.page);
 
-        // log the official name alongside the original layer name and set as success
+        // log the official name alongside the original node name and set as success
         result.status = 'success';
-        result.messages.log = `Style Name in design library for “${this.layer.name}” is “${textToSet}”`;
+        result.messages.log = `Style Name in design library for “${this.node.name}” is “${textToSet}”`;
         return result;
       }
     }
 
-    // could not find a matching layer in a connected design library
+    // could not find a matching node in a connected design library
     result.status = 'error';
-    result.messages.log = `${this.layer.id} was not found in a connected design library`;
+    result.messages.log = `${this.node.id} was not found in a connected design library`;
     result.messages.toast = '😢 This layer could not be found in a connected design library.';
     return result;
   }
 
   /**
-   * @description Checks the layer’s settings object for the existence of `annotationText` and
+   * @description Checks the node’s settings object for the existence of `annotationText` and
    * and that `annotationType` is 'custom' (Component and Style annotations can be easily updated
    * and need to be rechecked each time, whereas Custom annotations do not.
    *
@@ -666,20 +666,20 @@ export default class Identifier {
       },
     };
 
-    // get layer settings
-    const layerSettings = getNodeSettings(this.page, this.layer.id);
+    // get node settings
+    const nodeSettings = getNodeSettings(this.page, this.node.id);
 
     // check for existing `annotationText`
     if (
-      layerSettings
-      && layerSettings.annotationText
-      && (layerSettings.annotationType === 'custom')
+      nodeSettings
+      && nodeSettings.annotationText
+      && (nodeSettings.annotationType === 'custom')
     ) {
       result.status = 'success';
-      result.messages.log = `Custom text set for “${this.layer.name}” is “${layerSettings.annotationText}”`;
+      result.messages.log = `Custom text set for “${this.node.name}” is “${nodeSettings.annotationText}”`;
     } else {
       result.status = 'error';
-      result.messages.log = `No custom text is set for “${this.layer.name}”`;
+      result.messages.log = `No custom text is set for “${this.node.name}”`;
     }
 
     return result;
@@ -687,7 +687,7 @@ export default class Identifier {
 
   /**
    * @description Displays a dialog box to allow the user to set custom annotation text and
-   * adds the text to the layer’s settings object.
+   * adds the text to the node’s settings object.
    *
    * @kind function
    * @name setText
@@ -712,11 +712,11 @@ export default class Identifier {
     };
 
     // check settings for existing value
-    const layerSettings: any = getNodeSettings(this.page, this.layer.id);
-    let initialValue: string = cleanName(this.layer.name);
+    const nodeSettings: any = getNodeSettings(this.page, this.node.id);
+    let initialValue: string = cleanName(this.node.name);
 
-    if (layerSettings && layerSettings.annotationText) {
-      initialValue = layerSettings.annotationText;
+    if (nodeSettings && nodeSettings.annotationText) {
+      initialValue = nodeSettings.annotationText;
     }
 
     const getInputFromUser = (callback: Function): any => {
@@ -800,12 +800,12 @@ export default class Identifier {
         return callbackMain(result);
       }
 
-      // set `annotationText` on the layer settings as the custom text
-      setAnnotationTextSettings(customInput, null, 'custom', this.layer.id, this.page);
+      // set `annotationText` on the node settings as the custom text
+      setAnnotationTextSettings(customInput, null, 'custom', this.node.id, this.page);
 
-      // log the custom name alongside the original layer name and set as success
+      // log the custom name alongside the original node name and set as success
       result.status = 'success';
-      result.messages.log = `Custom Text set for “${this.layer.name}” is “${customInput}”`;
+      result.messages.log = `Custom Text set for “${this.node.name}” is “${customInput}”`;
       return callbackMain(result);
     };
 
