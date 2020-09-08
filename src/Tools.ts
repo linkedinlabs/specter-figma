@@ -358,11 +358,11 @@ const getRelativePosition = (
 const getNodeSettings = (page: any, nodeId: string) => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
   let nodeSettings: any = null;
-  if (pageSettings && pageSettings.nodeSettings) {
-    const settingSetIndex = pageSettings.nodeSettings.findIndex(
+  if (pageSettings && pageSettings.layerSettings) {
+    const settingSetIndex = pageSettings.layerSettings.findIndex(
       settingsSet => (settingsSet.id === nodeId),
     );
-    nodeSettings = pageSettings.nodeSettings[settingSetIndex];
+    nodeSettings = pageSettings.layerSettings[settingSetIndex];
   }
 
   return nodeSettings;
