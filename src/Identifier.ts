@@ -7,6 +7,7 @@ import {
   setLayerSettings,
   toSentenceCase,
 } from './Tools';
+import { RADIUS_MATRIX } from './constants';
 
 // --- private functions
 /**
@@ -436,6 +437,100 @@ export default class Identifier {
     this.messenger = messenger;
     this.page = page;
     this.shouldTerminate = shouldTerminate;
+  }
+
+  /** WIP
+   * @description Identifies the master name of a component OR the effect and adds the name to
+   * the layer’s `annotationText` settings object: Master Component identification is achieved
+   * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
+   * `name` and `description` for additional identifying information. If a layer is not
+   * attached to a Master Component, it is checked for remote style IDs. If found, the style(s)
+   * are labeled as Foundation elements or overrides to the main Component.
+   *
+   * @kind function
+   * @name getCornerToken
+   *
+   * @returns {Object} A result object containing success/error status and log/toast messages.
+   */
+  getCornerToken() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // check that all radii are the same
+    let radiiIsUnified = false;
+    const node = this.layer as FrameNode | RectangleNode;
+    if (
+      (node.topLeftRadius === node.topRightRadius)
+      && (node.topRightRadius === node.bottomLeftRadius)
+      && (node.bottomLeftRadius === node.bottomRightRadius)
+    ) {
+      radiiIsUnified = true;
+    }
+
+    // return an error if the radii are not the same
+    if (!radiiIsUnified) {
+      result.status = 'error';
+      result.messages.log = 'Radii are not the same';
+      result.messages.toast = 'Each corner radius must be the same ⏹';
+      return result;
+    }
+
+    // corners are the same, so set to one of them
+    let cornerValue = node.topLeftRadius;
+
+    // set cornerValue to valid Mercado Base Unit values
+    if (cornerValue < 5) {
+      cornerValue = 4;
+    } else if (cornerValue < 10) {
+      cornerValue = 8;
+    } else if (cornerValue < 20) {
+      cornerValue = 16;
+    } else if (cornerValue < 30) {
+      cornerValue = 24;
+    }
+
+    // throw back a radius that is too large
+    if (cornerValue > 24) {
+      result.status = 'error';
+      result.messages.log = 'Radius too big';
+      result.messages.toast = 'Each corner radius must be under 30';
+      return result;
+    }
+
+    // retrive the token based on the corner value
+    const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
+    if (radiusItem) {
+      // sets symbol type to `foundation` or `component` based on name checks
+      const symbolType: string = 'style';
+      const textToSet: string = radiusItem.token;
+      const subtextToSet = null;
+
+      // set `textToSet` on the layer settings as the component name
+      // set optional `subtextToSet` on the layer settings based on existing overrides
+      setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.layer.id, this.page);
+
+      // log the official name alongside the original layer name and set as success
+      result.status = 'success';
+      result.messages.log = `Name in library for “${this.layer.name}” corner radius is “${textToSet}”`;
+      return result;
+    }
+
+    // otherwise matching token could not be found; return an error
+    result.status = 'error';
+    result.messages.log = 'No radius token match';
+    result.messages.toast = 'Hmm… we could not find a token for this radius';
+    return result;
   }
 
   /**
