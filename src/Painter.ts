@@ -1233,17 +1233,19 @@ const removeAnnotation = (existingItemData: { id: string }): void => {
   return null;
 };
 
-/** WIP
- * @description Sets (finds or builds) the parent container group(s), places the layer in the
- * container(s) and updates the document settings (if a new container group has been created).
+/**
+ * @description Retrieves or sets the information on a node in order to track its annotation(s).
  *
  * @kind function
  * @name getSetLayerSettings
- * @param {Object} layerToContain An object including the `layer` that needs placement,
- * the `frame` and `page` the layer exists within, the `position` of the layer, and the
- * `type` of annotation or drawing action.
  *
- * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
+ * @param {string} annotationType A string representation the type of annotation,
+ * (`annotatedDimensions`, `annotatedLayers`, or `annotatedSpacings`).
+ * @param {Object} layerIdSet A layer ID set to find a match for. It needs to container
+ * `layerId` at a minimum, but may also container `layerAId`, `layerBId`, and `direction`.
+ * @param {Object} page The page containing the outer container group.
+ *
+ * @returns {null}
  * @private
  */
 const getSetLayerSettings = (
@@ -1259,17 +1261,20 @@ const getSetLayerSettings = (
   },
   page: PageNode,
 ): void => {
-  /** WIP
-   * @description Sets (finds or builds) the parent container group(s), places the layer in the
-   * container(s) and updates the document settings (if a new container group has been created).
+  /**
+   * @description Takes two sets of layer IDs (one from the node directly and one for
+   * the query) and tries to match them.
    *
    * @kind function
    * @name layerMatchCheck
-   * @param {Object} layerToContain An object including the `layer` that needs placement,
-   * the `frame` and `page` the layer exists within, the `position` of the layer, and the
-   * `type` of annotation or drawing action.
+   * @param {Object} layerSetToMatch A node’s layer ID set retrieved from settings. It
+   * needs to container `layerId` at a minimum, but may also container `layerAId`,
+   * `layerBId`, and `direction`.
+   * @param {Object} layerIdSetToCheck A layer ID set to find a match for. It
+   * needs to container `layerId` at a minimum, but may also container `layerAId`,
+   * `layerBId`, and `direction`.
    *
-   * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
+   * @returns {boolean} `true` if the layer ID set matches, otherwise `false`.
    * @private
    */
   const layerMatchCheck = (layerSetToMatch, layerIdSetToCheck): boolean => {

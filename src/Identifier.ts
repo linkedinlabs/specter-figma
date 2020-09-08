@@ -439,13 +439,9 @@ export default class Identifier {
     this.shouldTerminate = shouldTerminate;
   }
 
-  /** WIP
-   * @description Identifies the master name of a component OR the effect and adds the name to
-   * the layer’s `annotationText` settings object: Master Component identification is achieved
-   * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
-   * `name` and `description` for additional identifying information. If a layer is not
-   * attached to a Master Component, it is checked for remote style IDs. If found, the style(s)
-   * are labeled as Foundation elements or overrides to the main Component.
+  /**
+   * @description Retrieve the node’s corner radius values and matches them against the
+   * `RADIUS_MATRIX` to retrieve a design library corner radius token.
    *
    * @kind function
    * @name getCornerToken
