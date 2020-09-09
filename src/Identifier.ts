@@ -266,7 +266,7 @@ const setStyleText = (options: {
 
 /**
  * @description Looks through a component’s inner nodes primarily for Icon nodes. Checks those
- * nodes for presence in the master component. If the icon node cannot be found in the master
+ * nodes for presence in the main component. If the icon node cannot be found in the main
  * it is declared an override. Returns a text string based on the override(s) and context.
  *
  * @kind function
@@ -530,11 +530,11 @@ export default class Identifier {
   }
 
   /**
-   * @description Identifies the master name of a component OR the effect and adds the name to
-   * the node’s `annotationText` settings object: Master Component identification is achieved
-   * by ensuring a `masterComponent` is attached to the instance and then parsing the master’s
+   * @description Identifies the main name of a component OR the effect and adds the name to
+   * the node’s `annotationText` settings object: Main Component identification is achieved
+   * by ensuring a `mainComponent` is attached to the instance and then parsing the main’s
    * `name` and `description` for additional identifying information. If a node is not
-   * attached to a Master Component, it is checked for remote style IDs. If found, the style(s)
+   * attached to a Main Component, it is checked for remote style IDs. If found, the style(s)
    * are labeled as Foundation elements or overrides to the main Component.
    *
    * @kind function
@@ -557,33 +557,33 @@ export default class Identifier {
       },
     };
 
-    // check for library `masterComponent` or styling IDs
+    // check for library `mainComponent` or styling IDs
     // not much else we can do at the moment if none of it exists
     if (
-      !this.node.masterComponent
+      !this.node.mainComponent
       && !this.node.effectStyleId
       && !this.node.fillStyleId
       && !this.node.strokeStyleId
       && !this.node.textStyleId
     ) {
       result.status = 'error';
-      result.messages.log = 'Node is not connected to a Master Component or library styles';
+      result.messages.log = 'Node is not connected to a Main Component or library styles';
       result.messages.toast = '🆘 This layer is not a component or styled.';
       return result;
     }
 
     this.messenger.log(`Simple name for node: ${this.node.name}`);
 
-    // locate a `masterComponent`
-    if (this.node.masterComponent) {
-      const { masterComponent } = this.node;
+    // locate a `mainComponent`
+    if (this.node.mainComponent) {
+      const { mainComponent } = this.node;
 
-      this.messenger.log(`Master Component name for node: ${masterComponent.name}`);
+      this.messenger.log(`Main Component name for node: ${mainComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
-      const symbolType: string = checkNameForType(masterComponent.name);
+      const symbolType: string = checkNameForType(mainComponent.name);
       // take only the last segment of the name (after a “/”, if available)
-      const textToSet: string = cleanName(masterComponent.name);
+      const textToSet: string = cleanName(mainComponent.name);
       const subtextToSet = parseOverrides(this.node);
 
       // set `textToSet` on the node settings as the component name
