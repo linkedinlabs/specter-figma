@@ -60,7 +60,7 @@ const setAnnotationTextSettings = (
  * @kind function
  * @name isLegacyByName
  *
- * @param {string} name The full name of the Layer.
+ * @param {string} name The full name of the node.
  *
  * @returns {boolean} Bool declaring `true` for legacy component and `false` for newer component.
  *
@@ -82,7 +82,7 @@ const isLegacyByName = (name: string): boolean => {
  * @kind function
  * @name checkNameForType
  *
- * @param {string} name The full name of the Layer.
+ * @param {string} name The full name of the node.
  *
  * @returns {string} The `annotationType` – either `component` or `style`.
  *
@@ -121,7 +121,7 @@ const checkNameForType = (name: string): 'component' | 'style' => {
  * @kind function
  * @name cleanName
  *
- * @param {string} name The full name of the Layer.
+ * @param {string} name The full name of the node.
  *
  * @returns {string} The last segment of the node name as a string.
  *
@@ -567,7 +567,7 @@ export default class Identifier {
       && !this.node.textStyleId
     ) {
       result.status = 'error';
-      result.messages.log = 'Layer is not connected to a Master Component or library styles';
+      result.messages.log = 'Node is not connected to a Master Component or library styles';
       result.messages.toast = '🆘 This layer is not a component or styled.';
       return result;
     }

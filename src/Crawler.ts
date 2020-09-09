@@ -58,12 +58,12 @@ export default class Crawler {
         // +++ frames and groups are checked for child nodes
 
         // set initial holding array and add first level of children
-        let innerLayers = [];
-        node.children.forEach(child => innerLayers.push(child));
+        let innerNodes = [];
+        node.children.forEach(child => innerNodes.push(child));
 
         /**
-         * @description Iterates through `innerLayers`, adding normal nodes to the `flatSelection`
-         * array, while adding any additional children nodes into the `innerLayers` array.
+         * @description Iterates through `innerNodes`, adding normal nodes to the `flatSelection`
+         * array, while adding any additional children nodes into the `innerNodes` array.
          *
          * @kind function
          * @name iterateKnownChildren
@@ -72,10 +72,10 @@ export default class Crawler {
          * @private
          */
         const iterateKnownChildren = (): void => {
-          // iterate through known child nodes in `innerLayers`,
+          // iterate through known child nodes in `innerNodes`,
           // adding more children to the array as they are found in descendent nodes
-          innerLayers.forEach((
-            innerLayer: {
+          innerNodes.forEach((
+            innerNode: {
               children: any,
               id: string,
               type: string,
@@ -83,32 +83,32 @@ export default class Crawler {
             },
           ) => {
             if (
-              innerLayer.type !== CONTAINER_NODE_TYPES.group
-              && innerLayer.type !== CONTAINER_NODE_TYPES.frame
-              && innerLayer.visible
+              innerNode.type !== CONTAINER_NODE_TYPES.group
+              && innerNode.type !== CONTAINER_NODE_TYPES.frame
+              && innerNode.visible
             ) {
               // non-frame or -group nodes get added to the final selection
-              flatSelection.push(innerLayer);
+              flatSelection.push(innerNode);
             } else {
-              innerLayer.children.forEach(child => innerLayers.push(child));
+              innerNode.children.forEach(child => innerNodes.push(child));
             }
 
             // update the overall list of child nodes, removing the node that was just examined.
             // this array should eventually be empty, breaking the `while` loop
-            const innerLayerIndex = innerLayers.findIndex(
-              foundInnerLayer => (foundInnerLayer.id === innerLayer.id),
+            const innerNodeIndex = innerNodes.findIndex(
+              foundInnerNode => (foundInnerNode.id === innerNode.id),
             );
-            innerLayers = [
-              ...innerLayers.slice(0, innerLayerIndex),
-              ...innerLayers.slice(innerLayerIndex + 1),
+            innerNodes = [
+              ...innerNodes.slice(0, innerNodeIndex),
+              ...innerNodes.slice(innerNodeIndex + 1),
             ];
           });
 
           return null;
         };
 
-        // loop through the `innerLayers` array as long as it is not empty
-        while (innerLayers.length > 0) {
+        // loop through the `innerNodes` array as long as it is not empty
+        while (innerNodes.length > 0) {
           iterateKnownChildren();
         }
       }
@@ -135,7 +135,7 @@ export default class Crawler {
     const topFrame: SceneNode = findFrame(node);
 
     // clone the node that will need positioning coordinates
-    const newLayer: SceneNode = node.clone();
+    const newNode: SceneNode = node.clone();
 
     // set the cloned node’s positioning by comparing `absoluteTransform` values between
     // the original node and the top-level frame node.
@@ -154,16 +154,16 @@ export default class Crawler {
         node.absoluteTransform[1][2] - topFrame.absoluteTransform[1][2],
       ],
     ];
-    newLayer.relativeTransform = newTransformMatrix;
+    newNode.relativeTransform = newTransformMatrix;
 
     // add the clone to the first level of top node; group it for further evaluation.
     // grouping a node creates a new node that is not rotated and covers the entire bounds
     // of the original node (in case it is rotated). we will use the group for the final
     // positioning coordinates
-    topFrame.appendChild(newLayer);
-    const newLayerGroupArray = [newLayer];
-    const newLayerGroup = figma.group(newLayerGroupArray, topFrame);
-    const relativePosition = getRelativePosition(newLayerGroup, topFrame);
+    topFrame.appendChild(newNode);
+    const newNodeGroupArray = [newNode];
+    const newNodeGroup = figma.group(newNodeGroupArray, topFrame);
+    const relativePosition = getRelativePosition(newNodeGroup, topFrame);
 
     // set up the bounds positioning based on the group, not the original or cloned nodes
     const nodeBoundingPosition: {
@@ -176,14 +176,14 @@ export default class Crawler {
     } = {
       x: relativePosition.x,
       y: relativePosition.y,
-      xOuter: relativePosition.x + newLayerGroup.width,
-      yOuter: relativePosition.y + newLayerGroup.height,
-      width: newLayerGroup.width,
-      height: newLayerGroup.height,
+      xOuter: relativePosition.x + newNodeGroup.width,
+      yOuter: relativePosition.y + newNodeGroup.height,
+      width: newNodeGroup.width,
+      height: newNodeGroup.height,
     };
 
     // remove the cloned node (this will also remove the group)
-    newLayer.remove();
+    newNode.remove();
 
     // return the coordinates
     return nodeBoundingPosition;
@@ -786,7 +786,7 @@ export default class Crawler {
     // this should not happen, but nodes might be selected from multiple artboards.
     if (nodeAIndex === nodeBIndex) {
       result.status = 'error';
-      result.messages.log = 'Layers are the same index';
+      result.messages.log = 'Nodes are the same index';
       result.messages.toast = 'Select layers inside the same frame';
       return result;
     }

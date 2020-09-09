@@ -890,7 +890,7 @@ const retrieveSpacingValue = (length: number, isMercadoMode: boolean): number =>
  * within the outer container group node.
  *
  * @kind function
- * @name orderContainerLayers
+ * @name orderContainerNodes
  * @param {string} outerGroupId String ID for finding the outer container group.
  * @param {Object} page The page containing the outer container group.
  *
@@ -898,7 +898,7 @@ const retrieveSpacingValue = (length: number, isMercadoMode: boolean): number =>
  *
  * @private
  */
-const orderContainerLayers = (outerGroupId: string, page): void => {
+const orderContainerNodes = (outerGroupId: string, page): void => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || {});
   let containerGroupId: string = null;
   let boundingGroupId: string = null;
@@ -1206,7 +1206,7 @@ const setNodeInContainers = (nodeToContain: {
     frame.appendChild(outerGroup);
 
     // set the order of the inner container nodes
-    orderContainerLayers(outerGroup.id, page);
+    orderContainerNodes(outerGroup.id, page);
   }
 
   return containerSet;
@@ -1390,7 +1390,7 @@ export default class Painter {
 
     if (!nodeSettings || (nodeSettings && !nodeSettings.annotationText)) {
       result.status = 'error';
-      result.messages.log = 'Layer missing annotationText';
+      result.messages.log = 'Node missing annotationText';
       return result;
     }
 
@@ -1463,7 +1463,7 @@ export default class Painter {
     });
 
     // new object with IDs to add to settings
-    const newAnnotatedLayerSet: {
+    const newAnnotatedNodeSet: {
       containerGroupId: string,
       id: string,
       originalId: string,
@@ -1477,7 +1477,7 @@ export default class Painter {
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateArray(
       'annotatedLayers',
-      newAnnotatedLayerSet,
+      newAnnotatedNodeSet,
       newPageSettings,
       'add',
     );
