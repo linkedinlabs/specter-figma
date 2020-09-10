@@ -97,6 +97,27 @@ const updateArray = (
 };
 
 // --- helper functions
+/**
+ * @description An approximation of `forEach` but run in an async manner.
+ *
+ * @kind function
+ * @name asyncForEach
+ *
+ * @param {Array} array An array to iterate.
+ * @param {Function} callback A function to feed the single/iterated item back to.
+ *
+ * @returns {null} Runs the callback function.
+ */
+const asyncForEach = async (
+  array: Array<any>,
+  callback: Function,
+): Promise<Function> => {
+  for (let index = 0; index < array.length; index += 1) {
+    await callback(array[index], index, array); // eslint-disable-line no-await-in-loop
+  }
+  return null;
+};
+
 // we need to wait for the UI to be ready:
 // network calls are made through the UI iframe
 const awaitUIReadiness = async (messenger?) => {
@@ -467,6 +488,7 @@ const toSentenceCase = (anyString: string): string => {
 };
 
 export {
+  asyncForEach,
   awaitUIReadiness,
   findFrame,
   findParentInstance,
