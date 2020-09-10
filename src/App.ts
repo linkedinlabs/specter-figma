@@ -371,7 +371,7 @@ export default class App {
 
   /**
    * @description If two nodes are selected: annotates the selection with the
-   * spacing number (“IS-X”) based on either the gap between the two nodes or, if they
+   * spacing token (“IS-X”) based on either the gap between the two nodes or, if they
    * are overlapping, the 4 directions of overlap (top, bottom, right, and left). If
    * one node is selected: annotates the height and width of the selected node
    * in “dp” (digital points) units.
@@ -445,7 +445,7 @@ export default class App {
   }
 
   /**
-   * @description Annotates the selection with the spacing number (“IS-X”) based on either
+   * @description Annotates the selection with the spacing token (“IS-X”) based on either
    * the gap between the two nodes or, if they are overlapping, the 4 directions of overlap
    * (top, bottom, right, and left).
    *
@@ -511,7 +511,7 @@ export default class App {
   }
 
   /**
-   * @description Annotates the selection with the spacing number (“IS-X”) based on the
+   * @description Annotates the selection with the spacing token (“IS-X”) based on the
    * surrounding padding (top, bottom, right, and left). The selection must be a
    * node with auto-layout enabled.
    *
