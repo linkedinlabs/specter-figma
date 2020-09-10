@@ -167,20 +167,20 @@ const awaitUIReadiness = async (messenger?) => {
 
 /**
  * @description Takes a node object and traverses parent relationships until the top-level
- * `FrameNode` (or `PageNode`) is found. Returns the node.
+ * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
  *
  * @kind function
- * @name findFrame
+ * @name findTopFrame
  * @param {Object} node A Figma node object.
  *
- * @returns {Object} The top-level node.
+ * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
  */
-const findFrame = (node: any): FrameNode => {
+const findTopFrame = (node: any) => {
   let { parent } = node;
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
-    return null;
+    return parent;
   }
 
   // loop through each parent until we find the outermost FRAME
@@ -520,7 +520,7 @@ const toSentenceCase = (anyString: string): string => {
 export {
   asyncForEach,
   awaitUIReadiness,
-  findFrame,
+  findTopFrame,
   findParentInstance,
   getNodeSettings,
   getRelativeIndex,

@@ -1,6 +1,6 @@
 import { CONTAINER_NODE_TYPES } from './constants';
 import {
-  findFrame,
+  findTopFrame,
   getRelativeIndex,
   getRelativePosition,
 } from './Tools';
@@ -132,7 +132,7 @@ export default class Crawler {
    */
   static getBoundingPositition(node) {
     // find out top node
-    const topFrame: SceneNode = findFrame(node);
+    const topFrame: SceneNode = findTopFrame(node);
 
     // clone the node that will need positioning coordinates
     const newNode: SceneNode = node.clone();
@@ -239,7 +239,7 @@ export default class Crawler {
     // check for top frames
     let allHaveTopFrames = true;
     selection.forEach((node) => {
-      const topFrame = findFrame(node);
+      const topFrame = findTopFrame(node);
       if (!topFrame) {
         allHaveTopFrames = false;
       }
@@ -355,8 +355,8 @@ export default class Crawler {
     let nodeA = selection[firstIndex];
     let nodeB = selection[firstIndex];
 
-    const nodeATopFrame = findFrame(nodeA);
-    const nodeBTopFrame = findFrame(nodeB);
+    const nodeATopFrame = findTopFrame(nodeA);
+    const nodeBTopFrame = findTopFrame(nodeB);
 
     if (!nodeATopFrame || !nodeBTopFrame) {
       result.status = 'error';
@@ -746,8 +746,8 @@ export default class Crawler {
     let nodeA = selection[firstIndex];
     let nodeB = selection[selection.length - 1];
 
-    const nodeATopFrame = findFrame(nodeA);
-    const nodeBTopFrame = findFrame(nodeB);
+    const nodeATopFrame = findTopFrame(nodeA);
+    const nodeBTopFrame = findTopFrame(nodeB);
 
     if (!nodeATopFrame || !nodeBTopFrame) {
       result.status = 'error';
@@ -922,7 +922,7 @@ export default class Crawler {
     // set the node
     const node: FrameNode = this.first() as FrameNode;
 
-    const nodeTopFrame = findFrame(node);
+    const nodeTopFrame = findTopFrame(node);
 
     if (!nodeTopFrame) {
       result.status = 'error';

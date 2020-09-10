@@ -1,6 +1,6 @@
 import Crawler from './Crawler';
 import {
-  findFrame,
+  findTopFrame,
   getNodeSettings,
   hexToDecimalRgb,
   isInternal,
@@ -1357,7 +1357,7 @@ export default class Painter {
     isMercadoMode,
   }) {
     this.isMercadoMode = isMercadoMode;
-    this.frame = findFrame(node);
+    this.frame = findTopFrame(node);
     this.node = node;
     this.page = page;
   }
