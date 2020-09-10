@@ -1157,9 +1157,9 @@ const setNodeInContainers = (nodeToContain: {
     // remove the existing lookup pair so it does not conflict with the new one
     if (outerGroupId) {
       newPageSettings = updateNestedArray(
-        'containerGroups',
-        { id: outerGroupId },
         newPageSettings,
+        { id: outerGroupId },
+        'containerGroups',
         'remove',
       );
     }
@@ -1180,9 +1180,9 @@ const setNodeInContainers = (nodeToContain: {
 
     // update the `newPageSettings` array
     newPageSettings = updateNestedArray(
-      'containerGroups',
-      updatedContainerSet,
       newPageSettings,
+      updatedContainerSet,
+      'containerGroups',
       'add',
     );
 
@@ -1317,9 +1317,9 @@ const getSetNodeSettings = (
         // remove the nodeSet from the `pageSettings` array
         let newPageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER));
         newPageSettings = updateNestedArray(
-          annotationType,
-          { id: nodeSet.id },
           newPageSettings,
+          { id: nodeSet.id },
+          annotationType,
           'remove',
         );
 
@@ -1476,9 +1476,9 @@ export default class Painter {
     // update the `newPageSettings` array
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateNestedArray(
-      'annotatedLayers',
-      newAnnotatedNodeSet,
       newPageSettings,
+      newAnnotatedNodeSet,
+      'annotatedLayers',
       'add',
     );
 
@@ -1653,9 +1653,9 @@ export default class Painter {
     // update the `newPageSettings` array
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateNestedArray(
-      'annotatedDimensions',
-      newAnnotatedDimensionSetWidth,
       newPageSettings,
+      newAnnotatedDimensionSetWidth,
+      'annotatedDimensions',
       'add',
     );
 
@@ -1702,9 +1702,9 @@ export default class Painter {
 
     // update the `newPageSettings` array
     newPageSettings = updateNestedArray(
-      'annotatedDimensions',
-      newAnnotatedDimensionSetHeight,
       newPageSettings,
+      newAnnotatedDimensionSetHeight,
+      'annotatedDimensions',
       'add',
     );
 
@@ -1852,9 +1852,9 @@ export default class Painter {
     // update the `newPageSettings` array
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
     newPageSettings = updateNestedArray(
-      'annotatedSpacings',
-      newAnnotatedSpacingSet,
       newPageSettings,
+      newAnnotatedSpacingSet,
+      'annotatedSpacings',
       'add',
     );
 

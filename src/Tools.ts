@@ -106,9 +106,9 @@ const updateArray = (
  * @private
  */
 const updateNestedArray = (
-  subArrayKey: string,
-  item: { id: string },
   parentArray: Array<any>,
+  item: { id: string },
+  subArrayKey: string,
   action: 'add' | 'update' | 'remove' = 'add',
 ) => {
   // set initial array reference
@@ -482,9 +482,9 @@ const setNodeSettings = (page: any, newNodeSettings: any): void => {
 
   // update the `newPageSettings` array with `newNodeSettings`
   newPageSettings = updateNestedArray(
-    'layerSettings',
-    newNodeSettings,
     newPageSettings,
+    newNodeSettings,
+    'layerSettings',
     'add',
   );
 
