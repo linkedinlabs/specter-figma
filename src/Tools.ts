@@ -166,33 +166,6 @@ const awaitUIReadiness = async (messenger?) => {
 };
 
 /**
- * @description Takes a node object and traverses parent relationships until the top-level
- * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
- *
- * @kind function
- * @name findTopFrame
- * @param {Object} node A Figma node object.
- *
- * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
- */
-const findTopFrame = (node: any) => {
-  let { parent } = node;
-
-  // if the parent is a page, we're done
-  if (parent && parent.type === 'PAGE') {
-    return parent;
-  }
-
-  // loop through each parent until we find the outermost FRAME
-  if (parent) {
-    while (parent && parent.parent.type !== 'PAGE') {
-      parent = parent.parent;
-    }
-  }
-  return parent;
-};
-
-/**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
  * (if one exists) for the node.
  *
@@ -233,6 +206,108 @@ const findParentInstance = (node: any) => {
   }
 
   return currentTopInstance;
+};
+
+/**
+ * @description Takes a node object and traverses parent relationships until the top-level
+ * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
+ *
+ * @kind function
+ * @name findTopFrame
+ * @param {Object} node A Figma node object.
+ *
+ * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
+ */
+const findTopFrame = (node: any) => {
+  let { parent } = node;
+
+  // if the parent is a page, we're done
+  if (parent && parent.type === 'PAGE') {
+    return parent;
+  }
+
+  // loop through each parent until we find the outermost FRAME
+  if (parent) {
+    while (parent && parent.parent.type !== 'PAGE') {
+      parent = parent.parent;
+    }
+  }
+  return parent;
+};
+
+/**
+ * @description Reverse iterates the node tree to determine the top-level component instance
+ * (if one exists) for the node. This allows you to easily find a Master Component when dealing
+ * with an instance that may be nested within several component instances.
+ *
+ * @kind function
+ * @name findTopInstance
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
+ */
+const findTopInstance = (node: any) => {
+  let { parent } = node;
+  let currentNode = node;
+  let currentTopInstance: InstanceNode = null;
+
+  if (parent) {
+    // iterate until the parent is a page
+    while (parent && parent.type !== 'PAGE') {
+      currentNode = parent;
+      if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+        // update the top-most main component with the current one
+        currentTopInstance = currentNode;
+      }
+      parent = parent.parent;
+    }
+  }
+
+  if (currentTopInstance) {
+    return currentTopInstance;
+  }
+  return null;
+};
+
+/**
+ * @description Reverse iterates the node tree to determine the top-level component
+ * (if one exists) for the node. This allows you to check if a node is part of a component.
+ *
+ * @kind function
+ * @name findTopComponent
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {Object} Returns the component (`ComponentNode`) or `null`.
+ */
+const findTopComponent = (node: any) => {
+  // return self if component
+  if (node.type === CONTAINER_NODE_TYPES.component) {
+    return node;
+  }
+
+  let { parent } = node;
+  let currentNode = node;
+  let componentNode: ComponentNode = null;
+  if (parent) {
+    // iterate until the parent is a page or component is found;
+    // components cannot nest inside other components, so we can stop at the first
+    // found component
+    while (parent && parent.type !== 'PAGE' && componentNode === null) {
+      currentNode = parent;
+      if (currentNode.type === CONTAINER_NODE_TYPES.component) {
+        // update the top-most main component with the current one
+        componentNode = currentNode;
+      }
+      parent = parent.parent;
+    }
+  }
+
+  if (componentNode) {
+    return componentNode;
+  }
+  return null;
 };
 
 /**
@@ -439,6 +514,64 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
 };
 
 /**
+ * @description Maps the nesting order of a node within the tree and then uses that “map”
+ * as a guide to find the peer node within the an instance’s Master Component.
+ *
+ * @kind function
+ * @name matchMasterPeerNode
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ * @param {Object} topNode A Figma instance node object (`InstanceNode`).
+ *
+ * @returns {Object} Returns the main component or `null`.
+ */
+const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
+  // finds the `index` of self in the parent’s children list
+  const indexAtParent = (childNode: any): number => childNode.parent.children.findIndex(
+    child => child.id === childNode.id,
+  );
+
+  // set some defaults
+  let { parent } = node;
+  const childIndices = [];
+  const mainComponentNode = topNode.mainComponent;
+  let mainPeerNode = null;
+  let currentNode = node;
+
+  // iterate up the chain, collecting indices in each child list
+  if (parent) {
+    childIndices.push(indexAtParent(node));
+    while (parent && parent.id !== topNode.id) {
+      currentNode = parent;
+      parent = parent.parent;
+      childIndices.push(indexAtParent(currentNode));
+    }
+  }
+
+  // navigate down the chain of the corresponding main component using the
+  // collected child indices to locate the peer node
+  if (childIndices.length > 0 && mainComponentNode) {
+    const childIndicesReversed = childIndices.reverse();
+    let { children } = mainComponentNode;
+    let selectedChild = null;
+
+    childIndicesReversed.forEach((childIndex, index) => {
+      selectedChild = children[childIndex];
+      if ((childIndicesReversed.length - 1) > index) {
+        children = selectedChild.children;
+      }
+    });
+
+    // the last selected child should be the peer node
+    if (selectedChild) {
+      mainPeerNode = selectedChild;
+    }
+  }
+
+  return mainPeerNode;
+};
+
+/**
  * @description Resizes the plugin iframe GUI within the Figma app.
  *
  * @kind function
@@ -520,8 +653,10 @@ const toSentenceCase = (anyString: string): string => {
 export {
   asyncForEach,
   awaitUIReadiness,
-  findTopFrame,
   findParentInstance,
+  findTopFrame,
+  findTopInstance,
+  findTopComponent,
   getNodeSettings,
   getRelativeIndex,
   getRelativePosition,
@@ -529,6 +664,7 @@ export {
   isInternal,
   isVisible,
   loadFirstAvailableFontAsync,
+  matchMasterPeerNode,
   resizeGUI,
   setNodeSettings,
   toSentenceCase,
