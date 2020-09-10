@@ -46,10 +46,55 @@ const pollWithPromise = (
 /**
  * @description A reusable helper function to take an array and add or remove data from it
  * based on a top-level key and a defined action.
- * an action (`add` or `remove`).
  *
  * @kind function
  * @name updateArray
+ *
+ * @param {Array} array The array to be modified.
+ * @param {Object} item Object containing the new bit of data to add, remove, or update.
+ * @param {string} itemKey String representing the key to match (default is `id`).
+ * @param {string} action Constant string representing the action to take
+ * (`add`, `update`, or `remove`).
+ *
+ * @returns {Object} The modified array.
+ */
+const updateArray = (
+  array: Array<any>,
+  item,
+  itemKey: string = 'id',
+  action: 'add' | 'update' | 'remove' = 'add',
+) => {
+  let updatedArray = array;
+
+  // find the index of a pre-existing `id` match on the array
+  const itemIndex: number = updatedArray.findIndex(
+    foundItem => (foundItem[itemKey] === item[itemKey]),
+  );
+
+  // if a match exists, remove it
+  // even if the action is `add`, always remove the existing entry to prevent duplicates
+  if (itemIndex > -1) {
+    updatedArray = [
+      ...updatedArray.slice(0, itemIndex),
+      ...updatedArray.slice(itemIndex + 1),
+    ];
+  }
+
+  // if the `action` is `add` (or update), append the new `item` to the array
+  if (action !== 'remove') {
+    updatedArray.push(item);
+  }
+
+  return updatedArray;
+};
+
+/**
+ * @description A reusable helper function to take an array and add or remove data from it
+ * based on a top-level key and a defined action.
+ * an action (`add` or `remove`).
+ *
+ * @kind function
+ * @name updateNestedArray
  *
  * @param {string} key String representing the top-level area of the array to modify.
  * @param {Object} item Object containing the new bit of data to add or
@@ -60,38 +105,23 @@ const pollWithPromise = (
  * @returns {Object} The modified array.
  * @private
  */
-const updateArray = (
-  key: string,
+const updateNestedArray = (
+  subArrayKey: string,
   item: { id: string },
-  array: Array<any>,
-  action: 'add' | 'remove' = 'add',
+  parentArray: Array<any>,
+  action: 'add' | 'update' | 'remove' = 'add',
 ) => {
-  let updatedItems = null;
-  const updatedArray = array;
+  // set initial array reference
+  const updatedArray = parentArray;
 
-  // initialize the key if it does not exist
-  if (!updatedArray[key]) {
-    updatedArray[key] = [];
+  // initialize the sub array if it does not exist
+  if (!updatedArray[subArrayKey]) {
+    updatedArray[subArrayKey] = [];
   }
 
-  // find the index of a pre-existing `id` match on the array
-  const itemIndex: number = updatedArray[key].findIndex(foundItem => (foundItem.id === item.id));
-
-  // if a match exists, remove it
-  // even if the action is `add`, always remove the existing entry to prevent duplicates
-  if (itemIndex > -1) {
-    updatedItems = [
-      ...updatedArray[key].slice(0, itemIndex),
-      ...updatedArray[key].slice(itemIndex + 1),
-    ];
-
-    updatedArray[key] = updatedItems;
-  }
-
-  // if the `action` is `add`, append the new `item` to the array
-  if (action === 'add') {
-    updatedArray[key].push(item);
-  }
+  // update the sub array
+  const updatedItems = updateArray(updatedArray[subArrayKey], item, 'id', action);
+  updatedArray[subArrayKey] = updatedItems;
 
   return updatedArray;
 };
@@ -451,7 +481,7 @@ const setNodeSettings = (page: any, newNodeSettings: any): void => {
   }
 
   // update the `newPageSettings` array with `newNodeSettings`
-  newPageSettings = updateArray(
+  newPageSettings = updateNestedArray(
     'layerSettings',
     newNodeSettings,
     newPageSettings,
@@ -503,4 +533,5 @@ export {
   setNodeSettings,
   toSentenceCase,
   updateArray,
+  updateNestedArray,
 };
