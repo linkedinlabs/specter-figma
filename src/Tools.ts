@@ -6,7 +6,7 @@ import {
 
 const hexRgb = require('hex-rgb');
 
-// --- helper functions
+// --- helper functions other Tools depend on
 /**
  * @description An approximation of `setTimeout` but run in an async manner
  * with logging to Messenger.
@@ -96,50 +96,22 @@ const updateArray = (
   return updatedArray;
 };
 
-/**
- * @description A helper function to take a hexcolor string, conver it to an object in RGB format,
- * and further convert the `red`, `green`, and `blue` values to a decimal value.
- *
- * @kind function
- * @name hexToDecimalRGB
- * @param {string} hexColor A color in hex format (i.e. `#ffcc00`).
- *
- * @returns {Object} A representation of the original hex color in red, green, and blue (`r`,
- * `g`, `b`) decimal values.
- */
-const hexToDecimalRgb = (hexColor: string): {
-  r: number,
-  g: number,
-  b: number,
-} => {
-  const rgbColor: { red: number, green: number, blue: number } = hexRgb(hexColor);
+// --- helper functions
+// we need to wait for the UI to be ready:
+// network calls are made through the UI iframe
+const awaitUIReadiness = async (messenger?) => {
+  // set UI readiness check to falsey
+  let ready = false;
 
-  const r: number = (rgbColor.red / 255);
-  const g: number = (rgbColor.green / 255);
-  const b: number = (rgbColor.blue / 255);
+  // simple function to check truthiness of `ready`
+  const isUIReady = () => ready;
 
-  const decimalRgb: { r: number, g: number, b: number } = { r, g, b };
-  return decimalRgb;
-};
+  // set a one-time use listener
+  figma.ui.once('message', (msg) => {
+    if (msg && msg.loaded) { ready = true; }
+  });
 
-/**
- * @description Takes a string and converts everything except for the first alpha-letter to
- * lowercase. It also capitalizes the first alpha-letter.
- *
- * @kind function
- * @name toSentenceCase
- * @param {string} anyString String of text to title-case.
- *
- * @returns {string} The title-cased string.
- */
-const toSentenceCase = (anyString: string): string => {
-  const lowerCaseString = anyString.toLowerCase();
-  const titleCaseString = lowerCaseString.replace(
-    /[a-z]/i,
-    firstLetter => firstLetter.toUpperCase(),
-  ).trim();
-
-  return titleCaseString;
+  await pollWithPromise(isUIReady, messenger);
 };
 
 /**
@@ -212,57 +184,28 @@ const findParentInstance = (node: any) => {
   return currentTopInstance;
 };
 
-// we need to wait for the UI to be ready:
-// network calls are made through the UI iframe
-const awaitUIReadiness = async (messenger?) => {
-  // set UI readiness check to falsey
-  let ready = false;
-
-  // simple function to check truthiness of `ready`
-  const isUIReady = () => ready;
-
-  // set a one-time use listener
-  figma.ui.once('message', (msg) => {
-    if (msg && msg.loaded) { ready = true; }
-  });
-
-  await pollWithPromise(isUIReady, messenger);
-};
-
 /**
- * @description Takes an array of typefaces (`FontName`), iterates through the array, checking
- * the system available of each typeface and loading the first available.
+ * @description Takes a Figma page object and a `nodeId` and uses the Figma API’s
+ * `getPluginData` to extract and return a specific node’s settings.
  *
  * @kind function
- * @name loadFirstAvailableFontAsync
- * @param {Array} typefaces Array of typefaces in the `FontName` format.
+ * @name getNodeSettings
+ * @param {Object} page A Figma page object.
+ * @param {string} nodeId A string representing a node ID.
  *
- * @returns {Object} Returns the first successfully-loaded `FontName`.
+ * @returns {Object} The settings object that corresponds to the supplied `nodeId`.
  */
-const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
-  let typefaceToUse = null;
-  const availableFonts: Array<Font> = await figma.listAvailableFontsAsync();
+const getNodeSettings = (page: any, nodeId: string) => {
+  const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
+  let nodeSettings: any = null;
+  if (pageSettings && pageSettings.layerSettings) {
+    const settingSetIndex = pageSettings.layerSettings.findIndex(
+      settingsSet => (settingsSet.id === nodeId),
+    );
+    nodeSettings = pageSettings.layerSettings[settingSetIndex];
+  }
 
-  // check if a `typeface` is listed in `availableFonts`
-  // family AND style must match
-  const isAvailable = (typeface: FontName) => availableFonts.filter(
-    font => (
-      (font.fontName.family === typeface.family)
-      && (font.fontName.style === typeface.style)
-    ),
-  );
-
-  // iterate through `typefaces` array and find the first available
-  typefaces.forEach((typeface) => {
-    if (!typefaceToUse && isAvailable(typeface).length > 0) {
-      typefaceToUse = typeface;
-    }
-  });
-
-  // load the typeface
-  await figma.loadFontAsync(typefaceToUse);
-
-  return typefaceToUse;
+  return nodeSettings;
 };
 
 /**
@@ -345,27 +288,125 @@ const getRelativePosition = (
 };
 
 /**
- * @description Takes a Figma page object and a `nodeId` and uses the Figma API’s
- * `getPluginData` to extract and return a specific node’s settings.
+ * @description A helper function to take a hexcolor string, conver it to an object in RGB format,
+ * and further convert the `red`, `green`, and `blue` values to a decimal value.
  *
  * @kind function
- * @name getNodeSettings
- * @param {Object} page A Figma page object.
- * @param {string} nodeId A string representing a node ID.
+ * @name hexToDecimalRGB
+ * @param {string} hexColor A color in hex format (i.e. `#ffcc00`).
  *
- * @returns {Object} The settings object that corresponds to the supplied `nodeId`.
+ * @returns {Object} A representation of the original hex color in red, green, and blue (`r`,
+ * `g`, `b`) decimal values.
  */
-const getNodeSettings = (page: any, nodeId: string) => {
-  const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
-  let nodeSettings: any = null;
-  if (pageSettings && pageSettings.layerSettings) {
-    const settingSetIndex = pageSettings.layerSettings.findIndex(
-      settingsSet => (settingsSet.id === nodeId),
-    );
-    nodeSettings = pageSettings.layerSettings[settingSetIndex];
+const hexToDecimalRgb = (hexColor: string): {
+  r: number,
+  g: number,
+  b: number,
+} => {
+  const rgbColor: { red: number, green: number, blue: number } = hexRgb(hexColor);
+
+  const r: number = (rgbColor.red / 255);
+  const g: number = (rgbColor.green / 255);
+  const b: number = (rgbColor.blue / 255);
+
+  const decimalRgb: { r: number, g: number, b: number } = { r, g, b };
+  return decimalRgb;
+};
+
+/**
+ * @description Checks the `FEATURESET` environment variable from webpack and
+ * determines if the featureset build should be `internal` or not.
+ *
+ * @kind function
+ * @name isInternal
+ *
+ * @returns {boolean} `true` if the build is internal, `false` if it is not.
+ */
+const isInternal = (): boolean => {
+  const buildIsInternal: boolean = process.env.FEATURESET === 'internal';
+  return buildIsInternal;
+};
+
+/**
+ * @description Check if a node (or any of its parents) are hidden and returns false if they are.
+ *
+ * @kind function
+ * @name isVisible
+ *
+ * @param {Object} node A Figma `SceneNode` object.
+ *
+ * @returns {boolean} `true` if the build is internal, `false` if it is not.
+ */
+const isVisible = (node: SceneNode): boolean => {
+  // if original node is hidden, no need to proceed
+  if (!node.visible) { return false; }
+
+  if (
+    node.parent.type !== 'PAGE'
+    && node.parent.type !== 'DOCUMENT'
+  ) {
+    return isVisible(node.parent);
   }
 
-  return nodeSettings;
+  return true;
+};
+
+/**
+ * @description Takes an array of typefaces (`FontName`), iterates through the array, checking
+ * the system available of each typeface and loading the first available.
+ *
+ * @kind function
+ * @name loadFirstAvailableFontAsync
+ * @param {Array} typefaces Array of typefaces in the `FontName` format.
+ *
+ * @returns {Object} Returns the first successfully-loaded `FontName`.
+ */
+const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
+  let typefaceToUse = null;
+  const availableFonts: Array<Font> = await figma.listAvailableFontsAsync();
+
+  // check if a `typeface` is listed in `availableFonts`
+  // family AND style must match
+  const isAvailable = (typeface: FontName) => availableFonts.filter(
+    font => (
+      (font.fontName.family === typeface.family)
+      && (font.fontName.style === typeface.style)
+    ),
+  );
+
+  // iterate through `typefaces` array and find the first available
+  typefaces.forEach((typeface) => {
+    if (!typefaceToUse && isAvailable(typeface).length > 0) {
+      typefaceToUse = typeface;
+    }
+  });
+
+  // load the typeface
+  await figma.loadFontAsync(typefaceToUse);
+
+  return typefaceToUse;
+};
+
+/**
+ * @description Resizes the plugin iframe GUI within the Figma app.
+ *
+ * @kind function
+ * @name resizeGUI
+ * @param {string} type A string representing the `type` of GUI to load.
+ * @param {Function} ui An instance of `figma.ui` with the GUI pre-loaded.
+ *
+ * @returns {null}
+ */
+const resizeGUI = (
+  type: string,
+  ui: { resize: Function },
+): void => {
+  ui.resize(
+    GUI_SETTINGS[type].width,
+    GUI_SETTINGS[type].height,
+  );
+
+  return null;
 };
 
 /**
@@ -406,63 +447,23 @@ const setNodeSettings = (page: any, newNodeSettings: any): void => {
 };
 
 /**
- * @description Resizes the plugin iframe GUI within the Figma app.
+ * @description Takes a string and converts everything except for the first alpha-letter to
+ * lowercase. It also capitalizes the first alpha-letter.
  *
  * @kind function
- * @name resizeGUI
- * @param {string} type A string representing the `type` of GUI to load.
- * @param {Function} ui An instance of `figma.ui` with the GUI pre-loaded.
+ * @name toSentenceCase
+ * @param {string} anyString String of text to title-case.
  *
- * @returns {null}
+ * @returns {string} The title-cased string.
  */
-const resizeGUI = (
-  type: string,
-  ui: { resize: Function },
-): void => {
-  ui.resize(
-    GUI_SETTINGS[type].width,
-    GUI_SETTINGS[type].height,
-  );
+const toSentenceCase = (anyString: string): string => {
+  const lowerCaseString = anyString.toLowerCase();
+  const titleCaseString = lowerCaseString.replace(
+    /[a-z]/i,
+    firstLetter => firstLetter.toUpperCase(),
+  ).trim();
 
-  return null;
-};
-
-/**
- * @description Checks the `FEATURESET` environment variable from webpack and
- * determines if the featureset build should be `internal` or not.
- *
- * @kind function
- * @name isInternal
- *
- * @returns {boolean} `true` if the build is internal, `false` if it is not.
- */
-const isInternal = (): boolean => {
-  const buildIsInternal: boolean = process.env.FEATURESET === 'internal';
-  return buildIsInternal;
-};
-
-/**
- * @description Check if a node (or any of its parents) are hidden and returns false if they are.
- *
- * @kind function
- * @name isVisible
- *
- * @param {Object} node A Figma `SceneNode` object.
- *
- * @returns {boolean} `true` if the build is internal, `false` if it is not.
- */
-const isVisible = (node: SceneNode): boolean => {
-  // if original node is hidden, no need to proceed
-  if (!node.visible) { return false; }
-
-  if (
-    node.parent.type !== 'PAGE'
-    && node.parent.type !== 'DOCUMENT'
-  ) {
-    return isVisible(node.parent);
-  }
-
-  return true;
+  return titleCaseString;
 };
 
 export {
