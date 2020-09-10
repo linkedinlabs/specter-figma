@@ -96,11 +96,12 @@ const updateArray = (
  * @kind function
  * @name updateNestedArray
  *
- * @param {string} key String representing the top-level area of the array to modify.
- * @param {Object} item Object containing the new bit of data to add or
- * remove (must include an `id` string for comparison).
- * @param {Array} array The array to be modified.
- * @param {string} action Constant string representing the action to take (`add` or `remove`).
+ * @param {Array} parentArray The array to be modified.
+ * @param {Object} item Object containing the new bit of data to add, remove or
+ * update (must include an `id` string for comparison).
+ * @param {string} subArrayKey String representing the top-level area of the array to modify.
+ * @param {string} action Constant string representing the action to take
+ * (`add`, `update`, or `remove`).
  *
  * @returns {Object} The modified array.
  * @private
