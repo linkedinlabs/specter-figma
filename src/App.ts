@@ -77,9 +77,9 @@ export default class App {
       page,
       selection,
     } = assemble(figma);
-    // need one or two selected layers
+    // need one or two selected nodes
     if (selection === null || selection.length === 0) {
-      messenger.log(`Annotate corners: ${selection.length} layer(s) selected`);
+      messenger.log(`Annotate corners: ${selection.length} node(s) selected`);
       return messenger.toast('At least one layer must be selected');
     }
 
@@ -114,7 +114,7 @@ export default class App {
           && (shapeNode.bottomRightRadius > 0)
         ) {
           // set up Identifier instance for the node
-          const layerToAnnotate = new Identifier({
+          const nodeToAnnotate = new Identifier({
             for: node,
             data: page,
             dispatcher: this.dispatcher,
@@ -130,7 +130,7 @@ export default class App {
           });
 
           // retrieve corner token and set to node
-          const getCornerTokenResult = layerToAnnotate.getCornerToken();
+          const getCornerTokenResult = nodeToAnnotate.getCornerToken();
           messenger.handleResult(getCornerTokenResult);
 
           if (getCornerTokenResult.status === 'success') {
@@ -159,14 +159,14 @@ export default class App {
   }
 
   /**
-   * @description Identifies and annotates a selected layer or multiple layers in a Figma file.
+   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
    *
    * @kind function
-   * @name annotateLayer
+   * @name annotateNode
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  annotateLayer() {
+  annotateNode() {
     const {
       messenger,
       page,
@@ -175,29 +175,29 @@ export default class App {
 
     let shouldTerminateLocal = this.shouldTerminate;
 
-    // need a selected layer to annotate it
+    // need a selected node to annotate it
     if (selection === null || selection.length === 0) {
-      messenger.log('Annotate layer: nothing selected');
+      messenger.log('Annotate node: nothing selected');
       return messenger.toast('A layer must be selected');
     }
 
-    // iterate through each layer in a selection
-    const layers = new Crawler({ for: selection }).all();
-    const multipleLayers = (layers.length > 1);
+    // iterate through each node in a selection
+    const nodes = new Crawler({ for: selection }).all();
+    const multipleNodes = (nodes.length > 1);
 
-    layers.forEach((layer: BaseNode) => {
-      // set up Identifier instance for the layer
-      const layerToAnnotate = new Identifier({
-        for: layer,
+    nodes.forEach((node: BaseNode) => {
+      // set up Identifier instance for the node
+      const nodeToAnnotate = new Identifier({
+        for: node,
         data: page,
         dispatcher: this.dispatcher,
         isMercadoMode: this.isMercadoMode,
         messenger,
       });
 
-      // set up Painter instance for the layer
+      // set up Painter instance for the node
       const painter = new Painter({
-        for: layer,
+        for: node,
         in: page,
         isMercadoMode: this.isMercadoMode,
       });
@@ -222,23 +222,23 @@ export default class App {
       let hasText = false;
 
       // check first for custom text
-      const hasCustomTextResult = layerToAnnotate.hasCustomText();
+      const hasCustomTextResult = nodeToAnnotate.hasCustomText();
 
       if (hasCustomTextResult.status === 'error') {
         // find the name from a design library component, effect, or style
-        const getLibraryNameResult = layerToAnnotate.getLibraryName();
+        const getLibraryNameResult = nodeToAnnotate.getLibraryName();
         messenger.handleResult(getLibraryNameResult);
 
         if (getLibraryNameResult.status === 'error') {
-          if (!multipleLayers) {
-            // show the GUI if we are annotating a single custom layer
+          if (!multipleNodes) {
+            // show the GUI if we are annotating a single custom node
             if (shouldTerminateLocal) {
               shouldTerminateLocal = false;
               this.showGUI(this.isMercadoMode);
             }
 
             // present the option to set custom text
-            const setText = (callback: Function) => layerToAnnotate.setText(callback);
+            const setText = (callback: Function) => nodeToAnnotate.setText(callback);
             const handleSetTextResult = (setTextResult: {
               status: 'error' | 'success',
               messages: {
@@ -286,27 +286,27 @@ export default class App {
   }
 
   /**
-   * @description Annotates a selected layer in a Figma file with user input.
+   * @description Annotates a selected node in a Figma file with user input.
    *
    * @kind function
-   * @name annotateLayerCustom
+   * @name annotateNodeCustom
    *
-   * @returns {null} Shows a Toast in the UI if nothing is selected or if multiple layers
+   * @returns {null} Shows a Toast in the UI if nothing is selected or if multiple nodes
    * are selected.
    */
-  annotateLayerCustom() {
+  annotateNodeCustom() {
     const {
       messenger,
       page,
       selection,
     } = assemble(figma);
 
-    // need a selected layer to annotate it
+    // need a selected node to annotate it
     if (selection === null || selection.length === 0) {
       return messenger.toast('A layer must be selected');
     }
 
-    // need a single selected layer to annotate it
+    // need a single selected node to annotate it
     if (selection.length > 1) {
       return messenger.toast('Only one layer may be selected');
     }
@@ -315,12 +315,12 @@ export default class App {
       this.showGUI(this.isMercadoMode);
     }
 
-    // grab the layer form the selection
-    const layer = new Crawler({ for: selection }).first();
+    // grab the node form the selection
+    const node = new Crawler({ for: selection }).first();
 
-    // set up Identifier instance for the layer
-    const layerToAnnotate = new Identifier({
-      for: layer,
+    // set up Identifier instance for the node
+    const nodeToAnnotate = new Identifier({
+      for: node,
       data: page,
       dispatcher: this.dispatcher,
       isMercadoMode: this.isMercadoMode,
@@ -328,15 +328,15 @@ export default class App {
       shouldTerminate: this.shouldTerminate,
     });
 
-    // set up Painter instance for the layer
+    // set up Painter instance for the node
     const painter = new Painter({
-      for: layer,
+      for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
     });
 
     // determine the annotation text
-    const setText = (callback: Function) => layerToAnnotate.setText(callback);
+    const setText = (callback: Function) => nodeToAnnotate.setText(callback);
     const handleSetTextResult = (setTextResult: {
       status: 'error' | 'success',
       messages: {
@@ -370,17 +370,17 @@ export default class App {
   }
 
   /**
-   * @description If two layers are selected: annotates the selection with the
-   * spacing number (“IS-X”) based on either the gap between the two layers or, if they
+   * @description If two nodes are selected: annotates the selection with the
+   * spacing token (“IS-X”) based on either the gap between the two nodes or, if they
    * are overlapping, the 4 directions of overlap (top, bottom, right, and left). If
-   * one layer is selected: annotates the height and width of the selected layer
+   * one node is selected: annotates the height and width of the selected node
    * in “dp” (digital points) units.
    *
    * @kind function
    * @name annotateMeasurement
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected or
-   * if more than two layers are selected.
+   * if more than two nodes are selected.
    */
   annotateMeasurement() {
     const {
@@ -388,25 +388,25 @@ export default class App {
       page,
       selection,
     } = assemble(figma);
-    // need one or two selected layers
+    // need one or two selected nodes
     if (selection === null || selection.length === 0 || selection.length > 2) {
-      messenger.log(`Annotate measurement: ${selection.length} layer(s) selected`);
+      messenger.log(`Annotate measurement: ${selection.length} node(s) selected`);
       return messenger.toast('One or two layers must be selected');
     }
 
     // grab the gap position from the selection
     const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
+    const node = crawler.first();
 
-    // set up Painter instance for the reference layer
+    // set up Painter instance for the reference node
     const painter = new Painter({
-      for: layer,
+      for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
     });
 
     // draw the spacing annotation
-    // (if gap position exists or layers are overlapped)
+    // (if gap position exists or nodes are overlapped)
     let paintResult = null;
     if (selection.length === 2) {
       const gapPositionResult = crawler.gapPosition();
@@ -445,8 +445,8 @@ export default class App {
   }
 
   /**
-   * @description Annotates the selection with the spacing number (“IS-X”) based on either
-   * the gap between the two layers or, if they are overlapping, the 4 directions of overlap
+   * @description Annotates the selection with the spacing token (“IS-X”) based on either
+   * the gap between the two nodes or, if they are overlapping, the 4 directions of overlap
    * (top, bottom, right, and left).
    *
    * @kind function
@@ -454,7 +454,7 @@ export default class App {
    * @param {string} direction An optional string representing the annotation direction.
    * Valid inputs are `top`, `bottom`, `right` (default), and `left`.
    * @returns {null} Shows a Toast in the UI if nothing is selected or
-   * if more than two layers are selected.
+   * if more than two nodes are selected.
    */
   annotateSpacingOnly(direction: 'top' | 'bottom' | 'left' | 'right' = 'right') {
     const {
@@ -463,24 +463,24 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    // need a selected layer to annotate it
+    // need a selected node to annotate it
     if (selection === null || selection.length !== 2) {
       return messenger.toast('Two layers must be selected');
     }
 
     // grab the gap position from the selection
     const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
+    const node = crawler.first();
 
-    // set up Painter instance for the reference layer
+    // set up Painter instance for the reference node
     const painter = new Painter({
-      for: layer,
+      for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
     });
 
     // draw the spacing annotation
-    // (if gap position exists or layers are overlapped)
+    // (if gap position exists or nodes are overlapped)
     let paintResult = null;
     if (selection.length === 2) {
       const overlapPositionsResult = crawler.overlapPositions();
@@ -511,7 +511,7 @@ export default class App {
   }
 
   /**
-   * @description Annotates the selection with the spacing number (“IS-X”) based on the
+   * @description Annotates the selection with the spacing token (“IS-X”) based on the
    * surrounding padding (top, bottom, right, and left). The selection must be a
    * node with auto-layout enabled.
    *
@@ -528,23 +528,23 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    // need a selected layer to annotate it
+    // need a selected node to annotate it
     if (selection === null || selection.length > 1) {
       return messenger.toast('One layer must be selected');
     }
 
     // grab the gap position from the selection
     const crawler = new Crawler({ for: selection });
-    const layer = crawler.first();
+    const node = crawler.first();
 
     // need a node with auto-layout to annotate it
-    if (layer.type !== 'FRAME' || (layer.type === 'FRAME' && layer.layoutMode === 'NONE')) {
+    if (node.type !== 'FRAME' || (node.type === 'FRAME' && node.layoutMode === 'NONE')) {
       return messenger.toast('A layer with auto-layout enabled must be selected');
     }
 
-    // set up Painter instance for the reference layer
+    // set up Painter instance for the reference node
     const painter = new Painter({
-      for: layer,
+      for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
     });
@@ -596,7 +596,7 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    // need a selected layer to annotate it
+    // need a selected node to annotate it
     if (selection === null || selection.length === 0) {
       messenger.log('Draw bounding box: nothing selected');
       return messenger.toast('At least one layer must be selected');
@@ -606,7 +606,7 @@ export default class App {
       // grab the position from the selection
       const crawler = new Crawler({ for: nodes });
 
-      const layer = crawler.first();
+      const node = crawler.first();
       const positionResult = crawler.position();
 
       // read the response from Crawler; log and display message(s)
@@ -615,7 +615,7 @@ export default class App {
       if (positionResult.status === 'success' && positionResult.payload) {
         const position = positionResult.payload;
         const painter = new Painter({
-          for: layer,
+          for: node,
           in: page,
           isMercadoMode: this.isMercadoMode,
         });

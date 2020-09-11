@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "types": ["node", "@pyoner/svelte-types"]
+    "types": [
+      "node",
+      "@pyoner/svelte-types",
+      "@figma/plugin-typings"
+    ]
   }
 }

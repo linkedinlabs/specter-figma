@@ -161,7 +161,7 @@ const TYPEFACES: Array<FontName> = [
 
 /**
  * @description An object containing the current string constants the Figma API returns for
- * top-level (`main`) layer and `group` layer types.
+ * top-level (`main`) node and `group` node types.
  *
  * @kind constant
  * @name CONTAINER_NODE_TYPES
