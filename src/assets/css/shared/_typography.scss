@@ -11,15 +11,16 @@
   color: rgba($wl-type-01, 0.8);
 }
 
-@mixin type-02 {
-  @include type-01;
+@mixin type-02($weight: 400) {
+  @include type-01($weight);
   color: $wl-type-02;
 }
 
-@mixin type-03 {
-  @include type-01(600);
-  font-size: em(14);
-  line-height: em(24);
+@mixin type-03($weight: 400) {
+  @include type-01($weight);
+  font-size: 15px;
+  line-height: 22px;
+  letter-spacing: -0.15;
 }
 
 // force some other weights to pre-load (prevents the flout effect)
@@ -33,8 +34,12 @@
   }
 
   strong {
-    @include type-01(700);
+    @include type-01(500);
   }
+}
+
+h2, h3 {
+  @include type-02;
 }
 
 h2, h3, p, ul {
