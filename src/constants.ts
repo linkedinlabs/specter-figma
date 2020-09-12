@@ -184,8 +184,8 @@ const CONTAINER_NODE_TYPES = {
  */
 const GUI_SETTINGS = {
   default: {
-    width: 140,
-    height: 132,
+    width: 360,
+    height: 180,
   },
   input: {
     width: 440,
@@ -196,8 +196,8 @@ const GUI_SETTINGS = {
     height: 324,
   },
   mercadoDefault: {
-    width: 140,
-    height: 190,
+    width: 360,
+    height: 220,
   },
 };
 
