@@ -3,6 +3,7 @@
   import { isMercadoStored } from './stores';
   import ButtonInfoTrigger from './ButtonInfoTrigger';
   import FontPreload from './FontPreload';
+  import SceneNavigator from './SceneNavigator';
   import InfoPanel from './InfoPanel';
   import MainPanel from './MainPanel';
   import UserInput from './UserInput';
@@ -36,6 +37,7 @@
 
 <!-- core layout -->
 <FontPreload/>
+<SceneNavigator/>
 <div class={`container${isUserInput ? ' wide' : ''}`}>
   <div class="transition-mask"></div>
 
