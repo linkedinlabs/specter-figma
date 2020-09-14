@@ -37,7 +37,10 @@
 
 <!-- core layout -->
 <FontPreload/>
+{#if !isInfoPanel && !isUserInput}
 <SceneNavigator/>
+{/if}
+
 <div class={`container${isUserInput ? ' wide' : ''}`}>
   <div class="transition-mask"></div>
 
