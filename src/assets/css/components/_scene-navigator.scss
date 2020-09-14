@@ -91,6 +91,7 @@
 nav {
   &.scene-navigator {
     @include scene-navigator;
+    padding-left: em(8);
   }
 }
 
