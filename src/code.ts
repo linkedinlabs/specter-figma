@@ -100,10 +100,10 @@ const dispatcher = async (action: {
   const runAction = async (actionType: string) => {
     switch (actionType) {
       case 'annotate':
-        app.annotateLayer();
+        app.annotateNode();
         break;
       case 'annotate-custom':
-        app.annotateLayerCustom();
+        app.annotateNodeCustom();
         break;
       case 'annotate-spacing-left':
         app.annotateSpacingOnly('left');

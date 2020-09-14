@@ -1,14 +1,14 @@
 import { CONTAINER_NODE_TYPES } from './constants';
 import {
-  findFrame,
+  findTopFrame,
   getRelativeIndex,
   getRelativePosition,
 } from './Tools';
 
 /**
  * @description A class to handle traversing an array of selected items and return useful items
- * (child layers, first in selection, layer position, dimensions and position of layer gaps
- * and overlapping layer negative space).
+ * (child nodes, first in selection, node position, dimensions and position of node gaps
+ * and overlapping node negative space).
  *
  * @class
  * @name Crawler
@@ -28,18 +28,21 @@ export default class Crawler {
    *
    * @kind function
    * @name first
-   * @returns {Object} The first layer item in the array.
+   * @returns {Object} The first node item in the array.
    */
   first() {
     return this.array[0];
   }
 
   /**
-   * @description Looks into the selection array for any groups and pulls out individual layers,
-   * effectively flattening the selection.
+   * @description Looks into the selection array for any groups and pulls out individual nodes,
+   * effectively flattening the selection. NOTE: Component and Instance types are included to
+   * allow Specter to annotate at the top-level. If they are excluded, components nested within
+   * components will also be annotated.
    *
    * @kind function
    * @name all
+   *
    * @returns {Object} All items (including children) individual in an updated array.
    */
   all() {
@@ -47,23 +50,36 @@ export default class Crawler {
     const flatSelection = [];
 
     // iterate through initial selection
-    initialSelection.forEach((layer: any) => {
+    initialSelection.forEach((node: any) => {
       if (
-        layer.type !== CONTAINER_NODE_TYPES.group
-        && layer.type !== CONTAINER_NODE_TYPES.frame
+        node.type !== CONTAINER_NODE_TYPES.group
+        && node.type !== CONTAINER_NODE_TYPES.frame
+        // && node.type !== CONTAINER_NODE_TYPES.component
+        // && node.type !== CONTAINER_NODE_TYPES.instance
+        && node.visible
+        && !node.locked
       ) {
-        // non-frame or -group layers get added to the final selection
-        flatSelection.push(layer);
+        // non-frame or -group nodes get added to the final selection
+        flatSelection.push(node);
       } else {
-        // +++ frames and groups are checked for child layers
+        // +++ frames and groups are added for their own styles to be evaluated
+        flatSelection.push(node);
+
+        // +++ frames and groups are checked for child nodes
 
         // set initial holding array and add first level of children
         let innerLayers = [];
-        layer.children.forEach(child => innerLayers.push(child));
+        if (node.visible && !node.locked) {
+          node.children.forEach((child) => {
+            if (child.visible && !node.locked) {
+              innerLayers.push(child);
+            }
+          });
+        }
 
         /**
-         * @description Iterates through `innerLayers`, adding normal layers to the `flatSelection`
-         * array, while adding any additional children layers into the `innerLayers` array.
+         * @description Iterates through `innerLayers`, adding normal nodes to the `flatSelection`
+         * array, while adding any additional children nodes into the `innerLayers` array.
          *
          * @kind function
          * @name iterateKnownChildren
@@ -72,28 +88,39 @@ export default class Crawler {
          * @private
          */
         const iterateKnownChildren = (): void => {
-          // iterate through known child layers in `innerLayers`,
-          // adding more children to the array as they are found in descendent layers
+          // iterate through known child nodes in `innerLayers`,
+          // adding more children to the array as they are found in descendent nodes
           innerLayers.forEach((
             innerLayer: {
               children: any,
               id: string,
               type: string,
               visible: boolean,
+              locked: boolean,
             },
           ) => {
             if (
               innerLayer.type !== CONTAINER_NODE_TYPES.group
               && innerLayer.type !== CONTAINER_NODE_TYPES.frame
+              // && innerLayer.type !== CONTAINER_NODE_TYPES.component
+              // && innerLayer.type !== CONTAINER_NODE_TYPES.instance
               && innerLayer.visible
+              && !innerLayer.locked
             ) {
-              // non-frame or -group layers get added to the final selection
+              // non-frame or -group nodes get added to the final selection
               flatSelection.push(innerLayer);
-            } else {
-              innerLayer.children.forEach(child => innerLayers.push(child));
+            } else if (innerLayer.visible && !innerLayer.locked) {
+              // frames and groups are added for their own styles to be evaluated
+              flatSelection.push(innerLayer);
+
+              innerLayer.children.forEach((child) => {
+                if (child.visible && !child.locked) {
+                  innerLayers.push(child);
+                }
+              });
             }
 
-            // update the overall list of child layers, removing the layer that was just examined.
+            // update the overall list of child nodes, removing the node that was just examined.
             // this array should eventually be empty, breaking the `while` loop
             const innerLayerIndex = innerLayers.findIndex(
               foundInnerLayer => (foundInnerLayer.id === innerLayer.id),
@@ -113,7 +140,36 @@ export default class Crawler {
         }
       }
     });
+
     return flatSelection;
+  }
+
+  /**
+   * @description Looks into the selection array for any groups and pulls out individual nodes,
+   * effectively flattening the selection.
+   *
+   * @kind function
+   * @name allSorted
+   *
+   * @returns {Object} All items (including children) individual in an updated array.
+   */
+  allSorted() {
+    // start with flattened selection of all nodes
+    const nodes = this.all();
+
+    // sort by `y` position and then `x` if `y` values are equal
+    const sortByPosition = (nodeA, nodeB) => {
+      const aPos = { x: nodeA.absoluteTransform[0][2], y: nodeA.absoluteTransform[1][2] };
+      const bPos = { x: nodeB.absoluteTransform[0][2], y: nodeB.absoluteTransform[1][2] };
+
+      if (aPos.y === bPos.y) {
+        return aPos.x - bPos.x;
+      }
+      return aPos.y - bPos.y;
+    };
+
+    const sortedLayers = nodes.sort(sortByPosition);
+    return sortedLayers;
   }
 
   /**
@@ -132,10 +188,10 @@ export default class Crawler {
    */
   static getBoundingPositition(node) {
     // find out top node
-    const topFrame: SceneNode = findFrame(node);
+    const topFrame: FrameNode = findTopFrame(node);
 
     // clone the node that will need positioning coordinates
-    const newLayer: SceneNode = node.clone();
+    const newNode: SceneNode = node.clone();
 
     // set the cloned node’s positioning by comparing `absoluteTransform` values between
     // the original node and the top-level frame node.
@@ -154,16 +210,16 @@ export default class Crawler {
         node.absoluteTransform[1][2] - topFrame.absoluteTransform[1][2],
       ],
     ];
-    newLayer.relativeTransform = newTransformMatrix;
+    newNode.relativeTransform = newTransformMatrix;
 
     // add the clone to the first level of top node; group it for further evaluation.
     // grouping a node creates a new node that is not rotated and covers the entire bounds
     // of the original node (in case it is rotated). we will use the group for the final
     // positioning coordinates
-    topFrame.appendChild(newLayer);
-    const newLayerGroupArray = [newLayer];
-    const newLayerGroup = figma.group(newLayerGroupArray, topFrame);
-    const relativePosition = getRelativePosition(newLayerGroup, topFrame);
+    topFrame.appendChild(newNode);
+    const newNodeGroupArray = [newNode];
+    const newNodeGroup = figma.group(newNodeGroupArray, topFrame);
+    const relativePosition = getRelativePosition(newNodeGroup, topFrame);
 
     // set up the bounds positioning based on the group, not the original or cloned nodes
     const nodeBoundingPosition: {
@@ -176,14 +232,14 @@ export default class Crawler {
     } = {
       x: relativePosition.x,
       y: relativePosition.y,
-      xOuter: relativePosition.x + newLayerGroup.width,
-      yOuter: relativePosition.y + newLayerGroup.height,
-      width: newLayerGroup.width,
-      height: newLayerGroup.height,
+      xOuter: relativePosition.x + newNodeGroup.width,
+      yOuter: relativePosition.y + newNodeGroup.height,
+      width: newNodeGroup.width,
+      height: newNodeGroup.height,
     };
 
     // remove the cloned node (this will also remove the group)
-    newLayer.remove();
+    newNode.remove();
 
     // return the coordinates
     return nodeBoundingPosition;
@@ -192,7 +248,7 @@ export default class Crawler {
   /**
    * @description Creates an object containing `x`, `y` coordinates and `width` and `height`
    * an entire selection, keeping the coordinates relative to the frame, ignoring if some
-   * items are grouped inside other layers.
+   * items are grouped inside other nodes.
    *
    * @kind function
    * @name position
@@ -238,8 +294,8 @@ export default class Crawler {
 
     // check for top frames
     let allHaveTopFrames = true;
-    selection.forEach((layer) => {
-      const topFrame = findFrame(layer);
+    selection.forEach((node) => {
+      const topFrame: FrameNode = findTopFrame(node);
       if (!topFrame) {
         allHaveTopFrames = false;
       }
@@ -252,10 +308,10 @@ export default class Crawler {
       return result;
     }
 
-    // iterate through the selected layers and update the frame inner `x`/`y` values and
+    // iterate through the selected nodes and update the frame inner `x`/`y` values and
     // the outer `x`/`y` values
-    selection.forEach((layer) => {
-      const nodeBoundingPosition = Crawler.getBoundingPositition(layer);
+    selection.forEach((node) => {
+      const nodeBoundingPosition = Crawler.getBoundingPositition(node);
 
       // set upper-left x
       if (
@@ -300,16 +356,16 @@ export default class Crawler {
   }
 
   /**
-   * @description Simulates position(), but for the space between two selected layers.
+   * @description Simulates position(), but for the space between two selected nodes.
    * It keeps the coordinates relative to the artboard, ignoring if some of the items are
-   * grouped inside other layers. It also adds an orientation `horizontal` or `vertical`
-   * based on the gap orientation. Assumes only 2 layers are selected.
+   * grouped inside other nodes. It also adds an orientation `horizontal` or `vertical`
+   * based on the gap orientation. Assumes only 2 nodes are selected.
    *
    * @kind function
    * @name gapPosition
    * @returns {Object} The `x`, `y` coordinates, `width`, `height`, and `orientation`
-   * of an entire selection. It also includes layer IDs (`layerAId` and `layerBId`)
-   * for the two layers used to calculated the gap position.
+   * of an entire selection. It also includes node IDs (`layerAId` and `layerBId`)
+   * for the two nodes used to calculated the gap position.
    */
   gapPosition() {
     const result: {
@@ -350,95 +406,95 @@ export default class Crawler {
     // of an entire selection
     const selection = this.array;
 
-    // set the layers to a default for comparisons
+    // set the nodes to a default for comparisons
     const firstIndex: 0 = 0;
-    let layerA = selection[firstIndex];
-    let layerB = selection[firstIndex];
+    let nodeA = selection[firstIndex];
+    let nodeB = selection[firstIndex];
 
-    const layerATopFrame = findFrame(layerA);
-    const layerBTopFrame = findFrame(layerB);
+    const nodeATopFrame: FrameNode = findTopFrame(nodeA);
+    const nodeBTopFrame: FrameNode = findTopFrame(nodeB);
 
-    if (!layerATopFrame || !layerBTopFrame) {
+    if (!nodeATopFrame || !nodeBTopFrame) {
       result.status = 'error';
       result.messages.log = 'One or more nodes not inside a frame';
       result.messages.toast = 'All layers must be inside a frame';
       return result;
     }
 
-    let layerAPosition = Crawler.getBoundingPositition(layerA);
-    let layerBPosition = Crawler.getBoundingPositition(layerB);
+    let nodeAPosition = Crawler.getBoundingPositition(nodeA);
+    let nodeBPosition = Crawler.getBoundingPositition(nodeB);
 
     // assume the gap orientation is vertical
     let horizontalGap = false;
 
-    // find left-most (`layerA`) and right-most (`layerB`) layers
-    selection.forEach((layer) => {
-      const layerPosition = Crawler.getBoundingPositition(layer);
+    // find left-most (`nodeA`) and right-most (`nodeB`) nodes
+    selection.forEach((node) => {
+      const nodePosition = Crawler.getBoundingPositition(node);
 
-      if (layerPosition.x < layerAPosition.x) {
-        layerA = layer;
-        layerAPosition = Crawler.getBoundingPositition(layerA);
+      if (nodePosition.x < nodeAPosition.x) {
+        nodeA = node;
+        nodeAPosition = Crawler.getBoundingPositition(nodeA);
       }
 
-      if (layerPosition.x > layerBPosition.x) {
-        layerB = layer;
-        layerBPosition = Crawler.getBoundingPositition(layerB);
+      if (nodePosition.x > nodeBPosition.x) {
+        nodeB = node;
+        nodeBPosition = Crawler.getBoundingPositition(nodeB);
       }
     });
 
-    if (layerA && layerB) {
+    if (nodeA && nodeB) {
       let leftEdgeX = null; // lowest x within gap
       let rightEdgeX = null; // highest x within gap
       let topEdgeY = null;
       let bottomEdgeY = null;
       let positionHeight = null;
 
-      // make sure the layers are not overlapped (a gap exists)
-      if ((layerAPosition.x + layerAPosition.width) < layerBPosition.x) {
+      // make sure the nodes are not overlapped (a gap exists)
+      if ((nodeAPosition.x + nodeAPosition.width) < nodeBPosition.x) {
         // set the left/right edges of the gap
-        leftEdgeX = layerAPosition.x + layerAPosition.width; // lowest x within gap
-        rightEdgeX = layerBPosition.x; // highest x within gap
+        leftEdgeX = nodeAPosition.x + nodeAPosition.width; // lowest x within gap
+        rightEdgeX = nodeBPosition.x; // highest x within gap
 
-        const layerATopY = layerAPosition.y;
-        const layerABottomY = layerAPosition.y + layerAPosition.height;
-        const layerBTopY = layerBPosition.y;
-        const layerBBottomY = layerBPosition.y + layerBPosition.height;
+        const nodeATopY = nodeAPosition.y;
+        const nodeABottomY = nodeAPosition.y + nodeAPosition.height;
+        const nodeBTopY = nodeBPosition.y;
+        const nodeBBottomY = nodeBPosition.y + nodeBPosition.height;
 
-        if (layerBTopY >= layerATopY) {
+        if (nodeBTopY >= nodeATopY) {
           // top of A is higher than top of B
-          if (layerABottomY >= layerBTopY) {
+          if (nodeABottomY >= nodeBTopY) {
             // top of B is higher than bottom of A
-            if (layerBBottomY >= layerABottomY) {
+            if (nodeBBottomY >= nodeABottomY) {
               // bottom of A is higher than bottom of B
               // decision: top edge is top of B; bottom edge is bottom of A
-              topEdgeY = layerBTopY;
-              bottomEdgeY = layerABottomY;
+              topEdgeY = nodeBTopY;
+              bottomEdgeY = nodeABottomY;
             } else {
               // decision: top edge is top of B; bottom edge is bottom of B
-              topEdgeY = layerBTopY;
-              bottomEdgeY = layerBBottomY;
+              topEdgeY = nodeBTopY;
+              bottomEdgeY = nodeBBottomY;
             }
           } else {
             // decision: top edge is bottom of A; bottom edge is top of B
-            topEdgeY = layerABottomY;
-            bottomEdgeY = layerBTopY;
+            topEdgeY = nodeABottomY;
+            bottomEdgeY = nodeBTopY;
           }
-        } else if (layerBBottomY >= layerATopY) {
+        } else if (nodeBBottomY >= nodeATopY) {
           // top of A is higher than bottom of B
-          if (layerABottomY >= layerBBottomY) {
+          if (nodeABottomY >= nodeBBottomY) {
             // bottom of B is higher than bottom of A
             // decision: top edge is top of A; bottom edge is bottom of B
-            topEdgeY = layerATopY;
-            bottomEdgeY = layerBBottomY;
+            topEdgeY = nodeATopY;
+            bottomEdgeY = nodeBBottomY;
           } else {
             // decision: top edge is top of A; bottom edge is bottom of A
-            topEdgeY = layerATopY;
-            bottomEdgeY = layerABottomY;
+            topEdgeY = nodeATopY;
+            bottomEdgeY = nodeABottomY;
           }
         } else {
           // decision: top edge is bottom of B; bottom edge is top of A
-          topEdgeY = layerBBottomY;
-          bottomEdgeY = layerATopY;
+          topEdgeY = nodeBBottomY;
+          bottomEdgeY = nodeATopY;
         }
 
         // set position height
@@ -450,8 +506,8 @@ export default class Crawler {
         thePosition.y = topEdgeY + (positionHeight / 2);
         thePosition.width = rightEdgeX - leftEdgeX;
         thePosition.height = positionHeight;
-        thePosition.layerAId = layerA.id;
-        thePosition.layerBId = layerB.id;
+        thePosition.layerAId = nodeA.id;
+        thePosition.layerBId = nodeB.id;
       } else {
         horizontalGap = true;
       }
@@ -459,18 +515,18 @@ export default class Crawler {
 
     // the gap is horizontal (if overlap does not exist)
     if (horizontalGap) {
-      // find top-most (`layerA`) and bottom-most (`layerB`) layers
-      selection.forEach((layer) => {
-        const layerPosition = Crawler.getBoundingPositition(layer);
+      // find top-most (`nodeA`) and bottom-most (`nodeB`) nodes
+      selection.forEach((node) => {
+        const nodePosition = Crawler.getBoundingPositition(node);
 
-        if (layerPosition.y < layerAPosition.y) {
-          layerA = layer;
-          layerAPosition = Crawler.getBoundingPositition(layerA);
+        if (nodePosition.y < nodeAPosition.y) {
+          nodeA = node;
+          nodeAPosition = Crawler.getBoundingPositition(nodeA);
         }
 
-        if (layerPosition.y > layerBPosition.y) {
-          layerB = layer;
-          layerBPosition = Crawler.getBoundingPositition(layerB);
+        if (nodePosition.y > nodeBPosition.y) {
+          nodeB = node;
+          nodeBPosition = Crawler.getBoundingPositition(nodeB);
         }
       });
 
@@ -481,53 +537,53 @@ export default class Crawler {
       let positionWidth = null;
       let positionHeight = null;
 
-      // make sure the layers are not overlapped (a gap exists)
-      if ((layerAPosition.y + layerAPosition.height) < layerBPosition.y) {
+      // make sure the nodes are not overlapped (a gap exists)
+      if ((nodeAPosition.y + nodeAPosition.height) < nodeBPosition.y) {
         // set the top/bottom edges of the gap
-        topEdgeY = layerAPosition.y + layerAPosition.height; // lowest y within gap
-        bottomEdgeY = layerBPosition.y; // highest y within gap
+        topEdgeY = nodeAPosition.y + nodeAPosition.height; // lowest y within gap
+        bottomEdgeY = nodeBPosition.y; // highest y within gap
 
-        // set initial layer values for comparison
-        const layerALeftX = layerAPosition.x;
-        const layerARightX = layerAPosition.x + layerAPosition.width;
-        const layerBLeftX = layerBPosition.x;
-        const layerBRightX = layerBPosition.x + layerBPosition.width;
+        // set initial node values for comparison
+        const nodeALeftX = nodeAPosition.x;
+        const nodeARightX = nodeAPosition.x + nodeAPosition.width;
+        const nodeBLeftX = nodeBPosition.x;
+        const nodeBRightX = nodeBPosition.x + nodeBPosition.width;
 
-        if (layerBLeftX >= layerALeftX) {
+        if (nodeBLeftX >= nodeALeftX) {
           // left-most of A is to the left of left-most of B
-          if (layerARightX >= layerBLeftX) {
+          if (nodeARightX >= nodeBLeftX) {
             // left-most of B is to the left of right-most of A
-            if (layerBRightX >= layerARightX) {
+            if (nodeBRightX >= nodeARightX) {
               // right-most of A is to the left of right-most of B
               // decision: left-most edge is left-most of B; right-most edge is right-most of A
-              leftEdgeX = layerBLeftX;
-              rightEdgeX = layerARightX;
+              leftEdgeX = nodeBLeftX;
+              rightEdgeX = nodeARightX;
             } else {
               // decision: left-most edge is left-most of B; right-most edge is right-most of B
-              leftEdgeX = layerBLeftX;
-              rightEdgeX = layerBRightX;
+              leftEdgeX = nodeBLeftX;
+              rightEdgeX = nodeBRightX;
             }
           } else {
             // decision: left-most edge is right-most of A; right-most edge is left-most of B
-            leftEdgeX = layerARightX;
-            rightEdgeX = layerBLeftX;
+            leftEdgeX = nodeARightX;
+            rightEdgeX = nodeBLeftX;
           }
-        } else if (layerBRightX >= layerALeftX) {
+        } else if (nodeBRightX >= nodeALeftX) {
           // left-most of A is to the left of right-most of B
-          if (layerARightX >= layerBRightX) {
+          if (nodeARightX >= nodeBRightX) {
             // right-most of B is to the left of right-most of A
             // decision: left-most edge is left-most of A; right-most edge is right-most of B
-            leftEdgeX = layerALeftX;
-            rightEdgeX = layerBRightX;
+            leftEdgeX = nodeALeftX;
+            rightEdgeX = nodeBRightX;
           } else {
             // decision: left-most edge is left-most of A; right-most edge is right-most of A
-            leftEdgeX = layerALeftX;
-            rightEdgeX = layerARightX;
+            leftEdgeX = nodeALeftX;
+            rightEdgeX = nodeARightX;
           }
         } else {
           // decision: left-most edge is right-most of B; right-most edge is left-most of A
-          leftEdgeX = layerBRightX;
-          rightEdgeX = layerALeftX;
+          leftEdgeX = nodeBRightX;
+          rightEdgeX = nodeALeftX;
         }
 
         // set position width
@@ -540,61 +596,61 @@ export default class Crawler {
         thePosition.width = positionWidth;
         thePosition.height = bottomEdgeY - topEdgeY;
         thePosition.orientation = 'horizontal';
-        thePosition.layerAId = layerA.id;
-        thePosition.layerBId = layerB.id;
+        thePosition.layerAId = nodeA.id;
+        thePosition.layerBId = nodeB.id;
       }
 
-      // check to see if the two layers are touching, rather than gapped or overlapped
-      if ((layerAPosition.y + layerAPosition.height) === layerBPosition.y) {
+      // check to see if the two nodes are touching, rather than gapped or overlapped
+      if ((nodeAPosition.y + nodeAPosition.height) === nodeBPosition.y) {
         // determine vertical auto-layout padding affects here
         if (
-          (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
-          || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
+          (nodeA.type === 'FRAME' && nodeA.layoutMode !== 'NONE')
+          || (nodeB.type === 'FRAME' && nodeB.layoutMode !== 'NONE')
         ) {
-          const topNode = layerA as FrameNode;
-          const bottomNode = layerB as FrameNode;
+          const topNode = nodeA as FrameNode;
+          const bottomNode = nodeB as FrameNode;
 
-          const layerALeftX = layerAPosition.x + topNode.horizontalPadding;
-          const layerARightX = layerAPosition.x + layerAPosition.width - topNode.horizontalPadding;
-          const layerBLeftX = layerBPosition.x + bottomNode.horizontalPadding;
-          const layerBRightX = layerBPosition.x
-            + layerBPosition.width - bottomNode.horizontalPadding;
+          const nodeALeftX = nodeAPosition.x + topNode.horizontalPadding;
+          const nodeARightX = nodeAPosition.x + nodeAPosition.width - topNode.horizontalPadding;
+          const nodeBLeftX = nodeBPosition.x + bottomNode.horizontalPadding;
+          const nodeBRightX = nodeBPosition.x
+            + nodeBPosition.width - bottomNode.horizontalPadding;
 
-          if (layerBLeftX >= layerALeftX) {
+          if (nodeBLeftX >= nodeALeftX) {
             // left-most of A is to the left of left-most of B
-            if (layerARightX >= layerBLeftX) {
+            if (nodeARightX >= nodeBLeftX) {
               // left-most of B is to the left of right-most of A
-              if (layerBRightX >= layerARightX) {
+              if (nodeBRightX >= nodeARightX) {
                 // right-most of A is to the left of right-most of B
                 // decision: left-most edge is left-most of B; right-most edge is right-most of A
-                leftEdgeX = layerBLeftX;
-                rightEdgeX = layerARightX;
+                leftEdgeX = nodeBLeftX;
+                rightEdgeX = nodeARightX;
               } else {
                 // decision: left-most edge is left-most of B; right-most edge is right-most of B
-                leftEdgeX = layerBLeftX;
-                rightEdgeX = layerBRightX;
+                leftEdgeX = nodeBLeftX;
+                rightEdgeX = nodeBRightX;
               }
             } else {
               // decision: left-most edge is right-most of A; right-most edge is left-most of B
-              leftEdgeX = layerARightX;
-              rightEdgeX = layerBLeftX;
+              leftEdgeX = nodeARightX;
+              rightEdgeX = nodeBLeftX;
             }
-          } else if (layerBRightX >= layerALeftX) {
+          } else if (nodeBRightX >= nodeALeftX) {
             // left-most of A is to the left of right-most of B
-            if (layerARightX >= layerBRightX) {
+            if (nodeARightX >= nodeBRightX) {
               // right-most of B is to the left of right-most of A
               // decision: left-most edge is left-most of A; right-most edge is right-most of B
-              leftEdgeX = layerALeftX;
-              rightEdgeX = layerBRightX;
+              leftEdgeX = nodeALeftX;
+              rightEdgeX = nodeBRightX;
             } else {
               // decision: left-most edge is left-most of A; right-most edge is right-most of A
-              leftEdgeX = layerALeftX;
-              rightEdgeX = layerARightX;
+              leftEdgeX = nodeALeftX;
+              rightEdgeX = nodeARightX;
             }
           } else {
             // decision: left-most edge is right-most of B; right-most edge is left-most of A
-            leftEdgeX = layerBRightX;
-            rightEdgeX = layerALeftX;
+            leftEdgeX = nodeBRightX;
+            rightEdgeX = nodeALeftX;
           }
 
           positionWidth = rightEdgeX - leftEdgeX;
@@ -602,67 +658,67 @@ export default class Crawler {
           // set a `thePosition` in the padded area to simulate the gap
           // move final `x` to position annotation at mid-point
           thePosition.x = leftEdgeX + (positionWidth / 2);
-          thePosition.y = layerAPosition.y + layerAPosition.height - topNode.verticalPadding;
+          thePosition.y = nodeAPosition.y + nodeAPosition.height - topNode.verticalPadding;
           thePosition.width = positionWidth;
           thePosition.height = topNode.verticalPadding + bottomNode.verticalPadding;
           thePosition.orientation = 'horizontal';
-          thePosition.layerAId = layerA.id;
-          thePosition.layerBId = layerB.id;
+          thePosition.layerAId = nodeA.id;
+          thePosition.layerBId = nodeB.id;
         }
-      } else if ((layerAPosition.x + layerAPosition.width) === layerBPosition.x) {
+      } else if ((nodeAPosition.x + nodeAPosition.width) === nodeBPosition.x) {
         // determine horizontal auto-layout padding affects here
         if (
-          (layerA.type === 'FRAME' && layerA.layoutMode !== 'NONE')
-          || (layerB.type === 'FRAME' && layerB.layoutMode !== 'NONE')
+          (nodeA.type === 'FRAME' && nodeA.layoutMode !== 'NONE')
+          || (nodeB.type === 'FRAME' && nodeB.layoutMode !== 'NONE')
         ) {
-          const leftNode = layerA as FrameNode;
-          const rightNode = layerB as FrameNode;
+          const leftNode = nodeA as FrameNode;
+          const rightNode = nodeB as FrameNode;
 
           // set the left/right edges of the gap
-          leftEdgeX = layerAPosition.x + layerAPosition.width; // lowest x within gap
-          rightEdgeX = layerBPosition.x; // highest x within gap
+          leftEdgeX = nodeAPosition.x + nodeAPosition.width; // lowest x within gap
+          rightEdgeX = nodeBPosition.x; // highest x within gap
 
-          const layerATopY = layerAPosition.y + leftNode.verticalPadding;
-          const layerABottomY = layerAPosition.y + layerAPosition.height - leftNode.verticalPadding;
-          const layerBTopY = layerBPosition.y + rightNode.verticalPadding;
-          const layerBBottomY = layerBPosition.y
-            + layerBPosition.height - rightNode.verticalPadding;
+          const nodeATopY = nodeAPosition.y + leftNode.verticalPadding;
+          const nodeABottomY = nodeAPosition.y + nodeAPosition.height - leftNode.verticalPadding;
+          const nodeBTopY = nodeBPosition.y + rightNode.verticalPadding;
+          const nodeBBottomY = nodeBPosition.y
+            + nodeBPosition.height - rightNode.verticalPadding;
 
-          if (layerBTopY >= layerATopY) {
+          if (nodeBTopY >= nodeATopY) {
             // top of A is higher than top of B
-            if (layerABottomY >= layerBTopY) {
+            if (nodeABottomY >= nodeBTopY) {
               // top of B is higher than bottom of A
-              if (layerBBottomY >= layerABottomY) {
+              if (nodeBBottomY >= nodeABottomY) {
                 // bottom of A is higher than bottom of B
                 // decision: top edge is top of B; bottom edge is bottom of A
-                topEdgeY = layerBTopY;
-                bottomEdgeY = layerABottomY;
+                topEdgeY = nodeBTopY;
+                bottomEdgeY = nodeABottomY;
               } else {
                 // decision: top edge is top of B; bottom edge is bottom of B
-                topEdgeY = layerBTopY;
-                bottomEdgeY = layerBBottomY;
+                topEdgeY = nodeBTopY;
+                bottomEdgeY = nodeBBottomY;
               }
             } else {
               // decision: top edge is bottom of A; bottom edge is top of B
-              topEdgeY = layerABottomY;
-              bottomEdgeY = layerBTopY;
+              topEdgeY = nodeABottomY;
+              bottomEdgeY = nodeBTopY;
             }
-          } else if (layerBBottomY >= layerATopY) {
+          } else if (nodeBBottomY >= nodeATopY) {
             // top of A is higher than bottom of B
-            if (layerABottomY >= layerBBottomY) {
+            if (nodeABottomY >= nodeBBottomY) {
               // bottom of B is higher than bottom of A
               // decision: top edge is top of A; bottom edge is bottom of B
-              topEdgeY = layerATopY;
-              bottomEdgeY = layerBBottomY;
+              topEdgeY = nodeATopY;
+              bottomEdgeY = nodeBBottomY;
             } else {
               // decision: top edge is top of A; bottom edge is bottom of A
-              topEdgeY = layerATopY;
-              bottomEdgeY = layerABottomY;
+              topEdgeY = nodeATopY;
+              bottomEdgeY = nodeABottomY;
             }
           } else {
             // decision: top edge is bottom of B; bottom edge is top of A
-            topEdgeY = layerBBottomY;
-            bottomEdgeY = layerATopY;
+            topEdgeY = nodeBBottomY;
+            bottomEdgeY = nodeATopY;
           }
 
           // set position height
@@ -676,8 +732,8 @@ export default class Crawler {
             + leftNode.horizontalPadding + rightNode.horizontalPadding;
           thePosition.height = positionHeight;
           thePosition.orientation = 'vertical';
-          thePosition.layerAId = layerA.id;
-          thePosition.layerBId = layerB.id;
+          thePosition.layerAId = nodeA.id;
+          thePosition.layerBId = nodeB.id;
         }
       }
     }
@@ -699,17 +755,17 @@ export default class Crawler {
 
   /**
    * @description Creates four separate positions for the spaces around two overlapping
-   * selected layers. It keeps the coordinates relative to the artboard, ignoring
-   * if some of the items are grouped inside other layers. It also adds an orientation
-   * `horizontal` or `vertical` based on the gap orientation. Assumes only 2 layers
+   * selected nodes. It keeps the coordinates relative to the artboard, ignoring
+   * if some of the items are grouped inside other nodes. It also adds an orientation
+   * `horizontal` or `vertical` based on the gap orientation. Assumes only 2 nodes
    * are selected.
    *
    * @kind function
    * @name overlapPositions
    * @returns {Object} The `top`, `bottom`, `right`, and `left` positions. Each position
    * contains `x`, `y` coordinates, `width`, `height`, and `orientation`.
-   * The object also includes layer IDs (`layerAId` and `layerBId`)
-   * for the two layers used to calculated the overlapped areas.
+   * The object also includes node IDs (`layerAId` and `layerBId`)
+   * for the two nodes used to calculated the overlapped areas.
    */
   overlapPositions() {
     const result: {
@@ -741,81 +797,81 @@ export default class Crawler {
     // set the selection
     const selection = this.array;
 
-    // set the layers to a default for comparisons
+    // set the nodes to a default for comparisons
     const firstIndex: 0 = 0;
-    let layerA = selection[firstIndex];
-    let layerB = selection[selection.length - 1];
+    let nodeA = selection[firstIndex];
+    let nodeB = selection[selection.length - 1];
 
-    const layerATopFrame = findFrame(layerA);
-    const layerBTopFrame = findFrame(layerB);
+    const nodeATopFrame: FrameNode = findTopFrame(nodeA);
+    const nodeBTopFrame: FrameNode = findTopFrame(nodeB);
 
-    if (!layerATopFrame || !layerBTopFrame) {
+    if (!nodeATopFrame || !nodeBTopFrame) {
       result.status = 'error';
       result.messages.log = 'One or more nodes not inside a frame';
-      result.messages.toast = 'All layers must be inside a frame';
+      result.messages.toast = 'All nodes must be inside a frame';
       return result;
     }
 
-    let layerAPosition = Crawler.getBoundingPositition(layerA);
-    let layerBPosition = Crawler.getBoundingPositition(layerB);
+    let nodeAPosition = Crawler.getBoundingPositition(nodeA);
+    let nodeBPosition = Crawler.getBoundingPositition(nodeB);
 
-    // find bottom (`layerA`) and top (`layerB`) layers
-    let layerAIndex = getRelativeIndex(layerA);
-    let layerBIndex = getRelativeIndex(layerB);
+    // find bottom (`nodeA`) and top (`nodeB`) nodes
+    let nodeAIndex = getRelativeIndex(nodeA);
+    let nodeBIndex = getRelativeIndex(nodeB);
 
-    // set the bottom layer to `layerA` and the top to `layerB`
-    // if `layerB` is currently the bottom, we have to flip them
-    selection.forEach((layer) => {
-      const layerIndex = getRelativeIndex(layer);
+    // set the bottom node to `nodeA` and the top to `nodeB`
+    // if `nodeB` is currently the bottom, we have to flip them
+    selection.forEach((node) => {
+      const nodeIndex = getRelativeIndex(node);
 
-      if (layerIndex > layerBIndex) {
-        layerB = layer;
-        layerBIndex = layerIndex;
-        layerBPosition = Crawler.getBoundingPositition(layerB);
+      if (nodeIndex > nodeBIndex) {
+        nodeB = node;
+        nodeBIndex = nodeIndex;
+        nodeBPosition = Crawler.getBoundingPositition(nodeB);
       }
 
-      if (layerIndex < layerAIndex) {
-        layerA = layer;
-        layerAIndex = layerIndex;
-        layerAPosition = Crawler.getBoundingPositition(layerA);
+      if (nodeIndex < nodeAIndex) {
+        nodeA = node;
+        nodeAIndex = nodeIndex;
+        nodeAPosition = Crawler.getBoundingPositition(nodeA);
       }
     });
 
-    // we need a dominant layer to orient positioning;
-    // if both layers are exactly the same index, we cannot assume dominance.
-    // this should not happen, but layers might be selected from multiple artboards.
-    if (layerAIndex === layerBIndex) {
+    // we need a dominant node to orient positioning;
+    // if both nodes are exactly the same index, we cannot assume dominance.
+    // this should not happen, but nodes might be selected from multiple artboards.
+    if (nodeAIndex === nodeBIndex) {
       result.status = 'error';
-      result.messages.log = 'Layers are the same index';
+      result.messages.log = 'Nodes are the same index';
       result.messages.toast = 'Select layers inside the same frame';
       return result;
     }
 
     // -------- set positions - essentially defining rectangles in the overapped spaces
-    // between the two layers
+    // between the two nodes
     // top
-    const topWidth = layerBPosition.width;
-    const topHeight = layerBPosition.y - layerAPosition.y;
-    const topX = layerBPosition.x;
-    const topY = layerAPosition.y;
+    const topWidth = nodeBPosition.width;
+    const topHeight = nodeBPosition.y - nodeAPosition.y;
+    const topX = nodeBPosition.x;
+    const topY = nodeAPosition.y;
 
     // bottom
-    const bottomWidth = layerBPosition.width;
-    const bottomHeight = layerAPosition.height - topHeight - layerBPosition.height;
-    const bottomX = layerBPosition.x;
-    const bottomY = layerAPosition.y + topHeight + layerBPosition.height;
+    const bottomWidth = nodeBPosition.width;
+    const bottomHeight = nodeAPosition.height - topHeight - nodeBPosition.height;
+    const bottomX = nodeBPosition.x;
+    const bottomY = nodeAPosition.y + topHeight + nodeBPosition.height;
 
     // left
-    const leftWidth = layerBPosition.x - layerAPosition.x;
-    const leftHeight = layerBPosition.height;
-    const leftX = layerAPosition.x;
-    const leftY = layerBPosition.y;
+    const leftWidth = nodeBPosition.x - nodeAPosition.x;
+    const leftHeight = nodeBPosition.height;
+    const leftX = nodeAPosition.x;
+    const leftY = nodeBPosition.y;
 
     // right
-    const rightWidth = layerAPosition.width - layerBPosition.width - leftWidth;
-    const rightHeight = layerBPosition.height;
-    const rightX = layerBPosition.x + layerBPosition.width;
-    const rightY = layerBPosition.y;
+    const rightWidth = nodeAPosition.width - nodeBPosition.width - leftWidth;
+    const rightHeight = nodeBPosition.height;
+    const rightX = nodeBPosition.x + nodeBPosition.width;
+    const rightY = nodeBPosition.y;
 
     // set the positions
     const thePositions: {
@@ -878,8 +934,8 @@ export default class Crawler {
         height: leftHeight,
         orientation: 'vertical',
       },
-      layerAId: layerA.id,
-      layerBId: layerB.id,
+      layerAId: nodeA.id,
+      layerBId: nodeB.id,
     };
 
     // set the payload and deliver
@@ -922,7 +978,7 @@ export default class Crawler {
     // set the node
     const node: FrameNode = this.first() as FrameNode;
 
-    const nodeTopFrame = findFrame(node);
+    const nodeTopFrame: FrameNode = findTopFrame(node);
 
     if (!nodeTopFrame) {
       result.status = 'error';

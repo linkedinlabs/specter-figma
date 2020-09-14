@@ -1,10 +1,10 @@
 import Crawler from './Crawler';
 import {
-  findFrame,
-  getLayerSettings,
+  findTopFrame,
+  getNodeSettings,
   hexToDecimalRgb,
   isInternal,
-  updateArray,
+  updateNestedArray,
 } from './Tools';
 import {
   COLORS,
@@ -23,7 +23,7 @@ import {
  * @param {string} colorHex A string representing the hex color for the icon.
  * @param {string} orientation A string representing the orientation (optional).
  *
- * @returns {Object} FrameNode layer group containing the icon layers.
+ * @returns {Object} FrameNode node group containing the icon nodes.
  * @private
  */
 const buildMeasureIcon = (
@@ -171,7 +171,7 @@ const buildMeasureIcon = (
  * `secondaryText` – optional secondary text for the annotation, and `type` – a string
  * representing the type of annotation (component or foundation).
  *
- * @returns {Object} Each annotation element as a layer node (`diamond`, `rectangle`, `text`,
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
  * and `icon`).
  *
  * @private
@@ -261,13 +261,13 @@ const buildAnnotation = (options: {
     color,
   }];
 
-  // create empty text layer
+  // create empty text node
   const text: TextNode = figma.createText();
 
   // detect/retrieve last-loaded typeface
   const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
 
-  // style text layer
+  // style text node
   text.fontName = typefaceToUse;
   text.fontSize = 12;
   text.lineHeight = { value: 125, unit: 'PERCENT' };
@@ -344,7 +344,7 @@ const buildBoundingBox = (position: {
 };
 
 /**
- * @description Takes the individual annotation elements, the specs for the layer(s) receiving
+ * @description Takes the individual annotation elements, the specs for the node(s) receiving
  * the annotation, and adds the annotation to the container group in the proper position,
  * orientation, and with the correct auto-layout settings and constraints.
  *
@@ -355,14 +355,14 @@ const buildBoundingBox = (position: {
  * @param {string} groupName The name of the group that holds the annotation elements
  * inside the `containerGroup`.
  * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
- * @param {Object} layerPosition The position specifications (`width`, `height`, `x`, `y`, `index`)
- * for the layer receiving the annotation + the frame width/height (`frameWidth` /
+ * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`, `index`)
+ * for the node receiving the annotation + the frame width/height (`frameWidth` /
  * `frameHeight`).
  * @param {string} annotationType An optional string representing the type of annotation.
  * @param {string} orientation An optional string representing the orientation of the
  * annotation (`top` or `left`).
  *
- * @returns {Object} The final annotation as a layer group.
+ * @returns {Object} The final annotation as a node group.
  * @private
  */
 const positionAnnotation = (
@@ -374,7 +374,7 @@ const positionAnnotation = (
     text: TextNode,
     icon: FrameNode,
   },
-  layerPosition: {
+  nodePosition: {
     frameWidth: number,
     frameHeight: number,
     width: number,
@@ -393,11 +393,11 @@ const positionAnnotation = (
     icon,
   } = annotation;
 
-  const { frameWidth, frameHeight } = layerPosition;
-  const layerWidth: number = layerPosition.width;
-  const layerHeight: number = layerPosition.height;
-  const layerX: number = layerPosition.x;
-  const layerY: number = layerPosition.y;
+  const { frameWidth, frameHeight } = nodePosition;
+  const nodeWidth: number = nodePosition.width;
+  const nodeHeight: number = nodePosition.height;
+  const nodeX: number = nodePosition.x;
+  const nodeY: number = nodePosition.y;
 
   let isMeasurement: boolean = false;
   if (
@@ -462,21 +462,21 @@ const positionAnnotation = (
   // set outer clipping
   group.clipsContent = false;
 
-  // ------- position the group within the frame, above the layer receiving the annotation
+  // ------- position the group within the frame, above the node receiving the annotation
   let frameEdgeY: string = null;
   let frameEdgeX: string = null;
 
-  // initial placement based on layer to annotate
+  // initial placement based on node to annotate
   // for top
   let placementX: number = (
-    layerX + (
-      (layerWidth - rectangle.width) / 2
+    nodeX + (
+      (nodeWidth - rectangle.width) / 2
     )
   );
   // for `left` or `right`
   let placementY: number = (
-    layerY + (
-      (layerHeight - rectangle.height) / 2
+    nodeY + (
+      (nodeHeight - rectangle.height) / 2
     )
   );
 
@@ -487,15 +487,15 @@ const positionAnnotation = (
   switch (orientation) {
     case 'left':
       offsetX = (isMeasurement ? 36 : 38);
-      placementX = layerX - offsetX;
+      placementX = nodeX - offsetX;
       break;
     case 'right':
       offsetX = (isMeasurement ? 12 : 5);
-      placementX = layerX + layerWidth + offsetX;
+      placementX = nodeX + nodeWidth + offsetX;
       break;
     default: // top
       offsetY = (isMeasurement ? 15 : 8);
-      placementY = layerY - rectangle.height - offsetY;
+      placementY = nodeY - rectangle.height - offsetY;
   }
 
   // detect left edge
@@ -549,13 +549,13 @@ const positionAnnotation = (
 
   // adjust the measure icon width for top-oriented annotations
   if (orientation === 'top' && icon) {
-    group.resize(layerWidth, group.height);
-    group.x = layerX;
+    group.resize(nodeWidth, group.height);
+    group.x = nodeX;
 
     if (annotationType === 'dimension') {
-      group.y = layerY - group.height - 4;
+      group.y = nodeY - group.height - 4;
     } else {
-      group.y = layerY - group.height + 2;
+      group.y = nodeY - group.height + 2;
     }
   }
 
@@ -578,24 +578,24 @@ const positionAnnotation = (
       group.appendChild(bannerGroup);
     }
 
-    // resize icon based on gap/layer height
-    group.resize(group.width, layerHeight);
+    // resize icon based on gap/node height
+    group.resize(group.width, nodeHeight);
 
     // position annotation on `y`
-    group.y = layerY;
+    group.y = nodeY;
 
     // position on `x` based on orientation
     if (orientation === 'right') {
-      group.x = layerX + layerWidth + 4;
+      group.x = nodeX + nodeWidth + 4;
     } else {
-      group.x = layerX - group.width + 2;
+      group.x = nodeX - group.width + 2;
     }
   }
 
   // adjust placement, if necessary
   if (frameEdgeX || frameEdgeY) {
     if (!isMeasurement) {
-      // move to right of layer, right orientation
+      // move to right of node, right orientation
       if (frameEdgeX === 'left') {
         group.layoutMode = 'HORIZONTAL';
         group.appendChild(rectangle);
@@ -609,11 +609,11 @@ const positionAnnotation = (
         };
 
         // update position
-        group.x = layerWidth - (0 - layerX) + 5;
-        group.y = layerY + ((layerHeight - group.height) / 2);
+        group.x = nodeWidth - (0 - nodeX) + 5;
+        group.y = nodeY + ((nodeHeight - group.height) / 2);
       }
 
-      // move to left of layer, left orientation
+      // move to left of node, left orientation
       if (frameEdgeX === 'right') {
         group.layoutMode = 'HORIZONTAL';
         diamondVector.layoutAlign = 'CENTER';
@@ -626,15 +626,15 @@ const positionAnnotation = (
         };
 
         // update position
-        group.x = layerX - group.width - 5;
-        group.y = layerY + ((layerHeight - group.height) / 2);
+        group.x = nodeX - group.width - 5;
+        group.y = nodeY + ((nodeHeight - group.height) / 2);
       }
 
       // bottom-align annotation
       if (!frameEdgeX && frameEdgeY === 'top') {
         bannerGroup.appendChild(rectangle);
         diamondVector.rotation = 180;
-        group.y = layerY + layerHeight + 4;
+        group.y = nodeY + nodeHeight + 4;
 
         // update outer constraints
         group.constraints = {
@@ -667,15 +667,15 @@ const positionAnnotation = (
         };
 
         // adjust position against midpoint
-        if (layerY > 0) {
-          group.y = layerY - 2;
+        if (nodeY > 0) {
+          group.y = nodeY - 2;
         } else {
           group.y = 4;
         }
 
         // if dimension, move to bottom
         if (annotationType === 'dimension') {
-          group.y = layerY + layerHeight + 4;
+          group.y = nodeY + nodeHeight + 4;
         }
       }
 
@@ -692,7 +692,7 @@ const positionAnnotation = (
         group.appendChild(iconNew);
         bannerGroup.appendChild(diamondVector);
         diamondVector.rotation = 90;
-        group.x = (layerX - group.width - 4);
+        group.x = (nodeX - group.width - 4);
 
         // update outer constraints
         group.constraints = {
@@ -714,16 +714,16 @@ const positionAnnotation = (
         };
 
         // adjust position against midpoint
-        if (layerX < 0) {
+        if (nodeX < 0) {
           group.x = 4;
         } else {
-          group.x = layerX - 4;
+          group.x = nodeX - 4;
         }
       }
 
       // adjust position against edge of frame
       if (frameEdgeX === 'right' && orientation === 'left') {
-        if (layerX > frameWidth) {
+        if (nodeX > frameWidth) {
           group.x = frameWidth - group.width - 4;
         }
       }
@@ -886,11 +886,11 @@ const retrieveSpacingValue = (length: number, isMercadoMode: boolean): number =>
 };
 
 /**
- * @description Resets the layer order for the Component, Foundation, and Bounding Box layers
- * within the outer container group layer.
+ * @description Resets the node order for the Component, Foundation, and Bounding Box nodes
+ * within the outer container group node.
  *
  * @kind function
- * @name orderContainerLayers
+ * @name orderContainerNodes
  * @param {string} outerGroupId String ID for finding the outer container group.
  * @param {Object} page The page containing the outer container group.
  *
@@ -898,7 +898,7 @@ const retrieveSpacingValue = (length: number, isMercadoMode: boolean): number =>
  *
  * @private
  */
-const orderContainerLayers = (outerGroupId: string, page): void => {
+const orderContainerNodes = (outerGroupId: string, page): void => {
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || {});
   let containerGroupId: string = null;
   let boundingGroupId: string = null;
@@ -959,15 +959,15 @@ const orderContainerLayers = (outerGroupId: string, page): void => {
 
 /**
  * @description Sets up the individual elements for a container group (inner or outer) and
- * adds the child layer to the group.
+ * adds the child node to the group.
  *
  * @kind function
  * @name drawContainerGroup
  *
  * @param {Object} groupSettings Object containing the `name`, `position`,
- * `child` and `parent` layers, and `locked` status.
+ * `child` and `parent` nodes, and `locked` status.
  *
- * @returns {Object} The container group layer object.
+ * @returns {Object} The container group node object.
  * @private
  */
 const drawContainerGroup = (groupSettings: {
@@ -1011,9 +1011,9 @@ const drawContainerGroup = (groupSettings: {
  * @param {Object} containerSet An instance of the parent container group’s settings object.
  * @param {string} groupType A string representing the type of element going inside the continer.
  * @param {Object} frame An object representing the top-level Figma Frame for the container group.
- * @param {Object} layer An object representing the Figma layer to be set in the container group.
+ * @param {Object} node An object representing the Figma node to be set in the container group.
  *
- * @returns {Object} The inner container group layer object and the accompanying
+ * @returns {Object} The inner container group node object and the accompanying
  * updated parent container group settings object.
  * @private
  */
@@ -1035,7 +1035,7 @@ export const createContainerGroup = (
     | 'style'
     | 'topLevel',
   frame: FrameNode,
-  layer: SceneNode,
+  node: SceneNode,
 ): {
   newInnerGroup: GroupNode,
   updatedContainerSet: {
@@ -1051,12 +1051,12 @@ export const createContainerGroup = (
   const groupKey: string = setGroupKey(groupType);
   const locked: boolean = groupType === 'topLevel';
 
-  // set up new container group layer on the frame
+  // set up new container group node on the frame
   const newInnerGroup: GroupNode = drawContainerGroup({
     name: groupName,
-    position: { x: layer.x, y: layer.y },
+    position: { x: node.x, y: node.y },
     parent: frame,
-    child: layer,
+    child: node,
     locked,
   });
 
@@ -1075,20 +1075,20 @@ export const createContainerGroup = (
 };
 
 /**
- * @description Sets (finds or builds) the parent container group(s), places the layer in the
+ * @description Sets (finds or builds) the parent container group(s), places the node in the
  * container(s) and updates the document settings (if a new container group has been created).
  *
  * @kind function
- * @name setLayerInContainers
- * @param {Object} layerToContain An object including the `layer` that needs placement,
- * the `frame` and `page` the layer exists within, the `position` of the layer, and the
+ * @name setNodeInContainers
+ * @param {Object} nodeToContain An object including the `node` that needs placement,
+ * the `frame` and `page` the node exists within, the `position` of the node, and the
  * `type` of annotation or drawing action.
  *
- * @returns {boolean} `true` if the layer was placed successfully, otherwise `false`.
+ * @returns {boolean} `true` if the node was placed successfully, otherwise `false`.
  * @private
  */
-const setLayerInContainers = (layerToContain: {
-  layer: SceneNode,
+const setNodeInContainers = (nodeToContain: {
+  node: SceneNode,
   frame: FrameNode,
   page: PageNode,
   type:
@@ -1107,11 +1107,11 @@ const setLayerInContainers = (layerToContain: {
   styleInnerGroupId?: string,
 } => {
   const {
-    layer,
+    node,
     frame,
     page,
     type,
-  } = layerToContain;
+  } = nodeToContain;
   const groupKey = setGroupKey(type);
   const frameId: string = frame.id;
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
@@ -1135,7 +1135,7 @@ const setLayerInContainers = (layerToContain: {
       return null;
     });
 
-    // take the found ideas and load the specific layers (if they exist)
+    // take the found ideas and load the specific nodes (if they exist)
     outerGroup = figma.getNodeById(outerGroupId);
     innerGroup = figma.getNodeById(innerGroupId);
   }
@@ -1156,17 +1156,17 @@ const setLayerInContainers = (layerToContain: {
 
     // remove the existing lookup pair so it does not conflict with the new one
     if (outerGroupId) {
-      newPageSettings = updateArray(
-        'containerGroups',
-        { id: outerGroupId },
+      newPageSettings = updateNestedArray(
         newPageSettings,
+        { id: outerGroupId },
+        'containerGroups',
         'remove',
       );
     }
 
     // create the `innerGroup`, if it does not exist
     if (!innerGroup) {
-      const ccgResult = createContainerGroup(updatedContainerSet, type, frame, layer);
+      const ccgResult = createContainerGroup(updatedContainerSet, type, frame, node);
       innerGroup = ccgResult.newInnerGroup;
       updatedContainerSet = ccgResult.updatedContainerSet;
     }
@@ -1179,10 +1179,10 @@ const setLayerInContainers = (layerToContain: {
     }
 
     // update the `newPageSettings` array
-    newPageSettings = updateArray(
-      'containerGroups',
-      updatedContainerSet,
+    newPageSettings = updateNestedArray(
       newPageSettings,
+      updatedContainerSet,
+      'containerGroups',
       'add',
     );
 
@@ -1197,16 +1197,16 @@ const setLayerInContainers = (layerToContain: {
     containerSet = outerGroupSet;
   }
 
-  if (outerGroup && innerGroup && layer) {
-    // ensure the proper parent/child relationships are set in case container layers already exist
+  if (outerGroup && innerGroup && node) {
+    // ensure the proper parent/child relationships are set in case container nodes already exist
     outerGroup.appendChild(innerGroup);
-    innerGroup.appendChild(layer);
+    innerGroup.appendChild(node);
 
-    // move the outer container layer to the front
+    // move the outer container node to the front
     frame.appendChild(outerGroup);
 
-    // set the order of the inner container layers
-    orderContainerLayers(outerGroup.id, page);
+    // set the order of the inner container nodes
+    orderContainerNodes(outerGroup.id, page);
   }
 
   return containerSet;
@@ -1226,34 +1226,35 @@ const setLayerInContainers = (layerToContain: {
  * @private
  */
 const removeAnnotation = (existingItemData: { id: string }): void => {
-  const layerToDelete = figma.getNodeById(existingItemData.id);
-  if (layerToDelete) {
-    layerToDelete.remove();
+  const nodeToDelete = figma.getNodeById(existingItemData.id);
+  if (nodeToDelete) {
+    nodeToDelete.remove();
   }
   return null;
 };
 
 /**
  * @description Retrieves or sets the information on a node in order to track its annotation(s).
+ * The ID params use “layer” instead of “node” to match older documents.
  *
  * @kind function
- * @name getSetLayerSettings
+ * @name getSetNodeSettings
  *
  * @param {string} annotationType A string representation the type of annotation,
  * (`annotatedDimensions`, `annotatedLayers`, or `annotatedSpacings`).
- * @param {Object} layerIdSet A layer ID set to find a match for. It needs to container
+ * @param {Object} nodeIdSet A node ID set to find a match for. It needs to container
  * `layerId` at a minimum, but may also container `layerAId`, `layerBId`, and `direction`.
  * @param {Object} page The page containing the outer container group.
  *
  * @returns {null}
  * @private
  */
-const getSetLayerSettings = (
+const getSetNodeSettings = (
   annotationType:
     'annotatedDimensions'
     | 'annotatedLayers'
     | 'annotatedSpacings',
-  layerIdSet: {
+  nodeIdSet: {
     layerId: string,
     layerAId?: string,
     layerBId?: string,
@@ -1262,41 +1263,41 @@ const getSetLayerSettings = (
   page: PageNode,
 ): void => {
   /**
-   * @description Takes two sets of layer IDs (one from the node directly and one for
+   * @description Takes two sets of node IDs (one from the node directly and one for
    * the query) and tries to match them.
    *
    * @kind function
-   * @name layerMatchCheck
-   * @param {Object} layerSetToMatch A node’s layer ID set retrieved from settings. It
-   * needs to container `layerId` at a minimum, but may also container `layerAId`,
+   * @name nodeMatchCheck
+   * @param {Object} nodeSetToMatch A node’s node ID set retrieved from settings. It
+   * needs to container `layerId` at a minimum, but may also contain `layerAId`,
    * `layerBId`, and `direction`.
-   * @param {Object} layerIdSetToCheck A layer ID set to find a match for. It
-   * needs to container `layerId` at a minimum, but may also container `layerAId`,
+   * @param {Object} nodeIdSetToCheck A node ID set to find a match for. It
+   * needs to contain `layerId` at a minimum, but may also contain `layerAId`,
    * `layerBId`, and `direction`.
    *
-   * @returns {boolean} `true` if the layer ID set matches, otherwise `false`.
+   * @returns {boolean} `true` if the node ID set matches, otherwise `false`.
    * @private
    */
-  const layerMatchCheck = (layerSetToMatch, layerIdSetToCheck): boolean => {
+  const nodeMatchCheck = (nodeSetToMatch, nodeIdSetToCheck): boolean => {
     const {
       layerId,
       layerAId,
       layerBId,
       direction,
-    } = layerIdSetToCheck;
+    } = nodeIdSetToCheck;
 
-    // if `layerAId` is present, match multiple layer IDs
+    // if `layerAId` is present, match multiple node IDs
     if (layerAId) {
       if (
-        layerSetToMatch.layerAId === layerAId
-        && layerSetToMatch.layerBId === layerBId
-        && layerSetToMatch.layerId === layerId
-        && layerSetToMatch.direction === direction
+        nodeSetToMatch.layerAId === layerAId
+        && nodeSetToMatch.layerBId === layerBId
+        && nodeSetToMatch.layerId === layerId
+        && nodeSetToMatch.direction === direction
       ) {
         return true;
       }
-    } else if (layerSetToMatch.originalId === layerId) {
-      // match single layer ID
+    } else if (nodeSetToMatch.originalId === layerId) {
+      // match single node ID
       return true;
     }
     // no matches, return false
@@ -1309,16 +1310,16 @@ const getSetLayerSettings = (
   // check if we have already annotated this element and remove the old annotation
   if (pageSettings && pageSettings[annotationType]) {
     // remove the old ID pair(s) from the `newPageSettings` array
-    pageSettings[annotationType].forEach((layerSet) => {
-      if (layerMatchCheck(layerSet, layerIdSet)) {
-        removeAnnotation(layerSet);
+    pageSettings[annotationType].forEach((nodeSet) => {
+      if (nodeMatchCheck(nodeSet, nodeIdSet)) {
+        removeAnnotation(nodeSet);
 
-        // remove the layerSet from the `pageSettings` array
+        // remove the nodeSet from the `pageSettings` array
         let newPageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER));
-        newPageSettings = updateArray(
-          annotationType,
-          { id: layerSet.id },
+        newPageSettings = updateNestedArray(
           newPageSettings,
+          { id: nodeSet.id },
+          annotationType,
           'remove',
         );
 
@@ -1341,28 +1342,28 @@ const getSetLayerSettings = (
  *
  * @constructor
  *
- * @property layer The SceneNode in the Figma file that we want to annotate or modify.
+ * @property node The SceneNode in the Figma file that we want to annotate or modify.
  * @property frame The top-level FrameNode in the Figma file that we want to annotate or modify.
- * @property page The PageNode in the Figma file containing the corresponding `frame` and `layer`.
+ * @property page The PageNode in the Figma file containing the corresponding `frame` and `node`.
  */
 export default class Painter {
   frame: FrameNode;
   isMercadoMode: boolean;
-  layer: SceneNode;
+  node: SceneNode;
   page: PageNode;
   constructor({
-    for: layer,
+    for: node,
     in: page,
     isMercadoMode,
   }) {
     this.isMercadoMode = isMercadoMode;
-    this.frame = findFrame(layer);
-    this.layer = layer;
+    this.frame = findTopFrame(node);
+    this.node = node;
     this.page = page;
   }
 
   /**
-   * @description Locates annotation text in a layer’s Settings object and
+   * @description Locates annotation text in a node’s Settings object and
    * builds the visual annotation on the Figma frame.
    *
    * @kind function
@@ -1385,11 +1386,11 @@ export default class Painter {
       },
     };
 
-    const layerSettings = getLayerSettings(this.page, this.layer.id);
+    const nodeSettings = getNodeSettings(this.page, this.node.id);
 
-    if (!layerSettings || (layerSettings && !layerSettings.annotationText)) {
+    if (!nodeSettings || (nodeSettings && !nodeSettings.annotationText)) {
       result.status = 'error';
-      result.messages.log = 'Layer missing annotationText';
+      result.messages.log = 'Node missing annotationText';
       return result;
     }
 
@@ -1406,13 +1407,13 @@ export default class Painter {
       annotationText,
       annotationSecondaryText,
       annotationType,
-    } = layerSettings;
-    const layerName = this.layer.name;
-    const layerId = this.layer.id;
-    const groupName = `Annotation for ${layerName}`;
+    } = nodeSettings;
+    const nodeName = this.node.name;
+    const nodeId = this.node.id;
+    const groupName = `Annotation for ${nodeName}`;
 
     // set document settings to track annotation
-    getSetLayerSettings('annotatedLayers', { layerId }, this.page);
+    getSetNodeSettings('annotatedLayers', { layerId: nodeId }, this.page);
 
     // construct the base annotation elements
     const annotation = buildAnnotation({
@@ -1422,13 +1423,13 @@ export default class Painter {
     });
 
     // grab the position from crawler
-    const crawler = new Crawler({ for: [this.layer] });
+    const crawler = new Crawler({ for: [this.node] });
     const positionResult = crawler.position();
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const layerPosition: {
+    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
+    const nodePosition: {
       frameWidth: number,
       frameHeight: number,
       width: number,
@@ -1443,41 +1444,41 @@ export default class Painter {
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: layerIndex,
+      index: nodeIndex,
     };
 
     const group = positionAnnotation(
       this.frame,
       groupName,
       annotation,
-      layerPosition,
+      nodePosition,
     );
 
     // set it in the correct containers
-    const containerSet = setLayerInContainers({
-      layer: group,
+    const containerSet = setNodeInContainers({
+      node: group,
       frame: this.frame,
       page: this.page,
       type: annotationType,
     });
 
     // new object with IDs to add to settings
-    const newAnnotatedLayerSet: {
+    const newAnnotatedNodeSet: {
       containerGroupId: string,
       id: string,
       originalId: string,
     } = {
       containerGroupId: containerSet.componentInnerGroupId,
       id: group.id,
-      originalId: layerId,
+      originalId: nodeId,
     };
 
     // update the `newPageSettings` array
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-    newPageSettings = updateArray(
-      'annotatedLayers',
-      newAnnotatedLayerSet,
+    newPageSettings = updateNestedArray(
       newPageSettings,
+      newAnnotatedNodeSet,
+      'annotatedLayers',
       'add',
     );
 
@@ -1522,8 +1523,8 @@ export default class Painter {
     const boundingBox = buildBoundingBox(position);
 
     // set it in the correct containers
-    const containerSet = setLayerInContainers({
-      layer: boundingBox,
+    const containerSet = setNodeInContainers({
+      node: boundingBox,
       frame: this.frame,
       page: this.page,
       type: 'boundingBox',
@@ -1544,7 +1545,7 @@ export default class Painter {
   }
 
   /**
-   * @description Takes a layer and creates two dimension annotations with the layer’s
+   * @description Takes a node and creates two dimension annotations with the node’s
    * `height` and `width`.
    *
    * @kind function
@@ -1577,20 +1578,20 @@ export default class Painter {
 
     // set up some information
     const annotationType = 'dimension';
-    const layerId = this.layer.id;
-    const layerName = this.layer.name;
+    const nodeId = this.node.id;
+    const nodeName = this.node.name;
 
     // set document settings to track annotation
-    getSetLayerSettings('annotatedDimensions', { layerId }, this.page);
+    getSetNodeSettings('annotatedDimensions', { layerId: nodeId }, this.page);
 
     // grab the position from crawler
-    const crawler = new Crawler({ for: [this.layer] });
+    const crawler = new Crawler({ for: [this.node] });
     const positionResult = crawler.position();
     const relativePosition = positionResult.payload;
 
     // group and position the annotation elements
-    const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const layerPosition: {
+    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
+    const nodePosition: {
       frameWidth: number,
       frameHeight: number,
       width: number,
@@ -1605,16 +1606,16 @@ export default class Painter {
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: layerIndex,
+      index: nodeIndex,
     };
 
     // ------------------------
     // construct the width annotation elements
     const roundedWidthNumber: number = Math.round(
-      (this.layer.width + Number.EPSILON) * 100,
+      (this.node.width + Number.EPSILON) * 100,
     ) / 100;
     const annotationTextWidth: string = `${roundedWidthNumber}dp`;
-    const groupNameWidth: string = `Dimension Width for layer ${layerName}`;
+    const groupNameWidth: string = `Dimension Width for layer ${nodeName}`;
     const annotationWidth = buildAnnotation({
       mainText: annotationTextWidth,
       type: annotationType,
@@ -1625,14 +1626,14 @@ export default class Painter {
       this.frame,
       groupNameWidth,
       annotationWidth,
-      layerPosition,
+      nodePosition,
       annotationType,
       annotationOrientation,
     );
 
     // set it in the correct containers
-    const containerSetWidth = setLayerInContainers({
-      layer: groupWidth,
+    const containerSetWidth = setNodeInContainers({
+      node: groupWidth,
       frame: this.frame,
       page: this.page,
       type: annotationType,
@@ -1646,25 +1647,25 @@ export default class Painter {
     } = {
       containerGroupId: containerSetWidth.componentInnerGroupId,
       id: groupWidth.id,
-      originalId: layerId,
+      originalId: nodeId,
     };
 
     // update the `newPageSettings` array
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-    newPageSettings = updateArray(
-      'annotatedDimensions',
-      newAnnotatedDimensionSetWidth,
+    newPageSettings = updateNestedArray(
       newPageSettings,
+      newAnnotatedDimensionSetWidth,
+      'annotatedDimensions',
       'add',
     );
 
     // ------------------------
     // construct the height annotation elements
     const roundedHeightNumber: number = Math.round(
-      (this.layer.height + Number.EPSILON) * 100,
+      (this.node.height + Number.EPSILON) * 100,
     ) / 100;
     const annotationTextHeight: string = `${roundedHeightNumber}dp`;
-    const groupNameHeight: string = `Dimension Height for layer ${layerName}`;
+    const groupNameHeight: string = `Dimension Height for layer ${nodeName}`;
     const annotationHeight = buildAnnotation({
       mainText: annotationTextHeight,
       type: annotationType,
@@ -1675,14 +1676,14 @@ export default class Painter {
       this.frame,
       groupNameHeight,
       annotationHeight,
-      layerPosition,
+      nodePosition,
       annotationType,
       annotationOrientationHeight,
     );
 
     // set it in the correct containers
-    const containerSetHeight = setLayerInContainers({
-      layer: groupHeight,
+    const containerSetHeight = setNodeInContainers({
+      node: groupHeight,
       frame: this.frame,
       page: this.page,
       type: annotationType,
@@ -1696,14 +1697,14 @@ export default class Painter {
     } = {
       containerGroupId: containerSetHeight.componentInnerGroupId,
       id: groupHeight.id,
-      originalId: layerId,
+      originalId: nodeId,
     };
 
     // update the `newPageSettings` array
-    newPageSettings = updateArray(
-      'annotatedDimensions',
-      newAnnotatedDimensionSetHeight,
+    newPageSettings = updateNestedArray(
       newPageSettings,
+      newAnnotatedDimensionSetHeight,
+      'annotatedDimensions',
       'add',
     );
 
@@ -1717,7 +1718,7 @@ export default class Painter {
 
     // return a successful result
     result.status = 'success';
-    result.messages.log = `Dimensions annotated for “${this.layer.name}”`;
+    result.messages.log = `Dimensions annotated for “${this.node.name}”`;
     return result;
   }
 
@@ -1730,8 +1731,8 @@ export default class Painter {
    * @name addSpacingAnnotation
    *
    * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
-   * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
-   * for the two layers used to calculated the gap OR `layerId` for the single node in the
+   * of an entire selection. It should also includes node IDs (`layerAId` and `layerBId`)
+   * for the two nodes used to calculated the gap OR `layerId` for the single node in the
    * case of an auto-layout, padded node.
    *
    * @returns {null}
@@ -1770,11 +1771,12 @@ export default class Painter {
 
     const annotationText: string = `${spacingPrefix}${spacingValue}${spacingSuffix}`;
     const annotationType = 'spacing';
-    const layerName: string = this.layer.name;
-    const groupName: string = `Spacing for ${layerName} (${spacingPosition.direction})`;
+    const nodeName: string = this.node.name;
+    const groupName: string = `Spacing for ${nodeName} (${spacingPosition.direction})`;
 
     // set document settings
-    getSetLayerSettings(
+    // use “layer” instead of “node” to match older documents
+    getSetNodeSettings(
       'annotatedSpacings',
       {
         layerId: spacingPosition.layerId,
@@ -1792,8 +1794,8 @@ export default class Painter {
     });
 
     // group and position the base annotation elements
-    const layerIndex: number = this.layer.parent.children.findIndex(node => node === this.layer);
-    const layerPosition: {
+    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
+    const nodePosition: {
       frameWidth: number,
       frameHeight: number,
       width: number,
@@ -1808,7 +1810,7 @@ export default class Painter {
       height: spacingPosition.height,
       x: spacingPosition.x,
       y: spacingPosition.y,
-      index: layerIndex,
+      index: nodeIndex,
     };
 
     const annotationOrientation = (spacingPosition.orientation === 'vertical' ? 'top' : 'left');
@@ -1816,20 +1818,21 @@ export default class Painter {
       this.frame,
       groupName,
       annotation,
-      layerPosition,
+      nodePosition,
       annotationType,
       annotationOrientation,
     );
 
     // set it in the correct containers
-    const containerSet = setLayerInContainers({
-      layer: group,
+    const containerSet = setNodeInContainers({
+      node: group,
       frame: this.frame,
       page: this.page,
       type: annotationType,
     });
 
     // new object with IDs to add to settings
+    // use “layer” instead of “node” to match older documents
     const newAnnotatedSpacingSet: {
       containerGroupId: string,
       id: string,
@@ -1848,10 +1851,10 @@ export default class Painter {
 
     // update the `newPageSettings` array
     let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-    newPageSettings = updateArray(
-      'annotatedSpacings',
-      newAnnotatedSpacingSet,
+    newPageSettings = updateNestedArray(
       newPageSettings,
+      newAnnotatedSpacingSet,
+      'annotatedSpacings',
       'add',
     );
 
@@ -1872,8 +1875,8 @@ export default class Painter {
    * @name addGapMeasurement
    *
    * @param {Object} spacingPosition The `x`, `y` coordinates, `width`, `height`, and `orientation`
-   * of an entire selection. It should also includes layer IDs (`layerAId` and `layerBId`)
-   * for the two layers used to calculated the gap.
+   * of an entire selection. It should also includes node IDs (`layerAId` and `layerBId`)
+   * for the two nodes used to calculated the gap.
    *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
@@ -1923,7 +1926,7 @@ export default class Painter {
 
     // return a successful result
     result.status = 'success';
-    result.messages.log = `Spacing annotated for “${this.layer.name}”`;
+    result.messages.log = `Spacing annotated for “${this.node.name}”`;
     return result;
   }
 
@@ -1937,7 +1940,7 @@ export default class Painter {
    *
    * @param {Object} overlapFrames The `top`, `bottom`, `right`, and `left` frames. Each frame
    * contains `x`, `y` coordinates, `width`, `height`, and `orientation`. The object also includes
-   * layer IDs (`layerAId` and `layerBId`) for the two layers used to calculated the
+   * node IDs (`layerAId` and `layerBId`) for the two nodes used to calculated the
    * overlapped areas.
    * @param {Array} directions An optional array containing 4 unique strings representating
    * the annotation directions: `top`, `bottom`, `right`, `left`.
@@ -1974,7 +1977,7 @@ export default class Painter {
     if (!overlapFrames) {
       result.status = 'error';
       result.messages.log = 'overlapFrames is missing';
-      result.messages.toast = 'Could not find a overlapped layers in your selection';
+      result.messages.toast = 'Could not find overlapped layers in your selection';
       return result;
     }
 
@@ -1994,6 +1997,8 @@ export default class Painter {
         frameX = overlapFrames[direction].x;
       }
 
+      // set up position object
+      // use “layer” instead of “node” to match older documents
       const spacingPosition: {
         x: number,
         y: number,
@@ -2021,7 +2026,7 @@ export default class Painter {
 
     // return a successful result
     result.status = 'success';
-    result.messages.log = `Spacing (${directions.join(', ')}) annotated for “${this.layer.name}”`;
+    result.messages.log = `Spacing (${directions.join(', ')}) annotated for “${this.node.name}”`;
     return result;
   }
 }
