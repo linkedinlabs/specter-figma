@@ -1,10 +1,10 @@
 <script>
-  import { currentTask } from './stores';
+  export let currentView = 'general';
 
   const menuItems = [
     {
       text: 'General',
-      id: 'genera',
+      id: 'general',
     },
     {
       text: 'Keyboard',
@@ -20,22 +20,20 @@
     },
   ];
 
-  // const setCurrentFilters = (newIsStyles, newFilter) => {
-  //   parent.postMessage({
-  //     pluginMessage: {
-  //       action: 'setFilters',
-  //       payload: {
-  //         newIsSelection: $isSelection,
-  //         newIsStyles,
-  //         newFilter,
-  //       },
-  //     },
-  //   }, '*');
-  // };
+  const setCurrentViewContext = (newView) => {
+    parent.postMessage({
+      pluginMessage: {
+        action: 'setViewContext',
+        payload: {
+          newView,
+        },
+      },
+    }, '*');
+  };
 
   const handleItemClick = (selectedId) => {
     console.log(`item clicked: ${selectedId}`); // eslint-disable-line no-console
-    // setCurrentFilters($isStyles, selectedId);
+    setCurrentViewContext(selectedId);
   };
 </script>
 
@@ -48,7 +46,7 @@
     {#each menuItems as item, i}
     <li>
       <button
-        class:selected="{item.id === $currentTask}"
+        class:selected="{item.id === currentView}"
         on:click={() => handleItemClick(item.id)}
       >
         {item.text}

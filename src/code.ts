@@ -70,16 +70,22 @@ const showGUI = (isMercadoMode?: boolean): void => {
  * @returns {null}
  */
 const dispatcher = async (action: {
+  payload?: any,
   type: string,
   visual: boolean,
 }) => {
+  const {
+    payload,
+    // sessionKey,
+    type,
+    // visual,
+  } = action;
+
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
 
   // retrieve existing options
-  const lastUsedOptions: {
-    isMercadoMode: boolean,
-  } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+  const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
 
   // set mercado mode flag
   let isMercadoMode: boolean = false;
@@ -161,9 +167,9 @@ const dispatcher = async (action: {
         await App.toggleMercadoMode();
 
         // refresh options since they have changed
-        const refreshedOptions: {
-          isMercadoMode: boolean,
-        } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+        const refreshedOptions: PluginOptions = await figma.clientStorage.getAsync(
+          DATA_KEYS.options,
+        );
 
         if (refreshedOptions && refreshedOptions.isMercadoMode !== undefined) {
           isMercadoMode = refreshedOptions.isMercadoMode;
@@ -172,6 +178,9 @@ const dispatcher = async (action: {
         showGUI(isMercadoMode);
         break;
       }
+      case 'setViewContext':
+        App.setViewContext(payload);
+        break;
       default:
         showGUI(isMercadoMode);
     }
@@ -190,7 +199,7 @@ const dispatcher = async (action: {
     // run the action
     await runAction(actionType);
   };
-  await runActionWithTypefaces(action.type);
+  await runActionWithTypefaces(type);
 
   return null;
 };
@@ -223,13 +232,17 @@ const main = async () => {
     });
   }
 
-  // watch GUI action clicks -------------------------------------------------
-  figma.ui.onmessage = (msg: { navType: string }): void => {
-    // watch for nav actions and send to `dispatcher`
-    if (msg.navType) {
+  // watch GUI messages -------------------------------------------------
+  figma.ui.onmessage = (msg: { action: string, payload: any }): void => {
+    const { action, payload } = msg;
+
+    // watch for actions and send to `dispatcher`
+    if (action) {
       dispatcher({
-        type: msg.navType,
+        payload,
+        type: action,
         visual: true,
+        // sessionKey: SESSION_KEY,
       });
     }
 

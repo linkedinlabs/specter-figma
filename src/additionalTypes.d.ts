@@ -1,5 +1,9 @@
 declare global {
   // Internal Declarations
+  type PluginOptions = {
+    currentView: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings',
+    isMercadoMode: boolean,
+  };
 
   // Vendor Declarations
 

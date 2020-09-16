@@ -2,7 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { DATA_KEYS } from './constants';
+import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -647,6 +647,105 @@ export default class App {
     return null;
   }
 
+  /** WIP
+   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
+   * features specific to the Mercado Design Library. The flag is saved to local
+   * storage so that it persists across files.
+   *
+   * @kind function
+   * @name toggleMercadoMode
+   *
+   * @returns {Promise} Returns a promise for resolution.
+   */
+  static async refreshGUI() {
+    const { messenger, selection } = assemble(figma);
+
+    // set up initial selection
+    // tktk
+    const nodes: Array<SceneNode> = new Crawler({ for: selection }).all();
+
+    // get last-used filters from options
+    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    const { currentView, isMercadoMode } = lastUsedOptions;
+
+    // resize the UI based on selection
+    // tktk
+
+    // send the updates to the UI
+    figma.ui.postMessage({
+      action: 'refreshState',
+      payload: {
+        currentView,
+        isMercadoMode,
+        selection,
+        // sessionKey,
+        // guiStartSize: newGUIHeight,
+      },
+    });
+
+    // figma.ui.resize(
+    //   GUI_SETTINGS.default.width,
+    //   newGUIHeight,
+    // );
+
+    messenger.log(`Updating the UI with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
+  }
+
+
+  /** WIP
+   * @description Triggers a UI refresh with the current selection.
+   *
+   * @kind function
+   * @name resizeGUI
+   *
+   * @param {string} sessionKey A rotating key used during the single run of the plugin.
+   */
+  static async resizeGUI(
+    payload: { bodyHeight: number },
+  ) {
+    const { bodyHeight } = payload;
+    const newGUIHeight = bodyHeight + 40; // add floating footer height
+
+    if (bodyHeight) {
+      figma.ui.resize(
+        GUI_SETTINGS.default.width,
+        newGUIHeight,
+      );
+    }
+  }
+
+  /** WIP
+   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
+   * features specific to the Mercado Design Library. The flag is saved to local
+   * storage so that it persists across files.
+   *
+   * @kind function
+   * @name toggleMercadoMode
+   *
+   * @returns {Promise} Returns a promise for resolution.
+   */
+  static async setViewContext(payload) {
+    const { newView }: {
+      newView: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings'
+    } = payload;
+
+    // retrieve existing options
+    let options: any = {};
+    const lastUsedOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    if (lastUsedOptions !== undefined) {
+      options = lastUsedOptions;
+    }
+
+    // set new view without changing other options
+    options.currentView = newView;
+
+    // save new options to storage
+    await figma.clientStorage.setAsync(DATA_KEYS.options, options);
+
+    // App.refreshGUI(sessionKey);
+    App.refreshGUI();
+  }
+
   /**
    * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
    * features specific to the Mercado Design Library. The flag is saved to local
@@ -659,22 +758,21 @@ export default class App {
    */
   static async toggleMercadoMode() {
     // retrieve existing options
-    const lastUsedOptions: {
-      isMercadoMode: boolean,
-    } = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    let options: any = {};
+    const lastUsedOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+
+    if (lastUsedOptions) {
+      options = lastUsedOptions;
+    }
 
     // set preliminary mercado mode
     let currentIsMercadoMode: boolean = false;
-    if (lastUsedOptions && lastUsedOptions.isMercadoMode !== undefined) {
-      currentIsMercadoMode = lastUsedOptions.isMercadoMode;
+    if (options && options.isMercadoMode !== undefined) {
+      currentIsMercadoMode = options.isMercadoMode;
     }
 
-    // set new mercado mode flag
-    const options: {
-      isMercadoMode: boolean
-    } = {
-      isMercadoMode: !currentIsMercadoMode,
-    };
+    // set new mercado mode flag without changing other options
+    options.isMercadoMode = !currentIsMercadoMode;
 
     // save new options to storage
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);

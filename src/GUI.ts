@@ -5,16 +5,37 @@ import { isInternal } from './Tools';
 import './assets/css/main.scss';
 import App from './views/App.svelte'; // eslint-disable-line import/extensions
 
+const appProps: {
+  isInfoPanel: boolean,
+  isInternal: boolean,
+  isMercadoMode: boolean,
+  isUserInput: boolean,
+  userInputValue: string,
+  viewContext: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings',
+} = {
+  isInfoPanel: false,
+  isInternal: isInternal(),
+  isMercadoMode: false,
+  isUserInput: false,
+  viewContext: 'general',
+  userInputValue: null,
+};
+
 const app = new App({
   target: document.body,
-  props: {
-    isInternal: isInternal(),
-    isMercadoMode: false,
-    isUserInput: false,
-    isInfoPanel: false,
-    userInputValue: null,
-  },
+  props: appProps,
 });
+
+// const app = new App({
+//   target: document.body,
+//   props: {
+//     isInternal: isInternal(),
+//     isMercadoMode: false,
+//     viewContext: 'general',
+//     isInfoPanel: false,
+//     userInputValue: null,
+//   },
+// });
 
 /**
  * @description Posts a message to the main thread with `loaded` set to `true`. Used in the
@@ -110,6 +131,12 @@ const watchIncomingMessages = (): void => {
       case 'hideInfo':
         showHideInfo('hide');
         break;
+      case 'refreshState': {
+        const { currentView, isMercadoMode } = payload;
+        app.viewContext = currentView;
+        app.isMercadoMode = isMercadoMode;
+        break;
+      }
       case 'setMercadoMode':
         app.isMercadoMode = payload;
         break;
