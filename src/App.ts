@@ -2,6 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
+import { resizeGUI } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -40,24 +41,32 @@ const assemble = (context: any = null) => {
  * at the end of the plugin’s current task.
  */
 export default class App {
-  closeGUI: Function;
-  dispatcher: Function;
-  isMercadoMode: boolean;
   shouldTerminate: boolean;
-  showGUI: Function;
+  terminatePlugin: Function;
 
   constructor({
-    closeGUI,
-    dispatcher,
-    isMercadoMode,
     shouldTerminate,
-    showGUI,
+    terminatePlugin,
   }) {
-    this.closeGUI = closeGUI;
-    this.dispatcher = dispatcher;
-    this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
-    this.showGUI = showGUI;
+    this.terminatePlugin = terminatePlugin;
+  }
+
+  /**
+   * @description Resets the plugin GUI back to the original state or closes it entirely,
+   * terminating the plugin.
+   *
+   * @kind function
+   * @name closeOrReset
+   *
+   * @returns {null}
+   */
+  closeOrReset() {
+    if (this.shouldTerminate) {
+      return this.terminatePlugin();
+    }
+
+    return null;
   }
 
 
@@ -152,10 +161,7 @@ export default class App {
       return messenger.toast('At least one layer with matching corners must be selected');
     }
 
-    if (this.shouldTerminate) {
-      this.closeGUI();
-    }
-    return null;
+    return this.closeOrReset();
   }
 
   /**
@@ -234,7 +240,7 @@ export default class App {
             // show the GUI if we are annotating a single custom node
             if (shouldTerminateLocal) {
               shouldTerminateLocal = false;
-              this.showGUI(this.isMercadoMode);
+              App.showGUI(this.isMercadoMode);
             }
 
             // present the option to set custom text
@@ -257,7 +263,7 @@ export default class App {
 
               // close the GUI if it started closed
               if (this.shouldTerminate && !shouldTerminateLocal) {
-                this.closeGUI();
+                this.closeOrReset();
               }
             };
 
@@ -279,10 +285,7 @@ export default class App {
       return null;
     });
 
-    if (shouldTerminateLocal) {
-      this.closeGUI();
-    }
-    return null;
+    return this.closeOrReset();
   }
 
   /**
@@ -312,7 +315,7 @@ export default class App {
     }
 
     if (this.shouldTerminate) {
-      this.showGUI(this.isMercadoMode);
+      App.showGUI(this.isMercadoMode);
     }
 
     // grab the node form the selection
@@ -357,11 +360,7 @@ export default class App {
         }
       }
 
-      if (this.shouldTerminate) {
-        this.closeGUI();
-      }
-
-      return null;
+      return this.closeOrReset();
     };
 
     // set the custom text
@@ -438,10 +437,7 @@ export default class App {
       messenger.handleResult(paintResult);
     }
 
-    if (this.shouldTerminate) {
-      this.closeGUI();
-    }
-    return null;
+    return this.closeOrReset();
   }
 
   /**
@@ -504,10 +500,7 @@ export default class App {
       }
     }
 
-    if (this.shouldTerminate) {
-      this.closeGUI();
-    }
-    return null;
+    return this.closeOrReset();
   }
 
   /**
@@ -570,10 +563,7 @@ export default class App {
       messenger.toast('The selected layers need to overlap');
     }
 
-    if (this.shouldTerminate) {
-      this.closeGUI();
-    }
-    return null;
+    return this.closeOrReset();
   }
 
   /**
@@ -641,10 +631,7 @@ export default class App {
       drawSingleBox(selection);
     }
 
-    if (this.shouldTerminate) {
-      this.closeGUI();
-    }
-    return null;
+    return this.closeOrReset();
   }
 
   /** WIP
@@ -744,6 +731,56 @@ export default class App {
 
     // App.refreshGUI(sessionKey);
     App.refreshGUI();
+  }
+
+  /**
+   * @description Displays the plugin GUI within Figma.
+   *
+   * @kind function
+   * @name showGUI
+   *
+   * @param {Object} options Can include `size` calling one of the UI sizes defined
+   * in GUI_SETTINGS  and/or an initialized instance of the Messenger class for
+   * logging (`messenger`). Both are optional.
+   *
+   * @returns {null}
+   */
+  static async showGUI(options: {
+    size?: 'default' | 'info',
+    messenger?: { log: Function },
+  }) {
+    const { size, messenger } = options;
+
+    if (messenger) {
+      const displayMessage: string = size ? ` at size: ${size}` : '';
+      messenger.log(`Display GUI${displayMessage}`);
+    }
+
+    // set UI panel size
+    if (size) {
+      resizeGUI(size, figma.ui);
+    }
+
+    // show UI
+    figma.ui.show();
+
+    return null;
+  }
+
+  /**
+   * @description Triggers a UI refresh and then displays the plugin UI.
+   *
+   * @kind function
+   * @name showToolbar
+   *
+   * @param {string} sessionKey A rotating key used during the single run of the plugin.
+   */
+  static async showToolbar() {
+    const { messenger } = assemble(figma);
+
+    // await App.refreshGUI(sessionKey);
+    await App.refreshGUI();
+    App.showGUI({ messenger });
   }
 
   /**

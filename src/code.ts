@@ -14,44 +14,13 @@ import { DATA_KEYS, TYPEFACES } from './constants';
  * @description Shuts down the plugin and closes the GUI.
  *
  * @kind function
- * @name closeGUI
+ * @name terminatePlugin
  *
  * @returns {null}
  */
-const closeGUI = (): void => {
-  // close the UI without suppressing error messages
+const terminatePlugin = (): void => {
+  // close the plugin without suppressing error messages
   figma.closePlugin();
-  return null;
-};
-
-/**
- * @description Enables the plugin GUI within Figma.
- *
- * @kind function
- * @name showGUI
- *
- * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
- *
- * @returns {null} Shows a Toast in the UI if nothing is selected.
- */
-const showGUI = (isMercadoMode?: boolean): void => {
-  // set UI size
-  let size = 'default';
-
-  if (isMercadoMode) {
-    size = 'mercadoDefault';
-  }
-  resizeGUI(size, figma.ui);
-
-  // set mercado mode banner
-  figma.ui.postMessage({
-    action: 'setMercadoMode',
-    payload: isMercadoMode,
-  });
-
-  // show UI
-  figma.ui.show();
-
   return null;
 };
 
@@ -95,11 +64,9 @@ const dispatcher = async (action: {
 
   // pass along some GUI management and navigation functions to the App class
   const app = new App({
-    closeGUI,
     dispatcher,
     isMercadoMode,
     shouldTerminate,
-    showGUI,
   });
 
   // run the action in the App class based on type
@@ -175,14 +142,16 @@ const dispatcher = async (action: {
           isMercadoMode = refreshedOptions.isMercadoMode;
         }
 
-        showGUI(isMercadoMode);
+        // showGUI(isMercadoMode);
         break;
       }
       case 'setViewContext':
         App.setViewContext(payload);
         break;
       default:
-        showGUI(isMercadoMode);
+        // showGUI(lastUsedOptions);
+        console.log('here?')
+        await App.showToolbar();
     }
   };
 
