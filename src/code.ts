@@ -132,20 +132,10 @@ const dispatcher = async (action: {
       }
       case 'mercado-mode-toggle': {
         await App.toggleMercadoMode();
-
-        // refresh options since they have changed
-        const refreshedOptions: PluginOptions = await figma.clientStorage.getAsync(
-          DATA_KEYS.options,
-        );
-
-        if (refreshedOptions && refreshedOptions.isMercadoMode !== undefined) {
-          isMercadoMode = refreshedOptions.isMercadoMode;
-        }
-
         break;
       }
       case 'setViewContext':
-        App.setViewContext(payload);
+        await App.setViewContext(payload);
         break;
       default:
         await App.showToolbar();

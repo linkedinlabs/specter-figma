@@ -641,7 +641,7 @@ export default class App {
    * storage so that it persists across files.
    *
    * @kind function
-   * @name toggleMercadoMode
+   * @name refreshGUI
    *
    * @returns {Promise} Returns a promise for resolution.
    */
@@ -708,11 +708,13 @@ export default class App {
    * storage so that it persists across files.
    *
    * @kind function
-   * @name toggleMercadoMode
+   * @name setViewContext
    *
    * @returns {Promise} Returns a promise for resolution.
    */
-  static async setViewContext(payload) {
+  static async setViewContext(payload: {
+    newView: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings',
+  }) {
     const { newView }: {
       newView: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings'
     } = payload;
@@ -816,5 +818,11 @@ export default class App {
 
     // save new options to storage
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);
+
+    // reset the view to “general”
+    await this.setViewContext({ newView: 'general' });
+
+    // show the toolbar
+    await this.showToolbar();
   }
 }

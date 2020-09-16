@@ -185,7 +185,7 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   default: {
     width: 360,
-    height: 200,
+    height: 171,
   },
   input: {
     width: 440,

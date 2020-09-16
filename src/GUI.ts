@@ -26,17 +26,6 @@ const app = new App({
   props: appProps,
 });
 
-// const app = new App({
-//   target: document.body,
-//   props: {
-//     isInternal: isInternal(),
-//     isMercadoMode: false,
-//     viewContext: 'general',
-//     isInfoPanel: false,
-//     userInputValue: null,
-//   },
-// });
-
 /**
  * @description Posts a message to the main thread with `loaded` set to `true`. Used in the
  * main thread to indicate the GUI is listening.
