@@ -26,7 +26,7 @@ const assemble = (context: any = null) => {
   };
 };
 
-/**
+/** WIP
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -36,18 +36,20 @@ const assemble = (context: any = null) => {
  *
  * @property closeGUI A convenience function for closing the GUI and shutting down the plugin.
  * @property showGUI A convenience function for showing the GUI.
- * @property dispatcher The function from `main.ts` that determines where to route GUI clicks.
  * @property shouldTerminate A boolean that tells us whether or not the GUI should remain open
  * at the end of the plugin’s current task.
  */
 export default class App {
+  isMercadoMode: boolean;
   shouldTerminate: boolean;
   terminatePlugin: Function;
 
   constructor({
+    isMercadoMode,
     shouldTerminate,
     terminatePlugin,
   }) {
+    this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
     this.terminatePlugin = terminatePlugin;
   }
@@ -126,7 +128,6 @@ export default class App {
           const nodeToAnnotate = new Identifier({
             for: node,
             data: page,
-            dispatcher: this.dispatcher,
             isMercadoMode: this.isMercadoMode,
             messenger,
           });
@@ -196,7 +197,6 @@ export default class App {
       const nodeToAnnotate = new Identifier({
         for: node,
         data: page,
-        dispatcher: this.dispatcher,
         isMercadoMode: this.isMercadoMode,
         messenger,
       });
@@ -239,8 +239,9 @@ export default class App {
           if (!multipleNodes) {
             // show the GUI if we are annotating a single custom node
             if (shouldTerminateLocal) {
+              const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
               shouldTerminateLocal = false;
-              App.showGUI(this.isMercadoMode);
+              App.showGUI({ messenger, size });
             }
 
             // present the option to set custom text
@@ -315,7 +316,8 @@ export default class App {
     }
 
     if (this.shouldTerminate) {
-      App.showGUI(this.isMercadoMode);
+      const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
+      App.showGUI({ messenger, size });
     }
 
     // grab the node form the selection
@@ -325,7 +327,6 @@ export default class App {
     const nodeToAnnotate = new Identifier({
       for: node,
       data: page,
-      dispatcher: this.dispatcher,
       isMercadoMode: this.isMercadoMode,
       messenger,
       shouldTerminate: this.shouldTerminate,
@@ -746,7 +747,7 @@ export default class App {
    * @returns {null}
    */
   static async showGUI(options: {
-    size?: 'default' | 'info',
+    size?: 'default' | 'mercadoDefault',
     messenger?: { log: Function },
   }) {
     const { size, messenger } = options;

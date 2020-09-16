@@ -18,7 +18,7 @@
   const handleAction = (action) => {
     parent.postMessage({
       pluginMessage: {
-        navType: action,
+        action,
       },
     }, '*');
   };

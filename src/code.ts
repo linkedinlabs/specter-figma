@@ -64,9 +64,9 @@ const dispatcher = async (action: {
 
   // pass along some GUI management and navigation functions to the App class
   const app = new App({
-    dispatcher,
     isMercadoMode,
     shouldTerminate,
+    terminatePlugin,
   });
 
   // run the action in the App class based on type
@@ -142,15 +142,12 @@ const dispatcher = async (action: {
           isMercadoMode = refreshedOptions.isMercadoMode;
         }
 
-        // showGUI(isMercadoMode);
         break;
       }
       case 'setViewContext':
         App.setViewContext(payload);
         break;
       default:
-        // showGUI(lastUsedOptions);
-        console.log('here?')
         await App.showToolbar();
     }
   };
@@ -204,7 +201,6 @@ const main = async () => {
   // watch GUI messages -------------------------------------------------
   figma.ui.onmessage = (msg: { action: string, payload: any }): void => {
     const { action, payload } = msg;
-
     // watch for actions and send to `dispatcher`
     if (action) {
       dispatcher({
