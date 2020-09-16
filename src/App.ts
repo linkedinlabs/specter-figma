@@ -719,7 +719,7 @@ export default class App {
 
     // retrieve existing options
     let options: any = {};
-    const lastUsedOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
     if (lastUsedOptions !== undefined) {
       options = lastUsedOptions;
     }
@@ -778,10 +778,12 @@ export default class App {
    */
   static async showToolbar() {
     const { messenger } = assemble(figma);
+    const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    const size = currentOptions.isMercadoMode ? 'mercadoDefault' : 'default';
 
     // await App.refreshGUI(sessionKey);
     await App.refreshGUI();
-    App.showGUI({ messenger });
+    App.showGUI({ messenger, size });
   }
 
   /**
@@ -797,7 +799,7 @@ export default class App {
   static async toggleMercadoMode() {
     // retrieve existing options
     let options: any = {};
-    const lastUsedOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
 
     if (lastUsedOptions) {
       options = lastUsedOptions;
