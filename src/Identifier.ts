@@ -402,7 +402,7 @@ const parseOverrides = (parentNode: any): string => {
 };
 
 // --- main Identifier class function
-/**
+/** WIP
  * @description A class to handle identifying a Figma node as a valid part of the Design System.
  *
  * @class
@@ -413,10 +413,8 @@ const parseOverrides = (parentNode: any): string => {
  * @property node The node that needs identification.
  * @property page The Figma page that contains the node.
  * @property messenger An instance of the Messenger class.
- * @property dispatcher An optional instance of the `dispatcher` function from `main.ts`.
  */
 export default class Identifier {
-  dispatcher?: Function;
   isMercadoMode: boolean;
   node: any;
   messenger: any;
@@ -426,12 +424,10 @@ export default class Identifier {
   constructor({
     for: node,
     data: page,
-    dispatcher,
     isMercadoMode,
     messenger,
     shouldTerminate = false,
   }) {
-    this.dispatcher = dispatcher;
     this.isMercadoMode = isMercadoMode;
     this.node = node;
     this.messenger = messenger;
@@ -730,8 +726,8 @@ export default class Identifier {
         payload: { initialValue },
       });
 
-      // listen for feedback from the UI
-      figma.ui.onmessage = (
+      // set a one-time use listener for feedback from the UI
+      figma.ui.once('message', (
         msg: {
           inputType: 'cancel' | 'submit',
           inputValue: string,
@@ -763,22 +759,11 @@ export default class Identifier {
             this.messenger.log('User input is empty', 'error');
             // TKTK handle empty state validation
           }
-        } else {
-          if (userInputIsOpen) {
-            resetGUI();
-            userInputIsOpen = false;
-          }
-
-          // watch for nav actions and send to `dispatcher`
-          // `figma.ui.onmessage` can only have one instance at a time
-          if (msg.navType) {
-            this.dispatcher({
-              type: msg.navType,
-              visual: true,
-            });
-          }
+        } else if (userInputIsOpen) {
+          resetGUI();
+          userInputIsOpen = false;
         }
-      };
+      });
 
       // wait on the user input
       const checkUserInput = (): Function | NodeJS.Timeout => {
