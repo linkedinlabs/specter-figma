@@ -126,9 +126,6 @@ const watchIncomingMessages = (): void => {
         app.isMercadoMode = isMercadoMode;
         break;
       }
-      case 'setMercadoMode':
-        app.isMercadoMode = payload;
-        break;
       default:
         return null;
     }
