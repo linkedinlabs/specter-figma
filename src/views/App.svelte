@@ -1,11 +1,12 @@
 <script>
   import { beforeUpdate } from 'svelte';
   import { isMercadoStored, viewContextStored } from './stores';
+  import AccessibilityBase from './AccessibilityBase';
+  import InfoPanel from './InfoPanel';
   import ButtonInfoTrigger from './ButtonInfoTrigger';
   import FontPreload from './FontPreload';
-  import SceneNavigator from './SceneNavigator';
-  import InfoPanel from './InfoPanel';
   import MainPanel from './MainPanel';
+  import SceneNavigator from './SceneNavigator';
   import UserInput from './UserInput';
 
   export let isInternal = false;
@@ -59,6 +60,8 @@
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         showMercadoMode={$isMercadoStored}
       />
+    {:else}
+      <AccessibilityBase />
     {/if}
   {/if}
 
