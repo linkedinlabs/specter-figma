@@ -32,7 +32,6 @@
   };
 
   const handleItemClick = (selectedId) => {
-    console.log(`item clicked: ${selectedId}`); // eslint-disable-line no-console
     setCurrentViewContext(selectedId);
   };
 </script>

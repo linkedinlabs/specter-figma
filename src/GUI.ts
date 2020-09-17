@@ -11,7 +11,7 @@ const appProps: {
   isMercadoMode: boolean,
   isUserInput: boolean,
   userInputValue: string,
-  viewContext: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings',
+  viewContext: PluginViewTypes,
 } = {
   isInfoPanel: false,
   isInternal: isInternal(),

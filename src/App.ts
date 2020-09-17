@@ -2,7 +2,6 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { resizeGUI } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -239,9 +238,9 @@ export default class App {
           if (!multipleNodes) {
             // show the GUI if we are annotating a single custom node
             if (shouldTerminateLocal) {
-              const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
+              // const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
               shouldTerminateLocal = false;
-              App.showGUI({ messenger, size });
+              App.showGUI(messenger);
             }
 
             // present the option to set custom text
@@ -316,8 +315,8 @@ export default class App {
     }
 
     if (this.shouldTerminate) {
-      const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
-      App.showGUI({ messenger, size });
+      // const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
+      App.showGUI(messenger);
     }
 
     // grab the node form the selection
@@ -653,11 +652,29 @@ export default class App {
     const nodes: Array<SceneNode> = new Crawler({ for: selection }).all();
 
     // get last-used filters from options
-    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    const { currentView, isMercadoMode } = lastUsedOptions;
+    const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    const { currentView, isMercadoMode } = currentOptions;
 
-    // resize the UI based on selection
-    // tktk
+    // calculate UI size, based on view type and selection
+    let { width } = GUI_SETTINGS.default;
+    let { height } = GUI_SETTINGS.default;
+    switch (currentView) {
+      case 'general': {
+        if (isMercadoMode) {
+          width = GUI_SETTINGS.mercadoDefault.width;
+          height = GUI_SETTINGS.mercadoDefault.height;
+        }
+        break;
+      }
+      case 'a11y-headings':
+      case 'a11y-keyboard':
+      case 'a11y-labels':
+        width = GUI_SETTINGS.accessibilityDefault.width;
+        height = GUI_SETTINGS.accessibilityDefault.height;
+        break;
+      default:
+        return null;
+    }
 
     // send the updates to the UI
     figma.ui.postMessage({
@@ -671,12 +688,14 @@ export default class App {
       },
     });
 
-    // figma.ui.resize(
-    //   GUI_SETTINGS.default.width,
-    //   newGUIHeight,
-    // );
+    // commit the calculated size
+    figma.ui.resize(
+      width,
+      height,
+    );
 
-    messenger.log(`Updating the UI with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
+    messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
+    return null;
   }
 
 
@@ -712,12 +731,8 @@ export default class App {
    *
    * @returns {Promise} Returns a promise for resolution.
    */
-  static async setViewContext(payload: {
-    newView: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings',
-  }) {
-    const { newView }: {
-      newView: 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings'
-    } = payload;
+  static async setViewContext(payload: { newView: PluginViewTypes }) {
+    const { newView }: { newView: PluginViewTypes } = payload;
 
     // retrieve existing options
     let options: any = {};
@@ -748,20 +763,9 @@ export default class App {
    *
    * @returns {null}
    */
-  static async showGUI(options: {
-    size?: 'default' | 'mercadoDefault',
-    messenger?: { log: Function },
-  }) {
-    const { size, messenger } = options;
-
+  static async showGUI(messenger?: { log: Function }) {
     if (messenger) {
-      const displayMessage: string = size ? ` at size: ${size}` : '';
-      messenger.log(`Display GUI${displayMessage}`);
-    }
-
-    // set UI panel size
-    if (size) {
-      resizeGUI(size, figma.ui);
+      messenger.log('Display GUI');
     }
 
     // show UI
@@ -780,12 +784,10 @@ export default class App {
    */
   static async showToolbar() {
     const { messenger } = assemble(figma);
-    const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    const size = currentOptions.isMercadoMode ? 'mercadoDefault' : 'default';
 
     // await App.refreshGUI(sessionKey);
     await App.refreshGUI();
-    App.showGUI({ messenger, size });
+    await App.showGUI(messenger);
   }
 
   /**

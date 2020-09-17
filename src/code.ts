@@ -134,6 +134,9 @@ const dispatcher = async (action: {
         await App.toggleMercadoMode();
         break;
       }
+      case 'resize':
+        App.resizeGUI(payload);
+        break;
       case 'setViewContext':
         await App.setViewContext(payload);
         break;

@@ -183,6 +183,10 @@ const CONTAINER_NODE_TYPES = {
  * @type {Object}
  */
 const GUI_SETTINGS = {
+  accessibilityDefault: {
+    width: 360,
+    height: 180,
+  },
   default: {
     width: 360,
     height: 171,
