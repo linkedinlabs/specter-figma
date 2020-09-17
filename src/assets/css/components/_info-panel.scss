@@ -58,8 +58,7 @@
     }
   }
 
-  // open state trigger by .info-open class outside of trigger element
-  .info-open & {
+  &.info-open {
     bottom: auto;
     top: 0;
 

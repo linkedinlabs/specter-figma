@@ -52,9 +52,14 @@
 <div class={`container${isUserInput ? ' wide' : ''}`}>
   <div class="transition-mask"></div>
 
-  {#if !isUserInput && !isInfoPanel}
-    <ButtonInfoTrigger on:handleAction={customEvent => handleAction(customEvent.detail)} />
+  {#if !isUserInput}
+    <ButtonInfoTrigger
+      on:handleAction={customEvent => handleAction(customEvent.detail)}
+      isInfoPanel={isInfoPanel}
+    />
+  {/if}
 
+  {#if !isUserInput && !isInfoPanel}
     {#if $viewContextStored === 'general'}
       <MainPanel
         on:handleAction={customEvent => handleAction(customEvent.detail)}
