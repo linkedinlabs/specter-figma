@@ -238,7 +238,6 @@ export default class App {
           if (!multipleNodes) {
             // show the GUI if we are annotating a single custom node
             if (shouldTerminateLocal) {
-              // const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
               shouldTerminateLocal = false;
               App.showGUI(messenger);
             }
@@ -285,7 +284,10 @@ export default class App {
       return null;
     });
 
-    return this.closeOrReset();
+    if (shouldTerminateLocal) {
+      this.closeOrReset();
+    }
+    return null;
   }
 
   /**
@@ -315,7 +317,6 @@ export default class App {
     }
 
     if (this.shouldTerminate) {
-      // const size = this.isMercadoMode ? 'mercadoDefault' : 'default';
       App.showGUI(messenger);
     }
 
