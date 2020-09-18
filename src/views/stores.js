@@ -4,4 +4,4 @@ import { writable } from 'svelte/store';
 export const currentTask = writable(null);
 export const isMercadoStored = writable(false);
 export const sessionKey = writable(null);
-export const viewContextStored = writable('general');
+export const viewContextStored = writable(null);

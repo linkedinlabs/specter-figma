@@ -20,7 +20,7 @@
   export let newSessionKey = null;
   export let selected = null;
   export let userInputValue = null;
-  export let viewContext = 'general';
+  export let viewContext = null;
 
   const handleAction = (action) => {
     parent.postMessage({
@@ -52,7 +52,7 @@
 
 <!-- core layout -->
 <FontPreload/>
-{#if !isInfoPanel && !isUserInput}
+{#if $viewContextStored && !isInfoPanel && !isUserInput}
 <SceneNavigator currentView={$viewContextStored}/>
 {/if}
 
@@ -72,10 +72,10 @@
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         showMercadoMode={$isMercadoStored}
       />
-    {:else}
+    {:else if $viewContextStored}
       <AccessibilityBase
         selected={selected}
-        viewContext={viewContext}
+        viewContext={$viewContextStored}
       />
     {/if}
   {/if}

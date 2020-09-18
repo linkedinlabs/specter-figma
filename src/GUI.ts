@@ -20,7 +20,7 @@ const appProps: {
   isUserInput: false,
   selected: null,
   userInputValue: null,
-  viewContext: 'general',
+  viewContext: null,
 };
 
 const app = new App({
