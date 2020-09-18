@@ -1,6 +1,10 @@
 <script>
   import { beforeUpdate } from 'svelte';
-  import { isMercadoStored, viewContextStored } from './stores';
+  import {
+    isMercadoStored,
+    viewContextStored,
+    sessionKey,
+  } from './stores';
   import AccessibilityBase from './AccessibilityBase';
   import InfoPanel from './InfoPanel';
   import ButtonInfoTrigger from './ButtonInfoTrigger';
@@ -13,6 +17,8 @@
   export let isMercadoMode = false;
   export let isUserInput = false;
   export let isInfoPanel = false;
+  export let newSessionKey = null;
+  export let selected = null;
   export let userInputValue = null;
   export let viewContext = 'general';
 
@@ -37,6 +43,7 @@
   beforeUpdate(() => {
     setIsMercadoMode(isMercadoMode);
     setViewContext(viewContext);
+    sessionKey.set(newSessionKey);
   });
 </script>
 
@@ -66,7 +73,10 @@
         showMercadoMode={$isMercadoStored}
       />
     {:else}
-      <AccessibilityBase />
+      <AccessibilityBase
+        selected={selected}
+        viewContext={viewContext}
+      />
     {/if}
   {/if}
 

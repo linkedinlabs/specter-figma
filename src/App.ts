@@ -678,13 +678,15 @@ export default class App {
     }
 
     // send the updates to the UI
+    const sessionKey = null; // tktk
+    const selected = { items: nodes };
     figma.ui.postMessage({
       action: 'refreshState',
       payload: {
         currentView,
         isMercadoMode,
-        selection,
-        // sessionKey,
+        selected,
+        sessionKey,
         // guiStartSize: newGUIHeight,
       },
     });

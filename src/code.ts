@@ -202,6 +202,12 @@ const main = async () => {
     // ignore everything else
     return null;
   };
+
+  // watch selection changes on the Figma level -------------------------------
+  figma.on('selectionchange', () => {
+    // App.refreshGUI(SESSION_KEY);
+    App.refreshGUI();
+  });
 };
 
 // run main as default
