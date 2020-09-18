@@ -1395,10 +1395,10 @@ export default class Painter {
     }
 
     // return an error if the selection is not placed in a frame
-    if (!this.frame) {
+    if (!this.frame || (this.frame.id === this.node.id)) {
       result.status = 'error';
       result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be in a frame';
+      result.messages.toast = 'Your selection needs to be in an outer frame';
       return result;
     }
 
