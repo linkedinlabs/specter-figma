@@ -58,6 +58,14 @@
     }
   }
 
+  &:focus {
+    .icon {
+      &:before {
+        transform: translateY(#{em(-4)});
+      }
+    }
+  }
+
   &.info-open {
     bottom: auto;
     top: 0;
@@ -76,6 +84,14 @@
     }
 
     @include hover {
+      .icon {
+        &:before {
+          transform: translateY(#{em(4)});
+        }
+      }
+    }
+
+    &:focus {
       .icon {
         &:before {
           transform: translateY(#{em(4)});
