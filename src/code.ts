@@ -115,13 +115,8 @@ const dispatcher = async (action: {
         break;
       case 'info-hide': {
         setTimeout(() => {
-          // set UI size
-          let size = 'default';
-
-          if (isMercadoMode) {
-            size = 'mercadoDefault';
-          }
-          resizeGUI(size, figma.ui);
+          // let refresh determine size using plugin options for current view
+          App.refreshGUI();
         }, 180);
 
         // switch views
