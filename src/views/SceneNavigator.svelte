@@ -32,6 +32,7 @@
   };
 
   const handleItemClick = (selectedId) => {
+    currentView = selectedId;
     setCurrentViewContext(selectedId);
   };
 </script>

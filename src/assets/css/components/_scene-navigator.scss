@@ -23,6 +23,15 @@
   @include hover {
     @include type-01(600);
   }
+
+  &:focus {
+    box-shadow: inset 0 0 0 2px $wl-action-primary;
+
+    &:active,
+    &.selected {
+      box-shadow: inset 0 0 0 0 $wl-action-primary;
+    }
+  }
 }
 
 @mixin scene-navigator-button-icon {
