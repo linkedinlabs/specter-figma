@@ -104,41 +104,6 @@
   }
 }
 
-// bulk editor
-@mixin list-header-editor {
-  @include list-header-base;
-  background-color: rgba($wl-accent, 0.8);
-  z-index: $z-list-header-editor;
-
-  span {
-    &.text {
-      @include type-01(600);
-      color: $wl-type-01-invert;
-    }
-
-    &.actions {
-      #{$all-buttons} {
-        &.item-toggle {
-          @include button-icon($wl-ctrl-primary-invert, 16, $wl-ctrl-tertiary);
-          width: em(16);
-          height: em(16);
-        }
-      }
-    }
-  }
-}
-
-@mixin list-header-editor-expanded {
-  @include list-header-editor;
-  @include list-header-base-expanded;
-
-  span {
-    &.text {
-      color: $wl-type-01-invert;
-    }
-  }
-}
-
 // individual style or component
 @mixin list-header-single {
   @include list-header-base;
@@ -173,65 +138,9 @@
   }
 }
 
-// example “Container / color-bg-container”
-@mixin list-header-group {
-  @include list-header-base;
-  padding-top: em(12);
-  padding-bottom: em(12);
-  border-bottom: 1px solid $wl-accent-tertiary; // temp
-  z-index: $z-list-header-group;
-
-  span {
-    &.text {
-      @include type-01(600);
-      color: $wl-type-02;
-    }
-  }
-}
-
-// example “Color Styles”
-@mixin list-header-type {
-  @include list-header-base;
-  background-color: $wl-accent-secondary;
-  z-index: $z-list-header-type;
-
-  span {
-    &.text {
-      @include type-01(600);
-      color: $wl-type-01-invert;
-    }
-
-    &.actions {
-      #{$all-buttons} {
-        &.item-toggle {
-          @include button-icon($wl-ctrl-primary-invert, 16);
-          width: em(16);
-          height: em(16);
-        }
-      }
-    }
-  }
-}
-
 // apply the styles
-.item-group-header {
-  &.bulk-editor {
-    @include list-header-editor;
-
-    &.isOpen {
-      @include list-header-editor-expanded;
-    }
-  }
-
-  &.style-type {
-    @include list-header-type;
-  }
-
-  &.group-type {
-    @include list-header-group;
-  }
-
-  &.master-item {
+.item-header {
+  &.a11y-keyboard {
     @include list-header-single;
 
     &.isOpen {

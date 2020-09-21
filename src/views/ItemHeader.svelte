@@ -15,7 +15,7 @@
   /* components/list-headers */
 </style>
 
-<header class:isOpen class={`item-group-header ${type}`}>
+<header class:isOpen class={`item-header ${type}`}>
   <span class="left">
     <span class="actions">
       <ButtonOpenClose
