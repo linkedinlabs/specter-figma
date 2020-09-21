@@ -29,14 +29,17 @@ svg {
 
 // main container
 .container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  flex-direction: column;
+  nav {
+    &.scene-navigator {
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+  }
 }
 
 .container.wide {
-  flex-direction: row;
+  // flex-direction: row;
 }
 
 .main-container {

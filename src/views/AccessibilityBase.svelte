@@ -7,11 +7,14 @@
 </script>
 
 {#if selected && selected.items.length > 0}
-  Do the thing for {viewContext}
-  <ItemsList
-    selected={selected}
-    type={viewContext}
-  />
+  {#if (viewContext === 'a11y-keyboard')}
+    <ItemsList
+      selected={selected}
+      type={viewContext}
+    />
+  {:else}
+    Do the thing for {viewContext}
+  {/if}
 {:else}
   <BlankState/>
 {/if}
