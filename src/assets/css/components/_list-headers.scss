@@ -1,0 +1,241 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ list headers
+
+@mixin list-header-base {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: em(4) em(16);
+  width: 100%;
+  background-color: $wl-canvas;
+
+  span {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+
+    &.text {
+      @include type-01;
+    }
+
+    &.actions {
+      height: em(24);
+
+      #{$all-buttons} {
+        &.item-toggle {
+          @include button-icon($wl-action-tertiary, 16);
+          width: em(16);
+          height: em(16);
+          opacity: 0;
+
+          // keep expanded toggle visible
+          &.action-open-close {
+            transform: rotate(-90deg);
+
+            &.open {
+              transform: rotate(0);
+              opacity: 1;
+            }
+          }
+
+          // manage lock state
+          &.action-lock-toggle {
+            .icon.locked { display: none; }
+
+            // keep locked icon visible
+            &.locked {
+              opacity: 1;
+
+              .icon.unlocked { display: none; }
+              .icon.locked { display: block; }
+            }
+          }
+        }
+      }
+    }
+
+    &.right {
+      .actions {
+        margin-right: em(-2);
+
+        #{$all-buttons} {
+          &.item-toggle {
+            margin-left: em(4);
+
+            &:first-child {
+              margin-left: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  #{$all-buttons} {
+    span {
+      &.text {
+        @include hide-visually;
+      }
+    }
+  }
+
+  // show / hide actions
+  @include hover {
+    span {
+      &.actions {
+        #{$all-buttons} {
+          &.item-toggle {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin list-header-base-expanded {
+  padding-top: em(11);
+  border-bottom: 0;
+
+  span {
+    &.text {
+      @include type-01(600);
+    }
+  }
+}
+
+// bulk editor
+@mixin list-header-editor {
+  @include list-header-base;
+  background-color: rgba($wl-accent, 0.8);
+  z-index: $z-list-header-editor;
+
+  span {
+    &.text {
+      @include type-01(600);
+      color: $wl-type-01-invert;
+    }
+
+    &.actions {
+      #{$all-buttons} {
+        &.item-toggle {
+          @include button-icon($wl-ctrl-primary-invert, 16, $wl-ctrl-tertiary);
+          width: em(16);
+          height: em(16);
+        }
+      }
+    }
+  }
+}
+
+@mixin list-header-editor-expanded {
+  @include list-header-editor;
+  @include list-header-base-expanded;
+
+  span {
+    &.text {
+      color: $wl-type-01-invert;
+    }
+  }
+}
+
+// individual style or component
+@mixin list-header-single {
+  @include list-header-base;
+  border-bottom: 1px solid $wl-accent-tertiary;
+
+  span {
+    &.text {
+      em {
+        font-style: normal;
+        color: $wl-type-02;
+
+        &:after {
+          content: "/";
+          padding-right: em(4);
+          padding-left: em(4);
+        }
+      }
+    }
+  }
+}
+
+@mixin list-header-single-expanded {
+  @include list-header-single;
+  @include list-header-base-expanded;
+
+  span {
+    &.text {
+      em {
+        color: $wl-type-01;
+      }
+    }
+  }
+}
+
+// example “Container / color-bg-container”
+@mixin list-header-group {
+  @include list-header-base;
+  padding-top: em(12);
+  padding-bottom: em(12);
+  border-bottom: 1px solid $wl-accent-tertiary; // temp
+  z-index: $z-list-header-group;
+
+  span {
+    &.text {
+      @include type-01(600);
+      color: $wl-type-02;
+    }
+  }
+}
+
+// example “Color Styles”
+@mixin list-header-type {
+  @include list-header-base;
+  background-color: $wl-accent-secondary;
+  z-index: $z-list-header-type;
+
+  span {
+    &.text {
+      @include type-01(600);
+      color: $wl-type-01-invert;
+    }
+
+    &.actions {
+      #{$all-buttons} {
+        &.item-toggle {
+          @include button-icon($wl-ctrl-primary-invert, 16);
+          width: em(16);
+          height: em(16);
+        }
+      }
+    }
+  }
+}
+
+// apply the styles
+.item-group-header {
+  &.bulk-editor {
+    @include list-header-editor;
+
+    &.isOpen {
+      @include list-header-editor-expanded;
+    }
+  }
+
+  &.style-type {
+    @include list-header-type;
+  }
+
+  &.group-type {
+    @include list-header-group;
+  }
+
+  &.master-item {
+    @include list-header-single;
+
+    &.isOpen {
+      @include list-header-single-expanded;
+    }
+  }
+}

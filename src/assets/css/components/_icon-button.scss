@@ -1,0 +1,113 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ icon button
+// control that expects label text and an icon
+
+@mixin button-icon(
+  $iconColor: $wl-action-tertiary,
+  $iconSize-px: 12,
+  $iconColorHover: $wl-action-secondary-accent,
+) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  width: em(24);
+  height: em(24);
+  outline: none;
+  border: 0;
+
+  .label {
+    @include hide-visually;
+  }
+
+  .icon {
+    display: block;
+    width: em($iconSize-px);
+    height: em($iconSize-px);
+
+    svg {
+      path {
+        fill: $iconColor;
+
+        &.stroke {
+          fill: none;
+          stroke: $iconColor;
+          stroke-width: 1px;
+        }
+      }
+    }
+  }
+
+  @include hover {
+    .icon {
+      svg {
+        path {
+          fill: $iconColorHover;
+
+          &.stroke {
+            fill: none;
+            stroke: $iconColorHover;
+            stroke-width: 1px;
+          }
+        }
+      }
+    }
+  }
+
+  &:enabled:active,
+  &:enabled:focus {
+    .icon {
+      svg {
+        path {
+          fill: $wl-action-primary;
+
+          &.stroke {
+            fill: none;
+            stroke: $wl-action-primary;
+            stroke-width: 1px;
+          }
+        }
+      }
+    }
+  }
+
+  &:disabled {
+    opacity: 0.4;
+
+    @include hover {
+      svg {
+        path {
+          fill: $iconColor;
+
+          &.stroke {
+            fill: none;
+            stroke: blue;
+            stroke-width: 1px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.reset-control {
+  #{$all-buttons} {
+    @include button-icon;
+
+    &:disabled {
+      opacity: 0;
+    }
+  }
+}
+
+.remix-control {
+  #{$all-buttons} {
+    @include button-icon;
+  }
+}
+
+.locking-control {
+  #{$all-buttons} {
+    @include button-icon($wl-action-secondary-accent, 16);
+  }
+}
