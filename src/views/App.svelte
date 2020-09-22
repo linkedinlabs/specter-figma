@@ -7,7 +7,7 @@
   } from './stores';
   import AccessibilityBase from './AccessibilityBase';
   import InfoPanel from './InfoPanel';
-  import ButtonInfoTrigger from './ButtonInfoTrigger';
+  import ButtonInfoTrigger from './forms-controls/ButtonInfoTrigger';
   import FontPreload from './FontPreload';
   import MainPanel from './MainPanel';
   import SceneNavigator from './SceneNavigator';
