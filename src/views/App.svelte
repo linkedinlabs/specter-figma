@@ -9,7 +9,7 @@
   import InfoPanel from './InfoPanel';
   import ButtonInfoTrigger from './forms-controls/ButtonInfoTrigger';
   import FontPreload from './FontPreload';
-  import MainPanel from './MainPanel';
+  import GeneralPanel from './GeneralPanel';
   import SceneNavigator from './SceneNavigator';
   import UserInput from './UserInput';
 
@@ -68,7 +68,7 @@
 
   {#if !isUserInput && !isInfoPanel}
     {#if $viewContextStored === 'general'}
-      <MainPanel
+      <GeneralPanel
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         showMercadoMode={$isMercadoStored}
       />
