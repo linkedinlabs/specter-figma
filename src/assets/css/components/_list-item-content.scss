@@ -31,6 +31,8 @@
 }
 
 .items-list {
+  margin: 0 0 em(6) 0;
+
   .item-content {
     @include list-item-content;
   }

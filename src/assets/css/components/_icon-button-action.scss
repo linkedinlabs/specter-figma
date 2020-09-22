@@ -1,0 +1,54 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ icon button
+// control that expects label text and an icon
+
+@mixin icon-button-action(
+  $iconColor: $wl-action-tertiary,
+  $iconSize-px: 32,
+  $iconColorHover: $wl-action-secondary-accent,
+) {
+  @include button-icon(
+    $iconColor,
+    $iconSize-px,
+    $iconColorHover,
+  );
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 em(18);
+  width: 100%;
+  height: auto;
+
+  span {
+    &.text {
+      @include type-01(500);
+      color: $iconColor;
+    }
+  }
+
+  @include hover {
+    span {
+      &.text {
+        color: $iconColorHover;
+      }
+    }
+  }
+
+  &:focus {
+    box-shadow: inset 0 0 0 2px $wl-action-primary;
+
+    span {
+      &.text {
+        color: $wl-action-primary;
+      }
+    }
+
+    &:active {
+      box-shadow: inset 0 0 0 0 $wl-action-primary;
+    }
+  }
+}
+
+.items-list-holder {
+  .add-stop {
+    @include icon-button-action;
+  }
+}

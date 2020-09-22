@@ -1,17 +1,29 @@
 <script>
   import { createEventDispatcher } from 'svelte';
 
-  export let text = 'Button';
   export let action = 'clicked';
+  export let className = null;
+  export let isReversed = false;
+  export let text = 'Button';
 
   const dispatch = createEventDispatcher();
 </script>
 
-<button on:click={() => dispatch('handleAction', action)}>
-  <span class="icon">
-    <slot><!-- icon svg code here --></slot>
-  </span>
+<button
+  on:click={() => dispatch('handleAction', action)}
+  class={className}
+>
+  {#if !isReversed}
+    <span class="icon">
+      <slot><!-- icon svg code here --></slot>
+    </span>
+  {/if}
   <span class="text">
     {text}
   </span>
+  {#if isReversed}
+    <span class="icon">
+      <slot><!-- icon svg code here --></slot>
+    </span>
+  {/if}
 </button>

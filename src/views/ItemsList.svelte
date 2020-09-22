@@ -2,6 +2,7 @@
   import { beforeUpdate } from 'svelte';
   import { openItems } from './stores';
 
+  import ButtonAction from './forms-controls/ButtonAction';
   import ItemExpandedContent from './ItemExpandedContent';
   import ItemHeader from './ItemHeader';
 
@@ -25,6 +26,10 @@
     }
 
     return itemIsOpen;
+  };
+
+  const addItemEntry = (typeScope) => {
+    console.log(`add me: ${typeScope}`); // eslint-disable-line no-console
   };
 
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
@@ -105,7 +110,7 @@
   });
 </script>
 
-<section>
+<section class="items-list-holder">
   <ul class="items-list">
     {#each items as item, i (item.id)}
       <li>
@@ -125,4 +130,15 @@
       </li>
     {/each}
   </ul>
+  <ButtonAction
+    on:handleAction={() => addItemEntry(type)}
+    action="corners"
+    className="add-stop"
+    isReversed={true}
+    text="Add focus stop…"
+  >
+    <svg viewBox="0 0 32 32">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M15.5 15.5V10.5H16.5V15.5H21.5V16.5H16.5V21.5H15.5V16.5H10.5V15.5H15.5Z"/>
+    </svg>
+  </ButtonAction>
 </section>
