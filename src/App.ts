@@ -714,11 +714,14 @@ export default class App {
     payload: { bodyHeight: number },
   ) {
     const { bodyHeight } = payload;
-    const newGUIHeight = bodyHeight + 40; // add floating footer height
+    let newGUIHeight = bodyHeight + 10; // add buffer for info trigger
+    if (newGUIHeight < GUI_SETTINGS.accessibilityDefault.height) {
+      newGUIHeight = GUI_SETTINGS.accessibilityDefault.height;
+    }
 
-    if (bodyHeight) {
+    if (bodyHeight && newGUIHeight) {
       figma.ui.resize(
-        GUI_SETTINGS.default.width,
+        GUI_SETTINGS.accessibilityDefault.width,
         newGUIHeight,
       );
     }

@@ -129,37 +129,39 @@ const watchIncomingMessages = (): void => {
     },
   ) => {
     const { pluginMessage } = event.data;
-    const { payload } = pluginMessage;
+    if (pluginMessage) {
+      const { payload } = pluginMessage;
 
-    switch (pluginMessage.action) {
-      case 'showInput': {
-        const { initialValue } = payload;
-        showHideInput('show', initialValue);
-        break;
+      switch (pluginMessage.action) {
+        case 'showInput': {
+          const { initialValue } = payload;
+          showHideInput('show', initialValue);
+          break;
+        }
+        case 'hideInput':
+          showHideInput('hide');
+          break;
+        case 'showInfo':
+          showHideInfo('show');
+          break;
+        case 'hideInfo':
+          showHideInfo('hide');
+          break;
+        case 'refreshState': {
+          const {
+            currentView,
+            isMercadoMode,
+            selected,
+            sessionKey,
+          } = payload;
+          app.viewContext = currentView;
+          app.isMercadoMode = isMercadoMode;
+          updateSelected(selected, sessionKey);
+          break;
+        }
+        default:
+          return null;
       }
-      case 'hideInput':
-        showHideInput('hide');
-        break;
-      case 'showInfo':
-        showHideInfo('show');
-        break;
-      case 'hideInfo':
-        showHideInfo('hide');
-        break;
-      case 'refreshState': {
-        const {
-          currentView,
-          isMercadoMode,
-          selected,
-          sessionKey,
-        } = payload;
-        app.viewContext = currentView;
-        app.isMercadoMode = isMercadoMode;
-        updateSelected(selected, sessionKey);
-        break;
-      }
-      default:
-        return null;
     }
 
     return null;

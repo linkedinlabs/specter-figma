@@ -1,5 +1,5 @@
 <script>
-  import { beforeUpdate } from 'svelte';
+  import { afterUpdate, beforeUpdate } from 'svelte';
   import {
     isMercadoStored,
     viewContextStored,
@@ -21,6 +21,9 @@
   export let selected = null;
   export let userInputValue = null;
   export let viewContext = null;
+
+  let bodyHeight = 0;
+  let wasBodyHeight = 0;
 
   const handleAction = (action) => {
     parent.postMessage({
@@ -44,6 +47,25 @@
     setIsMercadoMode(isMercadoMode);
     setViewContext(viewContext);
     sessionKey.set(newSessionKey);
+
+    // resize UI height
+    if (
+      $viewContextStored
+      && ($viewContextStored !== 'general')
+      && (wasBodyHeight !== bodyHeight)
+      && (selected.items.length > 0)
+    ) {
+      parent.postMessage({
+        pluginMessage: {
+          action: 'resize',
+          payload: { bodyHeight },
+        },
+      }, '*');
+    }
+  });
+
+  afterUpdate(() => {
+    wasBodyHeight = bodyHeight;
   });
 </script>
 
@@ -51,46 +73,48 @@
 <svelte:options accessors={true}/>
 
 <!-- core layout -->
-<FontPreload/>
-{#if $viewContextStored && !isInfoPanel && !isUserInput}
-<SceneNavigator currentView={$viewContextStored}/>
-{/if}
-
-<div class={`container${isUserInput ? ' wide' : ''}`}>
-  <div class="transition-mask"></div>
-
-  {#if !isUserInput}
-    <ButtonInfoTrigger
-      on:handleAction={customEvent => handleAction(customEvent.detail)}
-      isInfoPanel={isInfoPanel}
-    />
+<div bind:offsetHeight={bodyHeight}>
+  <FontPreload/>
+  {#if $viewContextStored && !isInfoPanel && !isUserInput}
+  <SceneNavigator currentView={$viewContextStored}/>
   {/if}
 
-  {#if !isUserInput && !isInfoPanel}
-    {#if $viewContextStored === 'general'}
-      <GeneralPanel
+  <div class={`container${isUserInput ? ' wide' : ''}`}>
+    <div class="transition-mask"></div>
+
+    {#if !isUserInput}
+      <ButtonInfoTrigger
         on:handleAction={customEvent => handleAction(customEvent.detail)}
-        showMercadoMode={$isMercadoStored}
-      />
-    {:else if $viewContextStored}
-      <AccessibilityBase
-        selected={selected}
-        viewContext={$viewContextStored}
+        isInfoPanel={isInfoPanel}
       />
     {/if}
-  {/if}
 
-  {#if isUserInput}
-    <UserInput
-      on:handleAction={customEvent => handleAction(customEvent.detail)}
-      userInputValue={userInputValue}
-    />
-  {/if}
+    {#if !isUserInput && !isInfoPanel}
+      {#if $viewContextStored === 'general'}
+        <GeneralPanel
+          on:handleAction={customEvent => handleAction(customEvent.detail)}
+          showMercadoMode={$isMercadoStored}
+        />
+      {:else if $viewContextStored}
+        <AccessibilityBase
+          selected={selected}
+          viewContext={$viewContextStored}
+        />
+      {/if}
+    {/if}
 
-  {#if isInfoPanel}
-    <InfoPanel
-      on:handleAction={customEvent => handleAction(customEvent.detail)}
-      isInternal={isInternal}
-    />
-  {/if}
+    {#if isUserInput}
+      <UserInput
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+        userInputValue={userInputValue}
+      />
+    {/if}
+
+    {#if isInfoPanel}
+      <InfoPanel
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+        isInternal={isInternal}
+      />
+    {/if}
+  </div>
 </div>
