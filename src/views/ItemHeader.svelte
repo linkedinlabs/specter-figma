@@ -2,13 +2,15 @@
   import { createEventDispatcher } from 'svelte';
 
   import ButtonOpenClose from './forms-controls/ButtonOpenClose';
+  import FormUnit from './forms-controls/FormUnit';
 
   export let isOpen = false;
+  export let itemId = null;
   export let labelText = 'Item name here';
+  export let position = null;
   export let type = null;
 
   const dispatch = createEventDispatcher();
-
 </script>
 
 <style>
@@ -27,7 +29,17 @@
       {labelText}
     </span>
   </span>
-  <span class="right">
-    <em>—</em>
+  <span class="right form-element-holder">
+    <FormUnit
+      className="form-row"
+      on:deleteSignal={() => dispatch('handleUpdate', 'removeEntry', itemId)}
+      isDeletable={true}
+      kind="inputText"
+      labelText="Position"
+      nameId={`item-position-${itemId}`}
+      placeholder="0"
+      resetValue="1"
+      value={position}
+    />
   </span>
 </header>

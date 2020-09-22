@@ -1,11 +1,10 @@
 <script>
   import { createEventDispatcher } from 'svelte';
 
-  export let isOpen = false;
+  export let disabled = false;
 
   const dispatch = createEventDispatcher();
   const handleClick = () => {
-    isOpen = !isOpen;
     dispatch('handleUpdate');
   };
 </script>
@@ -15,15 +14,16 @@
 </style>
 
 <button
-  class={`item-toggle action-open-close${isOpen ? ' open' : ''}`}
+  class="inline-button action-remove"
   on:click={() => handleClick()}
+  disabled={disabled}
 >
-  <span class="text">
-    {`${isOpen ? 'Close' : 'Open'} item`}
+  <span class="label">
+    Remove field
   </span>
   <span class="icon">
-    <svg viewBox="0 0 16 16">
-      <path d="M8 10L11 6L5 6L8 10Z"/>
+    <svg viewBox="0 0 32 32">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M21 16.5H10V15.5H21V16.5Z"/>
     </svg>
   </span>
 </button>

@@ -23,10 +23,13 @@
 
       #{$all-buttons} {
         &.item-toggle {
-          @include button-icon($wl-action-tertiary, 16);
+          @include button-icon(
+            $wl-action-secondary-accent,
+            16,
+            $wl-action-tertiary,
+          );
           width: em(16);
           height: em(16);
-          opacity: 0;
 
           // keep expanded toggle visible
           &.action-open-close {
@@ -35,19 +38,6 @@
             &.open {
               transform: rotate(0);
               opacity: 1;
-            }
-          }
-
-          // manage lock state
-          &.action-lock-toggle {
-            .icon.locked { display: none; }
-
-            // keep locked icon visible
-            &.locked {
-              opacity: 1;
-
-              .icon.unlocked { display: none; }
-              .icon.locked { display: block; }
             }
           }
         }
@@ -80,17 +70,17 @@
   }
 
   // show / hide actions
-  @include hover {
-    span {
-      &.actions {
-        #{$all-buttons} {
-          &.item-toggle {
-            opacity: 1;
-          }
-        }
-      }
-    }
-  }
+  // @include hover {
+  //   span {
+  //     &.actions {
+  //       #{$all-buttons} {
+  //         &.item-toggle {
+  //           opacity: 1;
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 @mixin list-header-base-expanded {
@@ -145,6 +135,14 @@
 
     &.isOpen {
       @include list-header-single-expanded;
+    }
+
+    .form-element.element-type-text {
+      width: em(32);
+
+      input {
+        text-align: center;
+      }
     }
   }
 }

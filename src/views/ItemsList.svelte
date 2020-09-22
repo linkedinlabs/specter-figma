@@ -15,6 +15,7 @@
     let itemIsOpen = false;
 
     // tktk
+    console.log(`check open: ${itemId} – ${itemIsOpen}`); // eslint-disable-line no-console
     // // check the store to see if an entry exists
     // const itemIndex = $openItems.findIndex(foundId => (foundId === itemId));
 
@@ -27,7 +28,7 @@
   };
 
   const updateItemState = (itemId, operationType) => {
-    console.log('update me'); // eslint-disable-line no-console
+    console.log(`update me: ${itemId} – ${operationType}`); // eslint-disable-line no-console
   };
 
   beforeUpdate(() => {
@@ -37,11 +38,13 @@
 
 <section>
   <ul class="items-list">
-    {#each items as item (item.id)}
+    {#each items as item, i (item.id)}
       <li>
         <ItemHeader
-          on:handleUpdate={customEvent => updateItemState(item.id, type)}
+          on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail)}
           isOpen={checkIsOpen(type.id)}
+          itemId={item.id}
+          position={i + 1}
           type={type}
         />
         {#if checkIsOpen(item.id)}
