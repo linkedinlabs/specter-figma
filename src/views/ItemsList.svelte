@@ -1,6 +1,6 @@
 <script>
   import { beforeUpdate } from 'svelte';
-  // import { openItems } from './stores';
+  import { openItems } from './stores';
   import ItemExpandedContent from './ItemExpandedContent';
   import ItemHeader from './ItemHeader';
 
@@ -11,24 +11,92 @@
   // locals
   let { items } = selected;
 
-  const checkIsOpen = (itemId) => {
+  const checkIsOpen = (itemId, typeScope) => {
     let itemIsOpen = false;
 
-    // tktk
-    console.log(`check open: ${itemId} – ${itemIsOpen}`); // eslint-disable-line no-console
-    // // check the store to see if an entry exists
-    // const itemIndex = $openItems.findIndex(foundId => (foundId === itemId));
+    // check the store to see if an entry exists
+    const typedId = `${typeScope}-${itemId}`;
+    const itemIndex = $openItems.findIndex(foundId => foundId === typedId);
 
-    // // if the index exists, the item is open
-    // if (itemIndex > -1) {
-    //   itemIsOpen = true;
-    // }
+    // if the index exists, the item is open
+    if (itemIndex > -1) {
+      itemIsOpen = true;
+    }
 
     return itemIsOpen;
   };
 
-  const updateItemState = (itemId, operationType) => {
+  const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
+    const typedId = `${typeScope}-${itemId}`;
+
+    const addOrRemoveEntry = (itemsArray) => {
+      let updatedItemsArray = itemsArray;
+      const itemIndex = $openItems.findIndex(foundId => foundId === typedId);
+
+      // add or remove entry
+      if (itemIndex > -1) {
+        updatedItemsArray = [
+          ...updatedItemsArray.slice(0, itemIndex),
+          ...updatedItemsArray.slice(itemIndex + 1),
+        ];
+      } else {
+        updatedItemsArray.push(typedId);
+      }
+
+      return updatedItemsArray;
+    };
+
+    const removeEntry = (itemsArray) => {
+      let updatedItemsArray = itemsArray;
+      const itemIndex = $openItems.findIndex(foundId => foundId === typedId);
+
+      // add or remove entry
+      if (itemIndex > -1) {
+        updatedItemsArray = [
+          ...updatedItemsArray.slice(0, itemIndex),
+          ...updatedItemsArray.slice(itemIndex + 1),
+        ];
+      }
+
+      return updatedItemsArray;
+    };
+
+    const addEntry = (itemsArray) => {
+      // remove first to prevent duplicates
+      const updatedItemsArray = removeEntry(itemsArray);
+      updatedItemsArray.push(typedId);
+
+      return updatedItemsArray;
+    };
+
     console.log(`update me: ${itemId} – ${operationType}`); // eslint-disable-line no-console
+
+    // ---- toggle `isOpen`
+    if (operationType === 'toggleOpen') {
+      // retrieve open list from store and check for existing entry
+      const updatedOpenItems = addOrRemoveEntry($openItems);
+
+      // commit updated list to store
+      openItems.set(updatedOpenItems);
+    }
+
+    // ---- force open
+    if (operationType === 'setOpen') {
+      // retrieve open list from store and check for existing entry
+      const updatedOpenItems = addEntry($openItems);
+
+      // commit updated list to store
+      openItems.set(updatedOpenItems);
+    }
+
+    // ---- force closed
+    if (operationType === 'setClosed') {
+      // retrieve open list from store and check for existing entry
+      const updatedOpenItems = removeEntry($openItems);
+
+      // commit updated list to store
+      openItems.set(updatedOpenItems);
+    }
   };
 
   beforeUpdate(() => {
@@ -41,13 +109,13 @@
     {#each items as item, i (item.id)}
       <li>
         <ItemHeader
-          on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail)}
-          isOpen={checkIsOpen(type.id)}
+          on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
+          isOpen={checkIsOpen(item.id, type)}
           itemId={item.id}
           position={i + 1}
           type={type}
         />
-        {#if checkIsOpen(item.id)}
+        {#if checkIsOpen(item.id, type)}
           <ItemExpandedContent
             item={item}
           />
