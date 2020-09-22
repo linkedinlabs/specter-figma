@@ -2,14 +2,14 @@
   import { afterUpdate, createEventDispatcher } from 'svelte';
   import ButtonRemove from './ButtonRemove';
   import FigmaInput from './FigmaInput';
+  import FigmaSelectMenu from './FigmaSelectMenu';
   import FormLabel from './FormLabel';
 
   export let className = null;
   export let hideLabel = false;
-  export let invertView = false;
   export let isDeletable = false;
   export let isDirty = false;
-  export let itemIsLocked = false;
+  export let isDisabled = false;
   export let kind = 'inputText';
   export let labelText = 'Type something…';
   export let placeholder = null;
@@ -20,8 +20,6 @@
 
   const dispatch = createEventDispatcher();
   let originalValue = value;
-  let isLocked = itemIsLocked;
-  let wasUnlocked = false;
 
   const restoreValue = () => {
     value = originalValue;
@@ -30,20 +28,7 @@
   const handleDelete = () => dispatch('deleteSignal');
 
   afterUpdate(() => {
-    // watch locking changes and restore value if item becomes locked
-    if (!wasUnlocked && isLocked) {
-      restoreValue();
-      dispatch('lockUnlockSignal', isLocked);
-    }
-
-    if (wasUnlocked && !isLocked) {
-      dispatch('lockUnlockSignal', isLocked);
-    }
-
-    // update the comparison variable
-    wasUnlocked = isLocked;
-
-    if ((value !== originalValue) && (value !== 'blank--multiple')) {
+    if (value !== originalValue) {
       isDirty = true;
     } else {
       isDirty = false;
@@ -62,21 +47,28 @@
     <FormLabel
       on:handleRestore={() => restoreValue()}
       labelText={labelText}
-      invertView={invertView}
       isDirty={isDirty}
-      bind:isLocked={isLocked}
+      isDisabled={isDisabled}
       nameId={nameId}
-      parentIsLocked={itemIsLocked}
       value={value}
     />
   {/if}
 
   <span class="form-inner-row">
+    {#if kind === 'inputSelect'}
+      <FigmaSelectMenu
+        className="form-element element-type-select split-50"
+        disabled={isDisabled}
+        nameId={nameId}
+        options={options}
+        bind:value={value}
+      />
+    {/if}
+
     {#if kind === 'inputText'}
       <FigmaInput
         className="form-element element-type-text"
-        disabled={isLocked || itemIsLocked}
-        invertView={invertView}
+        disabled={isDisabled}
         nameId={nameId}
         placeholder={placeholder}
         on:saveSignal
@@ -86,9 +78,8 @@
 
     {#if isDeletable}
       <ButtonRemove
-        disabled={isLocked || itemIsLocked}
+        disabled={isDisabled}
         on:handleUpdate={() => handleDelete()}
-        invertView={invertView}
       />
     {/if}
   </span>

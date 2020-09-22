@@ -117,7 +117,8 @@
         />
         {#if checkIsOpen(item.id, type)}
           <ItemExpandedContent
-            item={item}
+            itemId={item.id}
+            type={type}
           />
         {/if}
       </li>
