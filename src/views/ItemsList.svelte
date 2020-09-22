@@ -1,6 +1,7 @@
 <script>
   import { beforeUpdate } from 'svelte';
   import { openItems } from './stores';
+
   import ItemExpandedContent from './ItemExpandedContent';
   import ItemHeader from './ItemHeader';
 

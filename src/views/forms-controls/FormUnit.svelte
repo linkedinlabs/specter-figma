@@ -1,5 +1,6 @@
 <script>
   import { afterUpdate, createEventDispatcher } from 'svelte';
+
   import ButtonRemove from './ButtonRemove';
   import FigmaInput from './FigmaInput';
   import FigmaSelectMenu from './FigmaSelectMenu';

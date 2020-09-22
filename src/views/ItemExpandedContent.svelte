@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
 
-  import FigmaSelectMenu from './forms-controls/FigmaSelectMenu';
   import FormUnit from './forms-controls/FormUnit';
 
   export let itemId = null;
@@ -45,7 +44,7 @@
       text: 'Escape',
       disabled: false,
     },
-  ]
+  ];
 
   const keyboardOptions = [
     {
@@ -81,16 +80,16 @@
       text: 'Escape',
       disabled: false,
     },
-  ]
+  ];
 </script>
 
 <style>
-  /* components/list-headers */
+  /* components/list-item-content */
 </style>
 
 <article class="item-content">
-  <ul>
-    <li>
+  <ul class="keys-list">
+    <li class="keys-item">
       <span class="form-element-holder">
         <FormUnit
           className="form-row"
@@ -106,10 +105,19 @@
         />
       </span>
     </li>
-    <li class="init">
-      <FigmaSelectMenu options={keyboardOptionsInit} value="no-key" />
+    <li class="keys-item init">
+      <span class="form-element-holder">
+        <FormUnit
+          className="form-row"
+          kind="inputSelect"
+          labelText="Key"
+          nameId={`${itemId}-key-no-key`}
+          options={keyboardOptionsInit}
+          placeholder="0"
+          resetValue="no-key"
+          value="no-key"
+        />
+      </span>
     </li>
   </ul>
 </article>
-
-<p>Item Expanded</p>

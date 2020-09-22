@@ -1,0 +1,37 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ list item content
+
+@mixin list-item-content {
+  ul {
+    &.keys-list {
+      margin: 0 0 em(6) 0;
+      padding: 0 em(22) 0 em(44);
+      list-style-type: none;
+
+      li {
+        &.keys-item {
+          .form-element-holder {
+            .form-inner-row {
+              width: calc(100% - #{em(58)});
+            }
+          }
+
+          &.init {
+            .styled-select__button {
+              color: $wl-type-02;
+
+              @include hover {
+                color: $wl-type-01;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.items-list {
+  .item-content {
+    @include list-item-content;
+  }
+}
