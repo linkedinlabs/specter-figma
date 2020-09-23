@@ -52,6 +52,8 @@
     if (
       $viewContextStored
       && ($viewContextStored !== 'general')
+      && !isUserInput
+      && !isInfoPanel
       && (wasBodyHeight !== bodyHeight)
       && (selected.items.length > 0)
     ) {
