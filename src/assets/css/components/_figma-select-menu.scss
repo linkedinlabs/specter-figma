@@ -185,6 +185,12 @@
   &.styled-select__list-item--indicate {
     @include hover-indicate-state;
   }
+
+  &.styled-select__list-item--disabled {
+    @include hover {
+      background: none;
+    }
+  }
 }
 
 .styled-select__list--active {
@@ -208,6 +214,10 @@
 
   &.has-multiple {
     font-style: italic;
+  }
+
+  &.styled-select__list-item-text--disabled {
+    opacity: 0.3;
   }
 }
 

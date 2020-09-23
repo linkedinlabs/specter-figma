@@ -16,7 +16,11 @@
       text: 'Add key…',
       disabled: true,
     },
-    // --------
+    {
+      value: 'divider--01',
+      text: null,
+      disabled: true,
+    },
     {
       value: 'arrows-left-right',
       text: 'Arrow keys (left/right)',
@@ -32,13 +36,21 @@
       text: 'Enter',
       disabled: false,
     },
-    // --------
+    {
+      value: 'divider--02',
+      text: null,
+      disabled: true,
+    },
     {
       value: 'space',
       text: 'Space',
       disabled: false,
     },
-    // --------
+    {
+      value: 'divider--03',
+      text: null,
+      disabled: true,
+    },
     {
       value: 'escape',
       text: 'Escape',
@@ -52,7 +64,11 @@
       text: 'No key (remove)',
       disabled: false,
     },
-    // --------
+    {
+      value: 'divider--01',
+      text: null,
+      disabled: true,
+    },
     {
       value: 'arrows-left-right',
       text: 'Arrow keys (left/right)',
@@ -68,13 +84,21 @@
       text: 'Enter',
       disabled: false,
     },
-    // --------
+    {
+      value: 'divider--02',
+      text: null,
+      disabled: true,
+    },
     {
       value: 'space',
       text: 'Space',
       disabled: false,
     },
-    // --------
+    {
+      value: 'divider--03',
+      text: null,
+      disabled: true,
+    },
     {
       value: 'escape',
       text: 'Escape',
