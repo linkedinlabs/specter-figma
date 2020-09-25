@@ -9,6 +9,7 @@
 {#if selected && selected.items.length > 0}
   {#if (viewContext === 'a11y-keyboard')}
     <ItemsList
+      on:handleAction
       selected={selected}
       type={viewContext}
     />

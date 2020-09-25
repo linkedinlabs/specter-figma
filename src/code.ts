@@ -135,6 +135,9 @@ const dispatcher = async (action: {
       case 'setViewContext':
         await App.setViewContext(payload);
         break;
+      case 'a11y-keyboard-add-stop':
+        console.log('add a tab stop'); // eslint-disable-line no-console
+        break;
       default:
         await App.showToolbar();
     }

@@ -1,5 +1,5 @@
 <script>
-  import { beforeUpdate } from 'svelte';
+  import { createEventDispatcher, beforeUpdate } from 'svelte';
   import { openItems } from './stores';
 
   import ButtonAction from './forms-controls/ButtonAction';
@@ -9,6 +9,8 @@
   // props
   export let selected = null;
   export let type = null;
+
+  const dispatch = createEventDispatcher();
 
   // locals
   let { items } = selected;
@@ -26,10 +28,6 @@
     }
 
     return itemIsOpen;
-  };
-
-  const addItemEntry = (typeScope) => {
-    console.log(`add me: ${typeScope}`); // eslint-disable-line no-console
   };
 
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
@@ -131,7 +129,7 @@
     {/each}
   </ul>
   <ButtonAction
-    on:handleAction={() => addItemEntry(type)}
+    on:handleAction={() => dispatch('handleAction', `${type}-add-stop`)}
     action="corners"
     className="add-stop"
     isReversed={true}

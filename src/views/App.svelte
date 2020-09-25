@@ -99,6 +99,7 @@
         />
       {:else if $viewContextStored}
         <AccessibilityBase
+          on:handleAction={customEvent => handleAction(customEvent.detail)}
           selected={selected}
           viewContext={$viewContextStored}
         />
