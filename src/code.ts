@@ -72,6 +72,9 @@ const dispatcher = async (action: {
   // run the action in the App class based on type
   const runAction = async (actionType: string) => {
     switch (actionType) {
+      case 'a11y-keyboard-add-stop':
+        await app.annotateKeystop();
+        break;
       case 'annotate':
         app.annotateNode();
         break;
@@ -134,9 +137,6 @@ const dispatcher = async (action: {
         break;
       case 'setViewContext':
         await App.setViewContext(payload);
-        break;
-      case 'a11y-keyboard-add-stop':
-        console.log('add a tab stop'); // eslint-disable-line no-console
         break;
       default:
         await App.showToolbar();

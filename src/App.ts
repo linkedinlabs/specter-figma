@@ -168,6 +168,87 @@ export default class App {
    * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
    *
    * @kind function
+   * @name annotateKeystop
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   */
+  async annotateKeystop() {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected node to annotate it
+    if (selection === null || selection.length === 0) {
+      messenger.log('Annotate keystop: nothing selected');
+      return messenger.toast('A layer must be selected');
+    }
+
+    // iterate through each node in a selection
+    const nodes = new Crawler({ for: selection }).all();
+
+    nodes.forEach((node: BaseNode) => {
+      // set up Identifier instance for the node
+      const identifier = new Identifier({
+        for: node,
+        data: page,
+        isMercadoMode: this.isMercadoMode,
+        messenger,
+      });
+
+      // set up Painter instance for the node
+      const painter = new Painter({
+        for: node,
+        in: page,
+        isMercadoMode: this.isMercadoMode,
+      });
+
+      // set up function to draw annotations
+      const drawAnnotation = (hasText: boolean) => {
+        // draw the annotation (if the text exists)
+        let paintResult = null;
+        if (hasText) {
+          paintResult = painter.addKeystop();
+        }
+
+        // read the response from Painter; if it was unsuccessful, log and display the error
+        if (paintResult) {
+          messenger.handleResult(paintResult);
+          if (paintResult.status === 'error') {
+            return null;
+          }
+        }
+
+        return null;
+      };
+
+      // get/set the keystop info
+      const identifierResult = identifier.getSetKeystop();
+
+      // read the response from Identifier; if it was unsuccessful, log and display the error
+      if (identifierResult) {
+        messenger.handleResult(identifierResult);
+        if (identifierResult.status === 'error') {
+          return null;
+        }
+      }
+
+      drawAnnotation(true);
+
+      return null;
+    });
+
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    }
+    return null;
+  }
+
+  /**
+   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+   *
+   * @kind function
    * @name annotateNode
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.

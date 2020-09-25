@@ -637,6 +637,56 @@ export default class Identifier {
     return result;
   }
 
+  /** WIP
+   * @description Checks the node’s settings object for the existence of `annotationText` and
+   * and that `annotationType` is 'custom' (Component and Style annotations can be easily updated
+   * and need to be rechecked each time, whereas Custom annotations do not.
+   *
+   * @kind function
+   * @name getSetKeystop
+   *
+   * @returns {Object} A result object containing success/error status and log/toast messages.
+   */
+  getSetKeystop() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // get node settings
+    const nodeSettings = getNodeSettings(this.page, this.node.id);
+
+    // temp
+    result.status = 'success';
+    result.messages.log = `Keystop set for “${this.node.name}”`;
+    console.log(nodeSettings); // eslint-disable-line no-console
+
+    // // check for existing `annotationText` tktk
+    // if (
+    //   nodeSettings
+    //   && nodeSettings.annotationText
+    //   && (nodeSettings.annotationType === 'custom')
+    // ) {
+    //   result.status = 'success';
+    //   result.messages.log = `Custom text set for “${this.node.name}”
+    // is “${nodeSettings.annotationText}”`;
+    // } else {
+    //   result.status = 'error';
+    //   result.messages.log = `No custom text is set for “${this.node.name}”`;
+    // }
+
+    return result;
+  }
+
   /**
    * @description Checks the node’s settings object for the existence of `annotationText` and
    * and that `annotationType` is 'custom' (Component and Style annotations can be easily updated

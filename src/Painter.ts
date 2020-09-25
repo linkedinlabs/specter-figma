@@ -1722,6 +1722,139 @@ export default class Painter {
     return result;
   }
 
+  /** WIP
+   * @description Locates annotation text in a node’s Settings object and
+   * builds the visual annotation on the Figma frame.
+   *
+   * @kind function
+   * @name addKeystop
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addKeystop() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
+
+    // const nodeSettings = getNodeSettings(this.page, this.node.id);
+
+    // if (!nodeSettings || (nodeSettings && !nodeSettings.annotationText)) {
+    //   result.status = 'error';
+    //   result.messages.log = 'Node missing annotationText';
+    //   return result;
+    // }
+
+    // // return an error if the selection is not placed in a frame
+    // if (!this.frame || (this.frame.id === this.node.id)) {
+    //   result.status = 'error';
+    //   result.messages.log = 'Selection not on frame';
+    //   result.messages.toast = 'Your selection needs to be in an outer frame';
+    //   return result;
+    // }
+
+    // // set up some information
+    // const {
+    //   annotationText,
+    //   annotationSecondaryText,
+    //   annotationType,
+    // } = nodeSettings;
+    // const nodeName = this.node.name;
+    // const nodeId = this.node.id;
+    // const groupName = `Annotation for ${nodeName}`;
+
+    // // set document settings to track annotation
+    // getSetNodeSettings('annotatedLayers', { layerId: nodeId }, this.page);
+
+    // // construct the base annotation elements
+    // const annotation = buildAnnotation({
+    //   mainText: annotationText,
+    //   secondaryText: annotationSecondaryText,
+    //   type: annotationType,
+    // });
+
+    // // grab the position from crawler
+    // const crawler = new Crawler({ for: [this.node] });
+    // const positionResult = crawler.position();
+    // const relativePosition = positionResult.payload;
+
+    // // group and position the base annotation elements
+    // const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
+    // const nodePosition: {
+    //   frameWidth: number,
+    //   frameHeight: number,
+    //   width: number,
+    //   height: number,
+    //   x: number,
+    //   y: number,
+    //   index: number,
+    // } = {
+    //   frameWidth: this.frame.width,
+    //   frameHeight: this.frame.height,
+    //   width: relativePosition.width,
+    //   height: relativePosition.height,
+    //   x: relativePosition.x,
+    //   y: relativePosition.y,
+    //   index: nodeIndex,
+    // };
+
+    // const group = positionAnnotation(
+    //   this.frame,
+    //   groupName,
+    //   annotation,
+    //   nodePosition,
+    // );
+
+    // // set it in the correct containers
+    // const containerSet = setNodeInContainers({
+    //   node: group,
+    //   frame: this.frame,
+    //   page: this.page,
+    //   type: annotationType,
+    // });
+
+    // // new object with IDs to add to settings
+    // const newAnnotatedNodeSet: {
+    //   containerGroupId: string,
+    //   id: string,
+    //   originalId: string,
+    // } = {
+    //   containerGroupId: containerSet.componentInnerGroupId,
+    //   id: group.id,
+    //   originalId: nodeId,
+    // };
+
+    // // update the `newPageSettings` array
+    // let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+    // newPageSettings = updateNestedArray(
+    //   newPageSettings,
+    //   newAnnotatedNodeSet,
+    //   'annotatedLayers',
+    //   'add',
+    // );
+
+    // // commit the `Settings` update
+    // this.page.setPluginData(
+    //   PLUGIN_IDENTIFIER,
+    //   JSON.stringify(newPageSettings),
+    // );
+
+    // return a successful result
+    result.status = 'success';
+    return result;
+  }
+
   /**
    * @description Takes a `spacingPosition` object and creates a spacing measurement annotation
    * with the correct spacing number (“IS-X”). If the calculated spacing number is larger
