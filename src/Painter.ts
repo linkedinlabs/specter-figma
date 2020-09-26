@@ -160,6 +160,136 @@ const buildMeasureIcon = (
   return icon;
 };
 
+/** WIP
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
+ *
+ * @kind function
+ * @name buildRectangle
+ *
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
+ *
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
+ *
+ * @private
+ */
+const buildRectangle = (
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keyboard'
+    | 'spacing'
+    | 'style',
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  // build base rectangle (used for most annotations)
+  const rectangle: FrameNode = figma.createFrame();
+  rectangle.name = 'Box / Text';
+  rectangle.layoutMode = 'HORIZONTAL';
+  rectangle.counterAxisSizingMode = 'AUTO';
+  rectangle.layoutAlign = 'CENTER';
+  rectangle.horizontalPadding = 16;
+  rectangle.verticalPadding = 4.5;
+  rectangle.itemSpacing = 0;
+
+  // style it – set the rectangle type, color, and opacity
+  rectangle.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // set rounded corners of the rectangle
+  rectangle.cornerRadius = 2;
+
+  // ------- update rectangle for measurement annotations
+  if (
+    type === 'spacing'
+    || type === 'dimension'
+  ) {
+    rectangle.horizontalPadding = 3;
+    rectangle.verticalPadding = 0.5;
+  }
+
+  // ------- update rectangle for keyboard annotations
+  if (type === 'keyboard') {
+    rectangle.layoutMode = 'VERTICAL';
+    rectangle.counterAxisSizingMode = 'FIXED';
+    rectangle.layoutAlign = 'MIN';
+    rectangle.horizontalPadding = 4;
+    rectangle.verticalPadding = 4;
+    rectangle.itemSpacing = 1;
+    rectangle.cornerRadius = 4;
+  }
+
+  return rectangle;
+};
+
+/** WIP
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
+ *
+ * @kind function
+ * @name buildText
+ *
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
+ *
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
+ *
+ * @private
+ */
+const buildText = (
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keyboard'
+    | 'spacing'
+    | 'style',
+  color: { r: number, g: number, b: number },
+  characters: string,
+): TextNode => {
+  // create empty text node
+  const text: TextNode = figma.createText();
+
+  // detect/retrieve last-loaded typeface
+  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+
+  // style text node
+  text.fontName = typefaceToUse;
+  text.fontSize = 12;
+  text.lineHeight = { value: 125, unit: 'PERCENT' };
+  text.fills = [{
+    type: 'SOLID',
+    color: hexToDecimalRgb('#ffffff'),
+  }];
+  text.layoutAlign = 'CENTER';
+
+  // set text – cannot do this before defining `fontName`
+  text.characters = characters;
+
+  // position the text in auto-layout
+  text.textAlignVertical = 'CENTER';
+  text.textAlignHorizontal = 'CENTER';
+  text.textAutoResize = 'WIDTH_AND_HEIGHT';
+
+  // ------- update text for keyboard annotations
+  if (type === 'keyboard') {
+    text.fontSize = 14;
+    text.textAlignHorizontal = 'LEFT';
+    text.textAutoResize = 'NONE';
+    text.layoutAlign = 'MIN';
+  }
+
+  return text;
+};
+
 /**
  * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
  * and sets auto-layout and constraint properties.
@@ -215,23 +345,7 @@ const buildAnnotation = (options: {
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle with auto-layout properties
-  const rectangle: FrameNode = figma.createFrame();
-  rectangle.name = 'Box / Text';
-  rectangle.layoutMode = 'HORIZONTAL';
-  rectangle.counterAxisSizingMode = 'AUTO';
-  rectangle.layoutAlign = 'CENTER';
-  rectangle.horizontalPadding = isMeasurement ? 3 : 16;
-  rectangle.verticalPadding = isMeasurement ? 0.5 : 4.5;
-  rectangle.itemSpacing = 0;
-
-  // style it – set the rectangle type, color, and opacity
-  rectangle.fills = [{
-    type: 'SOLID',
-    color,
-  }];
-
-  // set rounded corners of the rectangle
-  rectangle.cornerRadius = 2;
+  const rectangle: FrameNode = buildRectangle(type, color);
 
   // build the dangling diamond
   const diamond: PolygonNode = figma.createPolygon();
@@ -248,29 +362,8 @@ const buildAnnotation = (options: {
     color,
   }];
 
-  // create empty text node
-  const text: TextNode = figma.createText();
-
-  // detect/retrieve last-loaded typeface
-  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
-
-  // style text node
-  text.fontName = typefaceToUse;
-  text.fontSize = 12;
-  text.lineHeight = { value: 125, unit: 'PERCENT' };
-  text.fills = [{
-    type: 'SOLID',
-    color: hexToDecimalRgb('#ffffff'),
-  }];
-  text.layoutAlign = 'CENTER';
-
-  // set text – cannot do this before defining `fontName`
-  text.characters = setText;
-
-  // position the text in auto-layout
-  text.textAlignVertical = 'CENTER';
-  text.textAlignHorizontal = 'CENTER';
-  text.textAutoResize = 'WIDTH_AND_HEIGHT';
+  // create text node
+  const text: TextNode = buildText(type, color, setText);
 
   // create icon
   let icon: FrameNode = null;
