@@ -45,6 +45,7 @@ const COLORS = {
   component: '#6255ca',
   custom: '#c8006a',
   dimension: '#4c7100',
+  keyboard: '#c8006a',
   spacing: '#007373',
   style: '#bc3600',
 };

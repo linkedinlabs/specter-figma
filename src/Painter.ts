@@ -179,7 +179,13 @@ const buildMeasureIcon = (
 const buildAnnotation = (options: {
   mainText: string,
   secondaryText?: string,
-  type: 'component' | 'custom' | 'dimension' | 'spacing' | 'style',
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keyboard'
+    | 'spacing'
+    | 'style',
 }): {
   diamond: PolygonNode,
   rectangle: FrameNode,
@@ -189,26 +195,7 @@ const buildAnnotation = (options: {
   const { mainText, secondaryText, type } = options;
 
   // set the dominant color
-  let colorHex: string = null;
-  switch (type) {
-    case 'component':
-      colorHex = COLORS.component;
-      break;
-    case 'custom':
-      colorHex = COLORS.custom;
-      break;
-    case 'dimension':
-      colorHex = COLORS.dimension;
-      break;
-    case 'spacing':
-      colorHex = COLORS.spacing;
-      break;
-    case 'style':
-      colorHex = COLORS.style;
-      break;
-    default:
-      colorHex = COLORS.component;
-  }
+  const colorHex: string = COLORS[type];
 
   let setText: string = mainText;
   if (secondaryText) {
@@ -748,6 +735,7 @@ const setGroupKey = (elementType: string):
   'boundingInnerGroupId'
   | 'componentInnerGroupId'
   | 'dimensionInnerGroupId'
+  | 'keyboardInnerGroupId'
   | 'spacingInnerGroupId'
   | 'styleInnerGroupId'
   | 'id' => {
@@ -755,6 +743,7 @@ const setGroupKey = (elementType: string):
     'boundingInnerGroupId'
     | 'componentInnerGroupId'
     | 'dimensionInnerGroupId'
+    | 'keyboardInnerGroupId'
     | 'spacingInnerGroupId'
     | 'styleInnerGroupId'
     | 'id' = null;
@@ -768,6 +757,9 @@ const setGroupKey = (elementType: string):
       break;
     case 'dimension':
       groupKey = 'dimensionInnerGroupId';
+      break;
+    case 'keyboard':
+      groupKey = 'keyboardInnerGroupId';
       break;
     case 'spacing':
       groupKey = 'spacingInnerGroupId';
@@ -801,6 +793,7 @@ const setGroupName = (
     | 'component'
     | 'custom'
     | 'dimension'
+    | 'keyboard'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -816,6 +809,9 @@ const setGroupName = (
       break;
     case 'dimension':
       groupName = 'Dimension Annotations';
+      break;
+    case 'keyboard':
+      groupName = 'Keyboard Annotations';
       break;
     case 'spacing':
       groupName = 'Spacing Annotations';
@@ -1022,6 +1018,7 @@ export const createContainerGroup = (
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
     dimensionInnerGroupId?: string,
+    keyboardInnerGroupId?: string,
     frameId: string,
     spacingInnerGroupId?: string,
     styleInnerGroupId?: string,
@@ -1031,6 +1028,7 @@ export const createContainerGroup = (
     | 'component'
     | 'custom'
     | 'dimension'
+    | 'keyboard'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -1042,6 +1040,7 @@ export const createContainerGroup = (
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
     dimensionInnerGroupId?: string,
+    keyboardInnerGroupId?: string,
     frameId: string,
     spacingInnerGroupId?: string,
     styleInnerGroupId?: string,
@@ -1096,6 +1095,7 @@ const setNodeInContainers = (nodeToContain: {
     | 'component'
     | 'custom'
     | 'dimension'
+    | 'keyboard'
     | 'spacing'
     | 'style',
 }): {
@@ -1253,7 +1253,8 @@ const getSetNodeSettings = (
   annotationType:
     'annotatedDimensions'
     | 'annotatedLayers'
-    | 'annotatedSpacings',
+    | 'annotatedSpacings'
+    | 'keyboardLayers',
   nodeIdSet: {
     layerId: string,
     layerAId?: string,
@@ -1756,99 +1757,103 @@ export default class Painter {
     //   return result;
     // }
 
-    // // return an error if the selection is not placed in a frame
-    // if (!this.frame || (this.frame.id === this.node.id)) {
-    //   result.status = 'error';
-    //   result.messages.log = 'Selection not on frame';
-    //   result.messages.toast = 'Your selection needs to be in an outer frame';
-    //   return result;
-    // }
+    // return an error if the selection is not placed in a frame
+    if (!this.frame || (this.frame.id === this.node.id)) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
 
-    // // set up some information
+    // set up some information
     // const {
     //   annotationText,
     //   annotationSecondaryText,
     //   annotationType,
     // } = nodeSettings;
-    // const nodeName = this.node.name;
-    // const nodeId = this.node.id;
-    // const groupName = `Annotation for ${nodeName}`;
+    const nodeName = this.node.name;
+    const nodeId = this.node.id;
+    const groupName = `Keystop for ${nodeName}`;
 
-    // // set document settings to track annotation
-    // getSetNodeSettings('annotatedLayers', { layerId: nodeId }, this.page);
+    // set document settings to track annotation
+    getSetNodeSettings('keyboardLayers', { layerId: nodeId }, this.page);
 
-    // // construct the base annotation elements
+    // construct the base annotation elements
     // const annotation = buildAnnotation({
     //   mainText: annotationText,
     //   secondaryText: annotationSecondaryText,
     //   type: annotationType,
     // });
+    const annotation = buildAnnotation({
+      mainText: '1',
+      type: 'keyboard',
+    });
 
-    // // grab the position from crawler
-    // const crawler = new Crawler({ for: [this.node] });
-    // const positionResult = crawler.position();
-    // const relativePosition = positionResult.payload;
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.node] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
 
-    // // group and position the base annotation elements
-    // const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    // const nodePosition: {
-    //   frameWidth: number,
-    //   frameHeight: number,
-    //   width: number,
-    //   height: number,
-    //   x: number,
-    //   y: number,
-    //   index: number,
-    // } = {
-    //   frameWidth: this.frame.width,
-    //   frameHeight: this.frame.height,
-    //   width: relativePosition.width,
-    //   height: relativePosition.height,
-    //   x: relativePosition.x,
-    //   y: relativePosition.y,
-    //   index: nodeIndex,
-    // };
+    // group and position the base annotation elements
+    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
+    const nodePosition: {
+      frameWidth: number,
+      frameHeight: number,
+      width: number,
+      height: number,
+      x: number,
+      y: number,
+      index: number,
+    } = {
+      frameWidth: this.frame.width,
+      frameHeight: this.frame.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
+      x: relativePosition.x,
+      y: relativePosition.y,
+      index: nodeIndex,
+    };
 
-    // const group = positionAnnotation(
-    //   this.frame,
-    //   groupName,
-    //   annotation,
-    //   nodePosition,
-    // );
+    const group = positionAnnotation(
+      this.frame,
+      groupName,
+      annotation,
+      nodePosition,
+    );
 
-    // // set it in the correct containers
-    // const containerSet = setNodeInContainers({
-    //   node: group,
-    //   frame: this.frame,
-    //   page: this.page,
-    //   type: annotationType,
-    // });
+    // set it in the correct containers
+    const containerSet = setNodeInContainers({
+      node: group,
+      frame: this.frame,
+      page: this.page,
+      type: 'keyboard',
+    });
 
-    // // new object with IDs to add to settings
-    // const newAnnotatedNodeSet: {
-    //   containerGroupId: string,
-    //   id: string,
-    //   originalId: string,
-    // } = {
-    //   containerGroupId: containerSet.componentInnerGroupId,
-    //   id: group.id,
-    //   originalId: nodeId,
-    // };
+    // new object with IDs to add to settings
+    const newAnnotatedNodeSet: {
+      containerGroupId: string,
+      id: string,
+      originalId: string,
+    } = {
+      containerGroupId: containerSet.componentInnerGroupId,
+      id: group.id,
+      originalId: nodeId,
+    };
 
-    // // update the `newPageSettings` array
-    // let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-    // newPageSettings = updateNestedArray(
-    //   newPageSettings,
-    //   newAnnotatedNodeSet,
-    //   'annotatedLayers',
-    //   'add',
-    // );
+    // update the `newPageSettings` array
+    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
+    newPageSettings = updateNestedArray(
+      newPageSettings,
+      newAnnotatedNodeSet,
+      'keyboardLayers',
+      'add',
+    );
 
-    // // commit the `Settings` update
-    // this.page.setPluginData(
-    //   PLUGIN_IDENTIFIER,
-    //   JSON.stringify(newPageSettings),
-    // );
+    // commit the `Settings` update
+    this.page.setPluginData(
+      PLUGIN_IDENTIFIER,
+      JSON.stringify(newPageSettings),
+    );
 
     // return a successful result
     result.status = 'success';
