@@ -165,6 +165,97 @@ const buildMeasureIcon = (
  * and sets auto-layout and constraint properties.
  *
  * @kind function
+ * @name buildKeyboardIcon
+ *
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
+ *
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
+ *
+ * @private
+ */
+const buildKeyboardIcon = (
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  const icon: FrameNode = figma.createFrame();
+
+  // build horizontal rectangle
+  const rectangle1: RectangleNode = figma.createRectangle();
+  rectangle1.name = 'I am rect';
+  rectangle1.resize(26, 2);
+  rectangle1.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // build verticle rectangle
+  const rectangle2: RectangleNode = figma.createRectangle();
+  rectangle2.name = 'I am rect';
+  rectangle2.resize(2, 8);
+  rectangle2.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // build the diamond
+  let diamond: PolygonNode | VectorNode = figma.createPolygon();
+  diamond.name = 'Diamond';
+
+  // position and size the diamond
+  diamond.resize(9, 6);
+  diamond.rotation = -90;
+  diamond.pointCount = 3;
+
+  // style it – set the diamond type, color, and opacity
+  diamond.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // flatten and add to the icon frame
+  diamond = figma.flatten([diamond], icon);
+
+  // resize as flattened vector + position
+  diamond.resize(5, 8);
+  diamond.x = 0;
+  diamond.y = 0;
+
+  rectangle2.x = 5;
+  rectangle2.y = 0;
+
+  const shape = figma.flatten([diamond, rectangle2], icon);
+  shape.name = 'THing';
+  shape.x = 26;
+
+  icon.appendChild(rectangle1);
+  rectangle1.y = 3;
+
+  // style the icon frame
+  icon.name = 'Tab Stop Icon';
+  icon.fills = [];
+  icon.layoutAlign = 'STRETCH';
+  icon.resize(33, 8);
+
+  // set constraints after resize
+  shape.constraints = {
+    horizontal: 'MAX',
+    vertical: 'MIN',
+  };
+  rectangle1.constraints = {
+    horizontal: 'STRETCH',
+    vertical: 'MIN',
+  };
+
+  return icon;
+};
+
+/** WIP
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
+ *
+ * @kind function
  * @name buildRectangle
  *
  * @param {Object} options Object that includes `text` – the text for the annotation,
@@ -223,6 +314,7 @@ const buildRectangle = (
     rectangle.verticalPadding = 4;
     rectangle.itemSpacing = 1;
     rectangle.cornerRadius = 4;
+    rectangle.resize(42, 35);
   }
 
   return rectangle;
@@ -283,7 +375,7 @@ const buildText = (
   if (type === 'keyboard') {
     text.fontSize = 14;
     text.textAlignHorizontal = 'LEFT';
-    text.textAutoResize = 'NONE';
+    text.textAutoResize = 'WIDTH_AND_HEIGHT';
     text.layoutAlign = 'MIN';
   }
 
@@ -369,6 +461,9 @@ const buildAnnotation = (options: {
   let icon: FrameNode = null;
   if (isMeasurement) {
     icon = buildMeasureIcon(colorHex);
+  } else if (type === 'keyboard') {
+    const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
+    icon = buildKeyboardIcon(iconColor);
   }
 
   // return an object with each element
@@ -463,7 +558,13 @@ const positionAnnotation = (
     y: number,
     index: number,
   },
-  annotationType: 'component' | 'custom' | 'dimension' | 'spacing' | 'style' = 'component',
+  annotationType:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keyboard'
+    | 'spacing'
+    | 'style' = 'component',
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
 ) => {
   const {
@@ -513,23 +614,38 @@ const positionAnnotation = (
     bannerGroup.appendChild(diamondVector);
   }
 
-  // set up spacing / measurement
-  if (isMeasurement && icon) {
-    const measurementGroup: FrameNode = figma.createFrame();
-    measurementGroup.name = groupName;
-    measurementGroup.layoutMode = 'VERTICAL';
-    measurementGroup.counterAxisSizingMode = 'AUTO';
-    measurementGroup.layoutAlign = 'CENTER';
-    measurementGroup.itemSpacing = 3;
-    measurementGroup.fills = [];
+  // set up annotation with icon
+  if (icon) {
+    if (isMeasurement) {
+      const groupWithIcon: FrameNode = figma.createFrame();
+      groupWithIcon.name = groupName;
+      groupWithIcon.fills = [];
+      groupWithIcon.layoutMode = 'VERTICAL';
+      groupWithIcon.counterAxisSizingMode = 'AUTO';
+      groupWithIcon.layoutAlign = 'CENTER';
+      groupWithIcon.itemSpacing = 3;
 
-    // append children
-    measurementGroup.appendChild(bannerGroup);
-    measurementGroup.appendChild(icon);
+      // append children
+      groupWithIcon.appendChild(bannerGroup);
+      groupWithIcon.appendChild(icon);
 
-    // set top level
-    group = measurementGroup;
+      // set top level
+      group = groupWithIcon;
+    } else if (annotationType === 'keyboard') {
+      // add icon to the rectangle frame
+      rectangle.appendChild(icon);
+      // re-add text to force it to the bottom
+      rectangle.appendChild(text);
+
+      // set constraints
+      bannerGroup.counterAxisSizingMode = 'FIXED';
+      rectangle.layoutAlign = 'STRETCH';
+
+      // set the main group
+      group = bannerGroup;
+    }
   } else {
+    // set the main group
     group = bannerGroup;
   }
 
@@ -628,7 +744,7 @@ const positionAnnotation = (
   }
 
   // adjust the measure icon width for top-oriented annotations
-  if (orientation === 'top' && icon) {
+  if (isMeasurement && icon && (orientation === 'top')) {
     group.resize(nodeWidth, group.height);
     group.x = nodeX;
 
@@ -1912,6 +2028,7 @@ export default class Painter {
       groupName,
       annotation,
       nodePosition,
+      'keyboard',
     );
 
     // set it in the correct containers
