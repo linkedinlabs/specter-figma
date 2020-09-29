@@ -729,9 +729,8 @@ export default class App {
   static async refreshGUI() {
     const { messenger, selection } = assemble(figma);
 
-    // set up initial selection
-    // tktk
-    const nodes: Array<SceneNode> = new Crawler({ for: selection }).all();
+    // set up initial selection for “add stop” action
+    const nodes: Array<SceneNode> = selection;
 
     // get last-used filters from options
     const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
@@ -760,7 +759,26 @@ export default class App {
 
     // send the updates to the UI
     const sessionKey = null; // tktk
-    const selected = { items: nodes };
+    const selected: {
+      items: Array<{
+        id: string,
+        name: string,
+        hasStop: boolean,
+      }>
+    } = { items: [] };
+
+    // set up selected bundle
+    nodes.forEach((node: SceneNode) => {
+      const { id, name } = node;
+      const viewObject = {
+        id,
+        name,
+        hasStop: false,
+      };
+
+      selected.items.push(viewObject);
+    });
+
     figma.ui.postMessage({
       action: 'refreshState',
       payload: {

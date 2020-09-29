@@ -1,8 +1,8 @@
 <script>
-  import { createEventDispatcher, beforeUpdate } from 'svelte';
+  import { beforeUpdate } from 'svelte';
   import { openItems } from './stores';
 
-  import ButtonAction from './forms-controls/ButtonAction';
+  import ButtonAddStop from './forms-controls/ButtonAddStop';
   import ItemExpandedContent from './ItemExpandedContent';
   import ItemHeader from './ItemHeader';
 
@@ -10,10 +10,9 @@
   export let selected = null;
   export let type = null;
 
-  const dispatch = createEventDispatcher();
-
   // locals
   let { items } = selected;
+  let addNumber = 0;
 
   const checkIsOpen = (itemId, typeScope) => {
     let itemIsOpen = false;
@@ -73,8 +72,6 @@
       return updatedItemsArray;
     };
 
-    console.log(`update me: ${itemId} – ${operationType}`); // eslint-disable-line no-console
-
     // ---- toggle `isOpen`
     if (operationType === 'toggleOpen') {
       // retrieve open list from store and check for existing entry
@@ -103,8 +100,13 @@
     }
   };
 
+  const setAddStopButton = (currentSelection) => {
+    addNumber = currentSelection.items.length;
+  };
+
   beforeUpdate(() => {
     items = selected.items;
+    setAddStopButton(selected);
   });
 </script>
 
@@ -116,6 +118,7 @@
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
           itemId={item.id}
+          labelText={item.name}
           position={i + 1}
           type={type}
         />
@@ -128,15 +131,10 @@
       </li>
     {/each}
   </ul>
-  <ButtonAction
-    on:handleAction={() => dispatch('handleAction', `${type}-add-stop`)}
-    action="corners"
-    className="add-stop"
-    isReversed={true}
-    text="Add focus stop…"
-  >
-    <svg viewBox="0 0 32 32">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M15.5 15.5V10.5H16.5V15.5H21.5V16.5H16.5V21.5H15.5V16.5H10.5V15.5H15.5Z"/>
-    </svg>
-  </ButtonAction>
+  <ButtonAddStop
+    on:handleAction
+    disabled={addNumber < 1}
+    number={addNumber}
+    type={type}
+  />
 </section>
