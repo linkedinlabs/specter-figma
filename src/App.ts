@@ -2,6 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
+import { findTopFrame } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -188,6 +189,9 @@ export default class App {
     // iterate through each node in a selection
     const nodes = new Crawler({ for: selection }).all();
 
+    // temporarily track keystop annotations, relative to topFrame
+    const keystopTopFrames: Array<string> = [];
+
     nodes.forEach((node: BaseNode) => {
       // set up Identifier instance for the node
       const identifier = new Identifier({
@@ -219,9 +223,18 @@ export default class App {
             return null;
           }
         }
-
         return null;
       };
+
+      // reset the top frame list (if we have not seen it yet)
+      const topFrame: FrameNode = findTopFrame(node);
+      if (topFrame && !keystopTopFrames.includes(topFrame.id)) {
+        topFrame.setPluginData(
+          DATA_KEYS.keystops,
+          JSON.stringify([]),
+        );
+        keystopTopFrames.push(topFrame.id);
+      }
 
       // get/set the keystop info
       const identifierResult = identifier.getSetKeystop();

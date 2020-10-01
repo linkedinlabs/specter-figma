@@ -272,7 +272,7 @@ const buildRectangle = (
     'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -305,8 +305,8 @@ const buildRectangle = (
     rectangle.verticalPadding = 0.5;
   }
 
-  // ------- update rectangle for keyboard annotations
-  if (type === 'keyboard') {
+  // ------- update rectangle for keystop annotations
+  if (type === 'keystop') {
     rectangle.layoutMode = 'VERTICAL';
     rectangle.counterAxisSizingMode = 'FIXED';
     rectangle.layoutAlign = 'MIN';
@@ -341,7 +341,7 @@ const buildText = (
     'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -371,8 +371,8 @@ const buildText = (
   text.textAlignHorizontal = 'CENTER';
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
 
-  // ------- update text for keyboard annotations
-  if (type === 'keyboard') {
+  // ------- update text for keystop annotations
+  if (type === 'keystop') {
     text.fontSize = 14;
     text.textAlignHorizontal = 'LEFT';
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
@@ -405,7 +405,7 @@ const buildAnnotation = (options: {
     'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style',
 }): {
@@ -461,7 +461,7 @@ const buildAnnotation = (options: {
   let icon: FrameNode = null;
   if (isMeasurement) {
     icon = buildMeasureIcon(colorHex);
-  } else if (type === 'keyboard') {
+  } else if (type === 'keystop') {
     const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
     icon = buildKeyboardIcon(iconColor);
   }
@@ -562,7 +562,7 @@ const positionAnnotation = (
     'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style' = 'component',
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
@@ -631,7 +631,7 @@ const positionAnnotation = (
 
       // set top level
       group = groupWithIcon;
-    } else if (annotationType === 'keyboard') {
+    } else if (annotationType === 'keystop') {
       // add icon to the rectangle frame
       rectangle.appendChild(icon);
       // re-add text to force it to the bottom
@@ -944,7 +944,7 @@ const setGroupKey = (elementType: string):
   'boundingInnerGroupId'
   | 'componentInnerGroupId'
   | 'dimensionInnerGroupId'
-  | 'keyboardInnerGroupId'
+  | 'keystopInnerGroupId'
   | 'spacingInnerGroupId'
   | 'styleInnerGroupId'
   | 'id' => {
@@ -952,7 +952,7 @@ const setGroupKey = (elementType: string):
     'boundingInnerGroupId'
     | 'componentInnerGroupId'
     | 'dimensionInnerGroupId'
-    | 'keyboardInnerGroupId'
+    | 'keystopInnerGroupId'
     | 'spacingInnerGroupId'
     | 'styleInnerGroupId'
     | 'id' = null;
@@ -967,8 +967,8 @@ const setGroupKey = (elementType: string):
     case 'dimension':
       groupKey = 'dimensionInnerGroupId';
       break;
-    case 'keyboard':
-      groupKey = 'keyboardInnerGroupId';
+    case 'keystop':
+      groupKey = 'keystopInnerGroupId';
       break;
     case 'spacing':
       groupKey = 'spacingInnerGroupId';
@@ -1002,7 +1002,7 @@ const setGroupName = (
     | 'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -1019,7 +1019,7 @@ const setGroupName = (
     case 'dimension':
       groupName = 'Dimension Annotations';
       break;
-    case 'keyboard':
+    case 'keystop':
       groupName = 'Keyboard Annotations';
       break;
     case 'spacing':
@@ -1227,7 +1227,7 @@ export const createContainerGroup = (
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
     dimensionInnerGroupId?: string,
-    keyboardInnerGroupId?: string,
+    keystopInnerGroupId?: string,
     frameId: string,
     spacingInnerGroupId?: string,
     styleInnerGroupId?: string,
@@ -1237,7 +1237,7 @@ export const createContainerGroup = (
     | 'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -1249,7 +1249,7 @@ export const createContainerGroup = (
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
     dimensionInnerGroupId?: string,
-    keyboardInnerGroupId?: string,
+    keystopInnerGroupId?: string,
     frameId: string,
     spacingInnerGroupId?: string,
     styleInnerGroupId?: string,
@@ -1304,7 +1304,7 @@ const setNodeInContainers = (nodeToContain: {
     | 'component'
     | 'custom'
     | 'dimension'
-    | 'keyboard'
+    | 'keystop'
     | 'spacing'
     | 'style',
 }): {
@@ -1463,7 +1463,7 @@ const getSetNodeSettings = (
     'annotatedDimensions'
     | 'annotatedLayers'
     | 'annotatedSpacings'
-    | 'keyboardLayers',
+    | 'keystopLayers',
   nodeIdSet: {
     layerId: string,
     layerAId?: string,
@@ -1622,7 +1622,7 @@ export default class Painter {
     const nodeId = this.node.id;
     const groupName = `Annotation for ${nodeName}`;
 
-    // set document settings to track annotation
+    // set page settings to track annotation
     getSetNodeSettings('annotatedLayers', { layerId: nodeId }, this.page);
 
     // construct the base annotation elements
@@ -1791,7 +1791,7 @@ export default class Painter {
     const nodeId = this.node.id;
     const nodeName = this.node.name;
 
-    // set document settings to track annotation
+    // set page settings to track annotation
     getSetNodeSettings('annotatedDimensions', { layerId: nodeId }, this.page);
 
     // grab the position from crawler
@@ -1958,13 +1958,13 @@ export default class Painter {
 
     result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
 
-    // const nodeSettings = getNodeSettings(this.page, this.node.id);
+    const nodeSettings = getNodeSettings(this.page, this.node.id);
 
-    // if (!nodeSettings || (nodeSettings && !nodeSettings.annotationText)) {
-    //   result.status = 'error';
-    //   result.messages.log = 'Node missing annotationText';
-    //   return result;
-    // }
+    if (!nodeSettings || (nodeSettings && !nodeSettings.annotationText)) {
+      result.status = 'error';
+      result.messages.log = 'Node missing annotationText';
+      return result;
+    }
 
     // return an error if the selection is not placed in a frame
     if (!this.frame || (this.frame.id === this.node.id)) {
@@ -1975,28 +1975,28 @@ export default class Painter {
     }
 
     // set up some information
-    // const {
-    //   annotationText,
-    //   annotationSecondaryText,
-    //   annotationType,
-    // } = nodeSettings;
+    const {
+      annotationText,
+      annotationSecondaryText,
+      annotationType,
+    } = nodeSettings;
     const nodeName = this.node.name;
     const nodeId = this.node.id;
     const groupName = `Keystop for ${nodeName}`;
 
-    // set document settings to track annotation
-    getSetNodeSettings('keyboardLayers', { layerId: nodeId }, this.page);
+    // set page settings to track annotation
+    getSetNodeSettings('keystopLayers', { layerId: nodeId }, this.page);
 
     // construct the base annotation elements
-    // const annotation = buildAnnotation({
-    //   mainText: annotationText,
-    //   secondaryText: annotationSecondaryText,
-    //   type: annotationType,
-    // });
     const annotation = buildAnnotation({
-      mainText: '1',
-      type: 'keyboard',
+      mainText: annotationText,
+      secondaryText: annotationSecondaryText,
+      type: annotationType,
     });
+    // const annotation = buildAnnotation({
+    //   mainText: '1',
+    //   type: 'keystop',
+    // });
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -2028,7 +2028,7 @@ export default class Painter {
       groupName,
       annotation,
       nodePosition,
-      'keyboard',
+      'keystop',
     );
 
     // set it in the correct containers
@@ -2036,7 +2036,7 @@ export default class Painter {
       node: group,
       frame: this.frame,
       page: this.page,
-      type: 'keyboard',
+      type: 'keystop',
     });
 
     // new object with IDs to add to settings
@@ -2055,7 +2055,7 @@ export default class Painter {
     newPageSettings = updateNestedArray(
       newPageSettings,
       newAnnotatedNodeSet,
-      'keyboardLayers',
+      'keystopLayers',
       'add',
     );
 
@@ -2122,7 +2122,7 @@ export default class Painter {
     const nodeName: string = this.node.name;
     const groupName: string = `Spacing for ${nodeName} (${spacingPosition.direction})`;
 
-    // set document settings
+    // set page settings
     // use “layer” instead of “node” to match older documents
     getSetNodeSettings(
       'annotatedSpacings',

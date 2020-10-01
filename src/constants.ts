@@ -32,6 +32,7 @@ const PLUGIN_NAME = 'Specter';
  */
 const DATA_KEYS = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
+  keystops: `${PLUGIN_IDENTIFIER}.keystops-001`,
 };
 
 /**
@@ -45,7 +46,7 @@ const COLORS = {
   component: '#6255ca',
   custom: '#c8006a',
   dimension: '#4c7100',
-  keyboard: '#c8006a',
+  keystop: '#c8006a',
   spacing: '#007373',
   style: '#bc3600',
 };

@@ -1,4 +1,5 @@
 import {
+  findTopFrame,
   findParentInstance,
   getNodeSettings,
   isInternal,
@@ -7,7 +8,7 @@ import {
   setNodeSettings,
   toSentenceCase,
 } from './Tools';
-import { RADIUS_MATRIX } from './constants';
+import { DATA_KEYS, RADIUS_MATRIX } from './constants';
 
 // --- private functions
 /**
@@ -27,7 +28,7 @@ import { RADIUS_MATRIX } from './constants';
 const setAnnotationTextSettings = (
   annotationText: string,
   annotationSecondaryText: string,
-  annotationType: string,
+  annotationType: 'component' | 'custom' | 'keystop' | 'style',
   nodeId: string,
   page: any,
 ): void => {
@@ -504,7 +505,7 @@ export default class Identifier {
     const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
     if (radiusItem) {
       // sets symbol type to `foundation` or `component` based on name checks
-      const symbolType: string = 'style';
+      const symbolType: 'style' = 'style';
       const textToSet: string = radiusItem.token;
       const subtextToSet = null;
 
@@ -577,7 +578,7 @@ export default class Identifier {
       this.messenger.log(`Main Component name for node: ${mainComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
-      const symbolType: string = checkNameForType(mainComponent.name);
+      const symbolType: 'component' | 'style' = checkNameForType(mainComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       const textToSet: string = cleanName(mainComponent.name);
       const subtextToSet = parseOverrides(this.node);
@@ -662,28 +663,50 @@ export default class Identifier {
       },
     };
 
-    // get node settings
-    const nodeSettings = getNodeSettings(this.page, this.node.id);
+    // find the top frame
+    const topFrame: FrameNode = findTopFrame(this.node);
 
-    // temp
+    if (!topFrame) {
+      result.status = 'error';
+      result.messages.log = `Node “${this.node.name}” needs to be in a frame`;
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
+
+    // get top frame keystop list
+    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystops) || null);
+    let frameKeystopList: Array<{
+      id: string,
+      position: number,
+    }> = [];
+    if (frameKeystopListData) {
+      frameKeystopList = frameKeystopListData;
+    }
+
+    // set new position based on list length
+    // (we always assume `getSetKeystop` has been fed the node in order)
+    const positionToSet = frameKeystopList.length + 1;
+
+    // add the new node to the list with position
+    frameKeystopList.push({
+      id: this.node.id,
+      position: positionToSet,
+    });
+
+    // set/update top frame keystop list
+    topFrame.setPluginData(
+      DATA_KEYS.keystops,
+      JSON.stringify(frameKeystopList),
+    );
+
+    // convert position to string
+    const textToSet = `${positionToSet}`;
+
+    // set `annotationText` on the node settings as the effect name
+    setAnnotationTextSettings(textToSet, null, 'keystop', this.node.id, this.page);
+
     result.status = 'success';
-    result.messages.log = `Keystop set for “${this.node.name}”`;
-    console.log(nodeSettings); // eslint-disable-line no-console
-
-    // // check for existing `annotationText` tktk
-    // if (
-    //   nodeSettings
-    //   && nodeSettings.annotationText
-    //   && (nodeSettings.annotationType === 'custom')
-    // ) {
-    //   result.status = 'success';
-    //   result.messages.log = `Custom text set for “${this.node.name}”
-    // is “${nodeSettings.annotationText}”`;
-    // } else {
-    //   result.status = 'error';
-    //   result.messages.log = `No custom text is set for “${this.node.name}”`;
-    // }
-
+    result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 
