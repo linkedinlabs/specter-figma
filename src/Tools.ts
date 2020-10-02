@@ -44,6 +44,32 @@ const pollWithPromise = (
 };
 
 /**
+ * @description A reusable helper function to take an array and check if an item exists
+ * based on a `key`/`value` pair.
+ *
+ * @kind function
+ * @name existsInArray
+ *
+ * @param {Array} array The array to be checked.
+ * @param {string} value The string to match against `key`
+ * @param {string} key String representing the key to match against `value` (default is `id`).
+ *
+ * @returns {boolean}
+ */
+const existsInArray = (array, value, key = 'id') => {
+  let doesExist = false;
+  const itemIndex = array.findIndex(
+    foundItem => (foundItem[key] === value),
+  );
+
+  if (itemIndex > -1) {
+    doesExist = true;
+  }
+
+  return doesExist;
+};
+
+/**
  * @description A reusable helper function to take an array and add or remove data from it
  * based on a top-level key and a defined action.
  *
@@ -654,6 +680,7 @@ const toSentenceCase = (anyString: string): string => {
 export {
   asyncForEach,
   awaitUIReadiness,
+  existsInArray,
   findParentInstance,
   findTopFrame,
   findTopInstance,

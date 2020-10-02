@@ -2,7 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { findTopFrame } from './Tools';
+import { existsInArray, findTopFrame } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -187,12 +187,65 @@ export default class App {
     }
 
     // iterate through each node in a selection
-    const nodes = new Crawler({ for: selection }).all();
+    const selectedNodes: Array<SceneNode> = selection;
 
-    // temporarily track keystop annotations, relative to topFrame
-    const keystopTopFrames: Array<string> = [];
+    // determine topFrames involved in the current selection
+    const topFrameNodes: Array<FrameNode> = [];
+    selectedNodes.forEach((node: BaseNode) => {
+      const topFrame: FrameNode = findTopFrame(node);
 
-    nodes.forEach((node: BaseNode) => {
+      let topFrameExists = false;
+      topFrameNodes.forEach((existingTopFrame: FrameNode) => {
+        if (existingTopFrame.id === topFrame.id) {
+          topFrameExists = true;
+        }
+      });
+
+      if (!topFrameExists) {
+        topFrameNodes.push(topFrame);
+      }
+    });
+
+    // iterate topFrames and select nodes that already have annotations
+    const nodes: Array<SceneNode> = [];
+    topFrameNodes.forEach((topFrame: FrameNode) => {
+      const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystops) || null);
+      let frameKeystopList: Array<{
+        id: string,
+        position: number,
+      }> = [];
+      if (frameKeystopListData) {
+        frameKeystopList = frameKeystopListData;
+      }
+
+      if (frameKeystopList.length > 0) {
+        frameKeystopList.forEach((keystopItem) => {
+          const nodeToAdd: SceneNode = topFrame.findOne(node => node.id === keystopItem.id);
+
+          if (nodeToAdd) {
+            nodes.push(nodeToAdd);
+          } else {
+            // tktk remove annotation
+          }
+        });
+      }
+
+      // tktk? - reset the top frame list (if we have not seen it yet)
+      topFrame.setPluginData(
+        DATA_KEYS.keystops,
+        JSON.stringify([]),
+      );
+    });
+
+    // add in any directly-selected nodes that do not have annotations yet
+    selectedNodes.forEach((node: SceneNode) => {
+      if (!existsInArray(nodes, node.id)) {
+        nodes.push(node);
+      }
+    });
+
+    // re-paint the annotations
+    nodes.forEach((node: SceneNode) => {
       // set up Identifier instance for the node
       const identifier = new Identifier({
         for: node,
@@ -225,16 +278,6 @@ export default class App {
         }
         return null;
       };
-
-      // reset the top frame list (if we have not seen it yet)
-      const topFrame: FrameNode = findTopFrame(node);
-      if (topFrame && !keystopTopFrames.includes(topFrame.id)) {
-        topFrame.setPluginData(
-          DATA_KEYS.keystops,
-          JSON.stringify([]),
-        );
-        keystopTopFrames.push(topFrame.id);
-      }
 
       // get/set the keystop info
       const identifierResult = identifier.getSetKeystop();
