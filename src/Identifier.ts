@@ -674,7 +674,7 @@ export default class Identifier {
     }
 
     // get top frame keystop list
-    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystops) || null);
+    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
     let frameKeystopList: Array<{
       id: string,
       position: number,
@@ -695,15 +695,25 @@ export default class Identifier {
 
     // set/update top frame keystop list
     topFrame.setPluginData(
-      DATA_KEYS.keystops,
+      DATA_KEYS.keystopList,
       JSON.stringify(frameKeystopList),
     );
 
     // convert position to string
     const textToSet = `${positionToSet}`;
 
-    // set `annotationText` on the node settings as the effect name
-    setAnnotationTextSettings(textToSet, null, 'keystop', this.node.id, this.page);
+    // set `annotationText` data on the node
+    const nodeData: {
+      annotationText: string,
+      annotationSecondaryText?: string,
+    } = {
+      annotationText: textToSet,
+    };
+
+    this.node.setPluginData(
+      DATA_KEYS.keystopNodeData,
+      JSON.stringify(nodeData),
+    );
 
     result.status = 'success';
     result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;

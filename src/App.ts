@@ -207,32 +207,50 @@ export default class App {
     });
 
     // iterate topFrames and select nodes that already have annotations
+    const trackingData: Array<{
+      annotationId: string,
+      id: string,
+      topFrameId: string,
+      nodePosition: PluginNodePosition,
+    }> = JSON.parse(page.getPluginData(DATA_KEYS.keystopAnnotations) || null);
     const nodes: Array<SceneNode> = [];
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystops) || null);
-      let frameKeystopList: Array<{
+      const keystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+      let keystopList: Array<{
         id: string,
         position: number,
       }> = [];
-      if (frameKeystopListData) {
-        frameKeystopList = frameKeystopListData;
+      if (keystopListData) {
+        keystopList = keystopListData;
       }
 
-      if (frameKeystopList.length > 0) {
-        frameKeystopList.forEach((keystopItem) => {
+      if (keystopList.length > 0) {
+        keystopList.forEach((keystopItem) => {
           const nodeToAdd: SceneNode = topFrame.findOne(node => node.id === keystopItem.id);
 
           if (nodeToAdd) {
             nodes.push(nodeToAdd);
-          } else {
-            // tktk remove annotation
+          }
+
+          // tktk remove existing annotation
+          if (trackingData) {
+            const entryIndex: 0 = 0;
+            const trackingEntry = trackingData.filter(
+              entry => entry.id === keystopItem.id,
+            )[entryIndex];
+            if (trackingEntry) {
+              const annotationNode = figma.getNodeById(trackingEntry.annotationId);
+              if (annotationNode) {
+                annotationNode.remove();
+              }
+            }
           }
         });
       }
 
       // tktk? - reset the top frame list (if we have not seen it yet)
       topFrame.setPluginData(
-        DATA_KEYS.keystops,
+        DATA_KEYS.keystopList,
         JSON.stringify([]),
       );
     });

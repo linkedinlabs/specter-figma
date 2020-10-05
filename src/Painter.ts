@@ -4,10 +4,12 @@ import {
   getNodeSettings,
   hexToDecimalRgb,
   isInternal,
+  updateArray,
   updateNestedArray,
 } from './Tools';
 import {
   COLORS,
+  DATA_KEYS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
   SPACING_MATRIX,
@@ -1958,9 +1960,10 @@ export default class Painter {
 
     result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
 
-    const nodeSettings = getNodeSettings(this.page, this.node.id);
+    // retrieve the node data with our annotation text
+    const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
 
-    if (!nodeSettings || (nodeSettings && !nodeSettings.annotationText)) {
+    if (!nodeData || (nodeData && !nodeData.annotationText)) {
       result.status = 'error';
       result.messages.log = 'Node missing annotationText';
       return result;
@@ -1978,25 +1981,16 @@ export default class Painter {
     const {
       annotationText,
       annotationSecondaryText,
-      annotationType,
-    } = nodeSettings;
-    const nodeName = this.node.name;
-    const nodeId = this.node.id;
-    const groupName = `Keystop for ${nodeName}`;
-
-    // set page settings to track annotation
-    getSetNodeSettings('keystopLayers', { layerId: nodeId }, this.page);
+    } = nodeData;
+    const annotationType: 'keystop' = 'keystop';
+    const annotationName = `Keystop for ${this.node.name}`;
 
     // construct the base annotation elements
-    const annotation = buildAnnotation({
+    const annotationBundle = buildAnnotation({
       mainText: annotationText,
       secondaryText: annotationSecondaryText,
       type: annotationType,
     });
-    // const annotation = buildAnnotation({
-    //   mainText: '1',
-    //   type: 'keystop',
-    // });
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -2005,15 +1999,7 @@ export default class Painter {
 
     // group and position the base annotation elements
     const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
@@ -2023,46 +2009,55 @@ export default class Painter {
       index: nodeIndex,
     };
 
-    const group = positionAnnotation(
+    const annotationNode = positionAnnotation(
       this.frame,
-      groupName,
-      annotation,
+      annotationName,
+      annotationBundle,
       nodePosition,
       'keystop',
     );
 
     // set it in the correct containers
-    const containerSet = setNodeInContainers({
-      node: group,
+    setNodeInContainers({
+      node: annotationNode,
       frame: this.frame,
       page: this.page,
       type: 'keystop',
     });
 
-    // new object with IDs to add to settings
-    const newAnnotatedNodeSet: {
-      containerGroupId: string,
-      id: string,
-      originalId: string,
-    } = {
-      containerGroupId: containerSet.componentInnerGroupId,
-      id: group.id,
-      originalId: nodeId,
+    // ---------- set node tracking data
+    const newAnnotatedNodeData = {
+      annotationId: annotationNode.id,
+      id: this.node.id,
+      topFrameId: this.frame.id,
+      nodePosition,
     };
 
-    // update the `newPageSettings` array
-    let newPageSettings = JSON.parse(this.page.getPluginData(PLUGIN_IDENTIFIER) || null);
-    newPageSettings = updateNestedArray(
-      newPageSettings,
-      newAnnotatedNodeSet,
-      'keystopLayers',
-      'add',
+    // update the `trackingSettings` array
+    const trackingDataRaw = JSON.parse(
+      this.page.getPluginData(DATA_KEYS.keystopAnnotations) || null,
+    );
+    let trackingData: Array<{
+      annotationId: string,
+      id: string,
+      topFrameId: string,
+      nodePosition: PluginNodePosition,
+    }> = [];
+    if (trackingDataRaw) {
+      trackingData = trackingDataRaw;
+    }
+
+    trackingData = updateArray(
+      trackingData,
+      newAnnotatedNodeData,
+      'id',
+      'update',
     );
 
-    // commit the `Settings` update
+    // commit the `trackingData` update
     this.page.setPluginData(
-      PLUGIN_IDENTIFIER,
-      JSON.stringify(newPageSettings),
+      DATA_KEYS.keystopAnnotations,
+      JSON.stringify(trackingData),
     );
 
     // return a successful result
