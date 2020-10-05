@@ -2,7 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { existsInArray, findTopFrame } from './Tools';
+import { existsInArray } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -190,21 +190,8 @@ export default class App {
     const selectedNodes: Array<SceneNode> = selection;
 
     // determine topFrames involved in the current selection
-    const topFrameNodes: Array<FrameNode> = [];
-    selectedNodes.forEach((node: BaseNode) => {
-      const topFrame: FrameNode = findTopFrame(node);
-
-      let topFrameExists = false;
-      topFrameNodes.forEach((existingTopFrame: FrameNode) => {
-        if (existingTopFrame.id === topFrame.id) {
-          topFrameExists = true;
-        }
-      });
-
-      if (!topFrameExists) {
-        topFrameNodes.push(topFrame);
-      }
-    });
+    const crawlerSelected = new Crawler({ for: selectedNodes });
+    const topFrameNodes: Array<FrameNode> = crawlerSelected.topFrames();
 
     // iterate topFrames and select nodes that already have annotations
     const trackingData: Array<{
@@ -232,7 +219,7 @@ export default class App {
             nodes.push(nodeToAdd);
           }
 
-          // tktk remove existing annotation
+          // remove existing annotation
           if (trackingData) {
             const entryIndex: 0 = 0;
             const trackingEntry = trackingData.filter(

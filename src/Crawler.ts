@@ -1083,4 +1083,35 @@ export default class Crawler {
     result.payload = thePositions;
     return result;
   }
+
+  /** WIP
+   * @description Looks into the selection array and returns the unique top-level frames
+   * within the selection. `PAGE` is not returned as a top-level frame, so nodes not
+   * placed inside a top-level frame are ignored.
+   *
+   * @kind function
+   * @name topFrames
+   *
+   * @returns {Array} All top-level frame nodes.
+   */
+  topFrames() {
+    const topFrameNodes: Array<FrameNode> = [];
+    const nodes = this.array;
+    nodes.forEach((node: BaseNode) => {
+      const topFrame: FrameNode = findTopFrame(node);
+
+      let topFrameExists: boolean = false;
+      topFrameNodes.forEach((existingTopFrame: FrameNode) => {
+        if (existingTopFrame.id === topFrame.id) {
+          topFrameExists = true;
+        }
+      });
+
+      if (!topFrameExists) {
+        topFrameNodes.push(topFrame);
+      }
+    });
+
+    return topFrameNodes;
+  }
 }
