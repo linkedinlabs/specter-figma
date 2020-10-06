@@ -100,26 +100,32 @@
     }
   };
 
-  const setAddStopButton = (currentSelection) => {
-    addNumber = currentSelection.items.length;
+  const setAddStopButton = (currentItems) => {
+    addNumber = 0;
+
+    currentItems.forEach((item) => {
+      if (!item.hasStop) {
+        addNumber += 1;
+      }
+    });
   };
 
   beforeUpdate(() => {
     items = selected.items;
-    setAddStopButton(selected);
+    setAddStopButton(items);
   });
 </script>
 
 <section class="items-list-holder">
   <ul class="items-list">
-    {#each items as item, i (item.id)}
+    {#each items.filter(filterItem => filterItem.hasStop) as item, i (item.id)}
       <li>
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
           itemId={item.id}
           labelText={item.name}
-          position={i + 1}
+          position={item.position}
           type={type}
         />
         {#if checkIsOpen(item.id, type)}
