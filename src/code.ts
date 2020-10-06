@@ -75,6 +75,13 @@ const dispatcher = async (action: {
       case 'a11y-keyboard-add-stop':
         await app.annotateKeystop();
         break;
+      case 'a11y-keyboard-remove-stop': {
+        const { id } = payload;
+        if (id) {
+          await app.removeKeystops(id);
+        }
+        break;
+      }
       case 'annotate':
         app.annotateNode();
         break;

@@ -2,7 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { existsInArray } from './Tools';
+import { existsInArray, updateArray } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -384,6 +384,9 @@ export default class App {
 
     if (this.shouldTerminate) {
       this.closeOrReset();
+    } else {
+      // App.refreshGUI(sessionKey);
+      App.refreshGUI();
     }
     return null;
   }
@@ -986,6 +989,79 @@ export default class App {
     return null;
   }
 
+  /** WIP
+   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+   *
+   * @kind function
+   * @name removeKeystops
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   */
+  async removeKeystops(nodeId?: string) {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    if (!nodeId && selection.length < 1) {
+      messenger.log('Cannot remove keystop; missing node ID(s)', 'error');
+    }
+
+    let nodes = selection;
+    if (nodeId) {
+      const node: BaseNode = figma.getNodeById(nodeId);
+      if (node) {
+        nodes = [node];
+      }
+    }
+
+    // determine topFrames involved in the current selection
+    const crawler = new Crawler({ for: nodes });
+    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
+
+    // iterate topFrames and remove annotation(s) that match node(s)
+    topFrameNodes.forEach((frameNode: FrameNode) => {
+      // read keystop list data from top frame
+      const keystopList: Array<{
+        id: string,
+        position: number,
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+
+      // remove item(s) from the keystop list
+      let newKeystopList = keystopList;
+      if (keystopList) {
+        nodes.forEach((node) => {
+          newKeystopList = updateArray(newKeystopList, node, 'id', 'remove');
+        });
+      }
+
+      // set new keystop list
+      frameNode.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify(newKeystopList),
+      );
+    });
+
+    // remove the corresponding annotations
+    const nodeIds: Array<string> = [];
+    nodes.forEach(node => nodeIds.push(node.id));
+
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+    );
+    cleanupAnnotations(trackingData, nodeIds);
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      // App.refreshGUI(sessionKey);
+      App.refreshGUI();
+    }
+    return null;
+  }
 
   /** WIP
    * @description Triggers a UI refresh with the current selection.

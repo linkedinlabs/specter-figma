@@ -32,7 +32,7 @@
   <span class="right form-element-holder">
     <FormUnit
       className="form-row"
-      on:deleteSignal={() => dispatch('handleUpdate', 'removeEntry', itemId)}
+      on:deleteSignal={() => dispatch('handleUpdate', 'removeItem', itemId)}
       isDeletable={true}
       kind="inputText"
       labelText="Position"

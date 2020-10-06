@@ -98,6 +98,16 @@
       // commit updated list to store
       openItems.set(updatedOpenItems);
     }
+
+    // ---- remove item
+    if (operationType === 'removeItem') {
+      parent.postMessage({
+        pluginMessage: {
+          action: `${typeScope}-remove-stop`,
+          payload: { id: itemId },
+        },
+      }, '*');
+    }
   };
 
   const setAddStopButton = (currentItems) => {
