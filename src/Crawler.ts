@@ -1114,4 +1114,11 @@ export default class Crawler {
 
     return topFrameNodes;
   }
+
+  topFrame() {
+    const node = this.first();
+    const topFrame: FrameNode = findTopFrame(node);
+
+    return topFrame;
+  }
 }

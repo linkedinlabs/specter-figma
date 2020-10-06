@@ -12,6 +12,13 @@ declare global {
     index: number,
   };
 
+  type PluginNodeTrackingData = {
+    annotationId: string,
+    id: string,
+    topFrameId: string,
+    nodePosition: PluginNodePosition,
+  };
+
   type PluginOptions = {
     currentView: PluginViewTypes,
     isMercadoMode: boolean,

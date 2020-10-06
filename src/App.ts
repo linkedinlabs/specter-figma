@@ -27,6 +27,122 @@ const assemble = (context: any = null) => {
 };
 
 /** WIP
+ * @description A shared helper function to set up in-UI messages and the logger.
+ *
+ * @kind function
+ * @name cleanupAnnotations
+ * @param {Object} context The current context (event) received from Figma.
+ * @returns {Object} Contains an object with the current page as a javascript object,
+ * a messenger instance, and a selection array (if applicable).
+ */
+const cleanupAnnotations = (
+  trackingData: Array<PluginNodeTrackingData>,
+  orphanedIds: Array<string>,
+): void => {
+  orphanedIds.forEach((orphanedId) => {
+    const entryIndex: 0 = 0;
+    const trackingEntry = trackingData.filter(
+      entry => entry.id === orphanedId,
+    )[entryIndex];
+    if (trackingEntry) {
+      const annotationNode = figma.getNodeById(trackingEntry.annotationId);
+      if (annotationNode) {
+        annotationNode.remove();
+      }
+    }
+  });
+};
+
+/** WIP
+ * @description A shared helper function to set up in-UI messages and the logger.
+ *
+ * @kind function
+ * @name getKeystopNodes
+ * @param {Object} context The current context (event) received from Figma.
+ * @returns {Object} Contains an object with the current page as a javascript object,
+ * a messenger instance, and a selection array (if applicable).
+ */
+const getKeystopNodes = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+  resetData: boolean = false,
+) => {
+  const nodes: Array<SceneNode> = [];
+
+  // grab (or initialize) keystop list for the top frame
+  const keystopListData = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+  let keystopList: Array<{
+    id: string,
+    position: number,
+  }> = [];
+  if (keystopListData) {
+    keystopList = keystopListData;
+  }
+
+  if (keystopList.length > 0) {
+    keystopList.forEach((keystopItem) => {
+      const nodeToAdd: SceneNode = frameNode.findOne(node => node.id === keystopItem.id);
+
+      if (nodeToAdd) {
+        nodes.push(nodeToAdd);
+      } else if (trackingData.length > 0) {
+        // remove orphaned annotation
+        cleanupAnnotations(trackingData, [keystopItem.id]);
+      }
+    });
+  }
+
+  // reset the top frame list – list should be reset when annotations are re-painted
+  if (resetData) {
+    frameNode.setPluginData(
+      DATA_KEYS.keystopList,
+      JSON.stringify([]),
+    );
+  }
+
+  return nodes;
+};
+
+/** WIP
+ * @description A shared helper function to set up in-UI messages and the logger.
+ *
+ * @kind function
+ * @name getKeystopPosition
+ * @param {Object} context The current context (event) received from Figma.
+ * @returns {Object} Contains an object with the current page as a javascript object,
+ * a messenger instance, and a selection array (if applicable).
+ */
+const getKeystopPosition = (node: SceneNode): {
+  hasStop: boolean,
+  position: number,
+} => {
+  // set up keystop blank
+  const keystopPosition: {
+    hasStop: boolean,
+    position: number,
+  } = {
+    hasStop: false,
+    position: null,
+  };
+
+  // find top frame for selected node
+  const crawler = new Crawler({ for: [node] });
+  const topFrame = crawler.topFrame();
+  if (topFrame) {
+    // read keystop list data from top frame
+    const itemIndex = 0;
+    const keystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+    const keystopItem = keystopList.filter(item => item.id === node.id)[itemIndex];
+    if (keystopItem) {
+      keystopPosition.hasStop = true;
+      keystopPosition.position = keystopItem.position;
+    }
+  }
+
+  return keystopPosition;
+};
+
+/** WIP
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -165,7 +281,7 @@ export default class App {
     return this.closeOrReset();
   }
 
-  /**
+  /** WIP
    * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
    *
    * @kind function
@@ -186,60 +302,23 @@ export default class App {
       return messenger.toast('A layer must be selected');
     }
 
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+    );
+
     // iterate through each node in a selection
     const selectedNodes: Array<SceneNode> = selection;
 
     // determine topFrames involved in the current selection
-    const crawlerSelected = new Crawler({ for: selectedNodes });
-    const topFrameNodes: Array<FrameNode> = crawlerSelected.topFrames();
+    const crawlerForSelected = new Crawler({ for: selectedNodes });
+    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
 
     // iterate topFrames and select nodes that already have annotations
-    const trackingData: Array<{
-      annotationId: string,
-      id: string,
-      topFrameId: string,
-      nodePosition: PluginNodePosition,
-    }> = JSON.parse(page.getPluginData(DATA_KEYS.keystopAnnotations) || null);
     const nodes: Array<SceneNode> = [];
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const keystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
-      let keystopList: Array<{
-        id: string,
-        position: number,
-      }> = [];
-      if (keystopListData) {
-        keystopList = keystopListData;
-      }
-
-      if (keystopList.length > 0) {
-        keystopList.forEach((keystopItem) => {
-          const nodeToAdd: SceneNode = topFrame.findOne(node => node.id === keystopItem.id);
-
-          if (nodeToAdd) {
-            nodes.push(nodeToAdd);
-          }
-
-          // remove existing annotation
-          if (trackingData) {
-            const entryIndex: 0 = 0;
-            const trackingEntry = trackingData.filter(
-              entry => entry.id === keystopItem.id,
-            )[entryIndex];
-            if (trackingEntry) {
-              const annotationNode = figma.getNodeById(trackingEntry.annotationId);
-              if (annotationNode) {
-                annotationNode.remove();
-              }
-            }
-          }
-        });
-      }
-
-      // tktk? - reset the top frame list (if we have not seen it yet)
-      topFrame.setPluginData(
-        DATA_KEYS.keystopList,
-        JSON.stringify([]),
-      );
+      const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+      keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
     });
 
     // add in any directly-selected nodes that do not have annotations yet
@@ -251,6 +330,9 @@ export default class App {
 
     // re-paint the annotations
     nodes.forEach((node: SceneNode) => {
+      // remove existing annotation
+      cleanupAnnotations(trackingData, [node.id]);
+
       // set up Identifier instance for the node
       const identifier = new Identifier({
         for: node,
@@ -788,10 +870,11 @@ export default class App {
    * @returns {Promise} Returns a promise for resolution.
    */
   static async refreshGUI() {
-    const { messenger, selection } = assemble(figma);
-
-    // set up initial selection for “add stop” action
-    const nodes: Array<SceneNode> = selection;
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
 
     // get last-used filters from options
     const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
@@ -818,7 +901,7 @@ export default class App {
         return null;
     }
 
-    // send the updates to the UI
+    const nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
     const selected: {
       items: Array<{
@@ -828,18 +911,60 @@ export default class App {
       }>
     } = { items: [] };
 
-    // set up selected bundle
-    nodes.forEach((node: SceneNode) => {
-      const { id, name } = node;
-      const viewObject = {
-        id,
-        name,
-        hasStop: false,
-      };
+    // specific to `a11y-keyboard`
+    if (currentView === 'a11y-keyboard') {
+      // grab tracking data for the page
+      const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+        page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+      );
 
-      selected.items.push(viewObject);
-    });
+      // iterate through each node in a selection
+      const selectedNodes: Array<SceneNode> = selection;
 
+      // determine topFrames involved in the current selection
+      const crawlerForSelected = new Crawler({ for: selectedNodes });
+      const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
+      // iterate topFrames and select nodes that already have annotations
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
+        keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+      });
+
+      // add in any directly-selected nodes that do not have annotations yet
+      selectedNodes.forEach((node: SceneNode) => {
+        if (!existsInArray(nodes, node.id)) {
+          nodes.push(node);
+        }
+      });
+
+      // set up selected bundle
+      nodes.forEach((node: SceneNode) => {
+        const { id, name } = node;
+        const { hasStop, position } = getKeystopPosition(node);
+        const viewObject = {
+          id,
+          name,
+          position,
+          hasStop,
+        };
+
+        selected.items.push(viewObject);
+      });
+    } else {
+      nodes.forEach((node: SceneNode) => {
+        const { id, name } = node;
+        const viewObject = {
+          id,
+          name,
+          hasStop: false,
+        };
+
+        selected.items.push(viewObject);
+      });
+    }
+
+    // send the updates to the UI
     figma.ui.postMessage({
       action: 'refreshState',
       payload: {
