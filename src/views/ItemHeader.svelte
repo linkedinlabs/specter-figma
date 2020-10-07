@@ -34,6 +34,7 @@
       className="form-row"
       on:deleteSignal={() => dispatch('handleUpdate', 'removeItem', itemId)}
       isDeletable={true}
+      inputType="number"
       kind="inputText"
       labelText="Position"
       nameId={`item-position-${itemId}`}

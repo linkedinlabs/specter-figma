@@ -6,6 +6,7 @@
   export let disabled = null;
   export let nameId = null;
   export let placeholder = null;
+  export let inputType = 'text';
   export let value = null;
 
   let inputElement = null;
@@ -15,6 +16,11 @@
     if (autoSelect) {
       inputElement.select();
     }
+  };
+
+  // set input type (svelte does not directly support a bound value _with_ type as a prop)
+  const setType = (node) => {
+    node.type = inputType; // eslint-disable-line no-param-reassign
   };
 
   const watchKeys = (event) => {
@@ -41,8 +47,8 @@
     on:keyup={watchKeys}
     name={nameId}
     placeholder={placeholder}
+    use:setType
     bind:this={inputElement}
-    type="text"
     bind:value={value}
   >
 </span>

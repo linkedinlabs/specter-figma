@@ -11,6 +11,7 @@
   export let isDeletable = false;
   export let isDirty = false;
   export let isDisabled = false;
+  export let inputType = 'text';
   export let kind = 'inputText';
   export let labelText = 'Type something…';
   export let placeholder = null;
@@ -71,6 +72,7 @@
         autoSelect={true}
         className="form-element element-type-text"
         disabled={isDisabled}
+        inputType={inputType}
         nameId={nameId}
         placeholder={placeholder}
         on:saveSignal
