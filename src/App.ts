@@ -980,10 +980,15 @@ export default class App {
     });
 
     // commit the calculated size
-    figma.ui.resize(
-      width,
-      height,
-    );
+    if (
+      (currentView !== 'a11y-keyboard')
+      || ((currentView === 'a11y-keyboard') && selected.items.length < 1)
+    ) {
+      figma.ui.resize(
+        width,
+        height,
+      );
+    }
 
     messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
     return null;
