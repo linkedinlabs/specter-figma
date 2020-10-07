@@ -11,6 +11,29 @@
   export let type = null;
 
   const dispatch = createEventDispatcher();
+
+  const removeStop = () => {
+    parent.postMessage({
+      pluginMessage: {
+        action: `${type}-remove-stop`,
+        payload: {
+          id: itemId,
+        },
+      },
+    }, '*');
+  };
+
+  const updatePosition = (newPosition) => {
+    parent.postMessage({
+      pluginMessage: {
+        action: `${type}-update-stop`,
+        payload: {
+          id: itemId,
+          position: newPosition,
+        },
+      },
+    }, '*');
+  };
 </script>
 
 <style>
@@ -32,7 +55,7 @@
   <span class="right form-element-holder">
     <FormUnit
       className="form-row"
-      on:deleteSignal={() => dispatch('handleUpdate', 'removeItem', itemId)}
+      on:deleteSignal={() => removeStop()}
       isDeletable={true}
       inputType="number"
       kind="inputText"
@@ -40,7 +63,8 @@
       nameId={`item-position-${itemId}`}
       placeholder="0"
       resetValue="1"
-      value={position}
+      on:saveSignal={() => updatePosition(position)}
+      bind:value={position}
     />
   </span>
 </header>
