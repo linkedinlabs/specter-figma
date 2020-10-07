@@ -68,6 +68,7 @@
 
     {#if kind === 'inputText'}
       <FigmaInput
+        autoSelect={true}
         className="form-element element-type-text"
         disabled={isDisabled}
         nameId={nameId}
