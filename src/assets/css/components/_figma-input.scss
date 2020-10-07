@@ -68,4 +68,17 @@
       border: 1px solid transparent;
     }
   }
+
+  // hide number arrows
+  /* stylelint-disable property-no-vendor-prefix */
+  &[type=number] {
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+  /* stylelint-enable property-no-vendor-prefix */
 }
