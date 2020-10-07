@@ -1199,4 +1199,135 @@ export default class App {
     // show the toolbar
     await this.showToolbar();
   }
+
+  /** WIP
+   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+   *
+   * @kind function
+   * @name updateKeystops
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   */
+  async updateKeystops(params: {
+    id: string,
+    position: string,
+  }) {
+    const {
+      messenger,
+      page,
+    } = assemble(figma);
+
+    const nodeId: string = params.id;
+    // force the new position into a positive integer
+    let newPosition: number = Math.abs(parseInt(params.position, 10));
+
+    if (!nodeId || !newPosition) {
+      messenger.log('Cannot update keystops; missing node ID or new position', 'error');
+    }
+
+    let nodes: Array<BaseNode> = [];
+    const node: BaseNode = figma.getNodeById(nodeId);
+    if (node) {
+      nodes = [node];
+    }
+
+    // determine topFrames involved in the current selection
+    const crawler = new Crawler({ for: nodes });
+    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
+
+    // iterate topFrames and remove annotation(s) that match node(s)
+    topFrameNodes.forEach((frameNode: FrameNode) => {
+      // read keystop list data from top frame
+      const keystopList: Array<{
+        id: string,
+        position: number,
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+
+      console.log(keystopList);
+      // remove item(s) from the keystop list
+      let newKeystopList = [];
+      if (keystopList) {
+        // number items
+        const numberItems = keystopList.length;
+
+        // validate and adjust based on actual number of items
+        if (newPosition > numberItems) {
+          newPosition = numberItems;
+        }
+
+        // find the old position
+        const index = 0;
+        const selectedItem = keystopList.filter(keystopItem => keystopItem.id === nodeId)[index];
+        const oldPosition = selectedItem.position;
+
+        console.log(`oldPosition: ${oldPosition}; newPosition: ${newPosition}`);
+
+        if (newPosition === oldPosition) {
+          // do nothing if the positions match
+          newKeystopList = keystopList;
+        } else {
+          // build the new list
+          keystopList.forEach((keystopItem) => {
+            // stub in new entry based on old values
+            const newItemEntry = {
+              id: keystopItem.id,
+              position: keystopItem.position,
+            }
+
+            if (keystopItem.id === nodeId) {
+              // the selected node always gets the new position
+              newItemEntry.position = newPosition;
+            } else {
+              // how we manipulate the new position is based on relationship
+              // to the _selected_ node’s old position:
+              // nodes higher in the list relative to the old position may need to be moved lower;
+              // nodes lower in the list relative to the old position may need to be moved higher
+              if (keystopItem.position > oldPosition) {
+                console.log(`${keystopItem.position} greater`);
+                // when current position is less than the _new_ position, subtract 1
+                if (keystopItem.position <= newPosition) {
+                  newItemEntry.position -= 1;
+                }
+              } else {
+                console.log(`${keystopItem.position} less`);
+                // when current position is greater than the _new_ position, add 1
+                if (keystopItem.position >= newPosition) {
+                  newItemEntry.position += 1;
+                }
+              }
+            }
+
+            newKeystopList.push(newItemEntry);
+          });
+        }
+      }
+
+      console.log(newKeystopList);
+
+      // set new keystop list
+      // frameNode.setPluginData(
+      //   DATA_KEYS.keystopList,
+      //   JSON.stringify(newKeystopList),
+      // );
+    });
+
+    // // remove the corresponding annotations
+    // const nodeIds: Array<string> = [];
+    // nodes.forEach(node => nodeIds.push(node.id));
+
+    // // grab tracking data for the page
+    // const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+    //   page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+    // );
+    // cleanupAnnotations(trackingData, nodeIds);
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      // App.refreshGUI(sessionKey);
+      App.refreshGUI();
+    }
+    return null;
+  }
 }

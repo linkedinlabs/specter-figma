@@ -82,6 +82,13 @@ const dispatcher = async (action: {
         }
         break;
       }
+      case 'a11y-keyboard-update-stop': {
+        const { id } = payload;
+        if (id) {
+          await app.updateKeystops(payload);
+        }
+        break;
+      }
       case 'annotate':
         app.annotateNode();
         break;
