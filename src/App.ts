@@ -1022,6 +1022,7 @@ export default class App {
       messenger.log('Cannot remove keystop; missing node ID(s)', 'error');
     }
 
+    const nodesToRepaint: Array<SceneNode> = [];
     let nodes = selection;
     if (nodeId) {
       const node: BaseNode = figma.getNodeById(nodeId);
@@ -1055,6 +1056,14 @@ export default class App {
         DATA_KEYS.keystopList,
         JSON.stringify(newKeystopList),
       );
+
+      // use the new, sorted list to select the original nodes in figma
+      newKeystopList.forEach((keystopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(keystopItem.id);
+        if (itemNode) {
+          nodesToRepaint.push(itemNode as SceneNode);
+        }
+      });
     });
 
     // remove the corresponding annotations
@@ -1066,6 +1075,9 @@ export default class App {
       page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
     );
     cleanupAnnotations(trackingData, nodeIds);
+
+    // repaint affected nodes
+    this.annotateKeystop(nodesToRepaint);
 
     // close or refresh UI
     if (this.shouldTerminate) {
