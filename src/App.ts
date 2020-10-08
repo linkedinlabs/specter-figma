@@ -132,10 +132,12 @@ const getKeystopPosition = (node: SceneNode): {
     // read keystop list data from top frame
     const itemIndex = 0;
     const keystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
-    const keystopItem = keystopList.filter(item => item.id === node.id)[itemIndex];
-    if (keystopItem) {
-      keystopPosition.hasStop = true;
-      keystopPosition.position = keystopItem.position;
+    if (keystopList) {
+      const keystopItem = keystopList.filter(item => item.id === node.id)[itemIndex];
+      if (keystopItem) {
+        keystopPosition.hasStop = true;
+        keystopPosition.position = keystopItem.position;
+      }
     }
   }
 
@@ -391,7 +393,6 @@ export default class App {
     if (this.shouldTerminate) {
       this.closeOrReset();
     } else {
-      // App.refreshGUI(sessionKey);
       App.refreshGUI();
     }
     return null;
@@ -1068,7 +1069,6 @@ export default class App {
     if (this.shouldTerminate) {
       this.closeOrReset();
     } else {
-      // App.refreshGUI(sessionKey);
       App.refreshGUI();
     }
     return null;
@@ -1125,7 +1125,7 @@ export default class App {
     // save new options to storage
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);
 
-    // App.refreshGUI(sessionKey);
+    // refresh the view
     App.refreshGUI();
   }
 
@@ -1163,7 +1163,6 @@ export default class App {
   static async showToolbar() {
     const { messenger } = assemble(figma);
 
-    // await App.refreshGUI(sessionKey);
     await App.refreshGUI();
     await App.showGUI(messenger);
   }
@@ -1340,7 +1339,6 @@ export default class App {
     if (this.shouldTerminate) {
       this.closeOrReset();
     } else {
-      // App.refreshGUI(sessionKey);
       App.refreshGUI();
     }
     return null;
