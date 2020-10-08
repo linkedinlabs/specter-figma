@@ -1077,7 +1077,9 @@ export default class App {
     cleanupAnnotations(trackingData, nodeIds);
 
     // repaint affected nodes
-    this.annotateKeystop(nodesToRepaint);
+    if (nodesToRepaint.length > 0) {
+      this.annotateKeystop(nodesToRepaint);
+    }
 
     // close or refresh UI
     if (this.shouldTerminate) {
