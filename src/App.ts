@@ -312,8 +312,10 @@ export default class App {
       page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
     );
 
-    // iterate through each node in a selection
-    let selectedNodes: Array<SceneNode> = selection;
+    // set up selection based on supplied array or direct selection in the Figma UI
+    // the direct UI selection is sorted based on visual hierarchy
+    const crawlerForSelection = new Crawler({ for: selection });
+    let selectedNodes: Array<SceneNode> = crawlerForSelection.sorted();
     if (suppliedSelection && suppliedSelection.length > 0) {
       selectedNodes = suppliedSelection;
     }

@@ -146,7 +146,9 @@ export default class Crawler {
 
   /**
    * @description Looks into the selection array for any groups and pulls out individual nodes,
-   * effectively flattening the selection.
+   * effectively flattening the selection. Sorts the resulting array of nodes by `y` position
+   * and then `x` if `y` values are equal. Position is determined absolutely
+   * (relative to only the page).
    *
    * @kind function
    * @name allSorted
@@ -156,20 +158,8 @@ export default class Crawler {
   allSorted() {
     // start with flattened selection of all nodes
     const nodes = this.all();
-
-    // sort by `y` position and then `x` if `y` values are equal
-    const sortByPosition = (nodeA, nodeB) => {
-      const aPos = { x: nodeA.absoluteTransform[0][2], y: nodeA.absoluteTransform[1][2] };
-      const bPos = { x: nodeB.absoluteTransform[0][2], y: nodeB.absoluteTransform[1][2] };
-
-      if (aPos.y === bPos.y) {
-        return aPos.x - bPos.x;
-      }
-      return aPos.y - bPos.y;
-    };
-
-    const sortedLayers = nodes.sort(sortByPosition);
-    return sortedLayers;
+    const sortedNodes = this.sorted(nodes);
+    return sortedNodes;
   }
 
   /**
@@ -1082,6 +1072,41 @@ export default class Crawler {
     result.messages.log = 'Padding positions calculated';
     result.payload = thePositions;
     return result;
+  }
+
+  /**
+   * @description Sorts an array of nodes by `y` position and then `x` if `y` values are equal.
+   * Position is determined absolutely (relative to only the page).
+   *
+   * @kind function
+   * @name sorted
+   *
+   * @param {Array} nodes Array of nodes to sort by position.
+   *
+   * @returns {Object} All items (including children) individual in an updated array.
+   */
+  sorted(nodes?: Array<SceneNode>) {
+    // sort by `y` position and then `x` if `y` values are equal
+    const sortByPosition = (nodeA, nodeB) => {
+      const aPos = { x: nodeA.absoluteTransform[0][2], y: nodeA.absoluteTransform[1][2] };
+      const bPos = { x: nodeB.absoluteTransform[0][2], y: nodeB.absoluteTransform[1][2] };
+
+      if (aPos.y === bPos.y) {
+        return aPos.x - bPos.x;
+      }
+      return aPos.y - bPos.y;
+    };
+
+    // set up a sortable array without a read-only reference
+    const nodesToSort = [];
+    if (nodes && nodes.length > 0) {
+      nodes.forEach(node => nodesToSort.push(node));
+    } else {
+      this.array.forEach(node => nodesToSort.push(node));
+    }
+
+    const sortedNodes: Array<SceneNode> = nodesToSort.sort(sortByPosition);
+    return sortedNodes;
   }
 
   /** WIP
