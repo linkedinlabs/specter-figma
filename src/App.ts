@@ -289,7 +289,7 @@ export default class App {
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  async annotateKeystop() {
+  async annotateKeystop(suppliedSelection?: Array<SceneNode>) {
     const {
       messenger,
       page,
@@ -297,9 +297,12 @@ export default class App {
     } = assemble(figma);
 
     // need a selected node to annotate it
-    if (selection === null || selection.length === 0) {
+    if (
+      (selection === null || selection.length === 0)
+      && (suppliedSelection === null || suppliedSelection.length === 0)
+    ) {
       messenger.log('Annotate keystop: nothing selected');
-      return messenger.toast('A layer must be selected');
+      return messenger.toast('A layer must be supplied');
     }
 
     // grab tracking data for the page
@@ -308,7 +311,10 @@ export default class App {
     );
 
     // iterate through each node in a selection
-    const selectedNodes: Array<SceneNode> = selection;
+    let selectedNodes: Array<SceneNode> = selection;
+    if (suppliedSelection && suppliedSelection.length > 0) {
+      selectedNodes = suppliedSelection;
+    }
 
     // determine topFrames involved in the current selection
     const crawlerForSelected = new Crawler({ for: selectedNodes });
@@ -1212,19 +1218,17 @@ export default class App {
     id: string,
     position: string,
   }) {
-    const {
-      messenger,
-      page,
-    } = assemble(figma);
+    const { messenger } = assemble(figma);
 
     const nodeId: string = params.id;
     // force the new position into a positive integer
-    let newPosition: number = Math.abs(parseInt(params.position, 10));
+    let newPosition: number = parseInt(params.position, 10);
 
     if (!nodeId || !newPosition) {
       messenger.log('Cannot update keystops; missing node ID or new position', 'error');
     }
 
+    const nodesToRepaint: Array<SceneNode> = [];
     let nodes: Array<BaseNode> = [];
     const node: BaseNode = figma.getNodeById(nodeId);
     if (node) {
@@ -1243,7 +1247,6 @@ export default class App {
         position: number,
       }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
 
-      console.log(keystopList);
       // remove item(s) from the keystop list
       let newKeystopList = [];
       if (keystopList) {
@@ -1260,66 +1263,78 @@ export default class App {
         const selectedItem = keystopList.filter(keystopItem => keystopItem.id === nodeId)[index];
         const oldPosition = selectedItem.position;
 
-        console.log(`oldPosition: ${oldPosition}; newPosition: ${newPosition}`);
-
+        // compare new/old positions and, if applicable, set up the new list
         if (newPosition === oldPosition) {
           // do nothing if the positions match
           newKeystopList = keystopList;
         } else {
+          const setPosition = (currentPosition: number, itemId: string): number => {
+            // the selected node always gets the new position
+            if (itemId === nodeId) {
+              return newPosition;
+            }
+
+            // how we manipulate the new position is based on relationship to the
+            // _selected_ node’s old position:
+            //
+            // nodes higher in the list relative to the old position may need to be moved lower;
+            // nodes lower in the list relative to the old position may need to be moved higher.
+            if (currentPosition > oldPosition) {
+              // when current position is less than the _new_ position, subtract 1
+              if (currentPosition <= newPosition) {
+                return (currentPosition - 1);
+              }
+            } else if (currentPosition >= newPosition) {
+              // when current position is greater than the _new_ position, add 1
+              return (currentPosition + 1);
+            }
+            return currentPosition;
+          };
+
           // build the new list
           keystopList.forEach((keystopItem) => {
             // stub in new entry based on old values
             const newItemEntry = {
               id: keystopItem.id,
-              position: keystopItem.position,
-            }
-
-            if (keystopItem.id === nodeId) {
-              // the selected node always gets the new position
-              newItemEntry.position = newPosition;
-            } else {
-              // how we manipulate the new position is based on relationship
-              // to the _selected_ node’s old position:
-              // nodes higher in the list relative to the old position may need to be moved lower;
-              // nodes lower in the list relative to the old position may need to be moved higher
-              if (keystopItem.position > oldPosition) {
-                console.log(`${keystopItem.position} greater`);
-                // when current position is less than the _new_ position, subtract 1
-                if (keystopItem.position <= newPosition) {
-                  newItemEntry.position -= 1;
-                }
-              } else {
-                console.log(`${keystopItem.position} less`);
-                // when current position is greater than the _new_ position, add 1
-                if (keystopItem.position >= newPosition) {
-                  newItemEntry.position += 1;
-                }
-              }
-            }
+              position: setPosition(keystopItem.position, keystopItem.id),
+            };
 
             newKeystopList.push(newItemEntry);
           });
         }
       }
 
-      console.log(newKeystopList);
+      // sort the new list by position
+      const sortByPosition = (keystopItemA, keystopItemB) => {
+        const aPosition = keystopItemA.position;
+        const bPosition = keystopItemB.position;
+        if (aPosition < bPosition) {
+          return -1;
+        }
+        if (aPosition > bPosition) {
+          return 1;
+        }
+        return 0;
+      };
+      newKeystopList = newKeystopList.sort(sortByPosition);
 
-      // set new keystop list
-      // frameNode.setPluginData(
-      //   DATA_KEYS.keystopList,
-      //   JSON.stringify(newKeystopList),
-      // );
+      // commit the new keystop list
+      frameNode.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify(newKeystopList),
+      );
+
+      // use the new, sorted list to select the original nodes in figma
+      newKeystopList.forEach((keystopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(keystopItem.id);
+        if (itemNode) {
+          nodesToRepaint.push(itemNode as SceneNode);
+        }
+      });
     });
 
-    // // remove the corresponding annotations
-    // const nodeIds: Array<string> = [];
-    // nodes.forEach(node => nodeIds.push(node.id));
-
-    // // grab tracking data for the page
-    // const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-    //   page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
-    // );
-    // cleanupAnnotations(trackingData, nodeIds);
+    // repaint affected nodes
+    this.annotateKeystop(nodesToRepaint);
 
     // close or refresh UI
     if (this.shouldTerminate) {
