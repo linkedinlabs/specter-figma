@@ -10,7 +10,15 @@ const appProps: {
   isInternal: boolean,
   isMercadoMode: boolean,
   isUserInput: boolean,
-  selected: Array<SceneNode>,
+  selected: {
+    items: Array<{
+      id: string,
+      name: string,
+      position?: number,
+      hasStop: boolean,
+      isSelected: boolean,
+    }>,
+  },
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -98,7 +106,13 @@ const showHideInfo = (action: 'show' | 'hide') => {
  */
 const updateSelected = (
   selected: {
-    items: Array<any>,
+    items: Array<{
+      id: string,
+      name: string,
+      position?: number,
+      hasStop: boolean,
+      isSelected: boolean,
+    }>,
   },
   sessionKey?: string,
 ): void => {

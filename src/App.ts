@@ -919,7 +919,9 @@ export default class App {
       items: Array<{
         id: string,
         name: string,
+        position?: number,
         hasStop: boolean,
+        isSelected: boolean,
       }>
     } = { items: [] };
 
@@ -959,6 +961,7 @@ export default class App {
           name,
           position,
           hasStop,
+          isSelected: existsInArray(selectedNodes, node.id),
         };
 
         selected.items.push(viewObject);
@@ -970,6 +973,7 @@ export default class App {
           id,
           name,
           hasStop: false,
+          isSelected: true,
         };
 
         selected.items.push(viewObject);

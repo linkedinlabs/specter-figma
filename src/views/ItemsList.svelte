@@ -123,6 +123,7 @@
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
+          isSelected={item.isSelected}
           itemId={item.id}
           labelText={item.name}
           position={item.position}

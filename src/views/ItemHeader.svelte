@@ -9,6 +9,7 @@
   import FormUnit from './forms-controls/FormUnit';
 
   export let isOpen = false;
+  export let isSelected = false;
   export let itemId = null;
   export let labelText = 'Item name here';
   export let position = null;
@@ -81,7 +82,7 @@
   /* components/list-headers */
 </style>
 
-<header class:isOpen class={`item-header ${type}`}>
+<header class:isOpen class:isSelected class={`item-header ${type}`}>
   <span class="left">
     <span class="actions">
       <ButtonOpenClose
