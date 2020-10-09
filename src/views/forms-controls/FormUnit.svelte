@@ -12,6 +12,7 @@
   export let isDirty = false;
   export let isDisabled = false;
   export let inputType = 'text';
+  export let inputWatchBlur = false;
   export let kind = 'inputText';
   export let labelText = 'Type something…';
   export let placeholder = null;
@@ -77,6 +78,7 @@
         placeholder={placeholder}
         on:saveSignal
         bind:value={value}
+        watchBlur={inputWatchBlur}
       />
     {/if}
 

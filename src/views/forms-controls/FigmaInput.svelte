@@ -8,13 +8,16 @@
   export let placeholder = null;
   export let inputType = 'text';
   export let value = null;
+  export let watchBlur = false;
 
   let inputElement = null;
   const dispatch = createEventDispatcher();
 
   const selectAll = () => {
     if (autoSelect) {
-      inputElement.select();
+      setTimeout(() => {
+        inputElement.select();
+      }, 5);
     }
   };
 
@@ -41,6 +44,7 @@
 
 <span class={className}>
   <input
+    on:blur={watchBlur ? () => dispatch('saveSignal') : undefined}
     disabled={disabled}
     id={nameId}
     on:focus={selectAll}

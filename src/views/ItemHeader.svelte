@@ -58,6 +58,7 @@
       on:deleteSignal={() => removeStop()}
       isDeletable={true}
       inputType="number"
+      inputWatchBlur={true}
       kind="inputText"
       labelText="Position"
       nameId={`item-position-${itemId}`}
