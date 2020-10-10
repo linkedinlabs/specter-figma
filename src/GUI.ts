@@ -10,15 +10,13 @@ const appProps: {
   isInternal: boolean,
   isMercadoMode: boolean,
   isUserInput: boolean,
-  selected: {
-    items: Array<{
-      id: string,
-      name: string,
-      position?: number,
-      hasStop: boolean,
-      isSelected: boolean,
-    }>,
-  },
+  items: Array<{
+    id: string,
+    name: string,
+    position?: number,
+    hasStop: boolean,
+    isSelected: boolean,
+  }>,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -26,7 +24,7 @@ const appProps: {
   isInternal: isInternal(),
   isMercadoMode: false,
   isUserInput: false,
-  selected: null,
+  items: null,
   userInputValue: null,
   viewContext: null,
 };
@@ -97,27 +95,25 @@ const showHideInfo = (action: 'show' | 'hide') => {
  * the supplied options for each layer in the supplied array.
  *
  * @kind function
- * @name updateSelected
+ * @name updateItems
  *
  * @param {Array} items An array of items to clone. Each entry should include an `id`,
  * an `assignment`, `originalText`, `proposedText`, and a `locked` boolean.
  *
  * @returns {null}
  */
-const updateSelected = (
-  selected: {
-    items: Array<{
-      id: string,
-      name: string,
-      position?: number,
-      hasStop: boolean,
-      isSelected: boolean,
-    }>,
-  },
+const updateItems = (
+  items: Array<{
+    id: string,
+    name: string,
+    position?: number,
+    hasStop: boolean,
+    isSelected: boolean,
+  }>,
   sessionKey?: string,
 ): void => {
-  if (selected) {
-    app.selected = selected;
+  if (items) {
+    app.items = items;
     app.newSessionKey = sessionKey;
   }
 };
@@ -165,12 +161,12 @@ const watchIncomingMessages = (): void => {
           const {
             currentView,
             isMercadoMode,
-            selected,
+            items,
             sessionKey,
           } = payload;
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
-          updateSelected(selected, sessionKey);
+          updateItems(items, sessionKey);
           break;
         }
         default:

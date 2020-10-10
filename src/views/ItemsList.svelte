@@ -7,11 +7,11 @@
   import ItemHeader from './ItemHeader';
 
   // props
-  export let selected = null;
+  export let items = null;
   export let type = null;
 
   // locals
-  let { items } = selected;
+  let itemsDirty = items;
   let addNumber = 0;
 
   const checkIsOpen = (itemId, typeScope) => {
@@ -111,14 +111,14 @@
   };
 
   beforeUpdate(() => {
-    items = selected.items;
-    setAddStopButton(items);
+    itemsDirty = items;
+    setAddStopButton(itemsDirty);
   });
 </script>
 
 <section class="items-list-holder">
   <ul class="items-list">
-    {#each items.filter(filterItem => filterItem.hasStop) as item, i (item.id)}
+    {#each itemsDirty.filter(filterItem => filterItem.hasStop) as item, i (item.id)}
       <li class="single-item">
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}

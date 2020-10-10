@@ -915,15 +915,13 @@ export default class App {
 
     const nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
-    const selected: {
-      items: Array<{
-        id: string,
-        name: string,
-        position?: number,
-        hasStop: boolean,
-        isSelected: boolean,
-      }>
-    } = { items: [] };
+    const items: Array<{
+      id: string,
+      name: string,
+      position?: number,
+      hasStop: boolean,
+      isSelected: boolean,
+    }> = [];
 
     // specific to `a11y-keyboard`
     if (currentView === 'a11y-keyboard') {
@@ -964,7 +962,7 @@ export default class App {
           isSelected: existsInArray(selectedNodes, node.id),
         };
 
-        selected.items.push(viewObject);
+        items.push(viewObject);
       });
     } else {
       nodes.forEach((node: SceneNode) => {
@@ -976,7 +974,7 @@ export default class App {
           isSelected: true,
         };
 
-        selected.items.push(viewObject);
+        items.push(viewObject);
       });
     }
 
@@ -986,7 +984,7 @@ export default class App {
       payload: {
         currentView,
         isMercadoMode,
-        selected,
+        items,
         sessionKey,
         // guiStartSize: newGUIHeight,
       },
@@ -995,7 +993,7 @@ export default class App {
     // commit the calculated size
     if (
       (currentView !== 'a11y-keyboard')
-      || ((currentView === 'a11y-keyboard') && selected.items.length < 1)
+      || ((currentView === 'a11y-keyboard') && items.length < 1)
     ) {
       figma.ui.resize(
         width,
