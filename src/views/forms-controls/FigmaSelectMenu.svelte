@@ -123,31 +123,31 @@
         const dropdown = currentlySelectedItem.parentNode;
 
         // default is `down`, grab the next sibling
-        let nextSelectedItem = currentlySelectedItem.nextSibling;
+        let nextSelectedItem = currentlySelectedItem.nextElementSibling;
         if (direction === 'up') {
           // grab the previous sibling
-          nextSelectedItem = currentlySelectedItem.previousSibling;
+          nextSelectedItem = currentlySelectedItem.previousElementSibling;
 
           // skip over separators
           if (nextSelectedItem && nextSelectedItem.tagName !== 'LI') {
-            nextSelectedItem = nextSelectedItem.previousSibling;
+            nextSelectedItem = nextSelectedItem.previousElementSibling;
           }
 
           // if the previous sibling is missing, must be at the top
           // grab the last element in the list
           if (!nextSelectedItem) {
-            nextSelectedItem = currentlySelectedItem.parentNode.lastChild;
+            nextSelectedItem = currentlySelectedItem.parentNode.lastElementChild;
           }
         } else {
           // skip over separators
           if (nextSelectedItem && nextSelectedItem.tagName !== 'LI') {
-            nextSelectedItem = nextSelectedItem.nextSibling;
+            nextSelectedItem = nextSelectedItem.nextElementSibling;
           }
 
           // if the next sibling is missing, must be at the bottom
           // grab the first element in the list
           if (!nextSelectedItem) {
-            nextSelectedItem = currentlySelectedItem.parentNode.firstChild;
+            nextSelectedItem = currentlySelectedItem.parentNode.firstElementChild;
           }
         }
 
@@ -249,8 +249,6 @@
   afterUpdate(() => {
     if (isMenuOpen) {
       setMenuPosition();
-    } else {
-      setSelected();
     }
   });
 </script>
