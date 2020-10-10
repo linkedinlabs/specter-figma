@@ -18,6 +18,7 @@
   export let placeholder = null;
   export let nameId = 'text-input-id';
   export let resetValue = false;
+  export let selectWatchChange = false;
   export let value = null;
   export let options = [];
 
@@ -64,7 +65,9 @@
         disabled={isDisabled}
         nameId={nameId}
         options={options}
+        on:saveSignal
         bind:value={value}
+        watchChange={selectWatchChange}
       />
     {/if}
 

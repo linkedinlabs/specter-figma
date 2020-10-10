@@ -9,6 +9,8 @@
   export let position = null;
   export let type = null;
 
+  let newKeyValue = 'no-key';
+
   const dispatch = createEventDispatcher();
 
   const keyboardOptionsInit = [
@@ -106,6 +108,26 @@
       disabled: false,
     },
   ];
+
+  const addKey = (keyToAdd) => {
+    if (keyToAdd !== 'no-key') {
+      console.log(`set new key: ${keyToAdd}`); // eslint-disable-line no-console
+    }
+    // if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
+    //   parent.postMessage({
+    //     pluginMessage: {
+    //       action: `${type}-update-stop`,
+    //       payload: {
+    //         id: itemId,
+    //         position: newPosition,
+    //       },
+    //     },
+    //   }, '*');
+
+    //   // pre-emptively reset to allow parent props to set new values
+    //   handleReset();
+    // }
+  };
 </script>
 
 <style>
@@ -139,8 +161,10 @@
           nameId={`${itemId}-key-no-key`}
           options={keyboardOptionsInit}
           placeholder="0"
-          resetValue="no-key"
-          value="no-key"
+          resetValue={false}
+          selectWatchChange={true}
+          on:saveSignal={() => addKey(newKeyValue)}
+          bind:value={newKeyValue}
         />
       </span>
     </li>

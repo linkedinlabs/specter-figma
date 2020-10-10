@@ -1,12 +1,17 @@
 <script>
   // this component is a svelte rebuild of the vendor/figma-select-menu.js script
   // used in other LinkedIn Figma plugins
-  import { afterUpdate, onMount } from 'svelte';
+  import {
+    afterUpdate,
+    createEventDispatcher,
+    onMount,
+  } from 'svelte';
 
   export let className = null;
   export let disabled = false;
   export let nameId = null;
   export let value = null;
+  export let watchChange = false;
   export let options = [
     {
       value: 'unassigned',
@@ -21,6 +26,8 @@
     value,
     text: null,
   };
+
+  const dispatch = createEventDispatcher();
 
   // ui
   let fauxSelectorElement = null;
@@ -63,6 +70,11 @@
 
     // update for real select + return binding
     value = selected.value;
+
+    // send save signal if watching
+    if (watchChange) {
+      dispatch('saveSignal');
+    }
     return selected;
   };
 
@@ -294,11 +306,11 @@
     </ul>
   </div>
   <select
-    bind:value={value}
     class="styled-select select-menu"
     disabled={disabled}
     id={nameId}
     style="display:none"
+    bind:value={value}
   >
     {#each options as option (option.value)}
       <option
