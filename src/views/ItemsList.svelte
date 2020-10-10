@@ -119,7 +119,7 @@
 <section class="items-list-holder">
   <ul class="items-list">
     {#each items.filter(filterItem => filterItem.hasStop) as item, i (item.id)}
-      <li>
+      <li class="single-item">
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
@@ -132,6 +132,7 @@
         {#if checkIsOpen(item.id, type)}
           <ItemExpandedContent
             itemId={item.id}
+            isSelected={item.isSelected}
             type={type}
           />
         {/if}

@@ -5,7 +5,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: em(4) em(4) em(4) em(16);
+  padding: em(4) em(4) em(4) em(0);
   width: 100%;
   background-color: $wl-canvas;
 
@@ -26,10 +26,12 @@
           @include button-icon(
             $wl-action-secondary-accent,
             16,
-            $wl-action-tertiary,
+            $wl-action-secondary-accent,
           );
           width: em(16);
           height: em(16);
+          margin-left: em(-2);
+          opacity: 0;
 
           // keep expanded toggle visible
           &.action-open-close {
@@ -70,17 +72,17 @@
   }
 
   // show / hide actions
-  // @include hover {
-  //   span {
-  //     &.actions {
-  //       #{$all-buttons} {
-  //         &.item-toggle {
-  //           opacity: 1;
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
+  @include hover {
+    span {
+      &.actions {
+        #{$all-buttons} {
+          &.item-toggle {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
 }
 
 @mixin list-header-base-expanded {
@@ -96,7 +98,11 @@
 // individual style or component
 @mixin list-header-single {
   @include list-header-base;
-  border-bottom: 1px solid $wl-accent-tertiary;
+  border-left: 4px solid rgba($wl-accent, 0);
+
+  &.isSelected {
+    border-left: 4px solid rgba($wl-accent, 1);
+  }
 
   span {
     &.text {

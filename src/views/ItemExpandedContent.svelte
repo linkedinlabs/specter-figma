@@ -3,6 +3,7 @@
 
   import FormUnit from './forms-controls/FormUnit';
 
+  export let isSelected = false;
   export let itemId = null;
   export let labelText = 'Item name here';
   export let position = null;
@@ -111,7 +112,7 @@
   /* components/list-item-content */
 </style>
 
-<article class="item-content">
+<article class:isSelected class="item-content">
   <ul class="keys-list">
     <li class="keys-item">
       <span class="form-element-holder">
