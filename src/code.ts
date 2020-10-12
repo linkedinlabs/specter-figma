@@ -89,6 +89,12 @@ const dispatcher = async (action: {
         }
         break;
       }
+      case 'a11y-keyboard-set-key':
+        await app.keystopAddRemoveKeys(payload);
+        break;
+      case 'a11y-keyboard-remove-key':
+        await app.keystopAddRemoveKeys(payload, true);
+        break;
       case 'annotate':
         app.annotateNode();
         break;

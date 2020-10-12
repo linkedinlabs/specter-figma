@@ -877,6 +877,56 @@ export default class App {
    * storage so that it persists across files.
    *
    * @kind function
+   * @name keystopAddRemoveKeys
+   *
+   * @returns {Promise} Returns a promise for resolution.
+   */
+  keystopAddRemoveKeys(
+    options: {
+      id: string,
+      key: 'arrows-left-right' | 'arrows-up-down' | 'space' | 'escape',
+    },
+    removeKey: boolean = false
+  ) {
+    console.log(`key: ${options.key}; remove? ${removeKey}`);
+
+    // const {
+    //   messenger,
+    //   page,
+    //   selection,
+    // } = assemble(figma);
+
+    // const { id, key } = options;
+
+    // // grab tracking data for the page
+    // const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+    //   page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+    // );
+
+    // // iterate through each node in a selection
+    // const selectedNodes: Array<SceneNode> = selection;
+
+    // // determine topFrames involved in the current selection
+    // const crawlerForSelected = new Crawler({ for: selectedNodes });
+    // const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+    // const index = 0;
+    // const frameNode: FrameNode = topFrameNodes.filter(node => node.id === id)[index];
+
+    // if (frameNode) {
+    //   // grab keystop list for the top frame
+    //   const keystopList = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+    //   if (keystopList) {
+    //     const nodeData = keystopList.filter(item => item.id === nodeId);
+    //   }
+    // }
+  }
+
+  /** WIP
+   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
+   * features specific to the Mercado Design Library. The flag is saved to local
+   * storage so that it persists across files.
+   *
+   * @kind function
    * @name refreshGUI
    *
    * @returns {Promise} Returns a promise for resolution.

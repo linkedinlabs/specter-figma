@@ -1,6 +1,4 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;
@@ -10,8 +8,6 @@
   export let type = null;
 
   let newKeyValue = 'no-key';
-
-  const dispatch = createEventDispatcher();
 
   const keyboardOptionsInit = [
     {
@@ -111,22 +107,28 @@
 
   const addKey = (keyToAdd) => {
     if (keyToAdd !== 'no-key') {
-      console.log(`set new key: ${keyToAdd}`); // eslint-disable-line no-console
+      parent.postMessage({
+        pluginMessage: {
+          action: `${type}-set-key`,
+          payload: {
+            id: itemId,
+            key: keyToAdd,
+          },
+        },
+      }, '*');
     }
-    // if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
-    //   parent.postMessage({
-    //     pluginMessage: {
-    //       action: `${type}-update-stop`,
-    //       payload: {
-    //         id: itemId,
-    //         position: newPosition,
-    //       },
-    //     },
-    //   }, '*');
+  };
 
-    //   // pre-emptively reset to allow parent props to set new values
-    //   handleReset();
-    // }
+  const removeKey = (keyToRemove) => {
+    parent.postMessage({
+      pluginMessage: {
+        action: `${type}-remove-key`,
+        payload: {
+          id: itemId,
+          key: keyToRemove,
+        },
+      },
+    }, '*');
   };
 </script>
 
@@ -140,7 +142,7 @@
       <span class="form-element-holder">
         <FormUnit
           className="form-row"
-          on:deleteSignal={() => dispatch('handleUpdate', 'removeKeyEntry', itemId)}
+          on:deleteSignal={() => removeKey('test')}
           isDeletable={true}
           kind="inputSelect"
           labelText="Key"
