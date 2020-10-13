@@ -1,13 +1,20 @@
 <script>
+  import { afterUpdate, beforeUpdate } from 'svelte';
+
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;
   export let itemId = null;
+  export let keys = null;
   export let labelText = 'Item name here';
   export let position = null;
   export let type = null;
 
+
   let newKeyValue = 'no-key';
+  let dirtyKeys = keys ? [...keys] : [];
+  let originalKeys = keys ? [...keys] : [];
+  let resetValue = false;
 
   const keyboardOptionsInit = [
     {
@@ -59,7 +66,7 @@
 
   const keyboardOptions = [
     {
-      value: 'remove',
+      value: 'no-key',
       text: 'No key (remove)',
       disabled: false,
     },
@@ -116,6 +123,7 @@
           },
         },
       }, '*');
+      newKeyValue = 'no-key';
     }
   };
 
@@ -130,6 +138,79 @@
       },
     }, '*');
   };
+
+  const updateKey = (currentKeys, keyToUpdate, oldKeyIndex) => {
+    const oldKey = currentKeys[oldKeyIndex];
+    if (oldKey !== keyToUpdate) {
+      removeKey(oldKey);
+
+      if (keyToUpdate !== 'no-key') {
+        addKey(keyToUpdate);
+      }
+    }
+  };
+
+  const compareArrays = (array1, array2) => {
+    let isDifferent = false;
+
+    if (!array1 && !array2) {
+      return isDifferent;
+    }
+
+    if (
+      (!array1 && array2)
+      || (!array2 && array1)
+    ) {
+      isDifferent = true;
+      return isDifferent;
+    }
+
+    if (array1.length !== array2.length) {
+      isDifferent = true;
+      return isDifferent;
+    }
+
+    array1.forEach((value) => {
+      const itemIndex = array2.findIndex(
+        foundValue => (foundValue === value),
+      );
+
+      if (itemIndex < 0) {
+        isDifferent = true;
+      }
+    });
+
+    if (isDifferent) {
+      return isDifferent;
+    }
+
+    array2.forEach((value) => {
+      const itemIndex = array1.findIndex(
+        foundValue => (foundValue === value),
+      );
+
+      if (itemIndex < 0) {
+        isDifferent = true;
+      }
+    });
+
+    return isDifferent;
+  };
+
+  beforeUpdate(() => {
+    // check `keys` against original to see if it was updated on the Figma side
+    if (compareArrays(keys, originalKeys)) {
+      dirtyKeys = keys ? [...keys] : [];
+      originalKeys = keys ? [...keys] : [];
+      resetValue = true;
+    }
+  });
+
+  afterUpdate(() => {
+    if (resetValue) {
+      resetValue = false;
+    }
+  });
 </script>
 
 <style>
@@ -138,22 +219,26 @@
 
 <article class:isSelected class="item-content">
   <ul class="keys-list">
-    <li class="keys-item">
-      <span class="form-element-holder">
-        <FormUnit
-          className="form-row"
-          on:deleteSignal={() => removeKey('test')}
-          isDeletable={true}
-          kind="inputSelect"
-          labelText="Key"
-          nameId={`${itemId}-key-arrows-up-down`}
-          options={keyboardOptions}
-          placeholder="0"
-          resetValue="arrows-up-down"
-          value="arrows-up-down"
-        />
-      </span>
-    </li>
+    {#each dirtyKeys as dirtyKey, i (dirtyKey)}
+      <li class="keys-item">
+        <span class="form-element-holder">
+          <FormUnit
+            className="form-row"
+            on:deleteSignal={() => removeKey(dirtyKey)}
+            isDeletable={true}
+            kind="inputSelect"
+            labelText="Key"
+            nameId={`${itemId}-key-${dirtyKey}`}
+            options={keyboardOptions}
+            placeholder="0"
+            resetValue={resetValue}
+            selectWatchChange={true}
+            on:saveSignal={() => updateKey(originalKeys, dirtyKey, i)}
+            bind:value={dirtyKey}
+          />
+        </span>
+      </li>
+    {/each}
     <li class="keys-item init">
       <span class="form-element-holder">
         <FormUnit
@@ -163,7 +248,7 @@
           nameId={`${itemId}-key-no-key`}
           options={keyboardOptionsInit}
           placeholder="0"
-          resetValue={false}
+          resetValue={resetValue}
           selectWatchChange={true}
           on:saveSignal={() => addKey(newKeyValue)}
           bind:value={newKeyValue}

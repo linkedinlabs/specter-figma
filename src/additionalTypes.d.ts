@@ -2,6 +2,8 @@ declare global {
   // Internal Declarations
   type PluginViewTypes = 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings';
 
+  type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'space' | 'escape';
+
   type PluginNodePosition = {
     frameWidth: number,
     frameHeight: number,

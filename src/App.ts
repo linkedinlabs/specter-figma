@@ -114,16 +114,26 @@ const getKeystopNodes = (
  */
 const getKeystopPosition = (node: SceneNode): {
   hasStop: boolean,
+  keys: Array<PluginKeystopKeys>,
   position: number,
 } => {
   // set up keystop blank
   const keystopPosition: {
     hasStop: boolean,
+    keys: Array<PluginKeystopKeys>,
     position: number,
   } = {
     hasStop: false,
+    keys: null,
     position: null,
   };
+
+  // find keys data for selected node
+  const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+  if (nodeData && nodeData.keys) {
+    const { keys } = nodeData;
+    keystopPosition.keys = keys;
+  }
 
   // find top frame for selected node
   const crawler = new Crawler({ for: [node] });
@@ -886,9 +896,51 @@ export default class App {
       id: string,
       key: 'arrows-left-right' | 'arrows-up-down' | 'space' | 'escape',
     },
-    removeKey: boolean = false
+    removeKey: boolean = false,
   ) {
-    console.log(`key: ${options.key}; remove? ${removeKey}`);
+    const { id, key } = options;
+    const node: BaseNode = figma.getNodeById(id);
+
+    if (node) {
+      // retrieve the node data
+      const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+      if (nodeData) {
+        let keys: Array<PluginKeystopKeys> = [];
+        if (nodeData.keys) {
+          keys = nodeData.keys;
+        }
+
+        let newKeys: Array<PluginKeystopKeys> = keys;
+        keys.forEach((keyEntry, index) => {
+          if (keyEntry === key) {
+            if (index > -1) {
+              newKeys = [
+                ...newKeys.slice(0, index),
+                ...newKeys.slice(index + 1),
+              ];
+            }
+          }
+        });
+
+        if (!removeKey) {
+          newKeys.push(key);
+        }
+
+        nodeData.keys = newKeys;
+        node.setPluginData(
+          DATA_KEYS.keystopNodeData,
+          JSON.stringify(nodeData),
+        );
+      }
+    }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
 
     // const {
     //   messenger,
@@ -896,7 +948,6 @@ export default class App {
     //   selection,
     // } = assemble(figma);
 
-    // const { id, key } = options;
 
     // // grab tracking data for the page
     // const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
@@ -1003,13 +1054,18 @@ export default class App {
       // set up selected bundle
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
-        const { hasStop, position } = getKeystopPosition(node);
+        const {
+          hasStop,
+          keys,
+          position,
+        } = getKeystopPosition(node);
         const viewObject = {
           id,
           name,
           position,
           hasStop,
           isSelected: existsInArray(selectedNodes, node.id),
+          keys,
         };
 
         items.push(viewObject);
