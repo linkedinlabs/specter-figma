@@ -167,7 +167,7 @@ const buildMeasureIcon = (
  * and sets auto-layout and constraint properties.
  *
  * @kind function
- * @name buildKeyboardIcon
+ * @name buildKeystopIcon
  *
  * @param {Object} options Object that includes `text` – the text for the annotation,
  * `secondaryText` – optional secondary text for the annotation, and `type` – a string
@@ -178,14 +178,14 @@ const buildMeasureIcon = (
  *
  * @private
  */
-const buildKeyboardIcon = (
+const buildKeystopIcon = (
   color: { r: number, g: number, b: number },
 ): FrameNode => {
   const icon: FrameNode = figma.createFrame();
 
   // build horizontal rectangle
   const rectangle1: RectangleNode = figma.createRectangle();
-  rectangle1.name = 'I am rect';
+  rectangle1.name = 'Rectangle';
   rectangle1.resize(26, 2);
   rectangle1.fills = [{
     type: 'SOLID',
@@ -194,7 +194,7 @@ const buildKeyboardIcon = (
 
   // build verticle rectangle
   const rectangle2: RectangleNode = figma.createRectangle();
-  rectangle2.name = 'I am rect';
+  rectangle2.name = 'Rectangle';
   rectangle2.resize(2, 8);
   rectangle2.fills = [{
     type: 'SOLID',
@@ -228,7 +228,7 @@ const buildKeyboardIcon = (
   rectangle2.y = 0;
 
   const shape = figma.flatten([diamond, rectangle2], icon);
-  shape.name = 'THing';
+  shape.name = 'Step Forward Icon';
   shape.x = 26;
 
   icon.appendChild(rectangle1);
@@ -275,6 +275,7 @@ const buildRectangle = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'keystopkey'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -344,6 +345,7 @@ const buildText = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'keystopkey'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -465,7 +467,7 @@ const buildAnnotation = (options: {
     icon = buildMeasureIcon(colorHex);
   } else if (type === 'keystop') {
     const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
-    icon = buildKeyboardIcon(iconColor);
+    icon = buildKeystopIcon(iconColor);
   }
 
   // return an object with each element
@@ -475,6 +477,62 @@ const buildAnnotation = (options: {
     text,
     icon,
   };
+};
+
+/** WIP
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
+ *
+ * @kind function
+ * @name buildAuxAnnotation
+ *
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
+ *
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
+ *
+ * @private
+ */
+const buildAuxAnnotation = (options: {
+  mainText: string,
+  type: 'keystopkey',
+}): FrameNode => {
+  const { mainText, type } = options;
+
+  // set the dominant color
+  const colorHex: string = COLORS[type];
+
+  const setText: string = mainText;
+
+  // set up the color object
+  // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
+  const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
+
+  // build the rounded rectangle with auto-layout properties
+  const rectangle: FrameNode = buildRectangle(type, color);
+
+  // create text node
+  const text: TextNode = buildText(type, color, setText);
+  text.fontSize = 14;
+  // text.verticalPadding
+
+  // create icon
+  const icon: FrameNode = null;
+
+  // update base rectangle for aux annotation
+  rectangle.counterAxisSizingMode = 'FIXED';
+  rectangle.layoutAlign = 'MIN';
+  rectangle.appendChild(text);
+  rectangle.appendChild(icon);
+  rectangle.resize(text.width, text.height + 8);
+  rectangle.y = 0;
+  rectangle.horizontalPadding = 4;
+  rectangle.verticalPadding = 4;
+  rectangle.cornerRadius = 4;
+  rectangle.name = 'Key';
+  return rectangle;
 };
 
 /**
@@ -1992,6 +2050,14 @@ export default class Painter {
       type: annotationType,
     });
 
+    let auxAnnotation: FrameNode = null;
+    if (nodeData.keys && nodeData.keys.length > 0) {
+      auxAnnotation = buildAuxAnnotation({
+        mainText: 'Enter',
+        type: 'keystopkey',
+      });
+    }
+
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
     const positionResult = crawler.position();
@@ -2009,13 +2075,35 @@ export default class Painter {
       index: nodeIndex,
     };
 
-    const annotationNode = positionAnnotation(
+    const baseAnnotationNode = positionAnnotation(
       this.frame,
       annotationName,
       annotationBundle,
       nodePosition,
       'keystop',
     );
+
+    const initialX = baseAnnotationNode.x;
+    const initialY = baseAnnotationNode.y;
+
+    let annotationNode: FrameNode = baseAnnotationNode;
+    if (auxAnnotation) {
+      annotationNode = figma.createFrame();
+      annotationNode.clipsContent = false;
+      annotationNode.layoutMode = 'HORIZONTAL';
+      annotationNode.counterAxisSizingMode = 'AUTO';
+      annotationNode.layoutAlign = 'MIN';
+      annotationNode.itemSpacing = 4;
+      annotationNode.fills = [];
+      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
+      annotationNode.appendChild(baseAnnotationNode);
+      annotationNode.appendChild(auxAnnotation);
+      baseAnnotationNode.layoutAlign = 'MIN';
+      auxAnnotation.layoutAlign = 'MIN';
+      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
+      annotationNode.x = initialX;
+      annotationNode.y = initialY;
+    }
 
     // set it in the correct containers
     setNodeInContainers({

@@ -932,6 +932,9 @@ export default class App {
           JSON.stringify(nodeData),
         );
       }
+
+      // repaint the node
+      this.annotateKeystop([node as SceneNode]);
     }
 
     // close or refresh UI
