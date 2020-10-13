@@ -3,8 +3,8 @@
   // used in other LinkedIn Figma plugins
   import {
     afterUpdate,
+    beforeUpdate,
     createEventDispatcher,
-    onMount,
   } from 'svelte';
 
   export let className = null;
@@ -242,7 +242,7 @@
     menuListElement.style.top = `${menuPosition}px`;
   };
 
-  onMount(async () => {
+  beforeUpdate(async () => {
     setSelected();
   });
 
