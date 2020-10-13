@@ -1,5 +1,6 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
+  import { updateArray } from '../Tools';
 
   import FormUnit from './forms-controls/FormUnit';
 
@@ -197,6 +198,65 @@
     return isDifferent;
   };
 
+  const updateSelect = (options) => {
+    const currentKeys = options.keys;
+    const selectType = options.type;
+    let selectedValue = null;
+
+    let modifiedSelectOptions = [...keyboardOptionsInit];
+    if (selectType !== 'init') {
+      modifiedSelectOptions = [...keyboardOptions];
+      selectedValue = options.value;
+    }
+
+    if (currentKeys) {
+      // remove existing key entries
+      currentKeys.forEach((keyEntry) => {
+        const compareValue = { value: keyEntry };
+        if ((selectType === 'init') || (keyEntry !== selectedValue)) {
+          modifiedSelectOptions = updateArray(
+            modifiedSelectOptions,
+            compareValue,
+            'value',
+            'remove',
+          );
+        }
+      });
+
+      // remove double dividers
+      let lastIsDivider = false;
+      modifiedSelectOptions.forEach((optionsEntry) => {
+        const isDivider = optionsEntry.value.includes('divider--');
+
+        if (isDivider && !lastIsDivider) {
+          lastIsDivider = true;
+        } else if (isDivider && lastIsDivider) {
+          modifiedSelectOptions = updateArray(
+            modifiedSelectOptions,
+            optionsEntry,
+            'value',
+            'remove',
+          );
+        } else {
+          lastIsDivider = false;
+        }
+      });
+
+      // remove divider if it is last
+      const lastOptionIndex = modifiedSelectOptions.length - 1;
+      const lastOption = modifiedSelectOptions[lastOptionIndex];
+      if (lastOption.value.includes('divider--')) {
+        modifiedSelectOptions = updateArray(
+          modifiedSelectOptions,
+          lastOption,
+          'value',
+          'remove',
+        );
+      }
+    }
+    return modifiedSelectOptions;
+  };
+
   beforeUpdate(() => {
     // check `keys` against original to see if it was updated on the Figma side
     if (compareArrays(keys, originalKeys)) {
@@ -229,8 +289,7 @@
             kind="inputSelect"
             labelText="Key"
             nameId={`${itemId}-key-${dirtyKey}`}
-            options={keyboardOptions}
-            placeholder="0"
+            options={updateSelect({ keys, type: 'selected', value: dirtyKey })}
             resetValue={resetValue}
             selectWatchChange={true}
             on:saveSignal={() => updateKey(originalKeys, dirtyKey, i)}
@@ -239,21 +298,22 @@
         </span>
       </li>
     {/each}
-    <li class="keys-item init">
-      <span class="form-element-holder">
-        <FormUnit
-          className="form-row"
-          kind="inputSelect"
-          labelText="Key"
-          nameId={`${itemId}-key-no-key`}
-          options={keyboardOptionsInit}
-          placeholder="0"
-          resetValue={resetValue}
-          selectWatchChange={true}
-          on:saveSignal={() => addKey(newKeyValue)}
-          bind:value={newKeyValue}
-        />
-      </span>
-    </li>
+    {#if updateSelect({ keys, type: 'init' }).length > 1}
+      <li class="keys-item init">
+        <span class="form-element-holder">
+          <FormUnit
+            className="form-row"
+            kind="inputSelect"
+            labelText="Key"
+            nameId={`${itemId}-key-no-key`}
+            options={updateSelect({ keys, type: 'init' })}
+            resetValue={resetValue}
+            selectWatchChange={true}
+            on:saveSignal={() => addKey(newKeyValue)}
+            bind:value={newKeyValue}
+          />
+        </span>
+      </li>
+    {/if}
   </ul>
 </article>
