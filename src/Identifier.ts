@@ -702,13 +702,21 @@ export default class Identifier {
     // convert position to string
     const textToSet = `${positionToSet}`;
 
-    // set `annotationText` data on the node
-    const nodeData: {
+    // retrieve the node data
+    let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
-    } = {
-      annotationText: textToSet,
-    };
+      keys?: Array<PluginKeystopKeys>,
+    } = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+
+    // set `annotationText` data on the node
+    if (!nodeData) {
+      nodeData = {
+        annotationText: textToSet,
+      };
+    } else {
+      nodeData.annotationText = textToSet;
+    }
 
     this.node.setPluginData(
       DATA_KEYS.keystopNodeData,
