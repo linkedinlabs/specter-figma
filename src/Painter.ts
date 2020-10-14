@@ -258,6 +258,74 @@ const buildKeystopIcon = (
  * and sets auto-layout and constraint properties.
  *
  * @kind function
+ * @name buildKeystopArrowIcon
+ *
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
+ *
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
+ *
+ * @private
+ */
+const buildKeystopArrowIcon = (
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  const icon: FrameNode = figma.createFrame();
+
+  // build horizontal rectangle
+  const rectangle1: RectangleNode = figma.createRectangle();
+  rectangle1.name = 'Rectangle';
+  rectangle1.resize(12, 2);
+  rectangle1.y = 3;
+  rectangle1.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // build the diamond
+  let diamond: PolygonNode | VectorNode = figma.createPolygon();
+  diamond.name = 'Diamond';
+
+  // position and size the diamond
+  diamond.resize(9, 6);
+  diamond.rotation = -90;
+  diamond.pointCount = 3;
+
+  // style it – set the diamond type, color, and opacity
+  diamond.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // flatten and add to the icon frame
+  diamond = figma.flatten([diamond], icon);
+
+  // resize as flattened vector + position
+  diamond.resize(5, 8);
+  diamond.x = 12;
+  diamond.y = 0;
+
+  const shape = figma.flatten([rectangle1, diamond], icon);
+  shape.name = 'Arrow Vector';
+  shape.x = 0;
+
+  icon.appendChild(shape);
+
+  // style the icon frame
+  icon.name = 'Arrow Icon';
+  icon.fills = [];
+  icon.resize(shape.width, shape.height);
+
+  return icon;
+};
+
+/** WIP
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
+ *
+ * @kind function
  * @name buildRectangle
  *
  * @param {Object} options Object that includes `text` – the text for the annotation,
@@ -498,13 +566,14 @@ const buildAuxAnnotation = (auxType): FrameNode => {
   const colorHex: string = COLORS.keystop;
 
   let setText: string = null;
+  let nameText: string = 'Key';
   let spacer: number = 0;
+  let buildIcons: boolean = false;
   switch (auxType) {
     case 'arrows-left-right':
-      setText = 'Arrows L/R';
-      break;
     case 'arrows-up-down':
-      setText = 'Arrows L/R';
+      buildIcons = true;
+      nameText = '<- ->';
       break;
     case 'enter':
     case 'escape':
@@ -512,8 +581,9 @@ const buildAuxAnnotation = (auxType): FrameNode => {
       setText = auxType.charAt(0).toUpperCase() + auxType.slice(1);
       spacer = 8;
       if (auxType === 'space') {
-        spacer = 24;
+        spacer = 28;
       }
+      nameText = setText;
       break;
     }
     default:
@@ -528,8 +598,11 @@ const buildAuxAnnotation = (auxType): FrameNode => {
   const rectangle: FrameNode = buildRectangle('keystop', color);
 
   // create text node
-  const text: TextNode = buildText('keystop', color, setText);
-  text.fontSize = 14;
+  let text: TextNode = null;
+  if (setText) {
+    text = buildText('keystop', color, setText);
+    text.fontSize = 14;
+  }
 
   // create spacer
   let spacerNode: RectangleNode = null;
@@ -540,7 +613,14 @@ const buildAuxAnnotation = (auxType): FrameNode => {
   }
 
   // create icon tktk
-  const icon: FrameNode = null;
+  let icon1: FrameNode = null;
+  let icon2: FrameNode = null;
+  if (buildIcons) {
+    const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
+    icon1 = buildKeystopArrowIcon(iconColor);
+    icon1.rotation = 180;
+    icon2 = buildKeystopArrowIcon(iconColor);
+  }
 
   // update base rectangle for aux annotation
   rectangle.layoutMode = 'HORIZONTAL';
@@ -548,20 +628,30 @@ const buildAuxAnnotation = (auxType): FrameNode => {
   rectangle.layoutAlign = 'MIN';
   if (text) {
     rectangle.appendChild(text);
+    rectangle.resize(text.width + 8, 26);
   }
   if (spacerNode) {
     rectangle.appendChild(spacerNode);
     spacerNode.layoutAlign = 'CENTER';
   }
-  if (icon) {
-    rectangle.appendChild(icon);
+  if (icon1 && icon2) {
+    rectangle.appendChild(icon1);
+    rectangle.appendChild(icon2);
+    rectangle.itemSpacing = 10;
+    icon1.layoutAlign = 'CENTER';
+    icon2.layoutAlign = 'CENTER';
+    rectangle.resize((icon1.width + icon2.width + 8), 26);
   }
-  rectangle.resize(text.width + 8, text.height + 8);
   rectangle.y = 0;
   rectangle.horizontalPadding = 4;
   rectangle.verticalPadding = 4;
   rectangle.cornerRadius = 4;
-  rectangle.name = 'Key';
+
+  if (auxType === 'arrows-up-down') {
+    nameText = '↑↓';
+    rectangle.rotation = 90;
+  }
+  rectangle.name = `Key ${nameText}`;
   return rectangle;
 };
 
