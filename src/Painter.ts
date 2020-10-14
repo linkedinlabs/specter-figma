@@ -275,7 +275,6 @@ const buildRectangle = (
     | 'custom'
     | 'dimension'
     | 'keystop'
-    | 'keystopkey'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -345,7 +344,6 @@ const buildText = (
     | 'custom'
     | 'dimension'
     | 'keystop'
-    | 'keystopkey'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -495,38 +493,70 @@ const buildAnnotation = (options: {
  *
  * @private
  */
-const buildAuxAnnotation = (options: {
-  mainText: string,
-  type: 'keystopkey',
-}): FrameNode => {
-  const { mainText, type } = options;
-
+const buildAuxAnnotation = (auxType): FrameNode => {
   // set the dominant color
-  const colorHex: string = COLORS[type];
+  const colorHex: string = COLORS.keystop;
 
-  const setText: string = mainText;
+  let setText: string = null;
+  let spacer: number = 0;
+  switch (auxType) {
+    case 'arrows-left-right':
+      setText = 'Arrows L/R';
+      break;
+    case 'arrows-up-down':
+      setText = 'Arrows L/R';
+      break;
+    case 'enter':
+    case 'escape':
+    case 'space': {
+      setText = auxType.charAt(0).toUpperCase() + auxType.slice(1);
+      spacer = 8;
+      if (auxType === 'space') {
+        spacer = 24;
+      }
+      break;
+    }
+    default:
+      setText = null;
+  }
 
   // set up the color object
   // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle with auto-layout properties
-  const rectangle: FrameNode = buildRectangle(type, color);
+  const rectangle: FrameNode = buildRectangle('keystop', color);
 
   // create text node
-  const text: TextNode = buildText(type, color, setText);
+  const text: TextNode = buildText('keystop', color, setText);
   text.fontSize = 14;
-  // text.verticalPadding
 
-  // create icon
+  // create spacer
+  let spacerNode: RectangleNode = null;
+  if (spacer > 0) {
+    spacerNode = figma.createRectangle();
+    spacerNode.fills = [];
+    spacerNode.resize(spacer, 4);
+  }
+
+  // create icon tktk
   const icon: FrameNode = null;
 
   // update base rectangle for aux annotation
+  rectangle.layoutMode = 'HORIZONTAL';
   rectangle.counterAxisSizingMode = 'FIXED';
   rectangle.layoutAlign = 'MIN';
-  rectangle.appendChild(text);
-  rectangle.appendChild(icon);
-  rectangle.resize(text.width, text.height + 8);
+  if (text) {
+    rectangle.appendChild(text);
+  }
+  if (spacerNode) {
+    rectangle.appendChild(spacerNode);
+    spacerNode.layoutAlign = 'CENTER';
+  }
+  if (icon) {
+    rectangle.appendChild(icon);
+  }
+  rectangle.resize(text.width + 8, text.height + 8);
   rectangle.y = 0;
   rectangle.horizontalPadding = 4;
   rectangle.verticalPadding = 4;
@@ -2050,11 +2080,12 @@ export default class Painter {
       type: annotationType,
     });
 
-    let auxAnnotation: FrameNode = null;
+    const auxAnnotations: Array<FrameNode> = [];
     if (nodeData.keys && nodeData.keys.length > 0) {
-      auxAnnotation = buildAuxAnnotation({
-        mainText: 'Enter',
-        type: 'keystopkey',
+      nodeData.keys.forEach((keyEntry) => {
+        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
+        auxAnnotation.layoutAlign = 'MIN';
+        auxAnnotations.push(auxAnnotation);
       });
     }
 
@@ -2087,7 +2118,7 @@ export default class Painter {
     const initialY = baseAnnotationNode.y;
 
     let annotationNode: FrameNode = baseAnnotationNode;
-    if (auxAnnotation) {
+    if (auxAnnotations.length > 0) {
       annotationNode = figma.createFrame();
       annotationNode.clipsContent = false;
       annotationNode.layoutMode = 'HORIZONTAL';
@@ -2096,10 +2127,14 @@ export default class Painter {
       annotationNode.itemSpacing = 4;
       annotationNode.fills = [];
       annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
+
+      // add the base annotation
       annotationNode.appendChild(baseAnnotationNode);
-      annotationNode.appendChild(auxAnnotation);
+
+      // add the key annotations
+      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
+
       baseAnnotationNode.layoutAlign = 'MIN';
-      auxAnnotation.layoutAlign = 'MIN';
       annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
       annotationNode.x = initialX;
       annotationNode.y = initialY;

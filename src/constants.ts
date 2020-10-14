@@ -49,7 +49,6 @@ const COLORS = {
   custom: '#c8006a',
   dimension: '#4c7100',
   keystop: '#c8006a',
-  keystopkey: '#c8006a',
   spacing: '#007373',
   style: '#bc3600',
 };
