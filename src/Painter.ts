@@ -540,7 +540,7 @@ const buildAnnotation = (options: {
  * @kind function
  * @name buildAuxAnnotation
  *
- * @param {string} type The type of auxilary annotation to build: `arrows-left-right`,
+ * @param {string} auxType The type of auxilary annotation to build: `arrows-left-right`,
  * `arrows-up-down`, `enter`, `escape`, `space`.
  *
  * @returns {Object} The full auxilary annotation FrameNode.

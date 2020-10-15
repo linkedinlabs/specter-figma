@@ -54,6 +54,7 @@ const cleanupAnnotations = (
       }
     }
   });
+  return null;
 };
 
 /**
@@ -314,6 +315,9 @@ export default class App {
    *
    * @kind function
    * @name annotateKeystop
+   *
+   * @param {Array} suppliedSelection If present, this array of nodes will override the
+   * nodes found in current selection.
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
@@ -905,6 +909,9 @@ export default class App {
    * @name keystopAddRemoveKeys
    *
    * @param {Object} options Should include a Figma node `id` and the `key` to be added.
+   * @param {boolean} removeKey Default is `false`. If set to `true`, the list of keystops will not
+   * be re-painted after an update, effectively removing the annotation that corresponds to the
+   * supplied `id` in `options`.
    *
    * @returns {null}
    */
@@ -971,6 +978,7 @@ export default class App {
    * @kind function
    * @name refreshGUI
    *
+   * @returns {null}
    */
   static async refreshGUI() {
     const {
@@ -1259,9 +1267,8 @@ export default class App {
    * @kind function
    * @name showGUI
    *
-   * @param {Object} options Can include `size` calling one of the UI sizes defined
-   * in GUI_SETTINGS  and/or an initialized instance of the Messenger class for
-   * logging (`messenger`). Both are optional.
+   * @param {Object} messenger An initialized instance of the Messenger class for
+   * logging (optional).
    *
    * @returns {null}
    */
@@ -1282,7 +1289,7 @@ export default class App {
    * @kind function
    * @name showToolbar
    *
-   * @param {string} sessionKey A rotating key used during the single run of the plugin.
+   * @returns {Promise} Returns a promise for resolution.
    */
   static async showToolbar() {
     const { messenger } = assemble(figma);

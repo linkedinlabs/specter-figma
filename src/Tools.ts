@@ -51,7 +51,7 @@ const pollWithPromise = (
  * @name existsInArray
  *
  * @param {Array} array The array to be checked.
- * @param {string} value The string to match against `key`
+ * @param {string} value The string to match against `key`.
  * @param {string} key String representing the key to match against `value` (default is `id`).
  *
  * @returns {boolean}

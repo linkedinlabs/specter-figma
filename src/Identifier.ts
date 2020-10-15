@@ -161,7 +161,7 @@ const cleanName = (name: string): string => {
  * @kind function
  * @name cleanColorName
  *
- * @param {string} name The original name of the color
+ * @param {string} name The original name of the color.
  *
  * @returns {string} The cleaned name of the color for the annotation.
  *
