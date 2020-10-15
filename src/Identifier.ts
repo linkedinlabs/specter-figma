@@ -403,7 +403,7 @@ const parseOverrides = (parentNode: any): string => {
 };
 
 // --- main Identifier class function
-/** WIP
+/**
  * @description A class to handle identifying a Figma node as a valid part of the Design System.
  *
  * @class
@@ -411,9 +411,13 @@ const parseOverrides = (parentNode: any): string => {
  *
  * @constructor
  *
+ * @property isMercadoMode A feature-flag (`isMercadoMode`) used to expose features specific to
+ * the Mercado Design Library.
+ * @property messenger An instance of the Messenger class.
  * @property node The node that needs identification.
  * @property page The Figma page that contains the node.
- * @property messenger An instance of the Messenger class.
+ * @property shouldTerminate A boolean that tells us whether or not the GUI should remain open
+ * at the end of the plugin’s current task.
  */
 export default class Identifier {
   isMercadoMode: boolean;
@@ -638,10 +642,13 @@ export default class Identifier {
     return result;
   }
 
-  /** WIP
-   * @description Checks the node’s settings object for the existence of `annotationText` and
-   * and that `annotationType` is 'custom' (Component and Style annotations can be easily updated
-   * and need to be rechecked each time, whereas Custom annotations do not.
+  /**
+   * @description Checks the node’s settings object for the existence of keystop-related data
+   * and either updates that data with a new position, or creates the data object with the
+   * initial position and saves it to the node. Position is calculated by reading the
+   * keystop list data from the nodes top-level container frame. The main underlying
+   * assumption is that the node being set is going to be in the next highest position in the
+   * list.
    *
    * @kind function
    * @name getSetKeystop
