@@ -154,7 +154,7 @@ const getKeystopPosition = (node: SceneNode): {
   return keystopPosition;
 };
 
-/** WIP
+/**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -162,10 +162,11 @@ const getKeystopPosition = (node: SceneNode): {
  *
  * @constructor
  *
- * @property closeGUI A convenience function for closing the GUI and shutting down the plugin.
- * @property showGUI A convenience function for showing the GUI.
+ * @property isMercadoMode A feature-flag (`isMercadoMode`) used to expose features specific to
+ * the Mercado Design Library.
  * @property shouldTerminate A boolean that tells us whether or not the GUI should remain open
  * at the end of the plugin’s current task.
+ * @property terminatePlugin A function to shut down the plugin and close the GUI.
  */
 export default class App {
   isMercadoMode: boolean;
@@ -293,8 +294,9 @@ export default class App {
     return this.closeOrReset();
   }
 
-  /** WIP
-   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+  /**
+   * @description Annotates a selected node or multiple nodes in a Figma file with
+   * focus order keystop annotations.
    *
    * @kind function
    * @name annotateKeystop
