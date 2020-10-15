@@ -1109,7 +1109,7 @@ export default class Crawler {
     return sortedNodes;
   }
 
-  /** WIP
+  /**
    * @description Looks into the selection array and returns the unique top-level frames
    * within the selection. `PAGE` is not returned as a top-level frame, so nodes not
    * placed inside a top-level frame are ignored.
@@ -1140,6 +1140,16 @@ export default class Crawler {
     return topFrameNodes;
   }
 
+  /**
+   * @description Takes a single node and finds its corresponding top-level frame (if it
+   * is placed inside one). `PAGE` is not returned as a top-level frame, so nodes not
+   * placed inside a top-level frame are ignored.
+   *
+   * @kind function
+   * @name topFrames
+   *
+   * @returns {Array} All top-level frame nodes.
+   */
   topFrame() {
     const node = this.first();
     const topFrame: FrameNode = findTopFrame(node);
