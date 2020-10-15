@@ -26,14 +26,17 @@ const assemble = (context: any = null) => {
   };
 };
 
-/** WIP
- * @description A shared helper function to set up in-UI messages and the logger.
+/**
+ * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
+ * the annotation is removed.
  *
  * @kind function
  * @name cleanupAnnotations
- * @param {Object} context The current context (event) received from Figma.
- * @returns {Object} Contains an object with the current page as a javascript object,
- * a messenger instance, and a selection array (if applicable).
+ *
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ *
+ * @returns {null}
  */
 const cleanupAnnotations = (
   trackingData: Array<PluginNodeTrackingData>,
@@ -53,20 +56,26 @@ const cleanupAnnotations = (
   });
 };
 
-/** WIP
- * @description A shared helper function to set up in-UI messages and the logger.
+/**
+ * @description Takes a frame node and uses its list data to create an array of nodes that
+ * currently have Keystop Annotations. The `trackingData` is used in case the list is stale
+ * and we need to clean up annotations that no longer exist.
  *
  * @kind function
  * @name getKeystopNodes
- * @param {Object} context The current context (event) received from Figma.
- * @returns {Object} Contains an object with the current page as a javascript object,
- * a messenger instance, and a selection array (if applicable).
+ *
+ * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {boolean} resetData Set to true if we know annotations are being re-painted and
+ * the top-level frame node’s list data should be cleared out.
+ *
+ * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
  */
 const getKeystopNodes = (
   frameNode: FrameNode,
   trackingData: Array<PluginNodeTrackingData>,
   resetData: boolean = false,
-) => {
+): Array<SceneNode> => {
   const nodes: Array<SceneNode> = [];
 
   // grab (or initialize) keystop list for the top frame
@@ -103,14 +112,19 @@ const getKeystopNodes = (
   return nodes;
 };
 
-/** WIP
- * @description A shared helper function to set up in-UI messages and the logger.
+/**
+ * @description Takes a node and locates its current Keystop data (position and keys), if
+ * it exists. The data is located through the node’s top-level frame. Returns an object
+ * formatted to pass along to the UI.
  *
  * @kind function
  * @name getKeystopPosition
- * @param {Object} context The current context (event) received from Figma.
- * @returns {Object} Contains an object with the current page as a javascript object,
- * a messenger instance, and a selection array (if applicable).
+ *
+ * @param {Object} node A SceneNode to check for Keystop data.
+ *
+ * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
+ * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
+ * if they exist.
  */
 const getKeystopPosition = (node: SceneNode): {
   hasStop: boolean,
@@ -883,20 +897,21 @@ export default class App {
     return this.closeOrReset();
   }
 
-  /** WIP
-   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
-   * features specific to the Mercado Design Library. The flag is saved to local
-   * storage so that it persists across files.
+  /**
+   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Key Annotation
+   * based on the supplied `key`.
    *
    * @kind function
    * @name keystopAddRemoveKeys
    *
-   * @returns {Promise} Returns a promise for resolution.
+   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
+   *
+   * @returns {null}
    */
   keystopAddRemoveKeys(
     options: {
       id: string,
-      key: 'arrows-left-right' | 'arrows-up-down' | 'space' | 'escape',
+      key: PluginKeystopKeys,
     },
     removeKey: boolean = false,
   ) {
@@ -946,46 +961,16 @@ export default class App {
       App.refreshGUI();
     }
     return null;
-
-    // const {
-    //   messenger,
-    //   page,
-    //   selection,
-    // } = assemble(figma);
-
-
-    // // grab tracking data for the page
-    // const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-    //   page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
-    // );
-
-    // // iterate through each node in a selection
-    // const selectedNodes: Array<SceneNode> = selection;
-
-    // // determine topFrames involved in the current selection
-    // const crawlerForSelected = new Crawler({ for: selectedNodes });
-    // const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
-    // const index = 0;
-    // const frameNode: FrameNode = topFrameNodes.filter(node => node.id === id)[index];
-
-    // if (frameNode) {
-    //   // grab keystop list for the top frame
-    //   const keystopList = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
-    //   if (keystopList) {
-    //     const nodeData = keystopList.filter(item => item.id === nodeId);
-    //   }
-    // }
   }
 
-  /** WIP
-   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
-   * features specific to the Mercado Design Library. The flag is saved to local
-   * storage so that it persists across files.
+  /**
+   * @description Triggers a UI refresh with the current selection. In the case of the
+   * `a11y-keyboard` view context, the necessary data is collected and an object is passed
+   * over to the UI thread.
    *
    * @kind function
    * @name refreshGUI
    *
-   * @returns {Promise} Returns a promise for resolution.
    */
   static async refreshGUI() {
     const {
@@ -1116,13 +1101,16 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+  /**
+   * @description Retrieves a node based on the supplied `nodeId` or uses the current selection
+   * and removes associated Keystop annotations and auxilary key annotations.
    *
    * @kind function
    * @name removeKeystops
    *
-   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   * @param {string} nodeId The `id` of a Figma node with a Keystop annotation.
+   *
+   * @returns {null} Shows a Toast in the UI if a `nodeId` is not supplied.
    */
   async removeKeystops(nodeId?: string) {
     const {
@@ -1203,13 +1191,17 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Triggers a UI refresh with the current selection.
+  /**
+   * @description Resizes the plugin UI based on either a default, or a provided
+   * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
    *
    * @kind function
    * @name resizeGUI
    *
-   * @param {string} sessionKey A rotating key used during the single run of the plugin.
+   * @param {Object} payload Should contain `bodyHeight` as the height of the current
+   * contents calculated in the UI.
+   *
+   * @returns {Promise} Returns a promise for resolution.
    */
   static async resizeGUI(
     payload: { bodyHeight: number },
@@ -1228,13 +1220,16 @@ export default class App {
     }
   }
 
-  /** WIP
-   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
-   * features specific to the Mercado Design Library. The flag is saved to local
-   * storage so that it persists across files.
+  /**
+   * @description Handles setting the UI view context based on a view type sent
+   * from the UI thread. The new view type is saved to `clientStorage` and the `refreshGUI`
+   * function is called.
    *
    * @kind function
    * @name setViewContext
+   *
+   * @param {Object} payload Should contain `newView` as the height of the current
+   * contents calculated in the UI.
    *
    * @returns {Promise} Returns a promise for resolution.
    */
@@ -1334,23 +1329,27 @@ export default class App {
     await this.showToolbar();
   }
 
-  /** WIP
-   * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+  /**
+   * @description Retrieves a node based on the supplied `id` and uses the `position` to update
+   * the node’s Keystop annotation. Any annotations in the top frame with new numbers are
+   * re-painted.
    *
    * @kind function
    * @name updateKeystops
    *
-   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
+   *
+   * @returns {null}
    */
-  async updateKeystops(params: {
+  async updateKeystops(options: {
     id: string,
     position: string,
   }) {
     const { messenger } = assemble(figma);
 
-    const nodeId: string = params.id;
+    const nodeId: string = options.id;
     // force the new position into a positive integer
-    let newPosition: number = parseInt(params.position, 10);
+    let newPosition: number = parseInt(options.position, 10);
 
     if (!nodeId || !newPosition) {
       messenger.log('Cannot update keystops; missing node ID or new position', 'error');

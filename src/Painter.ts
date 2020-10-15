@@ -547,14 +547,7 @@ const buildAnnotation = (options: {
  *
  * @private
  */
-const buildAuxAnnotation = (
-  auxType:
-    'arrows-left-right'
-    | 'arrows-up-down'
-    | 'enter'
-    | 'escape'
-    | 'space',
-): FrameNode => {
+const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
   // set the dominant color
   const colorHex: string = COLORS.keystop;
 
