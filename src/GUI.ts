@@ -90,34 +90,6 @@ const showHideInfo = (action: 'show' | 'hide') => {
   }
 };
 
-/** WIP
- * @description Clones a template html element and then updates the clone’s contents to match
- * the supplied options for each layer in the supplied array.
- *
- * @kind function
- * @name updateItems
- *
- * @param {Array} items An array of items to clone. Each entry should include an `id`,
- * an `assignment`, `originalText`, `proposedText`, and a `locked` boolean.
- *
- * @returns {null}
- */
-const updateItems = (
-  items: Array<{
-    id: string,
-    name: string,
-    position?: number,
-    hasStop: boolean,
-    isSelected: boolean,
-  }>,
-  sessionKey?: string,
-): void => {
-  if (items) {
-    app.items = items;
-    app.newSessionKey = sessionKey;
-  }
-};
-
 /**
  * @description Watches for incoming messages from the plugin’s main thread and dispatches
  * them to the appropriate GUI actions.
@@ -166,7 +138,8 @@ const watchIncomingMessages = (): void => {
           } = payload;
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
-          updateItems(items, sessionKey);
+          app.items = items;
+          app.newSessionKey = sessionKey;
           break;
         }
         default:
