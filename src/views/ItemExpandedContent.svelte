@@ -7,8 +7,6 @@
   export let isSelected = false;
   export let itemId = null;
   export let keys = null;
-  export let labelText = 'Item name here';
-  export let position = null;
   export let type = null;
 
 

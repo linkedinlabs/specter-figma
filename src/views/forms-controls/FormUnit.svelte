@@ -25,10 +25,6 @@
   const dispatch = createEventDispatcher();
   let originalValue = value;
 
-  const restoreValue = () => {
-    value = originalValue;
-  };
-
   const handleDelete = () => dispatch('deleteSignal');
 
   afterUpdate(() => {
@@ -49,12 +45,9 @@
 <span class={className}>
   {#if hideLabel}
     <FormLabel
-      on:handleRestore={() => restoreValue()}
       labelText={labelText}
       isDirty={isDirty}
-      isDisabled={isDisabled}
       nameId={nameId}
-      value={value}
     />
   {/if}
 

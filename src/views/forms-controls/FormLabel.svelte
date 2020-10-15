@@ -2,7 +2,6 @@
   export let labelText = null;
   export let isDirty = false;
   export let nameId = null;
-  export let value = null;
 </script>
 
 <style>
