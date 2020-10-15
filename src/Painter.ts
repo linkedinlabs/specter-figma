@@ -17,7 +17,7 @@ import {
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
- * @description Builds the initial annotation elements in Figma.
+ * @description Builds the spacing/measure annotation elements in Figma.
  *
  * @kind function
  * @name buildMeasureIcon
@@ -162,19 +162,15 @@ const buildMeasureIcon = (
   return icon;
 };
 
-/** WIP
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
- * and sets auto-layout and constraint properties.
+/**
+ * @description Builds the keystop icon.
  *
  * @kind function
  * @name buildKeystopIcon
  *
- * @param {Object} options Object that includes `text` – the text for the annotation,
- * `secondaryText` – optional secondary text for the annotation, and `type` – a string
- * representing the type of annotation (component or foundation).
+ * @param {Object} color An object representing a color in RGB decimal notation.
  *
- * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
- * and `icon`).
+ * @returns {Object} The icon FrameNode.
  *
  * @private
  */
@@ -253,19 +249,15 @@ const buildKeystopIcon = (
   return icon;
 };
 
-/** WIP
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
- * and sets auto-layout and constraint properties.
+/**
+ * @description Builds the keystop arrow icon used in the arrow key annotations.
  *
  * @kind function
  * @name buildKeystopArrowIcon
  *
- * @param {Object} options Object that includes `text` – the text for the annotation,
- * `secondaryText` – optional secondary text for the annotation, and `type` – a string
- * representing the type of annotation (component or foundation).
+ * @param {Object} color An object representing a color in RGB decimal notation.
  *
- * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
- * and `icon`).
+ * @returns {Object} The icon FrameNode.
  *
  * @private
  */
@@ -321,19 +313,17 @@ const buildKeystopArrowIcon = (
   return icon;
 };
 
-/** WIP
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
- * and sets auto-layout and constraint properties.
+/**
+ * @description Builds the initial recntangle element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on the `type`.
  *
  * @kind function
  * @name buildRectangle
  *
- * @param {Object} options Object that includes `text` – the text for the annotation,
- * `secondaryText` – optional secondary text for the annotation, and `type` – a string
- * representing the type of annotation (component or foundation).
+ * @param {string} type The type of annotation the rectange will be used in.
+ * @param {Object} color An object representing a color in RGB decimal notation.
  *
- * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
- * and `icon`).
+ * @returns {Object} The rectangle FrameNode.
  *
  * @private
  */
@@ -390,19 +380,18 @@ const buildRectangle = (
   return rectangle;
 };
 
-/** WIP
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
- * and sets auto-layout and constraint properties.
+/**
+ * @description Builds the initial text element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on the `type`.
  *
  * @kind function
  * @name buildText
  *
- * @param {Object} options Object that includes `text` – the text for the annotation,
- * `secondaryText` – optional secondary text for the annotation, and `type` – a string
- * representing the type of annotation (component or foundation).
+ * @param {string} type The type of annotation the text will be used in.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {string} characters The text that will be set to the node.
  *
- * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
- * and `icon`).
+ * @returns {Object} The text TextNode.
  *
  * @private
  */
@@ -545,23 +534,27 @@ const buildAnnotation = (options: {
   };
 };
 
-/** WIP
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
- * and sets auto-layout and constraint properties.
+/**
+ * @description Builds the auxilary annotation in Figma for a keystop annotation.
  *
  * @kind function
  * @name buildAuxAnnotation
  *
- * @param {Object} options Object that includes `text` – the text for the annotation,
- * `secondaryText` – optional secondary text for the annotation, and `type` – a string
- * representing the type of annotation (component or foundation).
+ * @param {string} type The type of auxilary annotation to build: `arrows-left-right`,
+ * `arrows-up-down`, `enter`, `escape`, `space`.
  *
- * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
- * and `icon`).
+ * @returns {Object} The full auxilary annotation FrameNode.
  *
  * @private
  */
-const buildAuxAnnotation = (auxType): FrameNode => {
+const buildAuxAnnotation = (
+  auxType:
+    'arrows-left-right'
+    | 'arrows-up-down'
+    | 'enter'
+    | 'escape'
+    | 'space',
+): FrameNode => {
   // set the dominant color
   const colorHex: string = COLORS.keystop;
 
@@ -2112,9 +2105,9 @@ export default class Painter {
     return result;
   }
 
-  /** WIP
-   * @description Locates annotation text in a node’s Settings object and
-   * builds the visual annotation on the Figma frame.
+  /**
+   * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
+   * available (`annotationText` and potential `keys` for auxilary annotations).
    *
    * @kind function
    * @name addKeystop
@@ -2156,17 +2149,14 @@ export default class Painter {
     }
 
     // set up some information
-    const {
-      annotationText,
-      annotationSecondaryText,
-    } = nodeData;
+    const { annotationText } = nodeData;
     const annotationType: 'keystop' = 'keystop';
     const annotationName = `Keystop for ${this.node.name}`;
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({
       mainText: annotationText,
-      secondaryText: annotationSecondaryText,
+      secondaryText: null,
       type: annotationType,
     });
 
