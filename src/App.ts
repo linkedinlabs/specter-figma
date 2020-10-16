@@ -1351,10 +1351,7 @@ export default class App {
     const options: PluginOptions = await getOptions();
 
     // set preliminary mercado mode
-    let currentIsMercadoMode: boolean = false;
-    if (options && options.isMercadoMode !== undefined) {
-      currentIsMercadoMode = options.isMercadoMode;
-    }
+    const currentIsMercadoMode: boolean = options.isMercadoMode;
 
     // set new mercado mode flag without changing other options
     options.isMercadoMode = !currentIsMercadoMode;
