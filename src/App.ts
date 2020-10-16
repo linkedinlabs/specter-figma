@@ -169,14 +169,14 @@ const getKeystopPosition = (node: SceneNode): {
   return keystopPosition;
 };
 
-/** WIP
- * @description A shared helper function to set up in-UI messages and the logger.
+/**
+ * @description Retrieves the current options saved to `clientStorage`. If none exist,
+ * defaults are set.
  *
  * @kind function
  * @name getOptions
- * @param {Object} context The current context (event) received from Figma.
- * @returns {Object} Contains an object with the current page as a javascript object,
- * a messenger instance, and a selection array (if applicable).
+ *
+ * @returns {Object} Returns the options (currently `currentView` and `isMercadoMode`.
  */
 const getOptions = async (): Promise<PluginOptions> => {
   // set default options
@@ -189,6 +189,23 @@ const getOptions = async (): Promise<PluginOptions> => {
   const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
   if (lastUsedOptions !== undefined) {
     options = lastUsedOptions;
+  }
+
+  // check for defaults
+  const {
+    currentView,
+    isMercadoMode,
+  }: {
+    currentView: PluginViewTypes,
+    isMercadoMode: boolean,
+  } = options;
+
+  if ((currentView === undefined) || (currentView === null)) {
+    options.currentView = 'general';
+  }
+
+  if (isMercadoMode === undefined) {
+    options.isMercadoMode = false;
   }
 
   return options;
@@ -1015,23 +1032,7 @@ export default class App {
     // retrieve existing options
     const options: PluginOptions = await getOptions();
 
-    let {
-      currentView,
-      isMercadoMode,
-    }: {
-      currentView: PluginViewTypes,
-      isMercadoMode: boolean,
-    } = options;
-
-    // need to set defaults if options are missing
-    // new options may need to be instatiated in a plugin with and older version of the options
-    if (!currentView) {
-      currentView = 'general';
-    }
-
-    if (!isMercadoMode) {
-      isMercadoMode = false;
-    }
+    const { currentView, isMercadoMode } = options;
 
     // calculate UI size, based on view type and selection
     let { width } = GUI_SETTINGS.default;
