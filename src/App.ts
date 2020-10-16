@@ -169,6 +169,31 @@ const getKeystopPosition = (node: SceneNode): {
   return keystopPosition;
 };
 
+/** WIP
+ * @description A shared helper function to set up in-UI messages and the logger.
+ *
+ * @kind function
+ * @name getOptions
+ * @param {Object} context The current context (event) received from Figma.
+ * @returns {Object} Contains an object with the current page as a javascript object,
+ * a messenger instance, and a selection array (if applicable).
+ */
+const getOptions = async (): Promise<PluginOptions> => {
+  // set default options
+  let options: PluginOptions = {
+    currentView: 'general',
+    isMercadoMode: false,
+  };
+
+  // retrieve last used, and use if they exist
+  const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+  if (lastUsedOptions !== undefined) {
+    options = lastUsedOptions;
+  }
+
+  return options;
+};
+
 /**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
@@ -987,17 +1012,8 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    // set default options
-    let currentOptions: PluginOptions = {
-      currentView: 'general',
-      isMercadoMode: false,
-    };
-
-    // get last-used options
-    const savedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    if (savedOptions) {
-      currentOptions = savedOptions;
-    }
+    // retrieve existing options
+    const options: PluginOptions = await getOptions();
 
     let {
       currentView,
@@ -1005,7 +1021,7 @@ export default class App {
     }: {
       currentView: PluginViewTypes,
       isMercadoMode: boolean,
-    } = currentOptions;
+    } = options;
 
     // need to set defaults if options are missing
     // new options may need to be instatiated in a plugin with and older version of the options
@@ -1271,11 +1287,7 @@ export default class App {
     const { newView }: { newView: PluginViewTypes } = payload;
 
     // retrieve existing options
-    let options: any = {};
-    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    if (lastUsedOptions !== undefined) {
-      options = lastUsedOptions;
-    }
+    const options: PluginOptions = await getOptions();
 
     // set new view without changing other options
     options.currentView = newView;
@@ -1336,12 +1348,7 @@ export default class App {
    */
   static async toggleMercadoMode() {
     // retrieve existing options
-    let options: any = {};
-    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-
-    if (lastUsedOptions) {
-      options = lastUsedOptions;
-    }
+    const options: PluginOptions = await getOptions();
 
     // set preliminary mercado mode
     let currentIsMercadoMode: boolean = false;
