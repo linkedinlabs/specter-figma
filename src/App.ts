@@ -987,9 +987,35 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    // get last-used filters from options
-    const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    const { currentView, isMercadoMode } = currentOptions;
+    // set default options
+    let currentOptions: PluginOptions = {
+      currentView: 'general',
+      isMercadoMode: false,
+    };
+
+    // get last-used options
+    const savedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+    if (savedOptions) {
+      currentOptions = savedOptions;
+    }
+
+    let {
+      currentView,
+      isMercadoMode,
+    }: {
+      currentView: PluginViewTypes,
+      isMercadoMode: boolean,
+    } = currentOptions;
+
+    // need to set defaults if options are missing
+    // new options may need to be instatiated in a plugin with and older version of the options
+    if (!currentView) {
+      currentView = 'general';
+    }
+
+    if (!isMercadoMode) {
+      isMercadoMode = false;
+    }
 
     // calculate UI size, based on view type and selection
     let { width } = GUI_SETTINGS.default;
