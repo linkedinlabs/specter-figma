@@ -9,7 +9,6 @@
   export let keys = null;
   export let type = null;
 
-
   let newKeyValue = 'no-key';
   let dirtyKeys = keys ? [...keys] : [];
   let originalKeys = keys ? [...keys] : [];
