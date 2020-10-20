@@ -43,13 +43,12 @@
 </script>
 
 <span class={className}>
-  {#if hideLabel}
-    <FormLabel
-      labelText={labelText}
-      isDirty={isDirty}
-      nameId={nameId}
-    />
-  {/if}
+  <FormLabel
+    hide={hideLabel}
+    labelText={labelText}
+    isDirty={isDirty}
+    nameId={nameId}
+  />
 
   <span class="form-inner-row">
     {#if kind === 'inputSelect'}

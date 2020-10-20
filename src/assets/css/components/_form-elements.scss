@@ -16,6 +16,10 @@
   width: 100%;
   min-height: em(30);
 
+  &.hidden {
+    @include hide-visually;
+  }
+
   span {
     display: flex;
     flex-flow: row;

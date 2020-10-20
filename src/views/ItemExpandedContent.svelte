@@ -283,6 +283,7 @@
           <FormUnit
             className="form-row"
             on:deleteSignal={() => removeKey(dirtyKey)}
+            hideLabel={true}
             isDeletable={true}
             kind="inputSelect"
             labelText="Key"
@@ -301,6 +302,7 @@
         <span class="form-element-holder">
           <FormUnit
             className="form-row"
+            hideLabel={true}
             kind="inputSelect"
             labelText="Key"
             nameId={`${itemId}-key-no-key`}

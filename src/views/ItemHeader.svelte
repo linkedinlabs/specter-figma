@@ -98,6 +98,7 @@
     <FormUnit
       className="form-row"
       on:deleteSignal={() => removeStop()}
+      hideLabel={true}
       isDeletable={true}
       inputType="number"
       inputWatchBlur={true}
