@@ -381,7 +381,7 @@ export default class App {
 
     // grab tracking data for the page
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
     );
 
     // set up selection based on supplied array or direct selection in the Figma UI
@@ -1069,7 +1069,7 @@ export default class App {
     if (currentView === 'a11y-keyboard') {
       // grab tracking data for the page
       const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-        page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+        page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
       );
 
       // iterate through each node in a selection
@@ -1224,7 +1224,7 @@ export default class App {
 
     // grab tracking data for the page
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || [],
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
     );
     cleanupAnnotations(trackingData, nodeIds);
 
