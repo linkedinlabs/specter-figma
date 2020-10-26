@@ -300,7 +300,6 @@
           </div>
         {/if}
       {/each}
-
     </ul>
   </div>
   <select
