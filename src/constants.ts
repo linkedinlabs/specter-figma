@@ -32,6 +32,7 @@ const PLUGIN_NAME = 'Specter';
  */
 const DATA_KEYS = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
+  bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
