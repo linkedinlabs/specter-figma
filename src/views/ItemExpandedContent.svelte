@@ -148,6 +148,19 @@
     }
   };
 
+  /**
+   * @description Takes two one-dimensional arrays and compare them. Returns `true` if they
+   * are different. Order of the array does not matter.
+   *
+   * @kind function
+   * @name compareArrays
+   *
+   * @param {Array} array1 A single-dimension array.
+   * @param {Array} array2 A single-dimension array to compare against.
+   *
+   * @returns {boolean} Returns `true` if the arrays are different, `false` if they have identical
+   * values.
+   */
   const compareArrays = (array1, array2) => {
     let isDifferent = false;
 

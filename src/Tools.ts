@@ -51,12 +51,16 @@ const pollWithPromise = (
  * @name existsInArray
  *
  * @param {Array} array The array to be checked.
- * @param {string} value The string to match against `key`.
+ * @param {string} value The value to test against `key`.
  * @param {string} key String representing the key to match against `value` (default is `id`).
  *
  * @returns {boolean}
  */
-const existsInArray = (array, value, key = 'id') => {
+const existsInArray = (
+  array: Array<any>,
+  value,
+  key: string = 'id',
+) => {
   let doesExist = false;
   const itemIndex = array.findIndex(
     foundItem => (foundItem[key] === value),
