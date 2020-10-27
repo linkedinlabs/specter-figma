@@ -249,6 +249,7 @@ const findParentInstance = (node: any) => {
  *
  * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
  */
+//
 const findTopFrame = (node: any) => {
   let { parent } = node;
 
@@ -278,10 +279,15 @@ const findTopFrame = (node: any) => {
  *
  * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
  */
-const findTopInstance = (node: any) => {
+const findTopInstance = (node: any): InstanceNode => {
   let { parent } = node;
   let currentNode = node;
   let currentTopInstance: InstanceNode = null;
+
+  // set first; top instance may be self
+  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+    currentTopInstance = currentNode;
+  }
 
   if (parent) {
     // iterate until the parent is a page
@@ -565,9 +571,15 @@ const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
   // set some defaults
   let { parent } = node;
   const childIndices = [];
-  const mainComponentNode = topNode.mainComponent;
+  const mainComponentNode: ComponentNode = topNode.mainComponent;
   let mainPeerNode = null;
   let currentNode = node;
+
+  // if `node` and `topNode` are the same, the peer node is top-level and we
+  // do not need to find anything else
+  if (mainComponentNode && node.id === topNode.id) {
+    return mainComponentNode;
+  }
 
   // iterate up the chain, collecting indices in each child list
   if (parent) {
@@ -589,7 +601,9 @@ const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
     childIndicesReversed.forEach((childIndex, index) => {
       selectedChild = children[childIndex];
       if ((childIndicesReversed.length - 1) > index) {
-        children = selectedChild.children;
+        if (selectedChild.children) {
+          children = selectedChild.children;
+        }
       }
     });
 
