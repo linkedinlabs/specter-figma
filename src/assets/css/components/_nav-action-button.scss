@@ -35,10 +35,10 @@
   }
 
   .text {
+    @include type-01;
     width: calc(100% - #{em(36)});
     text-align: left;
     line-height: 0.8;
-    letter-spacing: 0.01em;
   }
 
   svg {
