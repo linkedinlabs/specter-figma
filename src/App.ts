@@ -421,6 +421,7 @@ export default class App {
             if (
               !existsInArray(selectedNodes, childNode.id)
               && !existsInArray(keystopNodes, childNode.id)
+              && !existsInArray(topFrameNodes, childNode.id)
             ) {
               selectedNodes.push(childNode);
             }
@@ -435,7 +436,10 @@ export default class App {
 
     // add them to the main array
     selectedNodes.forEach((node: SceneNode) => {
-      if (!existsInArray(nodes, node.id)) {
+      if (
+        !existsInArray(nodes, node.id)
+        && !existsInArray(topFrameNodes, node.id)
+      ) {
         nodes.push(node);
       }
     });
@@ -1131,7 +1135,10 @@ export default class App {
 
       // add in any directly-selected nodes that do not have annotations yet
       selectedNodes.forEach((node: SceneNode) => {
-        if (!existsInArray(nodes, node.id)) {
+        if (
+          !existsInArray(nodes, node.id)
+          && !existsInArray(topFrameNodes, node.id)
+        ) {
           nodes.push(node);
         }
       });
