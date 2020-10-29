@@ -412,21 +412,27 @@ export default class App {
     // iterate topFrames and select nodes that could have stops based on assignment data
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
-        const crawlerForChildren = new Crawler({ for: topFrame.children });
-        const childNodes = crawlerForChildren.all();
-        childNodes.forEach((childNode) => {
-          const nodeData = getPeerPluginData(childNode);
-          if (nodeData && nodeData.hasKeystop) {
-            if (
-              !existsInArray(selectedNodes, childNode.id)
-              && !existsInArray(keystopNodes, childNode.id)
-              && !existsInArray(topFrameNodes, childNode.id)
-            ) {
-              selectedNodes.push(childNode);
+        const extractAssignedKeystops = (children) => {
+          const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+          const crawlerForChildren = new Crawler({ for: children });
+          const childNodes = crawlerForChildren.all();
+          childNodes.forEach((childNode) => {
+            const nodeData = getPeerPluginData(childNode);
+            if (nodeData && nodeData.hasKeystop) {
+              if (
+                !existsInArray(nodes, childNode.id)
+                && !existsInArray(keystopNodes, childNode.id)
+                && !existsInArray(topFrameNodes, childNode.id)
+              ) {
+                nodes.push(childNode);
+                if (nodeData.allowKeystopPassthrough && childNode.children) {
+                  extractAssignedKeystops(childNode.children);
+                }
+              }
             }
-          }
-        });
+          });
+        };
+        extractAssignedKeystops(topFrame.children);
       });
     }
 
@@ -1121,16 +1127,25 @@ export default class App {
 
       // iterate topFrames and select nodes that could have stops based on assignment data
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const crawlerForChildren = new Crawler({ for: topFrame.children });
-        const childNodes = crawlerForChildren.all();
-        childNodes.forEach((childNode) => {
-          const nodeData = getPeerPluginData(childNode);
-          if (nodeData && nodeData.hasKeystop) {
-            if (!existsInArray(nodes, childNode.id)) {
-              nodes.push(childNode);
+        const extractAssignedKeystops = (children) => {
+          const crawlerForChildren = new Crawler({ for: children });
+          const childNodes = crawlerForChildren.all();
+          childNodes.forEach((childNode) => {
+            const nodeData = getPeerPluginData(childNode);
+            if (nodeData && nodeData.hasKeystop) {
+              if (
+                !existsInArray(nodes, childNode.id)
+                && !existsInArray(topFrameNodes, childNode.id)
+              ) {
+                nodes.push(childNode);
+                if (nodeData.allowKeystopPassthrough && childNode.children) {
+                  extractAssignedKeystops(childNode.children);
+                }
+              }
             }
-          }
-        });
+          });
+        };
+        extractAssignedKeystops(topFrame.children);
       });
 
       // add in any directly-selected nodes that do not have annotations yet

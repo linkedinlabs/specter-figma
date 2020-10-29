@@ -440,18 +440,19 @@ const getNodeSettings = (page: any, nodeId: string) => {
 
 /**
  * @description A shared helper function to retrieve plugin data on a node from a
- * peer plugin (Realish or Specter).
+ * peer plugin (Stapler). The check is always done on a component node to get the
+ * latest data.
  *
  * @kind function
  * @name getPeerPluginData
  *
- * @param {Object} node The text node to retrieve the assignment on.
+ * @param {Object} node The instance node to retrieve the assignment on.
  * @param {string} pluginName The plugin name to use for lookup.
  *
  * @returns {string} The assignment is returned as an unparsed JSON string.
  */
 const getPeerPluginData = (
-  node: SceneNode,
+  node: InstanceNode | ComponentNode,
 ) => {
   const dataNamespace = (): string => {
     const key: string = process.env.SECRET_KEY ? process.env.SECRET_KEY : '1234';
@@ -462,22 +463,47 @@ const getPeerPluginData = (
   };
 
   const dataKey: string = DATA_KEYS.bundle;
+  let pluginData: string = null;
   let parsedData = null;
 
-  let pluginData = node.getSharedPluginData(
-    dataNamespace(),
-    dataKey,
-  );
+  // check the component directly, first
+  if (node.type === CONTAINER_NODE_TYPES.component) {
+    pluginData = node.getSharedPluginData(
+      dataNamespace(),
+      dataKey,
+    );
+  }
 
   if (!pluginData) {
-    const topInstanceNode = findTopInstance(node);
-    if (topInstanceNode) {
-      const peerNode = matchMasterPeerNode(node, topInstanceNode);
-      if (peerNode) {
-        pluginData = peerNode.getSharedPluginData(
-          dataNamespace(),
-          dataKey,
-        );
+    let instanceNode: InstanceNode = null;
+
+    if (node.type === CONTAINER_NODE_TYPES.instance) {
+      instanceNode = node as InstanceNode;
+    }
+
+    // check the instance’s direct component
+    if (instanceNode && instanceNode.mainComponent) {
+      let componentNode: ComponentNode = null;
+      componentNode = instanceNode.mainComponent;
+
+      pluginData = componentNode.getSharedPluginData(
+        dataNamespace(),
+        dataKey,
+      );
+    }
+
+    // check the peer node inside of a larger component
+    if (!pluginData) {
+      let peerNode = null;
+      const topInstanceNode: InstanceNode = findTopInstance(node);
+      if (topInstanceNode) {
+        peerNode = matchMasterPeerNode(node, topInstanceNode);
+        if (peerNode) {
+          pluginData = peerNode.getSharedPluginData(
+            dataNamespace(),
+            dataKey,
+          );
+        }
       }
     }
   }

@@ -34,7 +34,7 @@ export default class Crawler {
     return this.array[0];
   }
 
-  /**
+  /** WIP
    * @description Looks into the selection array for any groups and pulls out individual nodes,
    * effectively flattening the selection. NOTE: Component and Instance types are included to
    * allow Specter to annotate at the top-level. If they are excluded, components nested within
@@ -45,17 +45,23 @@ export default class Crawler {
    *
    * @returns {Object} All items (including children) individual in an updated array.
    */
-  all() {
+  all(excludeComponents: boolean = false) {
     const initialSelection = this.array;
     const flatSelection = [];
+    const excludedTypes: Array<string> = [
+      CONTAINER_NODE_TYPES.group,
+      CONTAINER_NODE_TYPES.frame,
+    ];
+
+    if (excludeComponents) {
+      excludedTypes.push(CONTAINER_NODE_TYPES.component);
+      excludedTypes.push(CONTAINER_NODE_TYPES.instance);
+    }
 
     // iterate through initial selection
     initialSelection.forEach((node: any) => {
       if (
-        node.type !== CONTAINER_NODE_TYPES.group
-        && node.type !== CONTAINER_NODE_TYPES.frame
-        // && node.type !== CONTAINER_NODE_TYPES.component
-        // && node.type !== CONTAINER_NODE_TYPES.instance
+        excludedTypes.filter(type => type === node.type).length < 1
         && node.visible
         && !node.locked
       ) {
