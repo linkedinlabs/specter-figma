@@ -410,22 +410,24 @@ export default class App {
     }
 
     // iterate topFrames and select nodes that could have stops based on assignment data
-    topFrameNodes.forEach((topFrame: FrameNode) => {
-      const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
-      const crawlerForChildren = new Crawler({ for: topFrame.children });
-      const childNodes = crawlerForChildren.all();
-      childNodes.forEach((childNode) => {
-        const nodeData = getPeerPluginData(childNode);
-        if (nodeData && nodeData.hasKeystop) {
-          if (
-            !existsInArray(selectedNodes, childNode.id)
-            && !existsInArray(keystopNodes, childNode.id)
-          ) {
-            selectedNodes.push(childNode);
+    if (!suppliedSelection) {
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+        const crawlerForChildren = new Crawler({ for: topFrame.children });
+        const childNodes = crawlerForChildren.all();
+        childNodes.forEach((childNode) => {
+          const nodeData = getPeerPluginData(childNode);
+          if (nodeData && nodeData.hasKeystop) {
+            if (
+              !existsInArray(selectedNodes, childNode.id)
+              && !existsInArray(keystopNodes, childNode.id)
+            ) {
+              selectedNodes.push(childNode);
+            }
           }
-        }
+        });
       });
-    });
+    }
 
     // sort nodes by visual hierarchy
     const crawlerForSelection = new Crawler({ for: selectedNodes });
