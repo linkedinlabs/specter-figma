@@ -2,7 +2,11 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { existsInArray, updateArray } from './Tools';
+import {
+  existsInArray,
+  getPeerPluginData,
+  updateArray,
+} from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -384,26 +388,50 @@ export default class App {
       page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
     );
 
-    // set up selection based on supplied array or direct selection in the Figma UI
-    // the direct UI selection is sorted based on visual hierarchy
-    const crawlerForSelection = new Crawler({ for: selection });
-    let selectedNodes: Array<SceneNode> = crawlerForSelection.sorted();
-    if (suppliedSelection && suppliedSelection.length > 0) {
-      selectedNodes = suppliedSelection;
-    }
-
     // determine topFrames involved in the current selection
-    const crawlerForSelected = new Crawler({ for: selectedNodes });
+    const crawlerForSelected = new Crawler({ for: selection });
     const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+    const nodes: Array<SceneNode> = [];
 
     // iterate topFrames and select nodes that already have annotations
-    const nodes: Array<SceneNode> = [];
     topFrameNodes.forEach((topFrame: FrameNode) => {
       const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
       keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
     });
 
-    // add in any directly-selected nodes that do not have annotations yet
+    // ------- add in any directly-selected nodes that do not have annotations yet
+    // ------- or any nodes that could have stops based on assignment data
+    // set up selection based on supplied array or direct selection in the Figma UI
+    let selectedNodes: Array<SceneNode> = [];
+    if (suppliedSelection && suppliedSelection.length > 0) {
+      selectedNodes = suppliedSelection;
+    } else {
+      selection.forEach((node: SceneNode) => selectedNodes.push(node));
+    }
+
+    // iterate topFrames and select nodes that could have stops based on assignment data
+    topFrameNodes.forEach((topFrame: FrameNode) => {
+      const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+      const crawlerForChildren = new Crawler({ for: topFrame.children });
+      const childNodes = crawlerForChildren.all();
+      childNodes.forEach((childNode) => {
+        const nodeData = getPeerPluginData(childNode);
+        if (nodeData && nodeData.hasKeystop) {
+          if (
+            !existsInArray(selectedNodes, childNode.id)
+            && !existsInArray(keystopNodes, childNode.id)
+          ) {
+            selectedNodes.push(childNode);
+          }
+        }
+      });
+    });
+
+    // sort nodes by visual hierarchy
+    const crawlerForSelection = new Crawler({ for: selectedNodes });
+    selectedNodes = crawlerForSelection.sorted();
+
+    // add them to the main array
     selectedNodes.forEach((node: SceneNode) => {
       if (!existsInArray(nodes, node.id)) {
         nodes.push(node);
@@ -1083,6 +1111,20 @@ export default class App {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
         keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+      });
+
+      // iterate topFrames and select nodes that could have stops based on assignment data
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const crawlerForChildren = new Crawler({ for: topFrame.children });
+        const childNodes = crawlerForChildren.all();
+        childNodes.forEach((childNode) => {
+          const nodeData = getPeerPluginData(childNode);
+          if (nodeData && nodeData.hasKeystop) {
+            if (!existsInArray(nodes, childNode.id)) {
+              nodes.push(childNode);
+            }
+          }
+        });
       });
 
       // add in any directly-selected nodes that do not have annotations yet
