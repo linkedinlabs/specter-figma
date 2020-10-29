@@ -2,6 +2,7 @@ import {
   findTopFrame,
   findParentInstance,
   getNodeSettings,
+  getPeerPluginData,
   isInternal,
   isVisible,
   resizeGUI,
@@ -725,6 +726,17 @@ export default class Identifier {
       nodeData.annotationText = textToSet;
     }
 
+    // check for assigned keys, if none exist (`undefined` or `null`):
+    // this check will only happen if keys have never been attached to this stop.
+    // if the component is updated after this stop has been altered, the updates will be ignored.
+    if (!nodeData.keys) {
+      const peerNodeData = getPeerPluginData(this.node);
+      if (peerNodeData && peerNodeData.keys) {
+        nodeData.keys = peerNodeData.keys;
+      }
+    }
+
+    // commit the updated data
     this.node.setPluginData(
       DATA_KEYS.keystopNodeData,
       JSON.stringify(nodeData),

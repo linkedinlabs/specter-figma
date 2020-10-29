@@ -417,15 +417,15 @@ export default class App {
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
           childNodes.forEach((childNode) => {
-            const nodeData = getPeerPluginData(childNode);
-            if (nodeData && nodeData.hasKeystop) {
+            const peerNodeData = getPeerPluginData(childNode);
+            if (peerNodeData && peerNodeData.hasKeystop) {
               if (
                 !existsInArray(nodes, childNode.id)
                 && !existsInArray(keystopNodes, childNode.id)
                 && !existsInArray(topFrameNodes, childNode.id)
               ) {
                 nodes.push(childNode);
-                if (nodeData.allowKeystopPassthrough && childNode.children) {
+                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
                   extractAssignedKeystops(childNode.children);
                 }
               }
@@ -1131,14 +1131,14 @@ export default class App {
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
           childNodes.forEach((childNode) => {
-            const nodeData = getPeerPluginData(childNode);
-            if (nodeData && nodeData.hasKeystop) {
+            const peerNodeData = getPeerPluginData(childNode);
+            if (peerNodeData && peerNodeData.hasKeystop) {
               if (
                 !existsInArray(nodes, childNode.id)
                 && !existsInArray(topFrameNodes, childNode.id)
               ) {
                 nodes.push(childNode);
-                if (nodeData.allowKeystopPassthrough && childNode.children) {
+                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
                   extractAssignedKeystops(childNode.children);
                 }
               }
