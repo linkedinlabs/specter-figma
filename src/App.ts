@@ -432,7 +432,10 @@ export default class App {
             }
           });
         };
-        extractAssignedKeystops(topFrame.children);
+
+        if (topFrame.children) {
+          extractAssignedKeystops(topFrame.children);
+        }
       });
     }
 
@@ -1145,7 +1148,10 @@ export default class App {
             }
           });
         };
-        extractAssignedKeystops(topFrame.children);
+
+        if (topFrame.children) {
+          extractAssignedKeystops(topFrame.children);
+        }
       });
 
       // add in any directly-selected nodes that do not have annotations yet
