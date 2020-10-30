@@ -424,7 +424,7 @@ export default class App {
                 && !existsInArray(keystopNodes, childNode.id)
                 && !existsInArray(topFrameNodes, childNode.id)
               ) {
-                nodes.push(childNode);
+                selectedNodes.push(childNode);
                 if (peerNodeData.allowKeystopPassthrough && childNode.children) {
                   extractAssignedKeystops(childNode.children);
                 }
