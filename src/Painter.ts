@@ -829,12 +829,13 @@ const positionAnnotation = (
   let frameEdgeX: string = null;
 
   // initial placement based on node to annotate
-  // for top
+  // for top (centered horizontally)
   let placementX: number = (
     nodeX + (
       (nodeWidth - rectangle.width) / 2
     )
   );
+
   // for `left` or `right`
   let placementY: number = (
     nodeY + (
@@ -858,6 +859,12 @@ const positionAnnotation = (
     default: // top
       offsetY = (isMeasurement ? 15 : 8);
       placementY = nodeY - rectangle.height - offsetY;
+  }
+
+  if (annotationType === 'keystop') {
+    if ((nodeWidth - 100) > rectangle.width) {
+      placementX = nodeX + 10;
+    }
   }
 
   // detect left edge
