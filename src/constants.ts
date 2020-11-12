@@ -169,6 +169,7 @@ const TYPEFACES: Array<FontName> = [
  */
 const CONTAINER_NODE_TYPES = {
   component: 'COMPONENT',
+  componentSet: 'COMPONENT_SET',
   frame: 'FRAME',
   group: 'GROUP',
   instance: 'INSTANCE',
