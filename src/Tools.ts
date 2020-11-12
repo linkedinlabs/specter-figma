@@ -452,7 +452,7 @@ const getNodeSettings = (page: any, nodeId: string) => {
  * @returns {string} The assignment is returned as an unparsed JSON string.
  */
 const getPeerPluginData = (
-  node: InstanceNode | ComponentNode,
+  node: InstanceNode | ComponentNode | ComponentSetNode,
 ) => {
   const dataNamespace = (): string => {
     const key: string = process.env.SECRET_KEY ? process.env.SECRET_KEY : '1234';
@@ -467,7 +467,10 @@ const getPeerPluginData = (
   let parsedData = null;
 
   // check the component directly, first
-  if (node.type === CONTAINER_NODE_TYPES.component) {
+  if (
+    (node.type === CONTAINER_NODE_TYPES.component)
+    || (node.type === CONTAINER_NODE_TYPES.componentSet)
+  ) {
     pluginData = node.getSharedPluginData(
       dataNamespace(),
       dataKey,
