@@ -1,5 +1,6 @@
 import {
   CONTAINER_NODE_TYPES,
+  DATA_KEYS,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
 } from './constants';
@@ -336,6 +337,86 @@ const getNodeSettings = (page: any, nodeId: string) => {
 };
 
 /**
+ * @description A shared helper function to retrieve plugin data on a node from a
+ * peer plugin (Stapler). The check is always done on a component node to get the
+ * latest data.
+ *
+ * @kind function
+ * @name getPeerPluginData
+ *
+ * @param {Object} node The instance node to retrieve the assignment on.
+ * @param {string} pluginName The plugin name to use for lookup.
+ *
+ * @returns {string} The assignment is returned as an unparsed JSON string.
+ */
+const getPeerPluginData = (
+  node: InstanceNode | ComponentNode | ComponentSetNode,
+) => {
+  const dataNamespace = (): string => {
+    const key: string = process.env.SECRET_KEY ? process.env.SECRET_KEY : '1234';
+    const identifier: string = PLUGIN_IDENTIFIER;
+    let namespace: string = `${identifier.toLowerCase()}${key.toLowerCase()}`;
+    namespace = namespace.replace(/[^0-9a-z]/gi, '');
+    return namespace;
+  };
+
+  const dataKey: string = DATA_KEYS.bundle;
+  let pluginData: string = null;
+  let parsedData = null;
+
+  // check the component directly, first
+  if (
+    (node.type === CONTAINER_NODE_TYPES.component)
+    || (node.type === CONTAINER_NODE_TYPES.componentSet)
+  ) {
+    pluginData = node.getSharedPluginData(
+      dataNamespace(),
+      dataKey,
+    );
+  }
+
+  if (!pluginData) {
+    let instanceNode: InstanceNode = null;
+
+    if (node.type === CONTAINER_NODE_TYPES.instance) {
+      instanceNode = node as InstanceNode;
+    }
+
+    // check the instance’s direct component
+    if (instanceNode && instanceNode.mainComponent) {
+      let componentNode: ComponentNode = null;
+      componentNode = instanceNode.mainComponent;
+
+      pluginData = componentNode.getSharedPluginData(
+        dataNamespace(),
+        dataKey,
+      );
+    }
+
+    // check the peer node inside of a larger component
+    if (!pluginData) {
+      let peerNode = null;
+      const topInstanceNode: InstanceNode = findTopInstance(node);
+      if (topInstanceNode) {
+        peerNode = matchMasterPeerNode(node, topInstanceNode);
+        if (peerNode) {
+          pluginData = peerNode.getSharedPluginData(
+            dataNamespace(),
+            dataKey,
+          );
+        }
+      }
+    }
+  }
+
+  if (pluginData) {
+    parsedData = JSON.parse(pluginData);
+  }
+
+  return parsedData;
+};
+
+/**
  * @description Compensates for a mix of groups and non-groups when determining a
  * node index. Grouped nodes are parsed to a decimal value that includes the final
  * parent Group index.
@@ -659,6 +740,7 @@ export {
   findTopInstance,
   findTopComponent,
   getNodeSettings,
+  getPeerPluginData,
   getRelativeIndex,
   getRelativePosition,
   hexToDecimalRgb,
