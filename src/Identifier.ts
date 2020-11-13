@@ -1,5 +1,5 @@
 import {
-  existsInArray, // eslint-disable-line import/named
+  existsInArray,
   findParentInstance,
   getPeerPluginData,
   getNodeSettings,
