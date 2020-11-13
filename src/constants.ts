@@ -32,6 +32,7 @@ const PLUGIN_NAME = 'Specter';
  */
 const DATA_KEYS = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
+  bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
 };
 
 /**
