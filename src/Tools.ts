@@ -313,6 +313,72 @@ const findTopComponent = (node: any) => {
 };
 
 /**
+ * @description Maps the nesting order of a node within the tree and then uses that “map”
+ * as a guide to find the peer node within the an instance’s Master Component.
+ *
+ * @kind function
+ * @name matchMasterPeerNode
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ * @param {Object} topNode A Figma instance node object (`InstanceNode`).
+ *
+ * @returns {Object} Returns the main component or `null`.
+ */
+const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
+  // finds the `index` of self in the parent’s children list
+  const indexAtParent = (childNode: any): number => childNode.parent.children.findIndex(
+    child => child.id === childNode.id,
+  );
+
+  // set some defaults
+  let { parent } = node;
+  const childIndices = [];
+  const mainComponentNode: ComponentNode = topNode.mainComponent;
+  let mainPeerNode = null;
+  let currentNode = node;
+
+  // if `node` and `topNode` are the same, the peer node is top-level and we
+  // do not need to find anything else
+  if (mainComponentNode && node.id === topNode.id) {
+    return mainComponentNode;
+  }
+
+  // iterate up the chain, collecting indices in each child list
+  if (parent) {
+    childIndices.push(indexAtParent(node));
+    while (parent && parent.id !== topNode.id) {
+      currentNode = parent;
+      parent = parent.parent;
+      childIndices.push(indexAtParent(currentNode));
+    }
+  }
+
+  // navigate down the chain of the corresponding main component using the
+  // collected child indices to locate the peer node
+  if (childIndices.length > 0 && mainComponentNode) {
+    const childIndicesReversed = childIndices.reverse();
+    let { children } = mainComponentNode;
+    let selectedChild = null;
+
+    childIndicesReversed.forEach((childIndex, index) => {
+      selectedChild = children[childIndex];
+      if ((childIndicesReversed.length - 1) > index) {
+        if (selectedChild.children) {
+          children = selectedChild.children;
+        }
+      }
+    });
+
+    // the last selected child should be the peer node
+    if (selectedChild) {
+      mainPeerNode = selectedChild;
+    }
+  }
+
+  return mainPeerNode;
+};
+
+/**
  * @description Takes a Figma page object and a `nodeId` and uses the Figma API’s
  * `getPluginData` to extract and return a specific node’s settings.
  *
@@ -345,7 +411,6 @@ const getNodeSettings = (page: any, nodeId: string) => {
  * @name getPeerPluginData
  *
  * @param {Object} node The instance node to retrieve the assignment on.
- * @param {string} pluginName The plugin name to use for lookup.
  *
  * @returns {string} The assignment is returned as an unparsed JSON string.
  */
@@ -593,64 +658,6 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
   await figma.loadFontAsync(typefaceToUse);
 
   return typefaceToUse;
-};
-
-/**
- * @description Maps the nesting order of a node within the tree and then uses that “map”
- * as a guide to find the peer node within the an instance’s Master Component.
- *
- * @kind function
- * @name matchMasterPeerNode
- *
- * @param {Object} node A Figma node object (`SceneNode`).
- * @param {Object} topNode A Figma instance node object (`InstanceNode`).
- *
- * @returns {Object} Returns the main component or `null`.
- */
-const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
-  // finds the `index` of self in the parent’s children list
-  const indexAtParent = (childNode: any): number => childNode.parent.children.findIndex(
-    child => child.id === childNode.id,
-  );
-
-  // set some defaults
-  let { parent } = node;
-  const childIndices = [];
-  const mainComponentNode = topNode.mainComponent;
-  let mainPeerNode = null;
-  let currentNode = node;
-
-  // iterate up the chain, collecting indices in each child list
-  if (parent) {
-    childIndices.push(indexAtParent(node));
-    while (parent && parent.id !== topNode.id) {
-      currentNode = parent;
-      parent = parent.parent;
-      childIndices.push(indexAtParent(currentNode));
-    }
-  }
-
-  // navigate down the chain of the corresponding main component using the
-  // collected child indices to locate the peer node
-  if (childIndices.length > 0 && mainComponentNode) {
-    const childIndicesReversed = childIndices.reverse();
-    let { children } = mainComponentNode;
-    let selectedChild = null;
-
-    childIndicesReversed.forEach((childIndex, index) => {
-      selectedChild = children[childIndex];
-      if ((childIndicesReversed.length - 1) > index) {
-        children = selectedChild.children;
-      }
-    });
-
-    // the last selected child should be the peer node
-    if (selectedChild) {
-      mainPeerNode = selectedChild;
-    }
-  }
-
-  return mainPeerNode;
 };
 
 /**
