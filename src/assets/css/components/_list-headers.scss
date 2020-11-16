@@ -83,6 +83,18 @@
       }
     }
   }
+
+  &:focus-within {
+    span {
+      &.actions {
+        #{$all-buttons} {
+          &.item-toggle {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
 }
 
 @mixin list-header-base-expanded {
