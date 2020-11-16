@@ -39,19 +39,7 @@
   }
 
   @include hover {
-    .icon {
-      svg {
-        path {
-          fill: $iconColorHover;
-
-          &.stroke {
-            fill: none;
-            stroke: $iconColorHover;
-            stroke-width: 1px;
-          }
-        }
-      }
-    }
+    background-color: $iconColorHover;
   }
 
   &:enabled:active,
@@ -87,27 +75,5 @@
         }
       }
     }
-  }
-}
-
-.reset-control {
-  #{$all-buttons} {
-    @include button-icon;
-
-    &:disabled {
-      opacity: 0;
-    }
-  }
-}
-
-.remix-control {
-  #{$all-buttons} {
-    @include button-icon;
-  }
-}
-
-.locking-control {
-  #{$all-buttons} {
-    @include button-icon($wl-action-secondary-accent, 16);
   }
 }

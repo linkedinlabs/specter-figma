@@ -105,20 +105,6 @@
   }
 }
 
-@mixin form-label-inverted {
-  @include form-label;
-
-  span {
-    &.actions {
-      #{$all-buttons} {
-        @include button-icon($wl-action-tertiary, 16, $wl-action-secondary);
-        width: em(16);
-        height: em(16);
-      }
-    }
-  }
-}
-
 .form-element-holder {
   .form-inner-row {
     display: flex;
@@ -127,10 +113,6 @@
 
   .form-label {
     @include form-label;
-
-    &.inverted {
-      @include form-label-inverted;
-    }
   }
 
   // style form element types
@@ -172,12 +154,6 @@
       @include button-icon($wl-action-secondary-accent, 32, $wl-action-tertiary);
       width: em(32);
       height: em(32);
-
-      &.inverted {
-        @include button-icon($wl-action-tertiary, 32, $wl-action-secondary);
-        width: em(32);
-        height: em(32);
-      }
     }
   }
 }
