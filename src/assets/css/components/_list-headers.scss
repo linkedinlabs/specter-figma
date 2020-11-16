@@ -26,11 +26,11 @@
           @include button-icon(
             $wl-action-secondary-accent,
             16,
-            $wl-action-secondary-accent,
+            $wl-action-tertiary-accent,
           );
-          width: em(16);
-          height: em(16);
-          margin-left: em(-2);
+          width: em(32);
+          height: em(32);
+          // margin-left: em(-2);
           opacity: 0;
 
           // keep expanded toggle visible
