@@ -151,7 +151,7 @@
 
   #{$all-buttons} {
     &.inline-button {
-      @include button-icon($wl-action-secondary-accent, 32, $wl-action-tertiary);
+      @include button-icon($wl-action-secondary-accent, 28, $wl-action-tertiary-accent);
       width: em(32);
       height: em(32);
     }

@@ -14,7 +14,8 @@
   width: em(24);
   height: em(24);
   outline: none;
-  border: 0;
+  border: 2px solid rgba($wl-action-secondary-accent, 0);
+  border-radius: 2px;
 
   .label {
     @include hide-visually;
@@ -40,23 +41,16 @@
 
   @include hover {
     background-color: $iconColorHover;
+    border-color: $iconColorHover;
   }
 
   &:enabled:active,
   &:enabled:focus {
-    .icon {
-      svg {
-        path {
-          fill: $wl-action-primary;
+    border-color: $wl-action-primary;
+  }
 
-          &.stroke {
-            fill: none;
-            stroke: $wl-action-primary;
-            stroke-width: 1px;
-          }
-        }
-      }
-    }
+  &:enabled:active {
+    background-color: $iconColorHover;
   }
 
   &:disabled {
