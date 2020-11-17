@@ -39,6 +39,7 @@ const assemble = (context: any = null) => {
  *
  * @param {Array} trackingData The page-level node tracking data.
  * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ * @param {string} topFrameId An optional Node ID for the top frame.
  *
  * @returns {null}
  */
@@ -64,6 +65,50 @@ const cleanupAnnotations = (
       }
     }
   });
+  return null;
+};
+
+/**
+ * @description Checks tracking data against the provided frameNode. If any annotations
+ * are missing, they are re-painted.
+ *
+ * @kind function
+ * @name refreshAnnotations
+ *
+ * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Object} page The Figma PageNode
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ *
+ * @returns {null}
+ */
+const refreshAnnotations = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+  page: PageNode,
+  isMercadoMode: boolean,
+): void => {
+  trackingData.forEach((trackingEntry) => {
+    if (trackingEntry.topFrameId === frameNode.id) {
+      const annotationNode: SceneNode = frameNode.findOne(
+        node => node.id === trackingEntry.annotationId,
+      );
+      const sceneNode: SceneNode = frameNode.findOne(node => node.id === trackingEntry.id);
+
+      if (!annotationNode && sceneNode) {
+        // set up Painter instance for the node
+        const painter = new Painter({
+          for: sceneNode,
+          in: page,
+          isMercadoMode,
+        });
+
+        // re-draw the annotation
+        painter.addKeystop();
+      }
+    }
+  });
+
   return null;
 };
 
@@ -1133,6 +1178,13 @@ export default class App {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
         keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+
+        refreshAnnotations(
+          topFrame,
+          trackingData,
+          page,
+          isMercadoMode,
+        );
       });
 
       // iterate topFrames and select nodes that could have stops based on assignment data
@@ -1263,6 +1315,11 @@ export default class App {
     const crawler = new Crawler({ for: nodes });
     const topFrameNodes: Array<FrameNode> = crawler.topFrames();
 
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+    );
+
     // iterate topFrames and remove annotation(s) that match node(s)
     topFrameNodes.forEach((frameNode: FrameNode) => {
       // read keystop list data from top frame
@@ -1272,10 +1329,13 @@ export default class App {
       }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
 
       // remove item(s) from the keystop list
+      // remove item(s) from the tracking data
       let newKeystopList = keystopList;
+      let newTrackingData = trackingData;
       if (keystopList) {
         nodes.forEach((node) => {
           newKeystopList = updateArray(newKeystopList, node, 'id', 'remove');
+          newTrackingData = updateArray(newTrackingData, node, 'id', 'remove');
         });
       }
 
@@ -1283,6 +1343,12 @@ export default class App {
       frameNode.setPluginData(
         DATA_KEYS.keystopList,
         JSON.stringify(newKeystopList),
+      );
+
+      // set new tracking data
+      page.setPluginData(
+        DATA_KEYS.keystopAnnotations,
+        JSON.stringify(newTrackingData),
       );
 
       // use the new, sorted list to select the original nodes in figma
@@ -1298,15 +1364,12 @@ export default class App {
     const nodeIds: Array<string> = [];
     nodes.forEach(node => nodeIds.push(node.id));
 
-    // grab tracking data for the page
-    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
-    );
+    // remove the orphaned annotations
     cleanupAnnotations(trackingData, nodeIds);
 
     // repaint affected nodes
     if (nodesToRepaint.length > 0) {
-      this.annotateKeystop(nodesToRepaint);
+      // this.annotateKeystop(nodesToRepaint);
     }
 
     // close or refresh UI
