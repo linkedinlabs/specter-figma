@@ -1369,7 +1369,7 @@ export default class App {
 
     // repaint affected nodes
     if (nodesToRepaint.length > 0) {
-      // this.annotateKeystop(nodesToRepaint);
+      this.annotateKeystop(nodesToRepaint);
     }
 
     // close or refresh UI
