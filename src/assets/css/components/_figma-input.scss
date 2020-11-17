@@ -82,3 +82,9 @@
   }
   /* stylelint-enable property-no-vendor-prefix */
 }
+
+.user-input {
+  .input {
+    @include figma-input;
+  }
+}
