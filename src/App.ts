@@ -45,13 +45,16 @@ const assemble = (context: any = null) => {
 const cleanupAnnotations = (
   trackingData: Array<PluginNodeTrackingData>,
   orphanedIds: Array<string>,
+  topFrameId: string,
 ): void => {
   orphanedIds.forEach((orphanedId) => {
     const entryIndex: 0 = 0;
     const trackingEntry = trackingData.filter(
       entry => entry.id === orphanedId,
     )[entryIndex];
-    if (trackingEntry) {
+
+    // ignore nodes that are not in the current top frame
+    if (trackingEntry && (topFrameId === trackingEntry.topFrameId)) {
       const annotationNode = figma.getNodeById(trackingEntry.annotationId);
       if (annotationNode) {
         annotationNode.remove();
@@ -101,7 +104,11 @@ const getKeystopNodes = (
         nodes.push(nodeToAdd);
       } else if (trackingData.length > 0) {
         // remove orphaned annotation
-        cleanupAnnotations(trackingData, [keystopItem.id]);
+        cleanupAnnotations(
+          trackingData,
+          [keystopItem.id],
+          frameNode.id,
+        );
       }
     });
   }
