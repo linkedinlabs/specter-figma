@@ -12,8 +12,8 @@ import {
   updateArray,
 } from './Tools';
 import {
-  DATA_KEYS,
   CONTAINER_NODE_TYPES,
+  DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
 
