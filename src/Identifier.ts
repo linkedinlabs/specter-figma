@@ -1,13 +1,19 @@
 import {
+  existsInArray,
   findParentInstance,
+  getPeerPluginData,
   getNodeSettings,
   isInternal,
   isVisible,
   resizeGUI,
   setNodeSettings,
   toSentenceCase,
+  updateArray,
 } from './Tools';
-import { RADIUS_MATRIX } from './constants';
+import {
+  CONTAINER_NODE_TYPES,
+  RADIUS_MATRIX,
+} from './constants';
 
 // --- private functions
 /**
@@ -401,6 +407,83 @@ const parseOverrides = (parentNode: any): string => {
   return setOverridesText;
 };
 
+/**
+ * @description Parses a layer name into variants (`key` and `value`). Checks the parent
+ * set’s peer data and removes any variants that should be ignored. Compiles the variants
+ * and set name into a single name string.
+ *
+ * @kind function
+ * @name parseVariants
+ *
+ * @param {string} variantLayerName The current node name for the variant.
+ * @param {Object} componentSetNode The Figma ComponentSetNode object.
+ *
+ * @returns {string} The proper token name for the variant.
+ *
+ * @private
+ */
+const parseVariants = (
+  variantLayerName: string,
+  componentSetNode: ComponentSetNode,
+): string => {
+  // grab clean name from set node
+  const setName = cleanName(componentSetNode.name);
+  let nameWithVariants = `${setName} ${variantLayerName}`;
+
+  let variants: Array<{
+    key: string,
+    value: string,
+  }> = [];
+  const nameVariantArray: Array<string> = variantLayerName.split(',');
+
+  // extract variants from variant layer name
+  nameVariantArray.forEach((variantKey) => {
+    const variantKeyStripped = variantKey.trim();
+    const variantKeyArray: Array<string> = variantKeyStripped.split('=');
+    if (variantKeyArray.length === 2) {
+      const keyIndex: number = 0;
+      const valueIndex: number = 1;
+      const key: string = variantKeyArray[keyIndex];
+      const value: string = variantKeyArray[valueIndex];
+
+      variants.push({
+        key,
+        value,
+      });
+    }
+  });
+
+  if (variants.length > 0) {
+    // remove variants that should be ignored
+    const peerNodeData = getPeerPluginData(componentSetNode);
+    if (peerNodeData && peerNodeData.variants) {
+      peerNodeData.variants.forEach((variantIgnoreItem) => {
+        if (
+          variantIgnoreItem.ignore
+          && existsInArray(variants, variantIgnoreItem.key, 'key')
+        ) {
+          variants = updateArray(variants, variantIgnoreItem, 'key', 'remove');
+        }
+      });
+    }
+
+    // ----------- set up name with variants
+    // if the variant value is a boolean, use the key, otherwise use the value
+    const withVariantsArray: Array<string> = [];
+    variants.forEach((variant) => {
+      const nameTest: string = variant.value.toLowerCase();
+      if (nameTest === 'true') {
+        withVariantsArray.push(variant.key);
+      } else if (nameTest !== 'false') {
+        withVariantsArray.push(variant.value);
+      }
+    });
+    nameWithVariants = `${setName} ${withVariantsArray.join(' ')}`;
+  }
+
+  return nameWithVariants;
+};
+
 // --- main Identifier class function
 /**
  * @description A class to handle identifying a Figma node as a valid part of the Design System.
@@ -583,8 +666,17 @@ export default class Identifier {
       // sets symbol type to `foundation` or `component` based on name checks
       const symbolType: string = checkNameForType(mainComponent.name);
       // take only the last segment of the name (after a “/”, if available)
-      const textToSet: string = cleanName(mainComponent.name);
+      let textToSet: string = cleanName(mainComponent.name);
       const subtextToSet = parseOverrides(this.node);
+
+      // check variant status
+      const isVariant = mainComponent.parent
+        && (mainComponent.parent.type === CONTAINER_NODE_TYPES.componentSet);
+
+      if (isVariant) {
+        const componentSet = mainComponent.parent;
+        textToSet = parseVariants(textToSet, componentSet);
+      }
 
       // set `textToSet` on the node settings as the component name
       // set optional `subtextToSet` on the node settings based on existing overrides
