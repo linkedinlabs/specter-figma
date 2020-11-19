@@ -250,6 +250,7 @@ const findParentInstance = (node: any) => {
  *
  * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
  */
+//
 const findTopFrame = (node: any) => {
   let { parent } = node;
 
@@ -279,10 +280,15 @@ const findTopFrame = (node: any) => {
  *
  * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
  */
-const findTopInstance = (node: any) => {
+const findTopInstance = (node: any): InstanceNode => {
   let { parent } = node;
   let currentNode = node;
   let currentTopInstance: InstanceNode = null;
+
+  // set first; top instance may be self
+  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+    currentTopInstance = currentNode;
+  }
 
   if (parent) {
     // iterate until the parent is a page

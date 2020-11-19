@@ -2,7 +2,11 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
-import { existsInArray, updateArray } from './Tools';
+import {
+  existsInArray,
+  getPeerPluginData,
+  updateArray,
+} from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -35,25 +39,76 @@ const assemble = (context: any = null) => {
  *
  * @param {Array} trackingData The page-level node tracking data.
  * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ * @param {string} topFrameId An optional Node ID for the top frame.
  *
  * @returns {null}
  */
 const cleanupAnnotations = (
   trackingData: Array<PluginNodeTrackingData>,
   orphanedIds: Array<string>,
+  topFrameId?: string,
 ): void => {
   orphanedIds.forEach((orphanedId) => {
     const entryIndex: 0 = 0;
     const trackingEntry = trackingData.filter(
       entry => entry.id === orphanedId,
     )[entryIndex];
-    if (trackingEntry) {
+
+    // ignore nodes that are not in the current top frame
+    if (
+      (trackingEntry && (topFrameId === trackingEntry.topFrameId))
+      || (trackingEntry && !topFrameId)
+    ) {
       const annotationNode = figma.getNodeById(trackingEntry.annotationId);
       if (annotationNode) {
         annotationNode.remove();
       }
     }
   });
+  return null;
+};
+
+/**
+ * @description Checks tracking data against the provided frameNode. If any annotations
+ * are missing, they are re-painted.
+ *
+ * @kind function
+ * @name refreshAnnotations
+ *
+ * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Object} page The Figma PageNode
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ *
+ * @returns {null}
+ */
+const refreshAnnotations = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+  page: PageNode,
+  isMercadoMode: boolean,
+): void => {
+  trackingData.forEach((trackingEntry) => {
+    if (trackingEntry.topFrameId === frameNode.id) {
+      const annotationNode: SceneNode = frameNode.findOne(
+        node => node.id === trackingEntry.annotationId,
+      );
+      const sceneNode: SceneNode = frameNode.findOne(node => node.id === trackingEntry.id);
+
+      if (!annotationNode && sceneNode) {
+        // set up Painter instance for the node
+        const painter = new Painter({
+          for: sceneNode,
+          in: page,
+          isMercadoMode,
+        });
+
+        // re-draw the annotation
+        painter.addKeystop();
+      }
+    }
+  });
+
   return null;
 };
 
@@ -97,7 +152,11 @@ const getKeystopNodes = (
         nodes.push(nodeToAdd);
       } else if (trackingData.length > 0) {
         // remove orphaned annotation
-        cleanupAnnotations(trackingData, [keystopItem.id]);
+        cleanupAnnotations(
+          trackingData,
+          [keystopItem.id],
+          frameNode.id,
+        );
       }
     });
   }
@@ -384,28 +443,64 @@ export default class App {
       page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
     );
 
-    // set up selection based on supplied array or direct selection in the Figma UI
-    // the direct UI selection is sorted based on visual hierarchy
-    const crawlerForSelection = new Crawler({ for: selection });
-    let selectedNodes: Array<SceneNode> = crawlerForSelection.sorted();
-    if (suppliedSelection && suppliedSelection.length > 0) {
-      selectedNodes = suppliedSelection;
-    }
-
     // determine topFrames involved in the current selection
-    const crawlerForSelected = new Crawler({ for: selectedNodes });
+    const crawlerForSelected = new Crawler({ for: selection });
     const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+    const nodes: Array<SceneNode> = [];
 
     // iterate topFrames and select nodes that already have annotations
-    const nodes: Array<SceneNode> = [];
     topFrameNodes.forEach((topFrame: FrameNode) => {
       const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
       keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
     });
 
-    // add in any directly-selected nodes that do not have annotations yet
+    // ------- add in any directly-selected nodes that do not have annotations yet
+    // ------- or any nodes that could have stops based on assignment data
+    // set up selection based on supplied array or direct selection in the Figma UI
+    let selectedNodes: Array<SceneNode> = [];
+    if (suppliedSelection && suppliedSelection.length > 0) {
+      selectedNodes = suppliedSelection;
+    } else {
+      selection.forEach((node: SceneNode) => selectedNodes.push(node));
+    }
+
+    // iterate topFrames and select nodes that could have stops based on assignment data
+    if (!suppliedSelection) {
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const extractAssignedKeystops = (children) => {
+          const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+          const crawlerForChildren = new Crawler({ for: children });
+          const childNodes = crawlerForChildren.all();
+          childNodes.forEach((childNode) => {
+            const peerNodeData = getPeerPluginData(childNode);
+            if (peerNodeData && peerNodeData.hasKeystop) {
+              if (
+                !existsInArray(nodes, childNode.id)
+                && !existsInArray(keystopNodes, childNode.id)
+                && !existsInArray(topFrameNodes, childNode.id)
+              ) {
+                selectedNodes.push(childNode);
+                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
+                  extractAssignedKeystops(childNode.children);
+                }
+              }
+            }
+          });
+        };
+        extractAssignedKeystops(topFrame.children);
+      });
+    }
+
+    // sort nodes by visual hierarchy
+    const crawlerForSelection = new Crawler({ for: selectedNodes });
+    selectedNodes = crawlerForSelection.sorted();
+
+    // add them to the main array
     selectedNodes.forEach((node: SceneNode) => {
-      if (!existsInArray(nodes, node.id)) {
+      if (
+        !existsInArray(nodes, node.id)
+        && !existsInArray(topFrameNodes, node.id)
+      ) {
         nodes.push(node);
       }
     });
@@ -1083,11 +1178,44 @@ export default class App {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
         keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+
+        refreshAnnotations(
+          topFrame,
+          trackingData,
+          page,
+          isMercadoMode,
+        );
+      });
+
+      // iterate topFrames and select nodes that could have stops based on assignment data
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const extractAssignedKeystops = (children) => {
+          const crawlerForChildren = new Crawler({ for: children });
+          const childNodes = crawlerForChildren.all();
+          childNodes.forEach((childNode) => {
+            const peerNodeData = getPeerPluginData(childNode);
+            if (peerNodeData && peerNodeData.hasKeystop) {
+              if (
+                !existsInArray(nodes, childNode.id)
+                && !existsInArray(topFrameNodes, childNode.id)
+              ) {
+                nodes.push(childNode);
+                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
+                  extractAssignedKeystops(childNode.children);
+                }
+              }
+            }
+          });
+        };
+        extractAssignedKeystops(topFrame.children);
       });
 
       // add in any directly-selected nodes that do not have annotations yet
       selectedNodes.forEach((node: SceneNode) => {
-        if (!existsInArray(nodes, node.id)) {
+        if (
+          !existsInArray(nodes, node.id)
+          && !existsInArray(topFrameNodes, node.id)
+        ) {
           nodes.push(node);
         }
       });
@@ -1187,6 +1315,11 @@ export default class App {
     const crawler = new Crawler({ for: nodes });
     const topFrameNodes: Array<FrameNode> = crawler.topFrames();
 
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+    );
+
     // iterate topFrames and remove annotation(s) that match node(s)
     topFrameNodes.forEach((frameNode: FrameNode) => {
       // read keystop list data from top frame
@@ -1196,10 +1329,13 @@ export default class App {
       }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
 
       // remove item(s) from the keystop list
+      // remove item(s) from the tracking data
       let newKeystopList = keystopList;
+      let newTrackingData = trackingData;
       if (keystopList) {
         nodes.forEach((node) => {
           newKeystopList = updateArray(newKeystopList, node, 'id', 'remove');
+          newTrackingData = updateArray(newTrackingData, node, 'id', 'remove');
         });
       }
 
@@ -1207,6 +1343,12 @@ export default class App {
       frameNode.setPluginData(
         DATA_KEYS.keystopList,
         JSON.stringify(newKeystopList),
+      );
+
+      // set new tracking data
+      page.setPluginData(
+        DATA_KEYS.keystopAnnotations,
+        JSON.stringify(newTrackingData),
       );
 
       // use the new, sorted list to select the original nodes in figma
@@ -1222,10 +1364,7 @@ export default class App {
     const nodeIds: Array<string> = [];
     nodes.forEach(node => nodeIds.push(node.id));
 
-    // grab tracking data for the page
-    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
-    );
+    // remove the orphaned annotations
     cleanupAnnotations(trackingData, nodeIds);
 
     // repaint affected nodes
