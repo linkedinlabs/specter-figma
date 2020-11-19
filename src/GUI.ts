@@ -10,7 +10,13 @@ const appProps: {
   isInternal: boolean,
   isMercadoMode: boolean,
   isUserInput: boolean,
-  selected: Array<SceneNode>,
+  items: Array<{
+    id: string,
+    name: string,
+    position?: number,
+    hasStop: boolean,
+    isSelected: boolean,
+  }>,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -18,7 +24,7 @@ const appProps: {
   isInternal: isInternal(),
   isMercadoMode: false,
   isUserInput: false,
-  selected: null,
+  items: null,
   userInputValue: null,
   viewContext: null,
 };
@@ -84,30 +90,6 @@ const showHideInfo = (action: 'show' | 'hide') => {
   }
 };
 
-/** WIP
- * @description Clones a template html element and then updates the clone’s contents to match
- * the supplied options for each layer in the supplied array.
- *
- * @kind function
- * @name updateSelected
- *
- * @param {Array} items An array of items to clone. Each entry should include an `id`,
- * an `assignment`, `originalText`, `proposedText`, and a `locked` boolean.
- *
- * @returns {null}
- */
-const updateSelected = (
-  selected: {
-    items: Array<any>,
-  },
-  sessionKey?: string,
-): void => {
-  if (selected) {
-    app.selected = selected;
-    app.newSessionKey = sessionKey;
-  }
-};
-
 /**
  * @description Watches for incoming messages from the plugin’s main thread and dispatches
  * them to the appropriate GUI actions.
@@ -151,12 +133,13 @@ const watchIncomingMessages = (): void => {
           const {
             currentView,
             isMercadoMode,
-            selected,
+            items,
             sessionKey,
           } = payload;
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
-          updateSelected(selected, sessionKey);
+          app.items = items;
+          app.newSessionKey = sessionKey;
           break;
         }
         default:

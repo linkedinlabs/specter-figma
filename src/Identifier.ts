@@ -1,8 +1,9 @@
 import {
   existsInArray,
+  findTopFrame,
   findParentInstance,
-  getPeerPluginData,
   getNodeSettings,
+  getPeerPluginData,
   isInternal,
   isVisible,
   resizeGUI,
@@ -12,6 +13,7 @@ import {
 } from './Tools';
 import {
   CONTAINER_NODE_TYPES,
+  DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
 
@@ -33,7 +35,7 @@ import {
 const setAnnotationTextSettings = (
   annotationText: string,
   annotationSecondaryText: string,
-  annotationType: string,
+  annotationType: 'component' | 'custom' | 'keystop' | 'style',
   nodeId: string,
   page: any,
 ): void => {
@@ -166,7 +168,7 @@ const cleanName = (name: string): string => {
  * @kind function
  * @name cleanColorName
  *
- * @param {string} name The original name of the color
+ * @param {string} name The original name of the color.
  *
  * @returns {string} The cleaned name of the color for the annotation.
  *
@@ -485,7 +487,7 @@ const parseVariants = (
 };
 
 // --- main Identifier class function
-/** WIP
+/**
  * @description A class to handle identifying a Figma node as a valid part of the Design System.
  *
  * @class
@@ -493,9 +495,13 @@ const parseVariants = (
  *
  * @constructor
  *
+ * @property isMercadoMode A feature-flag (`isMercadoMode`) used to expose features specific to
+ * the Mercado Design Library.
+ * @property messenger An instance of the Messenger class.
  * @property node The node that needs identification.
  * @property page The Figma page that contains the node.
- * @property messenger An instance of the Messenger class.
+ * @property shouldTerminate A boolean that tells us whether or not the GUI should remain open
+ * at the end of the plugin’s current task.
  */
 export default class Identifier {
   isMercadoMode: boolean;
@@ -587,7 +593,7 @@ export default class Identifier {
     const radiusItem = RADIUS_MATRIX.find(radius => radius.unit === cornerValue);
     if (radiusItem) {
       // sets symbol type to `foundation` or `component` based on name checks
-      const symbolType: string = 'style';
+      const symbolType: 'style' = 'style';
       const textToSet: string = radiusItem.token;
       const subtextToSet = null;
 
@@ -660,7 +666,7 @@ export default class Identifier {
       this.messenger.log(`Main Component name for node: ${mainComponent.name}`);
 
       // sets symbol type to `foundation` or `component` based on name checks
-      const symbolType: string = checkNameForType(mainComponent.name);
+      const symbolType: 'component' | 'style' = checkNameForType(mainComponent.name);
       // take only the last segment of the name (after a “/”, if available)
       let textToSet: string = cleanName(mainComponent.name);
       const subtextToSet = parseOverrides(this.node);
@@ -726,6 +732,110 @@ export default class Identifier {
     result.status = 'error';
     result.messages.log = `${this.node.id} was not found in a connected design library`;
     result.messages.toast = '😢 This layer could not be found in a connected design library.';
+    return result;
+  }
+
+  /**
+   * @description Checks the node’s settings object for the existence of keystop-related data
+   * and either updates that data with a new position, or creates the data object with the
+   * initial position and saves it to the node. Position is calculated by reading the
+   * keystop list data from the nodes top-level container frame. The main underlying
+   * assumption is that the node being set is going to be in the next highest position in the
+   * list.
+   *
+   * @kind function
+   * @name getSetKeystop
+   *
+   * @returns {Object} A result object containing success/error status and log/toast messages.
+   */
+  getSetKeystop() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // find the top frame
+    const topFrame: FrameNode = findTopFrame(this.node);
+
+    if (!topFrame) {
+      result.status = 'error';
+      result.messages.log = `Node “${this.node.name}” needs to be in a frame`;
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
+
+    // get top frame keystop list
+    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+    let frameKeystopList: Array<{
+      id: string,
+      position: number,
+    }> = [];
+    if (frameKeystopListData) {
+      frameKeystopList = frameKeystopListData;
+    }
+
+    // set new position based on list length
+    // (we always assume `getSetKeystop` has been fed the node in order)
+    const positionToSet = frameKeystopList.length + 1;
+
+    // add the new node to the list with position
+    frameKeystopList.push({
+      id: this.node.id,
+      position: positionToSet,
+    });
+
+    // set/update top frame keystop list
+    topFrame.setPluginData(
+      DATA_KEYS.keystopList,
+      JSON.stringify(frameKeystopList),
+    );
+
+    // convert position to string
+    const textToSet = `${positionToSet}`;
+
+    // retrieve the node data
+    let nodeData: {
+      annotationText: string,
+      annotationSecondaryText?: string,
+      keys?: Array<PluginKeystopKeys>,
+    } = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+
+    // set `annotationText` data on the node
+    if (!nodeData) {
+      nodeData = {
+        annotationText: textToSet,
+      };
+    } else {
+      nodeData.annotationText = textToSet;
+    }
+
+    // check for assigned keys, if none exist (`undefined` or `null`):
+    // this check will only happen if keys have never been attached to this stop.
+    // if the component is updated after this stop has been altered, the updates will be ignored.
+    if (!nodeData.keys) {
+      const peerNodeData = getPeerPluginData(this.node);
+      if (peerNodeData && peerNodeData.keys) {
+        nodeData.keys = peerNodeData.keys;
+      }
+    }
+
+    // commit the updated data
+    this.node.setPluginData(
+      DATA_KEYS.keystopNodeData,
+      JSON.stringify(nodeData),
+    );
+
+    result.status = 'success';
+    result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 

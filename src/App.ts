@@ -2,6 +2,11 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
+import {
+  existsInArray,
+  getPeerPluginData,
+  updateArray,
+} from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 
 /**
@@ -25,7 +30,247 @@ const assemble = (context: any = null) => {
   };
 };
 
-/** WIP
+/**
+ * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
+ * the annotation is removed.
+ *
+ * @kind function
+ * @name cleanupAnnotations
+ *
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ * @param {string} topFrameId An optional Node ID for the top frame.
+ *
+ * @returns {null}
+ */
+const cleanupAnnotations = (
+  trackingData: Array<PluginNodeTrackingData>,
+  orphanedIds: Array<string>,
+  topFrameId?: string,
+): void => {
+  orphanedIds.forEach((orphanedId) => {
+    const entryIndex: 0 = 0;
+    const trackingEntry = trackingData.filter(
+      entry => entry.id === orphanedId,
+    )[entryIndex];
+
+    // ignore nodes that are not in the current top frame
+    if (
+      (trackingEntry && (topFrameId === trackingEntry.topFrameId))
+      || (trackingEntry && !topFrameId)
+    ) {
+      const annotationNode = figma.getNodeById(trackingEntry.annotationId);
+      if (annotationNode) {
+        annotationNode.remove();
+      }
+    }
+  });
+  return null;
+};
+
+/**
+ * @description Checks tracking data against the provided frameNode. If any annotations
+ * are missing, they are re-painted.
+ *
+ * @kind function
+ * @name refreshAnnotations
+ *
+ * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Object} page The Figma PageNode
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ *
+ * @returns {null}
+ */
+const refreshAnnotations = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+  page: PageNode,
+  isMercadoMode: boolean,
+): void => {
+  trackingData.forEach((trackingEntry) => {
+    if (trackingEntry.topFrameId === frameNode.id) {
+      const annotationNode: SceneNode = frameNode.findOne(
+        node => node.id === trackingEntry.annotationId,
+      );
+      const sceneNode: SceneNode = frameNode.findOne(node => node.id === trackingEntry.id);
+
+      if (!annotationNode && sceneNode) {
+        // set up Painter instance for the node
+        const painter = new Painter({
+          for: sceneNode,
+          in: page,
+          isMercadoMode,
+        });
+
+        // re-draw the annotation
+        painter.addKeystop();
+      }
+    }
+  });
+
+  return null;
+};
+
+/**
+ * @description Takes a frame node and uses its list data to create an array of nodes that
+ * currently have Keystop Annotations. The `trackingData` is used in case the list is stale
+ * and we need to clean up annotations that no longer exist.
+ *
+ * @kind function
+ * @name getKeystopNodes
+ *
+ * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {boolean} resetData Set to true if we know annotations are being re-painted and
+ * the top-level frame node’s list data should be cleared out.
+ *
+ * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
+ */
+const getKeystopNodes = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+  resetData: boolean = false,
+): Array<SceneNode> => {
+  const nodes: Array<SceneNode> = [];
+
+  // grab (or initialize) keystop list for the top frame
+  const keystopListData = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+  let keystopList: Array<{
+    id: string,
+    position: number,
+  }> = [];
+  if (keystopListData) {
+    keystopList = keystopListData;
+  }
+
+  if (keystopList.length > 0) {
+    keystopList.forEach((keystopItem) => {
+      const nodeToAdd: SceneNode = frameNode.findOne(node => node.id === keystopItem.id);
+
+      if (nodeToAdd) {
+        nodes.push(nodeToAdd);
+      } else if (trackingData.length > 0) {
+        // remove orphaned annotation
+        cleanupAnnotations(
+          trackingData,
+          [keystopItem.id],
+          frameNode.id,
+        );
+      }
+    });
+  }
+
+  // reset the top frame list – list should be reset when annotations are re-painted
+  if (resetData) {
+    frameNode.setPluginData(
+      DATA_KEYS.keystopList,
+      JSON.stringify([]),
+    );
+  }
+
+  return nodes;
+};
+
+/**
+ * @description Takes a node and locates its current Keystop data (position and keys), if
+ * it exists. The data is located through the node’s top-level frame. Returns an object
+ * formatted to pass along to the UI.
+ *
+ * @kind function
+ * @name getKeystopPosition
+ *
+ * @param {Object} node A SceneNode to check for Keystop data.
+ *
+ * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
+ * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
+ * if they exist.
+ */
+const getKeystopPosition = (node: SceneNode): {
+  hasStop: boolean,
+  keys: Array<PluginKeystopKeys>,
+  position: number,
+} => {
+  // set up keystop blank
+  const keystopPosition: {
+    hasStop: boolean,
+    keys: Array<PluginKeystopKeys>,
+    position: number,
+  } = {
+    hasStop: false,
+    keys: null,
+    position: null,
+  };
+
+  // find keys data for selected node
+  const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+  if (nodeData && nodeData.keys) {
+    const { keys } = nodeData;
+    keystopPosition.keys = keys;
+  }
+
+  // find top frame for selected node
+  const crawler = new Crawler({ for: [node] });
+  const topFrame = crawler.topFrame();
+  if (topFrame) {
+    // read keystop list data from top frame
+    const itemIndex = 0;
+    const keystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+    if (keystopList) {
+      const keystopItem = keystopList.filter(item => item.id === node.id)[itemIndex];
+      if (keystopItem) {
+        keystopPosition.hasStop = true;
+        keystopPosition.position = keystopItem.position;
+      }
+    }
+  }
+
+  return keystopPosition;
+};
+
+/**
+ * @description Retrieves the current options saved to `clientStorage`. If none exist,
+ * defaults are set.
+ *
+ * @kind function
+ * @name getOptions
+ *
+ * @returns {Object} Returns the options (currently `currentView` and `isMercadoMode`.
+ */
+const getOptions = async (): Promise<PluginOptions> => {
+  // set default options
+  let options: PluginOptions = {
+    currentView: 'general',
+    isMercadoMode: false,
+  };
+
+  // retrieve last used, and use if they exist
+  const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
+  if (lastUsedOptions !== undefined) {
+    options = lastUsedOptions;
+  }
+
+  // check for defaults
+  const {
+    currentView,
+    isMercadoMode,
+  }: {
+    currentView: PluginViewTypes,
+    isMercadoMode: boolean,
+  } = options;
+
+  if ((currentView === undefined) || (currentView === null)) {
+    options.currentView = 'general';
+  }
+
+  if (isMercadoMode === undefined) {
+    options.isMercadoMode = false;
+  }
+
+  return options;
+};
+
+/**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -33,10 +278,11 @@ const assemble = (context: any = null) => {
  *
  * @constructor
  *
- * @property closeGUI A convenience function for closing the GUI and shutting down the plugin.
- * @property showGUI A convenience function for showing the GUI.
+ * @property isMercadoMode A feature-flag (`isMercadoMode`) used to expose features specific to
+ * the Mercado Design Library.
  * @property shouldTerminate A boolean that tells us whether or not the GUI should remain open
  * at the end of the plugin’s current task.
+ * @property terminatePlugin A function to shut down the plugin and close the GUI.
  */
 export default class App {
   isMercadoMode: boolean;
@@ -162,6 +408,163 @@ export default class App {
     }
 
     return this.closeOrReset();
+  }
+
+  /**
+   * @description Annotates a selected node or multiple nodes in a Figma file with
+   * focus order keystop annotations.
+   *
+   * @kind function
+   * @name annotateKeystop
+   *
+   * @param {Array} suppliedSelection If present, this array of nodes will override the
+   * nodes found in current selection.
+   *
+   * @returns {null} Shows a Toast in the UI if nothing is selected.
+   */
+  async annotateKeystop(suppliedSelection?: Array<SceneNode>) {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    // need a selected node to annotate it
+    if (
+      (selection === null || selection.length === 0)
+      && (suppliedSelection === null || suppliedSelection.length === 0)
+    ) {
+      messenger.log('Annotate keystop: nothing selected');
+      return messenger.toast('A layer must be supplied');
+    }
+
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+    );
+
+    // determine topFrames involved in the current selection
+    const crawlerForSelected = new Crawler({ for: selection });
+    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+    const nodes: Array<SceneNode> = [];
+
+    // iterate topFrames and select nodes that already have annotations
+    topFrameNodes.forEach((topFrame: FrameNode) => {
+      const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+      keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+    });
+
+    // ------- add in any directly-selected nodes that do not have annotations yet
+    // ------- or any nodes that could have stops based on assignment data
+    // set up selection based on supplied array or direct selection in the Figma UI
+    let selectedNodes: Array<SceneNode> = [];
+    if (suppliedSelection && suppliedSelection.length > 0) {
+      selectedNodes = suppliedSelection;
+    } else {
+      selection.forEach((node: SceneNode) => selectedNodes.push(node));
+    }
+
+    // iterate topFrames and select nodes that could have stops based on assignment data
+    if (!suppliedSelection) {
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const extractAssignedKeystops = (children) => {
+          const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData, true);
+          const crawlerForChildren = new Crawler({ for: children });
+          const childNodes = crawlerForChildren.all();
+          childNodes.forEach((childNode) => {
+            const peerNodeData = getPeerPluginData(childNode);
+            if (peerNodeData && peerNodeData.hasKeystop) {
+              if (
+                !existsInArray(nodes, childNode.id)
+                && !existsInArray(keystopNodes, childNode.id)
+                && !existsInArray(topFrameNodes, childNode.id)
+              ) {
+                selectedNodes.push(childNode);
+                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
+                  extractAssignedKeystops(childNode.children);
+                }
+              }
+            }
+          });
+        };
+        extractAssignedKeystops(topFrame.children);
+      });
+    }
+
+    // sort nodes by visual hierarchy
+    const crawlerForSelection = new Crawler({ for: selectedNodes });
+    selectedNodes = crawlerForSelection.sorted();
+
+    // add them to the main array
+    selectedNodes.forEach((node: SceneNode) => {
+      if (
+        !existsInArray(nodes, node.id)
+        && !existsInArray(topFrameNodes, node.id)
+      ) {
+        nodes.push(node);
+      }
+    });
+
+    // re-paint the annotations
+    nodes.forEach((node: SceneNode) => {
+      // remove existing annotation
+      cleanupAnnotations(trackingData, [node.id]);
+
+      // set up Identifier instance for the node
+      const identifier = new Identifier({
+        for: node,
+        data: page,
+        isMercadoMode: this.isMercadoMode,
+        messenger,
+      });
+
+      // set up Painter instance for the node
+      const painter = new Painter({
+        for: node,
+        in: page,
+        isMercadoMode: this.isMercadoMode,
+      });
+
+      // set up function to draw annotations
+      const drawAnnotation = (hasText: boolean) => {
+        // draw the annotation (if the text exists)
+        let paintResult = null;
+        if (hasText) {
+          paintResult = painter.addKeystop();
+        }
+
+        // read the response from Painter; if it was unsuccessful, log and display the error
+        if (paintResult) {
+          messenger.handleResult(paintResult);
+          if (paintResult.status === 'error') {
+            return null;
+          }
+        }
+        return null;
+      };
+
+      // get/set the keystop info
+      const identifierResult = identifier.getSetKeystop();
+
+      // read the response from Identifier; if it was unsuccessful, log and display the error
+      if (identifierResult) {
+        messenger.handleResult(identifierResult);
+        if (identifierResult.status === 'error') {
+          return null;
+        }
+      }
+
+      drawAnnotation(true);
+
+      return null;
+    });
+
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
   }
 
   /**
@@ -635,26 +1038,96 @@ export default class App {
     return this.closeOrReset();
   }
 
-  /** WIP
-   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
-   * features specific to the Mercado Design Library. The flag is saved to local
-   * storage so that it persists across files.
+  /**
+   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Key Annotation
+   * based on the supplied `key`.
+   *
+   * @kind function
+   * @name keystopAddRemoveKeys
+   *
+   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
+   * @param {boolean} removeKey Default is `false`. If set to `true`, the list of keystops will not
+   * be re-painted after an update, effectively removing the annotation that corresponds to the
+   * supplied `id` in `options`.
+   *
+   * @returns {null}
+   */
+  keystopAddRemoveKeys(
+    options: {
+      id: string,
+      key: PluginKeystopKeys,
+    },
+    removeKey: boolean = false,
+  ) {
+    const { id, key } = options;
+    const node: BaseNode = figma.getNodeById(id);
+
+    if (node) {
+      // retrieve the node data
+      const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+      if (nodeData) {
+        let keys: Array<PluginKeystopKeys> = [];
+        if (nodeData.keys) {
+          keys = nodeData.keys;
+        }
+
+        let newKeys: Array<PluginKeystopKeys> = keys;
+        keys.forEach((keyEntry, index) => {
+          if (keyEntry === key) {
+            if (index > -1) {
+              newKeys = [
+                ...newKeys.slice(0, index),
+                ...newKeys.slice(index + 1),
+              ];
+            }
+          }
+        });
+
+        if (!removeKey) {
+          newKeys.push(key);
+        }
+
+        nodeData.keys = newKeys;
+        node.setPluginData(
+          DATA_KEYS.keystopNodeData,
+          JSON.stringify(nodeData),
+        );
+      }
+
+      // repaint the node
+      this.annotateKeystop([node as SceneNode]);
+    }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
+  }
+
+  /**
+   * @description Triggers a UI refresh with the current selection. In the case of the
+   * `a11y-keyboard` view context, the necessary data is collected and an object is passed
+   * over to the UI thread.
    *
    * @kind function
    * @name refreshGUI
    *
-   * @returns {Promise} Returns a promise for resolution.
+   * @returns {null}
    */
   static async refreshGUI() {
-    const { messenger, selection } = assemble(figma);
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
 
-    // set up initial selection
-    // tktk
-    const nodes: Array<SceneNode> = new Crawler({ for: selection }).all();
+    // retrieve existing options
+    const options: PluginOptions = await getOptions();
 
-    // get last-used filters from options
-    const currentOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    const { currentView, isMercadoMode } = currentOptions;
+    const { currentView, isMercadoMode } = options;
 
     // calculate UI size, based on view type and selection
     let { width } = GUI_SETTINGS.default;
@@ -677,38 +1150,248 @@ export default class App {
         return null;
     }
 
-    // send the updates to the UI
+    const nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
-    const selected = { items: nodes };
+    const items: Array<{
+      id: string,
+      name: string,
+      position?: number,
+      hasStop: boolean,
+      isSelected: boolean,
+    }> = [];
+
+    // specific to `a11y-keyboard`
+    if (currentView === 'a11y-keyboard') {
+      // grab tracking data for the page
+      const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+        page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+      );
+
+      // iterate through each node in a selection
+      const selectedNodes: Array<SceneNode> = selection;
+
+      // determine topFrames involved in the current selection
+      const crawlerForSelected = new Crawler({ for: selectedNodes });
+      const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
+      // iterate topFrames and select nodes that already have annotations
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
+        keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+
+        refreshAnnotations(
+          topFrame,
+          trackingData,
+          page,
+          isMercadoMode,
+        );
+      });
+
+      // iterate topFrames and select nodes that could have stops based on assignment data
+      topFrameNodes.forEach((topFrame: FrameNode) => {
+        const extractAssignedKeystops = (children) => {
+          const crawlerForChildren = new Crawler({ for: children });
+          const childNodes = crawlerForChildren.all();
+          childNodes.forEach((childNode) => {
+            const peerNodeData = getPeerPluginData(childNode);
+            if (peerNodeData && peerNodeData.hasKeystop) {
+              if (
+                !existsInArray(nodes, childNode.id)
+                && !existsInArray(topFrameNodes, childNode.id)
+              ) {
+                nodes.push(childNode);
+                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
+                  extractAssignedKeystops(childNode.children);
+                }
+              }
+            }
+          });
+        };
+        extractAssignedKeystops(topFrame.children);
+      });
+
+      // add in any directly-selected nodes that do not have annotations yet
+      selectedNodes.forEach((node: SceneNode) => {
+        if (
+          !existsInArray(nodes, node.id)
+          && !existsInArray(topFrameNodes, node.id)
+        ) {
+          nodes.push(node);
+        }
+      });
+
+      // set up selected bundle
+      nodes.forEach((node: SceneNode) => {
+        const { id, name } = node;
+        const {
+          hasStop,
+          keys,
+          position,
+        } = getKeystopPosition(node);
+        const viewObject = {
+          id,
+          name,
+          position,
+          hasStop,
+          isSelected: existsInArray(selectedNodes, node.id),
+          keys,
+        };
+
+        items.push(viewObject);
+      });
+    } else {
+      nodes.forEach((node: SceneNode) => {
+        const { id, name } = node;
+        const viewObject = {
+          id,
+          name,
+          hasStop: false,
+          isSelected: true,
+        };
+
+        items.push(viewObject);
+      });
+    }
+
+    // send the updates to the UI
     figma.ui.postMessage({
       action: 'refreshState',
       payload: {
         currentView,
         isMercadoMode,
-        selected,
+        items,
         sessionKey,
         // guiStartSize: newGUIHeight,
       },
     });
 
     // commit the calculated size
-    figma.ui.resize(
-      width,
-      height,
-    );
+    if (
+      (currentView !== 'a11y-keyboard')
+      || ((currentView === 'a11y-keyboard') && items.length < 1)
+    ) {
+      figma.ui.resize(
+        width,
+        height,
+      );
+    }
 
     messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
     return null;
   }
 
+  /**
+   * @description Retrieves a node based on the supplied `nodeId` or uses the current selection
+   * and removes associated Keystop annotations and auxilary key annotations.
+   *
+   * @kind function
+   * @name removeKeystops
+   *
+   * @param {string} nodeId The `id` of a Figma node with a Keystop annotation.
+   *
+   * @returns {null} Shows a Toast in the UI if a `nodeId` is not supplied.
+   */
+  async removeKeystops(nodeId?: string) {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
 
-  /** WIP
-   * @description Triggers a UI refresh with the current selection.
+    if (!nodeId && selection.length < 1) {
+      messenger.log('Cannot remove keystop; missing node ID(s)', 'error');
+    }
+
+    const nodesToRepaint: Array<SceneNode> = [];
+    let nodes = selection;
+    if (nodeId) {
+      const node: BaseNode = figma.getNodeById(nodeId);
+      if (node) {
+        nodes = [node];
+      }
+    }
+
+    // determine topFrames involved in the current selection
+    const crawler = new Crawler({ for: nodes });
+    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
+
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+    );
+
+    // iterate topFrames and remove annotation(s) that match node(s)
+    topFrameNodes.forEach((frameNode: FrameNode) => {
+      // read keystop list data from top frame
+      const keystopList: Array<{
+        id: string,
+        position: number,
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+
+      // remove item(s) from the keystop list
+      // remove item(s) from the tracking data
+      let newKeystopList = keystopList;
+      let newTrackingData = trackingData;
+      if (keystopList) {
+        nodes.forEach((node) => {
+          newKeystopList = updateArray(newKeystopList, node, 'id', 'remove');
+          newTrackingData = updateArray(newTrackingData, node, 'id', 'remove');
+        });
+      }
+
+      // set new keystop list
+      frameNode.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify(newKeystopList),
+      );
+
+      // set new tracking data
+      page.setPluginData(
+        DATA_KEYS.keystopAnnotations,
+        JSON.stringify(newTrackingData),
+      );
+
+      // use the new, sorted list to select the original nodes in figma
+      newKeystopList.forEach((keystopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(keystopItem.id);
+        if (itemNode) {
+          nodesToRepaint.push(itemNode as SceneNode);
+        }
+      });
+    });
+
+    // remove the corresponding annotations
+    const nodeIds: Array<string> = [];
+    nodes.forEach(node => nodeIds.push(node.id));
+
+    // remove the orphaned annotations
+    cleanupAnnotations(trackingData, nodeIds);
+
+    // repaint affected nodes
+    if (nodesToRepaint.length > 0) {
+      this.annotateKeystop(nodesToRepaint);
+    }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
+  }
+
+  /**
+   * @description Resizes the plugin UI based on either a default, or a provided
+   * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
    *
    * @kind function
    * @name resizeGUI
    *
-   * @param {string} sessionKey A rotating key used during the single run of the plugin.
+   * @param {Object} payload Should contain `bodyHeight` as the height of the current
+   * contents calculated in the UI.
+   *
+   * @returns {Promise} Returns a promise for resolution.
    */
   static async resizeGUI(
     payload: { bodyHeight: number },
@@ -727,13 +1410,16 @@ export default class App {
     }
   }
 
-  /** WIP
-   * @description Enables/disables a feature-flag (`isMercadoMode`) used to expose
-   * features specific to the Mercado Design Library. The flag is saved to local
-   * storage so that it persists across files.
+  /**
+   * @description Handles setting the UI view context based on a view type sent
+   * from the UI thread. The new view type is saved to `clientStorage` and the `refreshGUI`
+   * function is called.
    *
    * @kind function
    * @name setViewContext
+   *
+   * @param {Object} payload Should contain `newView` as the height of the current
+   * contents calculated in the UI.
    *
    * @returns {Promise} Returns a promise for resolution.
    */
@@ -741,11 +1427,7 @@ export default class App {
     const { newView }: { newView: PluginViewTypes } = payload;
 
     // retrieve existing options
-    let options: any = {};
-    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-    if (lastUsedOptions !== undefined) {
-      options = lastUsedOptions;
-    }
+    const options: PluginOptions = await getOptions();
 
     // set new view without changing other options
     options.currentView = newView;
@@ -753,7 +1435,7 @@ export default class App {
     // save new options to storage
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);
 
-    // App.refreshGUI(sessionKey);
+    // refresh the view
     App.refreshGUI();
   }
 
@@ -763,9 +1445,8 @@ export default class App {
    * @kind function
    * @name showGUI
    *
-   * @param {Object} options Can include `size` calling one of the UI sizes defined
-   * in GUI_SETTINGS  and/or an initialized instance of the Messenger class for
-   * logging (`messenger`). Both are optional.
+   * @param {Object} messenger An initialized instance of the Messenger class for
+   * logging (optional).
    *
    * @returns {null}
    */
@@ -786,12 +1467,11 @@ export default class App {
    * @kind function
    * @name showToolbar
    *
-   * @param {string} sessionKey A rotating key used during the single run of the plugin.
+   * @returns {Promise} Returns a promise for resolution.
    */
   static async showToolbar() {
     const { messenger } = assemble(figma);
 
-    // await App.refreshGUI(sessionKey);
     await App.refreshGUI();
     await App.showGUI(messenger);
   }
@@ -808,18 +1488,10 @@ export default class App {
    */
   static async toggleMercadoMode() {
     // retrieve existing options
-    let options: any = {};
-    const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
-
-    if (lastUsedOptions) {
-      options = lastUsedOptions;
-    }
+    const options: PluginOptions = await getOptions();
 
     // set preliminary mercado mode
-    let currentIsMercadoMode: boolean = false;
-    if (options && options.isMercadoMode !== undefined) {
-      currentIsMercadoMode = options.isMercadoMode;
-    }
+    const currentIsMercadoMode: boolean = options.isMercadoMode;
 
     // set new mercado mode flag without changing other options
     options.isMercadoMode = !currentIsMercadoMode;
@@ -832,5 +1504,148 @@ export default class App {
 
     // show the toolbar
     await this.showToolbar();
+  }
+
+  /**
+   * @description Retrieves a node based on the supplied `id` and uses the `position` to update
+   * the node’s Keystop annotation. Any annotations in the top frame with new numbers are
+   * re-painted.
+   *
+   * @kind function
+   * @name updateKeystops
+   *
+   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
+   *
+   * @returns {null}
+   */
+  async updateKeystops(options: {
+    id: string,
+    position: string,
+  }) {
+    const { messenger } = assemble(figma);
+
+    const nodeId: string = options.id;
+    // force the new position into a positive integer
+    let newPosition: number = parseInt(options.position, 10);
+
+    if (!nodeId || !newPosition) {
+      messenger.log('Cannot update keystops; missing node ID or new position', 'error');
+    }
+
+    const nodesToRepaint: Array<SceneNode> = [];
+    let nodes: Array<BaseNode> = [];
+    const node: BaseNode = figma.getNodeById(nodeId);
+    if (node) {
+      nodes = [node];
+    }
+
+    // determine topFrames involved in the current selection
+    const crawler = new Crawler({ for: nodes });
+    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
+
+    // iterate topFrames and remove annotation(s) that match node(s)
+    topFrameNodes.forEach((frameNode: FrameNode) => {
+      // read keystop list data from top frame
+      const keystopList: Array<{
+        id: string,
+        position: number,
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+
+      // remove item(s) from the keystop list
+      let newKeystopList = [];
+      if (keystopList) {
+        // number items
+        const numberItems = keystopList.length;
+
+        // validate and adjust based on actual number of items
+        if (newPosition > numberItems) {
+          newPosition = numberItems;
+        }
+
+        // find the old position
+        const index = 0;
+        const selectedItem = keystopList.filter(keystopItem => keystopItem.id === nodeId)[index];
+        const oldPosition = selectedItem.position;
+
+        // compare new/old positions and, if applicable, set up the new list
+        if (newPosition === oldPosition) {
+          // do nothing if the positions match
+          newKeystopList = keystopList;
+        } else {
+          const setPosition = (currentPosition: number, itemId: string): number => {
+            // the selected node always gets the new position
+            if (itemId === nodeId) {
+              return newPosition;
+            }
+
+            // how we manipulate the new position is based on relationship to the
+            // _selected_ node’s old position:
+            //
+            // nodes higher in the list relative to the old position may need to be moved lower;
+            // nodes lower in the list relative to the old position may need to be moved higher.
+            if (currentPosition > oldPosition) {
+              // when current position is less than the _new_ position, subtract 1
+              if (currentPosition <= newPosition) {
+                return (currentPosition - 1);
+              }
+            } else if (currentPosition >= newPosition) {
+              // when current position is greater than the _new_ position, add 1
+              return (currentPosition + 1);
+            }
+            return currentPosition;
+          };
+
+          // build the new list
+          keystopList.forEach((keystopItem) => {
+            // stub in new entry based on old values
+            const newItemEntry = {
+              id: keystopItem.id,
+              position: setPosition(keystopItem.position, keystopItem.id),
+            };
+
+            newKeystopList.push(newItemEntry);
+          });
+        }
+      }
+
+      // sort the new list by position
+      const sortByPosition = (keystopItemA, keystopItemB) => {
+        const aPosition = keystopItemA.position;
+        const bPosition = keystopItemB.position;
+        if (aPosition < bPosition) {
+          return -1;
+        }
+        if (aPosition > bPosition) {
+          return 1;
+        }
+        return 0;
+      };
+      newKeystopList = newKeystopList.sort(sortByPosition);
+
+      // commit the new keystop list
+      frameNode.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify(newKeystopList),
+      );
+
+      // use the new, sorted list to select the original nodes in figma
+      newKeystopList.forEach((keystopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(keystopItem.id);
+        if (itemNode) {
+          nodesToRepaint.push(itemNode as SceneNode);
+        }
+      });
+    });
+
+    // repaint affected nodes
+    this.annotateKeystop(nodesToRepaint);
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
   }
 }

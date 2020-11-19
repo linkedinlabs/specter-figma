@@ -25,24 +25,61 @@
   }
 
   @include hover {
-    span {
-      &.text {
-        color: $iconColorHover;
+    background: none;
+    border-color: rgba($black, 0);
+
+    &:not(:disabled) {
+      span {
+        &.text {
+          color: $iconColorHover;
+        }
+
+        &.icon {
+          svg {
+            path {
+              fill: $iconColorHover;
+            }
+          }
+        }
       }
     }
   }
 
   &:focus {
-    box-shadow: inset 0 0 0 2px $wl-action-primary;
+    &:not(:disabled) {
+      span {
+        &.text {
+          color: $iconColorHover;
+        }
 
-    span {
-      &.text {
-        color: $wl-action-primary;
+        &.icon {
+          svg {
+            path {
+              fill: $iconColorHover;
+            }
+          }
+        }
       }
     }
+  }
 
-    &:active {
-      box-shadow: inset 0 0 0 0 $wl-action-primary;
+  &:active {
+    &:not(:disabled) {
+      background: none;
+
+      span {
+        &.text {
+          color: $wl-action-primary;
+        }
+
+        &.icon {
+          svg {
+            path {
+              fill: $wl-action-primary;
+            }
+          }
+        }
+      }
     }
   }
 }

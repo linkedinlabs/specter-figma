@@ -11,20 +11,19 @@
   export let isDeletable = false;
   export let isDirty = false;
   export let isDisabled = false;
+  export let inputType = 'text';
+  export let inputWatchBlur = false;
   export let kind = 'inputText';
   export let labelText = 'Type something…';
   export let placeholder = null;
   export let nameId = 'text-input-id';
   export let resetValue = false;
+  export let selectWatchChange = false;
   export let value = null;
   export let options = [];
 
   const dispatch = createEventDispatcher();
   let originalValue = value;
-
-  const restoreValue = () => {
-    value = originalValue;
-  };
 
   const handleDelete = () => dispatch('deleteSignal');
 
@@ -44,16 +43,12 @@
 </script>
 
 <span class={className}>
-  {#if hideLabel}
-    <FormLabel
-      on:handleRestore={() => restoreValue()}
-      labelText={labelText}
-      isDirty={isDirty}
-      isDisabled={isDisabled}
-      nameId={nameId}
-      value={value}
-    />
-  {/if}
+  <FormLabel
+    hide={hideLabel}
+    labelText={labelText}
+    isDirty={isDirty}
+    nameId={nameId}
+  />
 
   <span class="form-inner-row">
     {#if kind === 'inputSelect'}
@@ -62,18 +57,23 @@
         disabled={isDisabled}
         nameId={nameId}
         options={options}
+        on:saveSignal
         bind:value={value}
+        watchChange={selectWatchChange}
       />
     {/if}
 
     {#if kind === 'inputText'}
       <FigmaInput
+        autoSelect={true}
         className="form-element element-type-text"
         disabled={isDisabled}
+        inputType={inputType}
         nameId={nameId}
         placeholder={placeholder}
         on:saveSignal
         bind:value={value}
+        watchBlur={inputWatchBlur}
       />
     {/if}
 

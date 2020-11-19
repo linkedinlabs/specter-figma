@@ -34,7 +34,7 @@ export default class Crawler {
     return this.array[0];
   }
 
-  /**
+  /** WIP
    * @description Looks into the selection array for any groups and pulls out individual nodes,
    * effectively flattening the selection. NOTE: Component and Instance types are included to
    * allow Specter to annotate at the top-level. If they are excluded, components nested within
@@ -45,17 +45,23 @@ export default class Crawler {
    *
    * @returns {Object} All items (including children) individual in an updated array.
    */
-  all() {
+  all(excludeComponents: boolean = false) {
     const initialSelection = this.array;
     const flatSelection = [];
+    const excludedTypes: Array<string> = [
+      CONTAINER_NODE_TYPES.group,
+      CONTAINER_NODE_TYPES.frame,
+    ];
+
+    if (excludeComponents) {
+      excludedTypes.push(CONTAINER_NODE_TYPES.component);
+      excludedTypes.push(CONTAINER_NODE_TYPES.instance);
+    }
 
     // iterate through initial selection
     initialSelection.forEach((node: any) => {
       if (
-        node.type !== CONTAINER_NODE_TYPES.group
-        && node.type !== CONTAINER_NODE_TYPES.frame
-        // && node.type !== CONTAINER_NODE_TYPES.component
-        // && node.type !== CONTAINER_NODE_TYPES.instance
+        excludedTypes.filter(type => type === node.type).length < 1
         && node.visible
         && !node.locked
       ) {
@@ -146,7 +152,9 @@ export default class Crawler {
 
   /**
    * @description Looks into the selection array for any groups and pulls out individual nodes,
-   * effectively flattening the selection.
+   * effectively flattening the selection. Sorts the resulting array of nodes by `y` position
+   * and then `x` if `y` values are equal. Position is determined absolutely
+   * (relative to only the page).
    *
    * @kind function
    * @name allSorted
@@ -156,20 +164,8 @@ export default class Crawler {
   allSorted() {
     // start with flattened selection of all nodes
     const nodes = this.all();
-
-    // sort by `y` position and then `x` if `y` values are equal
-    const sortByPosition = (nodeA, nodeB) => {
-      const aPos = { x: nodeA.absoluteTransform[0][2], y: nodeA.absoluteTransform[1][2] };
-      const bPos = { x: nodeB.absoluteTransform[0][2], y: nodeB.absoluteTransform[1][2] };
-
-      if (aPos.y === bPos.y) {
-        return aPos.x - bPos.x;
-      }
-      return aPos.y - bPos.y;
-    };
-
-    const sortedLayers = nodes.sort(sortByPosition);
-    return sortedLayers;
+    const sortedNodes = this.sorted(nodes);
+    return sortedNodes;
   }
 
   /**
@@ -1082,5 +1078,88 @@ export default class Crawler {
     result.messages.log = 'Padding positions calculated';
     result.payload = thePositions;
     return result;
+  }
+
+  /**
+   * @description Sorts an array of nodes by `y` position and then `x` if `y` values are equal.
+   * Position is determined absolutely (relative to only the page).
+   *
+   * @kind function
+   * @name sorted
+   *
+   * @param {Array} nodes Array of nodes to sort by position.
+   *
+   * @returns {Object} All items (including children) individual in an updated array.
+   */
+  sorted(nodes?: Array<SceneNode>) {
+    // sort by `y` position and then `x` if `y` values are equal
+    const sortByPosition = (nodeA, nodeB) => {
+      const aPos = { x: nodeA.absoluteTransform[0][2], y: nodeA.absoluteTransform[1][2] };
+      const bPos = { x: nodeB.absoluteTransform[0][2], y: nodeB.absoluteTransform[1][2] };
+
+      if (aPos.y === bPos.y) {
+        return aPos.x - bPos.x;
+      }
+      return aPos.y - bPos.y;
+    };
+
+    // set up a sortable array without a read-only reference
+    const nodesToSort = [];
+    if (nodes && nodes.length > 0) {
+      nodes.forEach(node => nodesToSort.push(node));
+    } else {
+      this.array.forEach(node => nodesToSort.push(node));
+    }
+
+    const sortedNodes: Array<SceneNode> = nodesToSort.sort(sortByPosition);
+    return sortedNodes;
+  }
+
+  /**
+   * @description Looks into the selection array and returns the unique top-level frames
+   * within the selection. `PAGE` is not returned as a top-level frame, so nodes not
+   * placed inside a top-level frame are ignored.
+   *
+   * @kind function
+   * @name topFrames
+   *
+   * @returns {Array} All top-level frame nodes.
+   */
+  topFrames() {
+    const topFrameNodes: Array<FrameNode> = [];
+    const nodes = this.array;
+    nodes.forEach((node: BaseNode) => {
+      const topFrame: FrameNode = findTopFrame(node);
+
+      let topFrameExists: boolean = false;
+      topFrameNodes.forEach((existingTopFrame: FrameNode) => {
+        if (existingTopFrame.id === topFrame.id) {
+          topFrameExists = true;
+        }
+      });
+
+      if (!topFrameExists) {
+        topFrameNodes.push(topFrame);
+      }
+    });
+
+    return topFrameNodes;
+  }
+
+  /**
+   * @description Takes a single node and finds its corresponding top-level frame (if it
+   * is placed inside one). `PAGE` is not returned as a top-level frame, so nodes not
+   * placed inside a top-level frame are ignored.
+   *
+   * @kind function
+   * @name topFrames
+   *
+   * @returns {Array} All top-level frame nodes.
+   */
+  topFrame() {
+    const node = this.first();
+    const topFrame: FrameNode = findTopFrame(node);
+
+    return topFrame;
   }
 }

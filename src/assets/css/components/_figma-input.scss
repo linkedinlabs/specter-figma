@@ -17,7 +17,7 @@
   letter-spacing: 0.005em;
   border: 1px solid transparent;
   border-radius: 2px;
-  background-color: $wl-ctrl-secondary;
+  background: none;
   outline: none;
 
   @include hover {
@@ -67,5 +67,24 @@
     @include hover {
       border: 1px solid transparent;
     }
+  }
+
+  // hide number arrows
+  /* stylelint-disable property-no-vendor-prefix */
+  &[type=number] {
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+  /* stylelint-enable property-no-vendor-prefix */
+}
+
+.user-input {
+  .input {
+    @include figma-input;
   }
 }

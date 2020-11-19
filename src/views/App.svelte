@@ -17,8 +17,8 @@
   export let isMercadoMode = false;
   export let isUserInput = false;
   export let isInfoPanel = false;
+  export let items = null;
   export let newSessionKey = null;
-  export let selected = null;
   export let userInputValue = null;
   export let viewContext = null;
 
@@ -55,7 +55,7 @@
       && !isUserInput
       && !isInfoPanel
       && (wasBodyHeight !== bodyHeight)
-      && (selected.items.length > 0)
+      && (items.length > 0)
     ) {
       parent.postMessage({
         pluginMessage: {
@@ -99,7 +99,8 @@
         />
       {:else if $viewContextStored}
         <AccessibilityBase
-          selected={selected}
+          on:handleAction={customEvent => handleAction(customEvent.detail)}
+          items={items}
           viewContext={$viewContextStored}
         />
       {/if}

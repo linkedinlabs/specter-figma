@@ -2,16 +2,17 @@
   import { beforeUpdate } from 'svelte';
   import { openItems } from './stores';
 
-  import ButtonAction from './forms-controls/ButtonAction';
+  import ButtonAddStop from './forms-controls/ButtonAddStop';
   import ItemExpandedContent from './ItemExpandedContent';
   import ItemHeader from './ItemHeader';
 
   // props
-  export let selected = null;
+  export let items = null;
   export let type = null;
 
   // locals
-  let { items } = selected;
+  let itemsDirty = items;
+  let addNumber = 0;
 
   const checkIsOpen = (itemId, typeScope) => {
     let itemIsOpen = false;
@@ -26,10 +27,6 @@
     }
 
     return itemIsOpen;
-  };
-
-  const addItemEntry = (typeScope) => {
-    console.log(`add me: ${typeScope}`); // eslint-disable-line no-console
   };
 
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
@@ -75,8 +72,6 @@
       return updatedItemsArray;
     };
 
-    console.log(`update me: ${itemId} – ${operationType}`); // eslint-disable-line no-console
-
     // ---- toggle `isOpen`
     if (operationType === 'toggleOpen') {
       // retrieve open list from store and check for existing entry
@@ -105,40 +100,50 @@
     }
   };
 
+  const setAddStopButton = (currentItems) => {
+    addNumber = 0;
+
+    currentItems.forEach((item) => {
+      if (!item.hasStop) {
+        addNumber += 1;
+      }
+    });
+  };
+
   beforeUpdate(() => {
-    items = selected.items;
+    itemsDirty = items;
+    setAddStopButton(itemsDirty);
   });
 </script>
 
 <section class="items-list-holder">
   <ul class="items-list">
-    {#each items as item, i (item.id)}
-      <li>
+    {#each itemsDirty.filter(filterItem => filterItem.hasStop) as item, i (item.id)}
+      <li class="single-item">
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
+          isSelected={item.isSelected}
           itemId={item.id}
-          position={i + 1}
+          labelText={item.name}
+          position={item.position}
           type={type}
         />
         {#if checkIsOpen(item.id, type)}
           <ItemExpandedContent
             itemId={item.id}
+            isSelected={item.isSelected}
+            keys={item.keys}
             type={type}
           />
         {/if}
       </li>
     {/each}
   </ul>
-  <ButtonAction
-    on:handleAction={() => addItemEntry(type)}
-    action="corners"
-    className="add-stop"
-    isReversed={true}
-    text="Add focus stop…"
-  >
-    <svg viewBox="0 0 32 32">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M15.5 15.5V10.5H16.5V15.5H21.5V16.5H16.5V21.5H15.5V16.5H10.5V15.5H15.5Z"/>
-    </svg>
-  </ButtonAction>
+  <ButtonAddStop
+    on:handleAction
+    disabled={addNumber < 1}
+    number={addNumber}
+    type={type}
+  />
 </section>
