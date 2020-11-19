@@ -77,7 +77,7 @@ const cleanupAnnotations = (
  *
  * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
  * @param {Array} trackingData The page-level node tracking data.
- * @param {Object} page The Figma PageNode
+ * @param {Object} page The Figma PageNode.
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
  *
  * @returns {null}

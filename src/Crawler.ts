@@ -34,14 +34,18 @@ export default class Crawler {
     return this.array[0];
   }
 
-  /** WIP
+  /**
    * @description Looks into the selection array for any groups and pulls out individual nodes,
-   * effectively flattening the selection. NOTE: Component and Instance types are included to
-   * allow Specter to annotate at the top-level. If they are excluded, components nested within
-   * components will also be annotated.
+   * effectively flattening the selection. NOTE: Component and Instance types are included by
+   * default as single nodes to allow Specter to annotate at the top-level. If they are excluded
+   * (set `excludeComponents` to `true`), their children will be evaluated and components nested
+   * within components will also be annotated.
    *
    * @kind function
    * @name all
+   *
+   * @param {boolean} excludeComponents When set to `true` (default), Component and Instance
+   * type nodes will have their children evaluated for inclusion in the flattened selection.
    *
    * @returns {Object} All items (including children) individual in an updated array.
    */
