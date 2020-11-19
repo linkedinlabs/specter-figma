@@ -678,6 +678,13 @@ export default class Identifier {
         textToSet = parseVariants(textToSet, componentSet);
       }
 
+      // check for annotation override in Stapler
+      const peerNodeData = getPeerPluginData(mainComponent);
+      if (peerNodeData && peerNodeData.annotationText) {
+        const { annotationText } = peerNodeData;
+        textToSet = annotationText;
+      }
+
       // set `textToSet` on the node settings as the component name
       // set optional `subtextToSet` on the node settings based on existing overrides
       setAnnotationTextSettings(textToSet, subtextToSet, symbolType, this.node.id, this.page);
