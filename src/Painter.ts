@@ -432,12 +432,16 @@ const positionAnnotation = (
 
   const bannerGroup: FrameNode = figma.createFrame();
   bannerGroup.name = isMeasurement ? 'Banner' : groupName;
+
+  // auto-layout
   bannerGroup.layoutMode = 'VERTICAL';
   bannerGroup.primaryAxisAlignItems = 'CENTER';
   bannerGroup.primaryAxisSizingMode = 'AUTO';
   bannerGroup.counterAxisAlignItems = 'CENTER';
   bannerGroup.counterAxisSizingMode = 'AUTO';
   bannerGroup.layoutAlign = 'INHERIT';
+
+  // padding / fills
   bannerGroup.fills = [];
 
   if (rectangle) {
@@ -457,9 +461,16 @@ const positionAnnotation = (
   if (isMeasurement && icon) {
     const measurementGroup: FrameNode = figma.createFrame();
     measurementGroup.name = groupName;
+
+    // auto-layout
     measurementGroup.layoutMode = 'VERTICAL';
+    measurementGroup.primaryAxisAlignItems = 'CENTER';
+    measurementGroup.primaryAxisSizingMode = 'AUTO';
+    measurementGroup.counterAxisAlignItems = 'CENTER';
     measurementGroup.counterAxisSizingMode = 'AUTO';
-    measurementGroup.layoutAlign = 'CENTER';
+    measurementGroup.layoutAlign = 'INHERIT';
+
+    // padding / fills
     measurementGroup.itemSpacing = 3;
     measurementGroup.fills = [];
 
