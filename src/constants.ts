@@ -9,7 +9,7 @@
  * @name PLUGIN_IDENTIFIER
  * @type {string}
  */
-const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
+const PLUGIN_IDENTIFIER: string = 'com.linkedin.figma.specter-plugin';
 
 /**
  * @description The public-facing name for the plugin. This should match the
@@ -19,7 +19,7 @@ const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
  * @name PLUGIN_NAME
  * @type {string}
  */
-const PLUGIN_NAME = 'Specter';
+const PLUGIN_NAME: string = 'Specter';
 
 /**
  * @description An object containing the current string constants used as keys in plugin data.
@@ -30,7 +30,13 @@ const PLUGIN_NAME = 'Specter';
  * @name DATA_KEYS
  * @type {Object}
  */
-const DATA_KEYS = {
+const DATA_KEYS: {
+  options: string,
+  bundle: string,
+  keystopNodeData: string,
+  keystopAnnotations: string,
+  keystopList: string,
+} = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
@@ -45,7 +51,14 @@ const DATA_KEYS = {
  * @name COLORS
  * @type {Object}
  */
-const COLORS = {
+const COLORS: {
+  component: string,
+  custom: string,
+  dimension: string,
+  keystop: string,
+  spacing: string,
+  style: string,
+} = {
   component: '#6255ca',
   custom: '#c8006a',
   dimension: '#4c7100',
