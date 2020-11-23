@@ -233,8 +233,10 @@ const buildAnnotation = (options: {
   rectangle.layoutMode = 'HORIZONTAL';
   rectangle.counterAxisSizingMode = 'AUTO';
   rectangle.layoutAlign = 'CENTER';
-  rectangle.horizontalPadding = isMeasurement ? 3 : 16;
-  rectangle.verticalPadding = isMeasurement ? 0.5 : 4.5;
+  rectangle.paddingLeft = isMeasurement ? 3 : 16;
+  rectangle.paddingRight = isMeasurement ? 3 : 16;
+  rectangle.paddingTop = isMeasurement ? 0.5 : 4.5;
+  rectangle.paddingBottom = isMeasurement ? 0.5 : 4.5;
   rectangle.itemSpacing = 0;
 
   // style it – set the rectangle type, color, and opacity
