@@ -630,7 +630,7 @@ const positionAnnotation = (
       if (frameEdgeX === 'left') {
         group.layoutMode = 'HORIZONTAL';
         group.appendChild(rectangle);
-        diamondVector.layoutAlign = 'CENTER';
+        diamondVector.layoutAlign = 'INHERIT';
         diamondVector.rotation = 270;
 
         // update outer constraints
@@ -647,7 +647,7 @@ const positionAnnotation = (
       // move to left of node, left orientation
       if (frameEdgeX === 'right') {
         group.layoutMode = 'HORIZONTAL';
-        diamondVector.layoutAlign = 'CENTER';
+        diamondVector.layoutAlign = 'INHERIT';
         diamondVector.rotation = 90;
 
         // update outer constraints
