@@ -230,13 +230,21 @@ const buildAnnotation = (options: {
   // build the rounded rectangle with auto-layout properties
   const rectangle: FrameNode = figma.createFrame();
   rectangle.name = 'Box / Text';
+
+  // auto-layout
   rectangle.layoutMode = 'HORIZONTAL';
+  rectangle.primaryAxisSizingMode = 'AUTO';
+  rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
   rectangle.counterAxisSizingMode = 'AUTO';
-  rectangle.layoutAlign = 'CENTER';
+  rectangle.counterAxisAlignItems = 'CENTER';
+  rectangle.layoutAlign = 'INHERIT';
+  rectangle.layoutGrow = 0;
+
+  // set padding and item spacing
   rectangle.paddingLeft = isMeasurement ? 3 : 16;
   rectangle.paddingRight = isMeasurement ? 3 : 16;
   rectangle.paddingTop = isMeasurement ? 0.5 : 4.5;
-  rectangle.paddingBottom = isMeasurement ? 0.5 : 4.5;
+  rectangle.paddingBottom = isMeasurement ? 2 : 6;
   rectangle.itemSpacing = 0;
 
   // style it – set the rectangle type, color, and opacity
@@ -277,12 +285,15 @@ const buildAnnotation = (options: {
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
   }];
-  text.layoutAlign = 'CENTER';
+
+  // set auto-layout
+  text.layoutAlign = 'INHERIT';
+  text.layoutGrow = 0;
 
   // set text – cannot do this before defining `fontName`
   text.characters = setText;
 
-  // position the text in auto-layout
+  // position the text in the frame
   text.textAlignVertical = 'CENTER';
   text.textAlignHorizontal = 'CENTER';
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
@@ -422,15 +433,22 @@ const positionAnnotation = (
   const bannerGroup: FrameNode = figma.createFrame();
   bannerGroup.name = isMeasurement ? 'Banner' : groupName;
   bannerGroup.layoutMode = 'VERTICAL';
+  bannerGroup.primaryAxisAlignItems = 'CENTER';
+  bannerGroup.primaryAxisSizingMode = 'AUTO';
+  bannerGroup.counterAxisAlignItems = 'CENTER';
   bannerGroup.counterAxisSizingMode = 'AUTO';
-  bannerGroup.layoutAlign = 'CENTER';
+  bannerGroup.layoutAlign = 'INHERIT';
   bannerGroup.fills = [];
 
-  if (rectangle) { bannerGroup.appendChild(rectangle); }
+  if (rectangle) {
+    bannerGroup.appendChild(rectangle);
+  }
+
   if (diamond) {
     // flatten it and convert to vector
     diamondVector = figma.flatten([diamond]);
-    diamondVector.layoutAlign = 'CENTER';
+    diamondVector.layoutGrow = 0;
+    diamondVector.layoutAlign = 'INHERIT';
 
     bannerGroup.appendChild(diamondVector);
   }
