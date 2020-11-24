@@ -69,7 +69,7 @@ const setRelaunchCommands = (
   // pass the button commands object to Figma's relaunch button helper
   node.setRelaunchData(buttonBundle);
 
-  // add “Annotate” to top frame, if in-use
+  // add “Annotate” to top frame
   const topFrameNode = findTopFrame(node);
   if (topFrameNode) {
     topFrameNode.setRelaunchData({
@@ -77,8 +77,8 @@ const setRelaunchCommands = (
     });
   }
 
-  // add “Open Specter” to page, if in-use
-  figma.currentPage.setRelaunchData({
+  // add “Open Specter” to page
+  figma.currentPage.parent.setRelaunchData({
     tools: '',
   });
 
