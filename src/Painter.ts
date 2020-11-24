@@ -531,7 +531,7 @@ const buildAnnotation = (options: {
   }];
 
   // create text node
-  const text: TextNode = buildText(type, color, setText);
+  const text: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), setText);
 
   // create icon
   let icon: FrameNode = null;
@@ -603,7 +603,7 @@ const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
   // create text node
   let text: TextNode = null;
   if (setText) {
-    text = buildText('keystop', color, setText);
+    text = buildText('keystop', hexToDecimalRgb('#ffffff'), setText);
     text.fontSize = 14;
   }
 
