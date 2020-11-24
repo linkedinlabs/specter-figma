@@ -435,10 +435,10 @@ const positionAnnotation = (
 
   // auto-layout
   bannerGroup.layoutMode = 'VERTICAL';
-  bannerGroup.primaryAxisAlignItems = 'CENTER';
   bannerGroup.primaryAxisSizingMode = 'AUTO';
-  bannerGroup.counterAxisAlignItems = 'CENTER';
+  bannerGroup.primaryAxisAlignItems = 'CENTER';
   bannerGroup.counterAxisSizingMode = 'AUTO';
+  bannerGroup.counterAxisAlignItems = 'CENTER';
   bannerGroup.layoutAlign = 'INHERIT';
 
   // padding / fills
@@ -464,10 +464,10 @@ const positionAnnotation = (
 
     // auto-layout
     measurementGroup.layoutMode = 'VERTICAL';
-    measurementGroup.primaryAxisAlignItems = 'CENTER';
     measurementGroup.primaryAxisSizingMode = 'AUTO';
     measurementGroup.counterAxisAlignItems = 'CENTER';
     measurementGroup.counterAxisSizingMode = 'AUTO';
+    measurementGroup.primaryAxisAlignItems = 'CENTER';
     measurementGroup.layoutAlign = 'INHERIT';
 
     // padding / fills
