@@ -26,13 +26,15 @@ const assemble = (context: any = null) => {
 };
 
 /**
- * @description Invokes Figma’s `setRelaunchData` on the passed node and (if applicable),
- * the container component node.
+ * @description Invokes Figma’s `setRelaunchData` on the passed node and sets up
+ * relaunch buttons. The buttons in-use are also saved/tracked on the node’s data.
  *
  * @kind function
  * @name setRelaunchCommands
  *
- * @param {Object} node The node (`SceneNode`) to use with `setRelaunchData`.
+ * @param {Object} node The node (`BaseNode`) to use with `setRelaunchData`.
+ * @param {string} command The possible commands to pass along. These commands must match
+ * what is available in the manfiest.json file under “relaunchButtons”.
  *
  * @returns {null}
  */
@@ -40,27 +42,35 @@ const setRelaunchCommands = (
   node: BaseNode,
   command: 'annotate' | 'annotate-custom' | 'measure',
 ): void => {
-  const existingRelaunchButtons = JSON.parse(node.getPluginData(DATA_KEYS.relaunch) || null);
-
   const commandBundle = [];
+
+  // check for existing buttons (saved to plugin data because we cannot read them from
+  // Figma directly) and add them to the temporary bundle array
+  const existingRelaunchButtons = JSON.parse(node.getPluginData(DATA_KEYS.relaunch) || null);
   if (existingRelaunchButtons && existingRelaunchButtons.length > 0) {
     existingRelaunchButtons.forEach((existingCommand) => {
       commandBundle.push(existingCommand);
-    });    
+    });
   }
 
+  // if the current `command` is new, add it to the bundle array
   if (!commandBundle.includes(command)) {
     commandBundle.push(command);
   }
 
+  // set up the button commands object that Figma expects.
+  // add commands from the command bundle to it
   const buttonBundle: {} = {};
   commandBundle.forEach((bundledCommand) => {
-    buttonBundle[bundledCommand] = 'Run again…';
-  })
+    buttonBundle[bundledCommand] = '';
+  });
 
+  // pass the button commands object to Figma's relaunch button helper
   node.setRelaunchData(buttonBundle);
 
+  // save the current command bundle array to the node for future use
   node.setPluginData(DATA_KEYS.relaunch, JSON.stringify(commandBundle));
+
   return null;
 };
 
