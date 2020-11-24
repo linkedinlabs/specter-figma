@@ -87,5 +87,26 @@
       "name": "Annotate Mercado Corners",
       "command": "corners"
     }
+  ],
+  "relaunchButtons": [
+    {
+      "command": "annotate",
+      "name": "Annotate",
+      "multipleSelection": true
+    },
+    {
+      "command": "annotate-custom",
+      "name": "Custom Annotation…",
+      "multipleSelection": true
+    },
+    {
+      "command": "measure",
+      "name": "Measure",
+      "multipleSelection": true
+    },
+    {
+      "name": "Open Specter",
+      "command": "tools"
+    }
   ]
 }

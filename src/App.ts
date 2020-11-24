@@ -4,6 +4,7 @@ import Messenger from './Messenger';
 import Painter from './Painter';
 import {
   existsInArray,
+  findTopFrame,
   getPeerPluginData,
   updateArray,
 } from './Tools';
@@ -270,6 +271,68 @@ const getOptions = async (): Promise<PluginOptions> => {
   return options;
 };
 
+/*
+ * @description Invokes Figma’s `setRelaunchData` on the passed node and sets up
+ * relaunch buttons. The buttons in-use are also saved/tracked on the node’s data.
+ *
+ * @kind function
+ * @name setRelaunchCommands
+ *
+ * @param {Object} node The node (`BaseNode`) to use with `setRelaunchData`.
+ * @param {string} command The possible commands to pass along. These commands must match
+ * what is available in the manfiest.json file under “relaunchButtons”.
+ *
+ * @returns {null}
+ */
+const setRelaunchCommands = (
+  node: BaseNode,
+  command: 'annotate' | 'annotate-custom' | 'measure',
+): void => {
+  const commandBundle = [];
+
+  // check for existing buttons (saved to plugin data because we cannot read them from
+  // Figma directly) and add them to the temporary bundle array
+  const existingRelaunchButtons = JSON.parse(node.getPluginData(DATA_KEYS.relaunch) || null);
+  if (existingRelaunchButtons && existingRelaunchButtons.length > 0) {
+    existingRelaunchButtons.forEach((existingCommand) => {
+      commandBundle.push(existingCommand);
+    });
+  }
+
+  // if the current `command` is new, add it to the bundle array
+  if (!commandBundle.includes(command)) {
+    commandBundle.push(command);
+  }
+
+  // set up the button commands object that Figma expects.
+  // add commands from the command bundle to it
+  const buttonBundle: {} = {};
+  commandBundle.forEach((bundledCommand) => {
+    buttonBundle[bundledCommand] = '';
+  });
+
+  // pass the button commands object to Figma's relaunch button helper
+  node.setRelaunchData(buttonBundle);
+
+  // add “Annotate” to top frame
+  const topFrameNode = findTopFrame(node);
+  if (topFrameNode) {
+    topFrameNode.setRelaunchData({
+      annotate: '',
+    });
+  }
+
+  // add “Open Specter” to page
+  figma.currentPage.parent.setRelaunchData({
+    tools: '',
+  });
+
+  // save the current command bundle array to the node for future use
+  node.setPluginData(DATA_KEYS.relaunch, JSON.stringify(commandBundle));
+
+  return null;
+}
+
 /**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
@@ -315,7 +378,6 @@ export default class App {
 
     return null;
   }
-
 
   /**
    * @description Matches corner radius of a node (or inner-child node) with a matrix
@@ -684,6 +746,9 @@ export default class App {
         // draw the annotation
         drawAnnotation(hasText);
       }
+
+      setRelaunchCommands(node, 'annotate');
+
       return null;
     });
 
@@ -769,6 +834,8 @@ export default class App {
 
     // set the custom text
     setText(handleSetTextResult);
+    setRelaunchCommands(node, 'annotate-custom');
+
     return null;
   }
 
@@ -834,6 +901,7 @@ export default class App {
 
     if (selection.length === 1) {
       paintResult = painter.addDimMeasurement();
+      setRelaunchCommands(node, 'measure');
     }
 
     // read the response from Painter; log and display message(s)

@@ -340,11 +340,21 @@ const buildRectangle = (
   // build base rectangle (used for most annotations)
   const rectangle: FrameNode = figma.createFrame();
   rectangle.name = 'Box / Text';
+
+  // auto-layout
   rectangle.layoutMode = 'HORIZONTAL';
+  rectangle.primaryAxisSizingMode = 'AUTO';
+  rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
   rectangle.counterAxisSizingMode = 'AUTO';
-  rectangle.layoutAlign = 'CENTER';
-  rectangle.horizontalPadding = 16;
-  rectangle.verticalPadding = 4.5;
+  rectangle.counterAxisAlignItems = 'CENTER';
+  rectangle.layoutAlign = 'INHERIT';
+  rectangle.layoutGrow = 0;
+
+  // set padding and item spacing
+  rectangle.paddingLeft = 16;
+  rectangle.paddingRight = 16;
+  rectangle.paddingTop = 4.5;
+  rectangle.paddingBottom = 6;
   rectangle.itemSpacing = 0;
 
   // style it – set the rectangle type, color, and opacity
@@ -363,6 +373,10 @@ const buildRectangle = (
   ) {
     rectangle.horizontalPadding = 3;
     rectangle.verticalPadding = 0.5;
+    rectangle.paddingLeft = 3;
+    rectangle.paddingRight = 3;
+    rectangle.paddingTop = 0.5;
+    rectangle.paddingBottom = 2;
   }
 
   // ------- update rectangle for keystop annotations
@@ -420,12 +434,15 @@ const buildText = (
     type: 'SOLID',
     color: hexToDecimalRgb('#ffffff'),
   }];
-  text.layoutAlign = 'CENTER';
+
+  // set auto-layout
+  text.layoutAlign = 'INHERIT';
+  text.layoutGrow = 0;
 
   // set text – cannot do this before defining `fontName`
-  text.characters = characters;
+  text.characters = setText;
 
-  // position the text in auto-layout
+  // position the text in the frame
   text.textAlignVertical = 'CENTER';
   text.textAlignHorizontal = 'CENTER';
   text.textAutoResize = 'WIDTH_AND_HEIGHT';
@@ -766,16 +783,27 @@ const positionAnnotation = (
 
   const bannerGroup: FrameNode = figma.createFrame();
   bannerGroup.name = isMeasurement ? 'Banner' : groupName;
+
+  // auto-layout
   bannerGroup.layoutMode = 'VERTICAL';
+  bannerGroup.primaryAxisSizingMode = 'AUTO';
+  bannerGroup.primaryAxisAlignItems = 'CENTER';
   bannerGroup.counterAxisSizingMode = 'AUTO';
-  bannerGroup.layoutAlign = 'CENTER';
+  bannerGroup.counterAxisAlignItems = 'CENTER';
+  bannerGroup.layoutAlign = 'INHERIT';
+
+  // padding / fills
   bannerGroup.fills = [];
 
-  if (rectangle) { bannerGroup.appendChild(rectangle); }
+  if (rectangle) {
+    bannerGroup.appendChild(rectangle);
+  }
+
   if (diamond) {
     // flatten it and convert to vector
     diamondVector = figma.flatten([diamond]);
-    diamondVector.layoutAlign = 'CENTER';
+    diamondVector.layoutGrow = 0;
+    diamondVector.layoutAlign = 'INHERIT';
 
     bannerGroup.appendChild(diamondVector);
   }
@@ -785,11 +813,18 @@ const positionAnnotation = (
     if (isMeasurement) {
       const groupWithIcon: FrameNode = figma.createFrame();
       groupWithIcon.name = groupName;
-      groupWithIcon.fills = [];
+
+      // auto-layout
       groupWithIcon.layoutMode = 'VERTICAL';
+      groupWithIcon.primaryAxisSizingMode = 'AUTO';
+      groupWithIcon.counterAxisAlignItems = 'CENTER';
       groupWithIcon.counterAxisSizingMode = 'AUTO';
-      groupWithIcon.layoutAlign = 'CENTER';
+      groupWithIcon.primaryAxisAlignItems = 'CENTER';
+      groupWithIcon.layoutAlign = 'INHERIT';
+
+      // padding / fills
       groupWithIcon.itemSpacing = 3;
+      groupWithIcon.fills = [];
 
       // append children
       groupWithIcon.appendChild(bannerGroup);
@@ -968,7 +1003,7 @@ const positionAnnotation = (
       if (frameEdgeX === 'left') {
         group.layoutMode = 'HORIZONTAL';
         group.appendChild(rectangle);
-        diamondVector.layoutAlign = 'CENTER';
+        diamondVector.layoutAlign = 'INHERIT';
         diamondVector.rotation = 270;
 
         // update outer constraints
@@ -985,7 +1020,7 @@ const positionAnnotation = (
       // move to left of node, left orientation
       if (frameEdgeX === 'right') {
         group.layoutMode = 'HORIZONTAL';
-        diamondVector.layoutAlign = 'CENTER';
+        diamondVector.layoutAlign = 'INHERIT';
         diamondVector.rotation = 90;
 
         // update outer constraints
