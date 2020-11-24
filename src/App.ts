@@ -271,7 +271,7 @@ const getOptions = async (): Promise<PluginOptions> => {
   return options;
 };
 
-/*
+/**
  * @description Invokes Figma’s `setRelaunchData` on the passed node and sets up
  * relaunch buttons. The buttons in-use are also saved/tracked on the node’s data.
  *
@@ -331,7 +331,7 @@ const setRelaunchCommands = (
   node.setPluginData(DATA_KEYS.relaunch, JSON.stringify(commandBundle));
 
   return null;
-}
+};
 
 /**
  * @description A class to handle core app logic and dispatch work to other classes.

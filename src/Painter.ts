@@ -432,7 +432,7 @@ const buildText = (
   text.lineHeight = { value: 125, unit: 'PERCENT' };
   text.fills = [{
     type: 'SOLID',
-    color: hexToDecimalRgb('#ffffff'),
+    color,
   }];
 
   // set auto-layout
@@ -440,7 +440,7 @@ const buildText = (
   text.layoutGrow = 0;
 
   // set text – cannot do this before defining `fontName`
-  text.characters = setText;
+  text.characters = characters;
 
   // position the text in the frame
   text.textAlignVertical = 'CENTER';
