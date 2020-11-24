@@ -26,6 +26,45 @@ const assemble = (context: any = null) => {
 };
 
 /**
+ * @description Invokes Figma’s `setRelaunchData` on the passed node and (if applicable),
+ * the container component node.
+ *
+ * @kind function
+ * @name setRelaunchCommands
+ *
+ * @param {Object} node The node (`SceneNode`) to use with `setRelaunchData`.
+ *
+ * @returns {null}
+ */
+const setRelaunchCommands = (
+  node: BaseNode,
+  command: 'annotate' | 'annotate-custom' | 'measure',
+): void => {
+  const existingRelaunchButtons = JSON.parse(node.getPluginData(DATA_KEYS.relaunch) || null);
+
+  const commandBundle = [];
+  if (existingRelaunchButtons && existingRelaunchButtons.length > 0) {
+    existingRelaunchButtons.forEach((existingCommand) => {
+      commandBundle.push(existingCommand);
+    });    
+  }
+
+  if (!commandBundle.includes(command)) {
+    commandBundle.push(command);
+  }
+
+  const buttonBundle: {} = {};
+  commandBundle.forEach((bundledCommand) => {
+    buttonBundle[bundledCommand] = 'Run again…';
+  })
+
+  node.setRelaunchData(buttonBundle);
+
+  node.setPluginData(DATA_KEYS.relaunch, JSON.stringify(commandBundle));
+  return null;
+};
+
+/**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -59,7 +98,6 @@ export default class App {
     this.shouldTerminate = shouldTerminate;
     this.showGUI = showGUI;
   }
-
 
   /**
    * @description Matches corner radius of a node (or inner-child node) with a matrix
@@ -276,6 +314,9 @@ export default class App {
         // draw the annotation
         drawAnnotation(hasText);
       }
+
+      setRelaunchCommands(node, 'annotate');
+
       return null;
     });
 
@@ -366,6 +407,8 @@ export default class App {
 
     // set the custom text
     setText(handleSetTextResult);
+    setRelaunchCommands(node, 'annotate-custom');
+
     return null;
   }
 
@@ -431,6 +474,7 @@ export default class App {
 
     if (selection.length === 1) {
       paintResult = painter.addDimMeasurement();
+      setRelaunchCommands(node, 'measure');
     }
 
     // read the response from Painter; log and display message(s)
