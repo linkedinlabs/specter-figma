@@ -570,7 +570,6 @@ const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
 
   let setText: string = null;
   let nameText: string = 'Key';
-  let spacer: number = 0;
   let buildIcons: boolean = false;
   switch (auxType) {
     case 'arrows-left-right':
@@ -582,10 +581,6 @@ const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
     case 'escape':
     case 'space': {
       setText = auxType.charAt(0).toUpperCase() + auxType.slice(1);
-      spacer = 8;
-      if (auxType === 'space') {
-        spacer = 28;
-      }
       nameText = setText;
       break;
     }
@@ -607,15 +602,7 @@ const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
     text.fontSize = 14;
   }
 
-  // create spacer
-  let spacerNode: RectangleNode = null;
-  if (spacer > 0) {
-    spacerNode = figma.createRectangle();
-    spacerNode.fills = [];
-    spacerNode.resize(spacer, 4);
-  }
-
-  // create icon tktk
+  // create icon
   let icon1: FrameNode = null;
   let icon2: FrameNode = null;
   if (buildIcons) {
@@ -627,28 +614,47 @@ const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
 
   // update base rectangle for aux annotation
   rectangle.layoutMode = 'HORIZONTAL';
-  rectangle.counterAxisSizingMode = 'FIXED';
-  rectangle.layoutAlign = 'MIN';
+  rectangle.primaryAxisSizingMode = 'AUTO';
+  rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  rectangle.counterAxisSizingMode = 'AUTO';
+  rectangle.counterAxisAlignItems = 'CENTER';
+  rectangle.layoutAlign = 'INHERIT';
+  rectangle.layoutGrow = 0;
+
+  // initial padding
+  rectangle.paddingTop = 4;
+  rectangle.paddingBottom = 4;
+  rectangle.paddingLeft = 4;
+  rectangle.paddingRight = 4;
+  rectangle.cornerRadius = 4;
+
   if (text) {
     rectangle.appendChild(text);
-    rectangle.resize(text.width + 8, 26);
+    text.layoutAlign = 'INHERIT';
+
+    // padding adjustments
+    rectangle.paddingTop = 3;
+    rectangle.paddingBottom = 5;
+    if (auxType === 'space') {
+      rectangle.paddingRight = 24;
+    } else {
+      rectangle.paddingRight = 12;
+    }
   }
-  if (spacerNode) {
-    rectangle.appendChild(spacerNode);
-    spacerNode.layoutAlign = 'CENTER';
-  }
+
   if (icon1 && icon2) {
+    // rectangle.counterAxisSizingMode = 'AUTO';
     rectangle.appendChild(icon1);
     rectangle.appendChild(icon2);
     rectangle.itemSpacing = 10;
-    icon1.layoutAlign = 'CENTER';
-    icon2.layoutAlign = 'CENTER';
-    rectangle.resize((icon1.width + icon2.width + 8), 26);
+    icon1.layoutAlign = 'INHERIT';
+    icon2.layoutAlign = 'INHERIT';
+
+    // padding adjustments
+    rectangle.paddingTop = 9;
+    rectangle.paddingBottom = 9;
   }
   rectangle.y = 0;
-  rectangle.horizontalPadding = 4;
-  rectangle.verticalPadding = 4;
-  rectangle.cornerRadius = 4;
 
   if (auxType === 'arrows-up-down') {
     nameText = '↑↓';
