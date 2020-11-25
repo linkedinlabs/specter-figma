@@ -225,18 +225,26 @@ const buildKeystopIcon = (
 
   const shape = figma.flatten([diamond, rectangle2], icon);
   shape.name = 'Step Forward Icon';
-  shape.x = 26;
+  // shape.x = 26;
 
   icon.appendChild(rectangle1);
-  rectangle1.y = 3;
+  // rectangle1.y = 3;
+  rectangle1.layoutAlign = 'INHERIT';
 
   // style the icon frame
   icon.name = 'Tab Stop Icon';
   icon.fills = [];
-  icon.layoutAlign = 'STRETCH';
-  icon.resize(33, 8);
 
-  // set constraints after resize
+  icon.layoutMode = 'HORIZONTAL';
+  icon.primaryAxisSizingMode = 'AUTO';
+  icon.counterAxisAlignItems = 'CENTER';
+  icon.counterAxisSizingMode = 'AUTO';
+  icon.primaryAxisAlignItems = 'MAX';
+  icon.layoutAlign = 'INHERIT';
+
+  // icon.resize(34, 8);
+
+  // set constraints
   shape.constraints = {
     horizontal: 'MAX',
     vertical: 'MIN',
@@ -371,8 +379,6 @@ const buildRectangle = (
     type === 'spacing'
     || type === 'dimension'
   ) {
-    rectangle.horizontalPadding = 3;
-    rectangle.verticalPadding = 0.5;
     rectangle.paddingLeft = 3;
     rectangle.paddingRight = 3;
     rectangle.paddingTop = 0.5;
@@ -382,13 +388,20 @@ const buildRectangle = (
   // ------- update rectangle for keystop annotations
   if (type === 'keystop') {
     rectangle.layoutMode = 'VERTICAL';
+
+    rectangle.primaryAxisSizingMode = 'AUTO';
+    rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
     rectangle.counterAxisSizingMode = 'FIXED';
-    rectangle.layoutAlign = 'MIN';
-    rectangle.horizontalPadding = 4;
-    rectangle.verticalPadding = 4;
+    rectangle.counterAxisAlignItems = 'MIN';
+
+    rectangle.layoutAlign = 'INHERIT';
+    rectangle.paddingLeft = 4;
+    rectangle.paddingRight = 4;
+    rectangle.paddingTop = 4;
+    rectangle.paddingBottom = 4;
     rectangle.itemSpacing = 1;
     rectangle.cornerRadius = 4;
-    rectangle.resize(42, 35);
+    // rectangle.resize(42, 35);
   }
 
   return rectangle;
@@ -452,7 +465,7 @@ const buildText = (
     text.fontSize = 14;
     text.textAlignHorizontal = 'LEFT';
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
-    text.layoutAlign = 'MIN';
+    text.layoutAlign = 'INHERIT';
   }
 
   return text;
@@ -845,8 +858,10 @@ const positionAnnotation = (
       rectangle.appendChild(text);
 
       // set constraints
-      bannerGroup.counterAxisSizingMode = 'FIXED';
+      // bannerGroup.counterAxisSizingMode = 'FIXED';
       rectangle.layoutAlign = 'STRETCH';
+      // icon.resize(34, icon.height);
+      // icon.layoutAlign = 'INHERIT';
 
       // set the main group
       group = bannerGroup;
@@ -2205,7 +2220,7 @@ export default class Painter {
     if (nodeData.keys && nodeData.keys.length > 0) {
       nodeData.keys.forEach((keyEntry) => {
         const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-        auxAnnotation.layoutAlign = 'MIN';
+        auxAnnotation.layoutAlign = 'INHERIT';
         auxAnnotations.push(auxAnnotation);
       });
     }
@@ -2244,7 +2259,7 @@ export default class Painter {
       annotationNode.clipsContent = false;
       annotationNode.layoutMode = 'HORIZONTAL';
       annotationNode.counterAxisSizingMode = 'AUTO';
-      annotationNode.layoutAlign = 'MIN';
+      annotationNode.layoutAlign = 'INHERIT';
       annotationNode.itemSpacing = 4;
       annotationNode.fills = [];
       annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
@@ -2255,7 +2270,7 @@ export default class Painter {
       // add the key annotations
       auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
 
-      baseAnnotationNode.layoutAlign = 'MIN';
+      baseAnnotationNode.layoutAlign = 'INHERIT';
       annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
       annotationNode.x = initialX;
       annotationNode.y = initialY;
