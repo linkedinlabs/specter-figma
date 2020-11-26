@@ -223,17 +223,20 @@ const buildKeystopIcon = (
   rectangle2.x = 5;
   rectangle2.y = 0;
 
+  rectangle1.resize(30, rectangle1.height);
+  icon.appendChild(rectangle1);
+
   const shape = figma.flatten([diamond, rectangle2], icon);
   shape.name = 'Step Forward Icon';
   // shape.x = 26;
 
-  icon.appendChild(rectangle1);
   // rectangle1.y = 3;
-  rectangle1.layoutAlign = 'INHERIT';
 
   // style the icon frame
   icon.name = 'Tab Stop Icon';
   icon.fills = [];
+
+  icon.resize(34, 8);
 
   icon.layoutMode = 'HORIZONTAL';
   icon.primaryAxisSizingMode = 'AUTO';
@@ -241,8 +244,11 @@ const buildKeystopIcon = (
   icon.counterAxisSizingMode = 'AUTO';
   icon.primaryAxisAlignItems = 'MAX';
   icon.layoutAlign = 'INHERIT';
+  icon.layoutGrow = 0;
 
-  // icon.resize(34, 8);
+  rectangle1.layoutAlign = 'INHERIT';
+  rectangle1.layoutGrow = 1;
+
 
   // set constraints
   shape.constraints = {
@@ -553,6 +559,7 @@ const buildAnnotation = (options: {
   } else if (type === 'keystop') {
     const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
     icon = buildKeystopIcon(iconColor);
+    // icon.layoutAlign = 'STRETCH';
   }
 
   // return an object with each element
@@ -852,18 +859,35 @@ const positionAnnotation = (
       // set top level
       group = groupWithIcon;
     } else if (annotationType === 'keystop') {
-      // add icon to the rectangle frame
+      // ----- add icon to the rectangle frame
       rectangle.appendChild(icon);
-      // re-add text to force it to the bottom
-      rectangle.appendChild(text);
 
-      // set constraints
-      // bannerGroup.counterAxisSizingMode = 'FIXED';
+      // ----- set up text wrapper with padding to provide minimum width
+      const textWrapper: FrameNode = figma.createFrame();
+      textWrapper.name = 'Text Wrapper';
+      textWrapper.fills = [];
+
+      // auto-layout / padding
+      textWrapper.layoutMode = 'HORIZONTAL';
+      textWrapper.primaryAxisSizingMode = 'AUTO';
+      textWrapper.counterAxisAlignItems = 'CENTER';
+      textWrapper.counterAxisSizingMode = 'AUTO';
+      textWrapper.primaryAxisAlignItems = 'CENTER';
+      textWrapper.layoutAlign = 'INHERIT';
+      textWrapper.paddingRight = 30;
+
+      // add text to wrapper
+      textWrapper.appendChild(text);
+
+      // ----- add text wrapper last to force it to the bottom
+      rectangle.appendChild(textWrapper);
+
+      // ----- set constraints / defaults
+      icon.resize(30, icon.height);
+      icon.layoutAlign = 'STRETCH';
       rectangle.layoutAlign = 'STRETCH';
-      // icon.resize(34, icon.height);
-      // icon.layoutAlign = 'INHERIT';
 
-      // set the main group
+      // ----- set the main group
       group = bannerGroup;
     }
   } else {
