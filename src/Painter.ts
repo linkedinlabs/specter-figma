@@ -228,16 +228,15 @@ const buildKeystopIcon = (
 
   const shape = figma.flatten([diamond, rectangle2], icon);
   shape.name = 'Step Forward Icon';
-  // shape.x = 26;
-
-  // rectangle1.y = 3;
 
   // style the icon frame
   icon.name = 'Tab Stop Icon';
   icon.fills = [];
 
+  // set initial size
   icon.resize(34, 8);
 
+  // auto-layout
   icon.layoutMode = 'HORIZONTAL';
   icon.primaryAxisSizingMode = 'AUTO';
   icon.counterAxisAlignItems = 'CENTER';
@@ -248,7 +247,6 @@ const buildKeystopIcon = (
 
   rectangle1.layoutAlign = 'INHERIT';
   rectangle1.layoutGrow = 1;
-
 
   // set constraints
   shape.constraints = {
@@ -559,7 +557,6 @@ const buildAnnotation = (options: {
   } else if (type === 'keystop') {
     const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
     icon = buildKeystopIcon(iconColor);
-    // icon.layoutAlign = 'STRETCH';
   }
 
   // return an object with each element
