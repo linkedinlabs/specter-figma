@@ -71,7 +71,7 @@ const cleanupAnnotations = (
 
 /**
  * @description Checks tracking data against the provided frameNode. If any annotations
- * are missing, they are re-painted.
+ * are missing, they are re-painted. If any links are broken/invalidated, annotations are removed.
  *
  * @kind function
  * @name refreshAnnotations
@@ -89,6 +89,7 @@ const refreshAnnotations = (
   page: PageNode,
   isMercadoMode: boolean,
 ): void => {
+  // ----- redraw annotations, if necessary
   trackingData.forEach((trackingEntry) => {
     if (trackingEntry.topFrameId === frameNode.id) {
       const annotationNode: SceneNode = frameNode.findOne(
@@ -106,6 +107,46 @@ const refreshAnnotations = (
 
         // re-draw the annotation
         painter.addKeystop();
+      }
+    }
+  });
+
+  // ----- remove annotations with broken links
+  const crawlerForTopFrame = new Crawler({ for: [frameNode] });
+  const nodesToEvaluate = crawlerForTopFrame.all();
+  const annotationNodesToRemove: Array<string> = [];
+
+  // find nodes that do not match the tracking data
+  nodesToEvaluate.forEach((node) => {
+    const nodeLinkData: PluginNodeLinkData = JSON.parse(
+      node.getPluginData(DATA_KEYS.linkId) || null,
+    );
+    if (nodeLinkData && nodeLinkData.role === 'node') {
+      const filterIndex = 0;
+      const matchingData = trackingData.filter(
+        data => (data.linkId === nodeLinkData.id),
+      )[filterIndex];
+      if (
+        matchingData
+        && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
+      ) {
+        annotationNodesToRemove.push(matchingData.linkId);
+      }
+    }
+  });
+
+  // find annotation nodes that match the nodes to be removed and remove them
+  nodesToEvaluate.forEach((node) => {
+    // need to re-check for a node's existence since we are deleting as we go
+    const activeNode: BaseNode = figma.getNodeById(node.id);
+    if (activeNode) {
+      const nodeLinkData: PluginNodeLinkData = JSON.parse(
+        activeNode.getPluginData(DATA_KEYS.linkId) || null,
+      );
+      if (nodeLinkData && nodeLinkData.role === 'annotation') {
+        if (annotationNodesToRemove.includes(nodeLinkData.id)) {
+          activeNode.remove();
+        }
       }
     }
   });
@@ -1247,6 +1288,7 @@ export default class App {
         const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
         keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
 
+        // re-draw broken annotations and clean up orphaned
         refreshAnnotations(
           topFrame,
           trackingData,

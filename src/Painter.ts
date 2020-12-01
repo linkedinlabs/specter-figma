@@ -2340,10 +2340,24 @@ export default class Painter {
       JSON.stringify(trackingData),
     );
 
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(nodeLinkData),
+    );
+
     // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
     annotationNode.setPluginData(
       DATA_KEYS.linkId,
-      JSON.stringify(linkId),
+      JSON.stringify(annotatedLinkData),
     );
 
     // return a successful result

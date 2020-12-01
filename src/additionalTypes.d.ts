@@ -22,6 +22,11 @@ declare global {
     nodePosition: PluginNodePosition,
   };
 
+  type PluginNodeLinkData = {
+    id: string,
+    role: 'annotation' | 'node',
+  }
+
   type PluginOptions = {
     currentView: PluginViewTypes,
     isMercadoMode: boolean,
