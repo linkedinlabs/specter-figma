@@ -17,6 +17,7 @@ declare global {
   type PluginNodeTrackingData = {
     annotationId: string,
     id: string,
+    linkId: string,
     topFrameId: string,
     nodePosition: PluginNodePosition,
   };

@@ -15,6 +15,8 @@ import {
   SPACING_MATRIX,
 } from './constants';
 
+const uuid = require('uuid-random');
+
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
  * @description Builds the spacing/measure annotation elements in Figma.
@@ -2306,9 +2308,11 @@ export default class Painter {
     });
 
     // ---------- set node tracking data
-    const newAnnotatedNodeData = {
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
       annotationId: annotationNode.id,
       id: this.node.id,
+      linkId,
       topFrameId: this.frame.id,
       nodePosition,
     };
@@ -2317,16 +2321,12 @@ export default class Painter {
     const trackingDataRaw = JSON.parse(
       this.page.getPluginData(DATA_KEYS.keystopAnnotations) || null,
     );
-    let trackingData: Array<{
-      annotationId: string,
-      id: string,
-      topFrameId: string,
-      nodePosition: PluginNodePosition,
-    }> = [];
+    let trackingData: Array<PluginNodeTrackingData> = [];
     if (trackingDataRaw) {
       trackingData = trackingDataRaw;
     }
 
+    // set the node data in the `trackingData` array
     trackingData = updateArray(
       trackingData,
       newAnnotatedNodeData,
@@ -2338,6 +2338,12 @@ export default class Painter {
     this.page.setPluginData(
       DATA_KEYS.keystopAnnotations,
       JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotation node
+    annotationNode.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(linkId),
     );
 
     // return a successful result
