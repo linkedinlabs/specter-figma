@@ -130,7 +130,15 @@ const refreshAnnotations = (
         matchingData
         && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
       ) {
-        annotationNodesToRemove.push(matchingData.linkId);
+        // final check; make sure node that corresponds to the annotation does not
+        // actually exist within the current top frame.
+        const existingNode: SceneNode = frameNode.findOne(
+          frameChild => frameChild.id === matchingData.id,
+        );
+        if (!existingNode) {
+          // all checks pass; delete the annotation node
+          annotationNodesToRemove.push(matchingData.linkId);
+        }
       }
     }
   });
