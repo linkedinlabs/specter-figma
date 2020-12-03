@@ -1889,14 +1889,7 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
@@ -2048,14 +2041,7 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the annotation elements
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
@@ -2428,14 +2414,7 @@ export default class Painter {
     });
 
     // group and position the base annotation elements
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: spacingPosition.width,
