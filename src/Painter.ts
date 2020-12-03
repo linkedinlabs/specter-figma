@@ -738,7 +738,7 @@ const buildBoundingBox = (position: {
  * @param {string} groupName The name of the group that holds the annotation elements
  * inside the `containerGroup`.
  * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
- * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`, `index`)
+ * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`)
  * for the node receiving the annotation + the frame width/height (`frameWidth` /
  * `frameHeight`).
  * @param {string} annotationType An optional string representing the type of annotation.
@@ -764,7 +764,6 @@ const positionAnnotation = (
     height: number,
     x: number,
     y: number,
-    index: number,
   },
   annotationType:
     'component'
@@ -1890,7 +1889,6 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
     const nodePosition: {
       frameWidth: number,
       frameHeight: number,
@@ -1898,7 +1896,6 @@ export default class Painter {
       height: number,
       x: number,
       y: number,
-      index: number,
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -1906,7 +1903,6 @@ export default class Painter {
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     const group = positionAnnotation(
@@ -2052,7 +2048,6 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
     const nodePosition: {
       frameWidth: number,
       frameHeight: number,
@@ -2060,7 +2055,6 @@ export default class Painter {
       height: number,
       x: number,
       y: number,
-      index: number,
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -2068,7 +2062,6 @@ export default class Painter {
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     // ------------------------
@@ -2254,7 +2247,6 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
     const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -2262,7 +2254,6 @@ export default class Painter {
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     const baseAnnotationNode = positionAnnotation(
@@ -2437,7 +2428,6 @@ export default class Painter {
     });
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
     const nodePosition: {
       frameWidth: number,
       frameHeight: number,
@@ -2445,7 +2435,6 @@ export default class Painter {
       height: number,
       x: number,
       y: number,
-      index: number,
     } = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -2453,7 +2442,6 @@ export default class Painter {
       height: spacingPosition.height,
       x: spacingPosition.x,
       y: spacingPosition.y,
-      index: nodeIndex,
     };
 
     const annotationOrientation = (spacingPosition.orientation === 'vertical' ? 'top' : 'left');

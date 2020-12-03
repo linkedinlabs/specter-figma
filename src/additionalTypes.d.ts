@@ -11,7 +11,6 @@ declare global {
     height: number,
     x: number,
     y: number,
-    index: number,
   };
 
   type PluginNodeTrackingData = {
