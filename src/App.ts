@@ -3,6 +3,7 @@ import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
 import {
+  deepCompare,
   existsInArray,
   findTopFrame,
   getPeerPluginData,
@@ -31,43 +32,43 @@ const assemble = (context: any = null) => {
   };
 };
 
-/**
- * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
- * the annotation is removed.
- *
- * @kind function
- * @name cleanupAnnotations
- *
- * @param {Array} trackingData The page-level node tracking data.
- * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
- * @param {string} topFrameId An optional Node ID for the top frame.
- *
- * @returns {null}
- */
-const cleanupAnnotations = (
-  trackingData: Array<PluginNodeTrackingData>,
-  orphanedIds: Array<string>,
-  topFrameId?: string,
-): void => {
-  orphanedIds.forEach((orphanedId) => {
-    const entryIndex: 0 = 0;
-    const trackingEntry = trackingData.filter(
-      entry => entry.id === orphanedId,
-    )[entryIndex];
+// /**
+//  * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
+//  * the annotation is removed.
+//  *
+//  * @kind function
+//  * @name cleanupAnnotations
+//  *
+//  * @param {Array} trackingData The page-level node tracking data.
+//  * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+//  * @param {string} topFrameId An optional Node ID for the top frame.
+//  *
+//  * @returns {null}
+//  */
+// const cleanupAnnotations = (
+//   trackingData: Array<PluginNodeTrackingData>,
+//   orphanedIds: Array<string>,
+//   topFrameId?: string,
+// ): void => {
+//   orphanedIds.forEach((orphanedId) => {
+//     const entryIndex: 0 = 0;
+//     const trackingEntry = trackingData.filter(
+//       entry => entry.id === orphanedId,
+//     )[entryIndex];
 
-    // ignore nodes that are not in the current top frame
-    if (
-      (trackingEntry && (topFrameId === trackingEntry.topFrameId))
-      || (trackingEntry && !topFrameId)
-    ) {
-      const annotationNode = figma.getNodeById(trackingEntry.annotationId);
-      if (annotationNode) {
-        annotationNode.remove();
-      }
-    }
-  });
-  return null;
-};
+//     // ignore nodes that are not in the current top frame
+//     if (
+//       (trackingEntry && (topFrameId === trackingEntry.topFrameId))
+//       || (trackingEntry && !topFrameId)
+//     ) {
+//       const annotationNode = figma.getNodeById(trackingEntry.annotationId);
+//       if (annotationNode) {
+//         annotationNode.remove();
+//       }
+//     }
+//   });
+//   return null;
+// };
 
 /**
  * @description Checks tracking data against the provided frameNode. If any annotations
@@ -89,27 +90,121 @@ const refreshAnnotations = (
   page: PageNode,
   isMercadoMode: boolean,
 ): void => {
-  // ----- redraw annotations, if necessary
+  // removes a node, if it exists
+  const removeNode = (nodeId: string) => {
+    const nodeToRemove: BaseNode = figma.getNodeById(nodeId);
+    if (nodeToRemove) {
+      nodeToRemove.remove();
+    }
+  };
+
+  console.log('run refreshAnnotations'); // eslint-disable-line no-console
+  let updatedTrackingData: Array<PluginNodeTrackingData> = trackingData;
+  const nodesToRepaint: Array<string> = [];
   trackingData.forEach((trackingEntry) => {
-    if (trackingEntry.topFrameId === frameNode.id) {
-      const annotationNode: SceneNode = frameNode.findOne(
-        node => node.id === trackingEntry.annotationId,
-      );
-      const sceneNode: SceneNode = frameNode.findOne(node => node.id === trackingEntry.id);
+    const node: BaseNode = figma.getNodeById(trackingEntry.id);
 
-      if (!annotationNode && sceneNode) {
-        // set up Painter instance for the node
-        const painter = new Painter({
-          for: sceneNode,
-          in: page,
-          isMercadoMode,
-        });
+    // ----- check if main node still exists
+    if (node) {
+      const topFrame: FrameNode = findTopFrame(node);
 
-        // re-draw the annotation
-        painter.addKeystop();
+      // ----- check if topFrame is still the same
+      if (topFrame && topFrame.id === trackingEntry.topFrameId) {
+        // grab the position from crawler
+        const crawler = new Crawler({ for: [node] });
+        const positionResult = crawler.position();
+        const relativePosition = positionResult.payload;
+
+        // group and position the base annotation elements
+        const currentNodePosition: PluginNodePosition = {
+          frameWidth: topFrame.width,
+          frameHeight: topFrame.height,
+          width: relativePosition.width,
+          height: relativePosition.height,
+          x: relativePosition.x,
+          y: relativePosition.y,
+        };
+
+        // ----- check if position has changed
+        if (deepCompare(currentNodePosition, trackingEntry.nodePosition)) {
+          console.log('something about position is different; repaint'); // eslint-disable-line no-console
+          // remove annotation node
+          removeNode(trackingEntry.annotationId);
+
+          // queue for repaint
+          nodesToRepaint.push(node.id);
+        } else {
+          const annotationNode: BaseNode = figma.getNodeById(trackingEntry.annotationId);
+
+          // ----- check if annotation node is still there
+          if (!annotationNode) {
+            // ----- annotation is missing; repaint
+            console.log('annotation is missing; repaint'); // eslint-disable-line no-console
+            nodesToRepaint.push(node.id);
+          }
+        }
+      } else {
+        console.log('top frame has changed'); // eslint-disable-line no-console
+        // remove annotation node
+        removeNode(trackingEntry.annotationId);
       }
+    } else {
+      // ----- node is missing; remove annotation
+      console.log('node is missing; remove annotation'); // eslint-disable-line no-console
+      // remove annotation node
+      removeNode(trackingEntry.annotationId);
+
+      // remove from tracking data
+      updatedTrackingData = updateArray(updatedTrackingData, trackingEntry, 'id', 'remove');
+
+      // remove from topFrame list + trigger re-paint
     }
   });
+
+  // update the tracking data
+  page.setPluginData(
+    DATA_KEYS.keystopAnnotations,
+    JSON.stringify(updatedTrackingData),
+  );
+
+  // ----- repaint queued nodes
+  nodesToRepaint.forEach((nodeId) => {
+    const nodeToRepaint: BaseNode = figma.getNodeById(nodeId);
+
+    if (nodeToRepaint) {
+      // set up Painter instance for the node
+      const painter = new Painter({
+        for: nodeToRepaint,
+        in: page,
+        isMercadoMode,
+      });
+
+      // re-draw the annotation
+      painter.addKeystop();
+    }
+  });
+
+  // ----- redraw annotations, if necessary
+  // trackingData.forEach((trackingEntry) => {
+  //   if (trackingEntry.topFrameId === frameNode.id) {
+  //     const annotationNode: SceneNode = frameNode.findOne(
+  //       node => node.id === trackingEntry.annotationId,
+  //     );
+  //     const sceneNode: SceneNode = frameNode.findOne(node => node.id === trackingEntry.id);
+
+  //     if (!annotationNode && sceneNode) {
+  //       // set up Painter instance for the node
+  //       const painter = new Painter({
+  //         for: sceneNode,
+  //         in: page,
+  //         isMercadoMode,
+  //       });
+
+  //       // re-draw the annotation
+  //       painter.addKeystop();
+  //     }
+  //   }
+  // });
 
   // ----- remove annotations with broken links
   const crawlerForTopFrame = new Crawler({ for: [frameNode] });
@@ -202,11 +297,11 @@ const getKeystopNodes = (
         nodes.push(nodeToAdd);
       } else if (trackingData.length > 0) {
         // remove orphaned annotation
-        cleanupAnnotations(
-          trackingData,
-          [keystopItem.id],
-          frameNode.id,
-        );
+        // cleanupAnnotations(
+        //   trackingData,
+        //   [keystopItem.id],
+        //   frameNode.id,
+        // );
       }
     });
   }
@@ -619,7 +714,7 @@ export default class App {
     // re-paint the annotations
     nodes.forEach((node: SceneNode) => {
       // remove existing annotation
-      cleanupAnnotations(trackingData, [node.id]);
+      // cleanupAnnotations(trackingData, [node.id]);
 
       // set up Identifier instance for the node
       const identifier = new Identifier({
@@ -1483,7 +1578,7 @@ export default class App {
     nodes.forEach(node => nodeIds.push(node.id));
 
     // remove the orphaned annotations
-    cleanupAnnotations(trackingData, nodeIds);
+    // cleanupAnnotations(trackingData, nodeIds);
 
     // repaint affected nodes
     if (nodesToRepaint.length > 0) {
