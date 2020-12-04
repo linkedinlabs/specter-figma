@@ -198,6 +198,116 @@ const awaitUIReadiness = async (messenger?) => {
 };
 
 /**
+ * @description Takes two one-dimensional arrays and compare them. Returns `true` if they
+ * are different. Order of the array does not matter.
+ *
+ * @kind function
+ * @name compareArrays
+ *
+ * @param {Array} array1 A one-dimensional array.
+ * @param {Array} array2 A one-dimensional array to compare against.
+ *
+ * @returns {boolean} Returns `true` if the arrays are different, `false` if they have identical
+ * values.
+ */
+const compareArrays = (array1: Array<any>, array2: Array<any>) => {
+  // compares two values; uses `deepCompare` if values are an object
+  const isMatch = (value1: any, value2: any) => {
+    let match = false;
+    if ((typeof value1 === 'object') && (value1 !== null)) {
+      match = !deepCompare(value1, value2); // eslint-disable-line no-use-before-define
+    } else {
+      match = (value2 === value1);
+    }
+    return match;
+  };
+
+  let isDifferent = false;
+
+  if (!array1 && !array2) {
+    return isDifferent;
+  }
+
+  if (
+    (!array1 && array2)
+    || (!array2 && array1)
+  ) {
+    isDifferent = true;
+    return isDifferent;
+  }
+
+  if (array1.length !== array2.length) {
+    isDifferent = true;
+    return isDifferent;
+  }
+
+  array1.forEach((value) => {
+    const itemIndex = array2.findIndex(foundValue => isMatch(value, foundValue));
+
+    if (itemIndex < 0) {
+      isDifferent = true;
+    }
+  });
+
+  if (isDifferent) {
+    return isDifferent;
+  }
+
+  array2.forEach((value) => {
+    const itemIndex = array1.findIndex(foundValue => isMatch(value, foundValue));
+
+    if (itemIndex < 0) {
+      isDifferent = true;
+    }
+  });
+
+  return isDifferent;
+};
+
+/**
+ * @description Compares two multi-dimensional objects. Returns `true` if they are different.
+ *
+ * @kind function
+ * @name deepCompare
+ *
+ * @param {Object} unmodifiedObject An object to compare.
+ * @param {Object} modifiedObject An object to compare against `unmodifiedObject`.
+ *
+ * @returns {boolean} Returns `true` if the objects are different, `false` if they are identical.
+ */
+const deepCompare = (unmodifiedObject: Object, modifiedObject: Object) => {
+  let isDifferent: boolean = false;
+
+  if (typeof unmodifiedObject !== 'object' || unmodifiedObject === null) {
+    return isDifferent;
+  }
+
+  Object.entries(unmodifiedObject).forEach(([key, value]) => {
+    // check for inner object first
+    if ((typeof value === 'object') && (value !== null)) {
+      if (
+        modifiedObject[key] === undefined
+        || deepCompare(value, modifiedObject[key])
+      ) {
+        isDifferent = true;
+      }
+
+      if (value.constructor === Array) {
+        if (compareArrays(value, modifiedObject[key])) {
+          isDifferent = true;
+        }
+      }
+    } else if (modifiedObject[key] !== value) {
+      if (modifiedObject[key] !== 'blank--multiple') {
+        isDifferent = true;
+      }
+    }
+  });
+
+  return isDifferent;
+};
+
+/**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
  * (if one exists) for the node.
  *
@@ -778,6 +888,8 @@ const toSentenceCase = (anyString: string): string => {
 export {
   asyncForEach,
   awaitUIReadiness,
+  compareArrays,
+  deepCompare,
   existsInArray,
   findParentInstance,
   findTopFrame,
