@@ -41,7 +41,6 @@ const assemble = (context: any = null) => {
  *
  * @param {Array} trackingData The page-level node tracking data.
  * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
- * @param {string} topFrameId An optional Node ID for the top frame.
  *
  * @returns {null}
  */
@@ -446,14 +445,6 @@ const getKeystopNodes = (
 
       if (nodeToAdd) {
         nodes.push(nodeToAdd);
-      } else if (trackingData.length > 0) {
-        // remove orphaned annotation
-        // cleanUpAnnotations(
-        //   trackingData,
-        //   [keystopItem.id],
-        //   frameNode.id,
-        // );
-        // console.log('clean up')
       }
     });
   }
