@@ -315,6 +315,45 @@ const refreshAnnotations = (
       // re-draw the annotation
       const painterResult = painter.addKeystop();
       messenger.handleResult(painterResult);
+
+      if (painterResult.status === 'error') {
+        // we need to track nodes that previously had annotations;
+        // re-add them if they’re currently placed off-artboard on the page
+        const topFrame: FrameNode = findTopFrame(nodeToRepaint);
+        if (topFrame.parent.type === 'PAGE') {
+          // `findTopFrame` returns self if the parent is the page
+          // set up new tracking data node entry
+          const nodeToTrack: SceneNode = nodeToRepaint as SceneNode;
+          const currentNodePosition: PluginNodePosition = {
+            frameWidth: null,
+            frameHeight: null,
+            width: nodeToTrack.width,
+            height: nodeToTrack.height,
+            x: nodeToTrack.x,
+            y: nodeToTrack.y,
+          };
+          const freshTrackingEntry: PluginNodeTrackingData = {
+            annotationId: null,
+            id: nodeToTrack.id,
+            linkId: null,
+            topFrameId: topFrame.parent.id,
+            nodePosition: currentNodePosition,
+          };
+
+          // grab latest tracking data for the page; add the entry to the array
+          const freshTrackingData: Array<PluginNodeTrackingData> = JSON.parse(
+            page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+          );
+          let newFreshTrackingData: Array<PluginNodeTrackingData> = freshTrackingData;
+          newFreshTrackingData = updateArray(newFreshTrackingData, freshTrackingEntry, 'id', 'add');
+
+          // update the tracking data
+          page.setPluginData(
+            DATA_KEYS.keystopAnnotations,
+            JSON.stringify(newFreshTrackingData),
+          );
+        }
+      }
     }
   });
 
