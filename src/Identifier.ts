@@ -746,16 +746,18 @@ export default class Identifier {
    * @description Checks the node’s settings object for the existence of keystop-related data
    * and either updates that data with a new position, or creates the data object with the
    * initial position and saves it to the node. Position is calculated by reading the
-   * keystop list data from the nodes top-level container frame. The main underlying
-   * assumption is that the node being set is going to be in the next highest position in the
-   * list.
+   * keystop list data from the nodes top-level container frame. If `positions` is _not_
+   * supplied, the main underlying assumption is that the node being set is going to be in the
+   * next highest position in the list and needs to be added to the list. If `position` is
+   * supplied, the assumption is that we are simply updating the node data, and the keystop
+   * list does not need to be touched.
    *
    * @kind function
    * @name getSetKeystop
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
-  getSetKeystop() {
+  getSetKeystop(position?: number) {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -792,19 +794,22 @@ export default class Identifier {
 
     // set new position based on list length
     // (we always assume `getSetKeystop` has been fed the node in order)
-    const positionToSet = frameKeystopList.length + 1;
+    let positionToSet = frameKeystopList.length + 1;
+    if (position) {
+      positionToSet = position;
+    } else {
+      // add the new node to the list with position
+      frameKeystopList.push({
+        id: this.node.id,
+        position: positionToSet,
+      });
 
-    // add the new node to the list with position
-    frameKeystopList.push({
-      id: this.node.id,
-      position: positionToSet,
-    });
-
-    // set/update top frame keystop list
-    topFrame.setPluginData(
-      DATA_KEYS.keystopList,
-      JSON.stringify(frameKeystopList),
-    );
+      // set/update top frame keystop list
+      topFrame.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify(frameKeystopList),
+      );
+    }
 
     // convert position to string
     const textToSet = `${positionToSet}`;
