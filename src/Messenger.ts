@@ -64,7 +64,9 @@ export default class Messenger {
    *
    * @kind function
    * @name handleResult
+   *
    * @param {Object} result The success/error result and accompanying log/toast message(s).
+   * @param {boolean} suppressToasts When set to `true`, toast messages are not displayed.
    */
   handleResult(
     result: {

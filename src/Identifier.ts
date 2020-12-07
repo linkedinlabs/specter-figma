@@ -746,7 +746,7 @@ export default class Identifier {
    * @description Checks the node’s settings object for the existence of keystop-related data
    * and either updates that data with a new position, or creates the data object with the
    * initial position and saves it to the node. Position is calculated by reading the
-   * keystop list data from the nodes top-level container frame. If `positions` is _not_
+   * keystop list data from the nodes top-level container frame. If `position` is _not_
    * supplied, the main underlying assumption is that the node being set is going to be in the
    * next highest position in the list and needs to be added to the list. If `position` is
    * supplied, the assumption is that we are simply updating the node data, and the keystop
@@ -754,6 +754,8 @@ export default class Identifier {
    *
    * @kind function
    * @name getSetKeystop
+   *
+   * @param {number} position An optional number to override the counter.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
