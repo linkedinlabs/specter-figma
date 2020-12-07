@@ -74,6 +74,7 @@ export default class Messenger {
       },
       status: 'error' | 'success',
     },
+    suppressToasts: boolean = false,
   ) {
     if (result.messages) {
       // set up toast and log messages
@@ -87,7 +88,7 @@ export default class Messenger {
       }
 
       // toast a message or error
-      if (toastMessage) {
+      if (toastMessage && !suppressToasts) {
         this.toast(toastMessage);
       }
     }

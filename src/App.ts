@@ -72,9 +72,9 @@ const cleanUpAnnotations = (
  * @kind function
  * @name refreshAnnotations
  *
- * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
  * @param {Array} trackingData The page-level node tracking data.
  * @param {Object} page The Figma PageNode.
+ * @param {Object} messenger An initialized instance of the Messenger class for logging.
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
  *
  * @returns {null}
@@ -150,7 +150,7 @@ const refreshAnnotations = (
 
               // get/set the keystop info
               const identifierResult = identifier.getSetKeystop(updatedKeystopEntry.position);
-              messenger.handleResult(identifierResult);
+              messenger.handleResult(identifierResult, true);
 
               if (identifierResult.status === 'success') {
                 // flag node for repainting
@@ -313,7 +313,7 @@ const refreshAnnotations = (
 
       // re-draw the annotation
       const painterResult = painter.addKeystop();
-      messenger.handleResult(painterResult);
+      messenger.handleResult(painterResult, true);
 
       if (painterResult.status === 'error') {
         // we need to track nodes that previously had annotations;
