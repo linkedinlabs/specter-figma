@@ -83,6 +83,7 @@ const cleanUpAnnotations = (
 const refreshAnnotations = (
   trackingData: Array<PluginNodeTrackingData>,
   page: PageNode,
+  messenger: any,
   isMercadoMode: boolean,
 ): void => {
   // removes a node, if it exists
@@ -91,6 +92,99 @@ const refreshAnnotations = (
     if (nodeToRemove) {
       nodeToRemove.remove();
     }
+  };
+
+  // full cleanup; removes annotation + tracking data + resets topFrame list
+  const fullCleanup = (
+    trackingEntry: PluginNodeTrackingData,
+    initialTrackingData: Array<PluginNodeTrackingData>,
+  ): {
+    newTrackingData: Array<PluginNodeTrackingData>,
+    newNodesToRepaint: Array<string>,
+  } => {
+    const newNodesToRepaint: Array<string> = [];
+
+    // remove annotation node
+    removeNode(trackingEntry.annotationId);
+
+    // --- remove from tracking data
+    let newTrackingData = initialTrackingData;
+    newTrackingData = updateArray(newTrackingData, trackingEntry, 'id', 'remove');
+
+    // --- re-order (and potentially re-paint) annotations on the original top frame
+    // remove from topFrame list + trigger re-paint
+    const topFrameNode: FrameNode = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
+    const filterIndex: 0 = 0;
+    if (topFrameNode) {
+      // get top frame keystop list
+      const keystopList = JSON.parse(topFrameNode.getPluginData(DATA_KEYS.keystopList) || null);
+      if (keystopList) {
+        // get current position
+        let positionToRemove: number = 1;
+        const entryToRemove = keystopList.filter(
+          keystopItem => keystopItem.id === trackingEntry.id,
+        )[filterIndex];
+        if (entryToRemove) {
+          positionToRemove = entryToRemove.position;
+        }
+
+        // remove item
+        let newKeystopList = keystopList;
+        newKeystopList = updateArray(newKeystopList, trackingEntry, 'id', 'remove');
+
+        // renumber list
+        newKeystopList.forEach((keystopEntry) => {
+          if (keystopEntry.position > positionToRemove) {
+            const updatedKeystopEntry = keystopEntry;
+            updatedKeystopEntry.position -= 1;
+            newKeystopList = updateArray(newKeystopList, updatedKeystopEntry, 'id', 'update');
+
+            // set up Identifier instance for the node
+            const nodeToUpdate: BaseNode = figma.getNodeById(keystopEntry.id);
+            if (nodeToUpdate) {
+              const identifier = new Identifier({
+                for: nodeToUpdate,
+                data: page,
+                isMercadoMode,
+                messenger,
+              });
+
+              // get/set the keystop info
+              const identifierResult = identifier.getSetKeystop(updatedKeystopEntry.position);
+              messenger.handleResult(identifierResult);
+
+              if (identifierResult.status === 'success') {
+                // flag node for repainting
+                if (!newNodesToRepaint.includes(updatedKeystopEntry.id)) {
+                  newNodesToRepaint.push(updatedKeystopEntry.id);
+                }
+
+                // remove existing annotation node
+                const annotationToRemoveEntry = newTrackingData.filter(
+                  currentTrackingEntry => currentTrackingEntry.id === updatedKeystopEntry.id,
+                )[filterIndex];
+                if (annotationToRemoveEntry) {
+                  removeNode(annotationToRemoveEntry.annotationId);
+                }
+              }
+            }
+          }
+        });
+
+        // set new keystop list
+        topFrameNode.setPluginData(
+          DATA_KEYS.keystopList,
+          JSON.stringify(newKeystopList),
+        );
+      }
+    }
+
+    const results = {
+      newTrackingData,
+      newNodesToRepaint,
+    };
+
+    return results;
   };
 
   console.log('run refreshAnnotations'); // eslint-disable-line no-console
@@ -128,7 +222,9 @@ const refreshAnnotations = (
           removeNode(trackingEntry.annotationId);
 
           // queue for repaint
-          nodesToRepaint.push(node.id);
+          if (!nodesToRepaint.includes(node.id)) {
+            nodesToRepaint.push(node.id);
+          }
         } else {
           const annotationNode: BaseNode = figma.getNodeById(trackingEntry.annotationId);
 
@@ -136,24 +232,65 @@ const refreshAnnotations = (
           if (!annotationNode) {
             // ----- annotation is missing; repaint
             console.log('annotation is missing; repaint'); // eslint-disable-line no-console
-            nodesToRepaint.push(node.id);
+            if (!nodesToRepaint.includes(node.id)) {
+              nodesToRepaint.push(node.id);
+            }
           }
         }
       } else {
+        // ----- top frame has changed; remove annotation + re-order and re-paint remaining nodes
+        //   --- add annotation within new top frame, if applicable
         console.log('top frame has changed'); // eslint-disable-line no-console
-        // remove annotation node
-        removeNode(trackingEntry.annotationId);
+
+        // --- clean up and re-paint existing top frame
+        const cleanupResults = fullCleanup(
+          trackingEntry,
+          updatedTrackingData,
+        );
+
+        updatedTrackingData = cleanupResults.newTrackingData;
+        cleanupResults.newNodesToRepaint.forEach((nodeId) => {
+          if (!nodesToRepaint.includes(nodeId)) {
+            nodesToRepaint.push(nodeId);
+          }
+        });
+
+        // --- add the moved annotation to the new top frame
+        const identifier = new Identifier({
+          for: node,
+          data: page,
+          isMercadoMode,
+          messenger,
+        });
+
+        // get/set the keystop info
+        const identifierResult = identifier.getSetKeystop();
+
+        if (identifierResult.status === 'success') {
+          // flag node for repainting
+          if (!nodesToRepaint.includes(node.id)) {
+            nodesToRepaint.push(node.id);
+          }
+        } else if (!nodesToRepaint.includes(node.id)) {
+          nodesToRepaint.push(node.id);
+        }
       }
     } else {
-      // ----- node is missing; remove annotation
+      // ----- node is missing; remove annotation + re-order and re-paint remaining nodes
       console.log('node is missing; remove annotation'); // eslint-disable-line no-console
-      // remove annotation node
-      removeNode(trackingEntry.annotationId);
 
-      // remove from tracking data
-      updatedTrackingData = updateArray(updatedTrackingData, trackingEntry, 'id', 'remove');
+      // --- clean up and re-paint existing top frame
+      const cleanupResults = fullCleanup(
+        trackingEntry,
+        updatedTrackingData,
+      );
 
-      // remove from topFrame list + trigger re-paint
+      updatedTrackingData = cleanupResults.newTrackingData;
+      cleanupResults.newNodesToRepaint.forEach((nodeId) => {
+        if (!nodesToRepaint.includes(nodeId)) {
+          nodesToRepaint.push(nodeId);
+        }
+      });
     }
   });
 
@@ -176,7 +313,8 @@ const refreshAnnotations = (
       });
 
       // re-draw the annotation
-      painter.addKeystop();
+      const painterResult = painter.addKeystop();
+      messenger.handleResult(painterResult);
     }
   });
 
@@ -1358,6 +1496,7 @@ export default class App {
       refreshAnnotations(
         trackingData,
         page,
+        messenger,
         isMercadoMode,
       );
 
