@@ -304,7 +304,7 @@ const main = async () => {
     App.refreshGUI();
 
     // set the interval for each diff check
-    const checkInternal = 200;
+    const checkInternal = 50;
 
     // update/set the comparison timestamps
     initialStamp = new Date().getTime();

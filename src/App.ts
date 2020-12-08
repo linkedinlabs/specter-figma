@@ -1515,21 +1515,21 @@ export default class App {
       isSelected: boolean,
     }> = [];
 
+    // grab tracking data for the page (currently only Keystops)
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+    );
+
+    // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
+    refreshAnnotations(
+      trackingData,
+      page,
+      messenger,
+      isMercadoMode,
+    );
+
     // specific to `a11y-keyboard`
     if (currentView === 'a11y-keyboard') {
-      // grab tracking data for the page
-      const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-        page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
-      );
-
-      // re-draw broken/moved annotations and clean up orphaned
-      refreshAnnotations(
-        trackingData,
-        page,
-        messenger,
-        isMercadoMode,
-      );
-
       // iterate through each node in a selection
       const selectedNodes: Array<SceneNode> = selection;
 
