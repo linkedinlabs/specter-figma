@@ -34,14 +34,18 @@ export default class Crawler {
     return this.array[0];
   }
 
-  /** WIP
+  /**
    * @description Looks into the selection array for any groups and pulls out individual nodes,
-   * effectively flattening the selection. NOTE: Component and Instance types are included to
-   * allow Specter to annotate at the top-level. If they are excluded, components nested within
-   * components will also be annotated.
+   * effectively flattening the selection. NOTE: Component and Instance types are included by
+   * default as single nodes to allow Specter to annotate at the top-level. If they are excluded
+   * (set `excludeComponents` to `true`), their children will be evaluated and components nested
+   * within components will also be annotated.
    *
    * @kind function
    * @name all
+   *
+   * @param {boolean} excludeComponents When set to `true` (default), Component and Instance
+   * type nodes will have their children evaluated for inclusion in the flattened selection.
    *
    * @returns {Object} All items (including children) individual in an updated array.
    */
@@ -606,11 +610,11 @@ export default class Crawler {
           const topNode = nodeA as FrameNode;
           const bottomNode = nodeB as FrameNode;
 
-          const nodeALeftX = nodeAPosition.x + topNode.horizontalPadding;
-          const nodeARightX = nodeAPosition.x + nodeAPosition.width - topNode.horizontalPadding;
-          const nodeBLeftX = nodeBPosition.x + bottomNode.horizontalPadding;
+          const nodeALeftX = nodeAPosition.x + topNode.paddingLeft;
+          const nodeARightX = nodeAPosition.x + nodeAPosition.width - topNode.paddingLeft;
+          const nodeBLeftX = nodeBPosition.x + bottomNode.paddingLeft;
           const nodeBRightX = nodeBPosition.x
-            + nodeBPosition.width - bottomNode.horizontalPadding;
+            + nodeBPosition.width - bottomNode.paddingLeft;
 
           if (nodeBLeftX >= nodeALeftX) {
             // left-most of A is to the left of left-most of B
@@ -654,9 +658,9 @@ export default class Crawler {
           // set a `thePosition` in the padded area to simulate the gap
           // move final `x` to position annotation at mid-point
           thePosition.x = leftEdgeX + (positionWidth / 2);
-          thePosition.y = nodeAPosition.y + nodeAPosition.height - topNode.verticalPadding;
+          thePosition.y = nodeAPosition.y + nodeAPosition.height - topNode.paddingTop;
           thePosition.width = positionWidth;
-          thePosition.height = topNode.verticalPadding + bottomNode.verticalPadding;
+          thePosition.height = topNode.paddingTop + bottomNode.paddingTop;
           thePosition.orientation = 'horizontal';
           thePosition.layerAId = nodeA.id;
           thePosition.layerBId = nodeB.id;
@@ -674,11 +678,11 @@ export default class Crawler {
           leftEdgeX = nodeAPosition.x + nodeAPosition.width; // lowest x within gap
           rightEdgeX = nodeBPosition.x; // highest x within gap
 
-          const nodeATopY = nodeAPosition.y + leftNode.verticalPadding;
-          const nodeABottomY = nodeAPosition.y + nodeAPosition.height - leftNode.verticalPadding;
-          const nodeBTopY = nodeBPosition.y + rightNode.verticalPadding;
+          const nodeATopY = nodeAPosition.y + leftNode.paddingTop;
+          const nodeABottomY = nodeAPosition.y + nodeAPosition.height - leftNode.paddingTop;
+          const nodeBTopY = nodeBPosition.y + rightNode.paddingTop;
           const nodeBBottomY = nodeBPosition.y
-            + nodeBPosition.height - rightNode.verticalPadding;
+            + nodeBPosition.height - rightNode.paddingTop;
 
           if (nodeBTopY >= nodeATopY) {
             // top of A is higher than top of B
@@ -722,10 +726,10 @@ export default class Crawler {
 
           // set a `thePosition` in the padded area to simulate the gap
           // move final `y` to position annotation at mid-point
-          thePosition.x = leftEdgeX - leftNode.horizontalPadding;
+          thePosition.x = leftEdgeX - leftNode.paddingLeft;
           thePosition.y = topEdgeY + (positionHeight / 2);
           thePosition.width = rightEdgeX - leftEdgeX
-            + leftNode.horizontalPadding + rightNode.horizontalPadding;
+            + leftNode.paddingLeft + rightNode.paddingLeft;
           thePosition.height = positionHeight;
           thePosition.orientation = 'vertical';
           thePosition.layerAId = nodeA.id;
@@ -987,9 +991,9 @@ export default class Crawler {
 
     // -------- set positions - essentially defining rectangles in the padded spaces
     // top
-    const topWidth = nodePosition.width - (node.horizontalPadding * 2);
-    const topHeight = node.verticalPadding;
-    const topX = nodePosition.x + node.horizontalPadding;
+    const topWidth = nodePosition.width - (node.paddingLeft + node.paddingRight);
+    const topHeight = node.paddingTop;
+    const topX = nodePosition.x + node.paddingLeft;
     const topY = nodePosition.y;
 
     // bottom
@@ -999,7 +1003,7 @@ export default class Crawler {
     const bottomY = nodePosition.y + nodePosition.height - topHeight;
 
     // left
-    const leftWidth = node.horizontalPadding;
+    const leftWidth = node.paddingLeft;
     const leftHeight = nodePosition.height - topHeight - bottomHeight;
     const leftX = nodePosition.x;
     const leftY = nodePosition.y + topHeight;

@@ -4,6 +4,7 @@ import Messenger from './Messenger';
 import Painter from './Painter';
 import {
   existsInArray,
+  findTopFrame,
   getPeerPluginData,
   updateArray,
 } from './Tools';
@@ -39,25 +40,76 @@ const assemble = (context: any = null) => {
  *
  * @param {Array} trackingData The page-level node tracking data.
  * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ * @param {string} topFrameId An optional Node ID for the top frame.
  *
  * @returns {null}
  */
 const cleanupAnnotations = (
   trackingData: Array<PluginNodeTrackingData>,
   orphanedIds: Array<string>,
+  topFrameId?: string,
 ): void => {
   orphanedIds.forEach((orphanedId) => {
     const entryIndex: 0 = 0;
     const trackingEntry = trackingData.filter(
       entry => entry.id === orphanedId,
     )[entryIndex];
-    if (trackingEntry) {
+
+    // ignore nodes that are not in the current top frame
+    if (
+      (trackingEntry && (topFrameId === trackingEntry.topFrameId))
+      || (trackingEntry && !topFrameId)
+    ) {
       const annotationNode = figma.getNodeById(trackingEntry.annotationId);
       if (annotationNode) {
         annotationNode.remove();
       }
     }
   });
+  return null;
+};
+
+/**
+ * @description Checks tracking data against the provided frameNode. If any annotations
+ * are missing, they are re-painted.
+ *
+ * @kind function
+ * @name refreshAnnotations
+ *
+ * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Object} page The Figma PageNode.
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ *
+ * @returns {null}
+ */
+const refreshAnnotations = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+  page: PageNode,
+  isMercadoMode: boolean,
+): void => {
+  trackingData.forEach((trackingEntry) => {
+    if (trackingEntry.topFrameId === frameNode.id) {
+      const annotationNode: SceneNode = frameNode.findOne(
+        node => node.id === trackingEntry.annotationId,
+      );
+      const sceneNode: SceneNode = frameNode.findOne(node => node.id === trackingEntry.id);
+
+      if (!annotationNode && sceneNode) {
+        // set up Painter instance for the node
+        const painter = new Painter({
+          for: sceneNode,
+          in: page,
+          isMercadoMode,
+        });
+
+        // re-draw the annotation
+        painter.addKeystop();
+      }
+    }
+  });
+
   return null;
 };
 
@@ -101,7 +153,11 @@ const getKeystopNodes = (
         nodes.push(nodeToAdd);
       } else if (trackingData.length > 0) {
         // remove orphaned annotation
-        cleanupAnnotations(trackingData, [keystopItem.id]);
+        cleanupAnnotations(
+          trackingData,
+          [keystopItem.id],
+          frameNode.id,
+        );
       }
     });
   }
@@ -216,6 +272,68 @@ const getOptions = async (): Promise<PluginOptions> => {
 };
 
 /**
+ * @description Invokes Figma’s `setRelaunchData` on the passed node and sets up
+ * relaunch buttons. The buttons in-use are also saved/tracked on the node’s data.
+ *
+ * @kind function
+ * @name setRelaunchCommands
+ *
+ * @param {Object} node The node (`BaseNode`) to use with `setRelaunchData`.
+ * @param {string} command The possible commands to pass along. These commands must match
+ * what is available in the manfiest.json file under “relaunchButtons”.
+ *
+ * @returns {null}
+ */
+const setRelaunchCommands = (
+  node: BaseNode,
+  command: 'annotate' | 'annotate-custom' | 'measure',
+): void => {
+  const commandBundle = [];
+
+  // check for existing buttons (saved to plugin data because we cannot read them from
+  // Figma directly) and add them to the temporary bundle array
+  const existingRelaunchButtons = JSON.parse(node.getPluginData(DATA_KEYS.relaunch) || null);
+  if (existingRelaunchButtons && existingRelaunchButtons.length > 0) {
+    existingRelaunchButtons.forEach((existingCommand) => {
+      commandBundle.push(existingCommand);
+    });
+  }
+
+  // if the current `command` is new, add it to the bundle array
+  if (!commandBundle.includes(command)) {
+    commandBundle.push(command);
+  }
+
+  // set up the button commands object that Figma expects.
+  // add commands from the command bundle to it
+  const buttonBundle: {} = {};
+  commandBundle.forEach((bundledCommand) => {
+    buttonBundle[bundledCommand] = '';
+  });
+
+  // pass the button commands object to Figma's relaunch button helper
+  node.setRelaunchData(buttonBundle);
+
+  // add “Annotate” to top frame
+  const topFrameNode = findTopFrame(node);
+  if (topFrameNode) {
+    topFrameNode.setRelaunchData({
+      annotate: '',
+    });
+  }
+
+  // add “Open Specter” to page
+  figma.currentPage.parent.setRelaunchData({
+    tools: '',
+  });
+
+  // save the current command bundle array to the node for future use
+  node.setPluginData(DATA_KEYS.relaunch, JSON.stringify(commandBundle));
+
+  return null;
+};
+
+/**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -260,7 +378,6 @@ export default class App {
 
     return null;
   }
-
 
   /**
    * @description Matches corner radius of a node (or inner-child node) with a matrix
@@ -632,6 +749,9 @@ export default class App {
         // draw the annotation
         drawAnnotation(hasText);
       }
+
+      setRelaunchCommands(node, 'annotate');
+
       return null;
     });
 
@@ -717,6 +837,8 @@ export default class App {
 
     // set the custom text
     setText(handleSetTextResult);
+    setRelaunchCommands(node, 'annotate-custom');
+
     return null;
   }
 
@@ -782,6 +904,7 @@ export default class App {
 
     if (selection.length === 1) {
       paintResult = painter.addDimMeasurement();
+      setRelaunchCommands(node, 'measure');
     }
 
     // read the response from Painter; log and display message(s)
@@ -1126,6 +1249,13 @@ export default class App {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
         keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+
+        refreshAnnotations(
+          topFrame,
+          trackingData,
+          page,
+          isMercadoMode,
+        );
       });
 
       // iterate topFrames and select nodes that could have stops based on assignment data
@@ -1259,6 +1389,11 @@ export default class App {
     const crawler = new Crawler({ for: nodes });
     const topFrameNodes: Array<FrameNode> = crawler.topFrames();
 
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+    );
+
     // iterate topFrames and remove annotation(s) that match node(s)
     topFrameNodes.forEach((frameNode: FrameNode) => {
       // read keystop list data from top frame
@@ -1268,10 +1403,13 @@ export default class App {
       }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
 
       // remove item(s) from the keystop list
+      // remove item(s) from the tracking data
       let newKeystopList = keystopList;
+      let newTrackingData = trackingData;
       if (keystopList) {
         nodes.forEach((node) => {
           newKeystopList = updateArray(newKeystopList, node, 'id', 'remove');
+          newTrackingData = updateArray(newTrackingData, node, 'id', 'remove');
         });
       }
 
@@ -1279,6 +1417,12 @@ export default class App {
       frameNode.setPluginData(
         DATA_KEYS.keystopList,
         JSON.stringify(newKeystopList),
+      );
+
+      // set new tracking data
+      page.setPluginData(
+        DATA_KEYS.keystopAnnotations,
+        JSON.stringify(newTrackingData),
       );
 
       // use the new, sorted list to select the original nodes in figma
@@ -1294,10 +1438,7 @@ export default class App {
     const nodeIds: Array<string> = [];
     nodes.forEach(node => nodeIds.push(node.id));
 
-    // grab tracking data for the page
-    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
-    );
+    // remove the orphaned annotations
     cleanupAnnotations(trackingData, nodeIds);
 
     // repaint affected nodes
