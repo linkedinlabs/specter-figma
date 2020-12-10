@@ -8,8 +8,8 @@ You must be using the Figma [desktop app](https://www.figma.com/downloads/). It 
 
 1. Unzip the `Specter.figmaplugin.zip` file somewhere on your computer where you will be able to find it later.
 2. Open the Figma desktop app
-3. In Figma, on the left-hand sidebar of your dashboard, click “Plugins”
-4. On the right-hand sidebar of “Plugins”, next to “Create your own plugin”, click the “plus” icon.
+3. In Figma, at the top of the left-hand sidebar of your dashboard, click your name/avatar and then click “Plugins”
+4. In the middle of screen, next to “Create your own plugin”, click the “plus” icon.
 5. In the resulting modal, under “Link existing plugin”, click on “Click to choose a manifest.json file”
 6. Navigate to the directory that you un-zipped and select the “manifest.json” file.
 
