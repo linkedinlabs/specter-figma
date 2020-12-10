@@ -103,6 +103,10 @@
       "command": "measure",
       "name": "Measure",
       "multipleSelection": true
+    },
+    {
+      "name": "Open Specter",
+      "command": "tools"
     }
   ]
 }

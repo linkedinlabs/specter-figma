@@ -2,6 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter';
+import { findTopFrame } from './Tools';
 import { DATA_KEYS } from './constants';
 
 /**
@@ -67,6 +68,19 @@ const setRelaunchCommands = (
 
   // pass the button commands object to Figma's relaunch button helper
   node.setRelaunchData(buttonBundle);
+
+  // add “Annotate” to top frame
+  const topFrameNode = findTopFrame(node);
+  if (topFrameNode) {
+    topFrameNode.setRelaunchData({
+      annotate: '',
+    });
+  }
+
+  // add “Open Specter” to page
+  figma.currentPage.parent.setRelaunchData({
+    tools: '',
+  });
 
   // save the current command bundle array to the node for future use
   node.setPluginData(DATA_KEYS.relaunch, JSON.stringify(commandBundle));
