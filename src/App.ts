@@ -319,7 +319,10 @@ const refreshAnnotations = (
         // we need to track nodes that previously had annotations;
         // re-add them if they’re currently placed off-artboard on the page
         const topFrame: FrameNode = findTopFrame(nodeToRepaint);
-        if (topFrame.parent.type === 'PAGE') {
+        if (
+          (!topFrame && nodeToRepaint.parent.type === 'PAGE')
+          || (topFrame && topFrame.parent.type === 'PAGE')
+        ) {
           // `findTopFrame` returns self if the parent is the page
           // set up new tracking data node entry
           const nodeToTrack: SceneNode = nodeToRepaint as SceneNode;
@@ -335,7 +338,7 @@ const refreshAnnotations = (
             annotationId: null,
             id: nodeToTrack.id,
             linkId: null,
-            topFrameId: topFrame.parent.id,
+            topFrameId: nodeToRepaint.parent.id,
             nodePosition: currentNodePosition,
           };
 
@@ -1532,7 +1535,6 @@ export default class App {
     if (currentView === 'a11y-keyboard') {
       // iterate through each node in a selection
       const selectedNodes: Array<SceneNode> = selection;
-
       // determine topFrames involved in the current selection
       const crawlerForSelected = new Crawler({ for: selectedNodes });
       const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
@@ -1571,6 +1573,7 @@ export default class App {
         if (
           !existsInArray(nodes, node.id)
           && !existsInArray(topFrameNodes, node.id)
+          && (node.parent && node.parent.type !== 'PAGE')
         ) {
           nodes.push(node);
         }
