@@ -194,10 +194,10 @@ const cleanColorName = (name: string): string => {
  * @private
  */
 const setStyleText = (options: {
-  effectStyleId?: string,
-  fillStyleId?: string,
-  strokeStyleId?: string,
-  textStyleId?: string,
+  effectStyleId?: string | symbol,
+  fillStyleId?: string | symbol,
+  strokeStyleId?: string | symbol,
+  textStyleId?: string | symbol,
   textAlignHorizontal?: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED',
 }): {
   textToSet: string,
@@ -215,10 +215,14 @@ const setStyleText = (options: {
   const subtextToSetArray: Array<string> = [];
 
   // load the styles
-  const effectStyle: BaseStyle = figma.getStyleById(effectStyleId);
-  const fillStyle: BaseStyle = figma.getStyleById(fillStyleId);
-  const strokeStyle: BaseStyle = figma.getStyleById(strokeStyleId);
-  const textStyle: BaseStyle = figma.getStyleById(textStyleId);
+  const effectStyle: BaseStyle = effectStyleId !== figma.mixed
+    ? figma.getStyleById(effectStyleId as string) : null;
+  const fillStyle: BaseStyle = fillStyleId !== figma.mixed
+    ? figma.getStyleById(fillStyleId as string) : null;
+  const strokeStyle: BaseStyle = strokeStyleId !== figma.mixed
+    ? figma.getStyleById(strokeStyleId as string) : null;
+  const textStyle: BaseStyle = textStyleId !== figma.mixed
+    ? figma.getStyleById(textStyleId as string) : null;
 
   // ------- set text (based on hierarchy Text > Effect > Fill > Stroke)
 
