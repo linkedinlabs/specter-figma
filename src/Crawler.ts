@@ -67,7 +67,6 @@ export default class Crawler {
       if (
         excludedTypes.filter(type => type === node.type).length < 1
         && node.visible
-        && !node.locked
       ) {
         // non-frame or -group nodes get added to the final selection
         flatSelection.push(node);
@@ -79,9 +78,9 @@ export default class Crawler {
 
         // set initial holding array and add first level of children
         let innerLayers = [];
-        if (node.visible && !node.locked) {
+        if (node.visible) {
           node.children.forEach((child) => {
-            if (child.visible && !node.locked) {
+            if (child.visible) {
               innerLayers.push(child);
             }
           });
@@ -106,7 +105,6 @@ export default class Crawler {
               id: string,
               type: string,
               visible: boolean,
-              locked: boolean,
             },
           ) => {
             if (
@@ -115,16 +113,15 @@ export default class Crawler {
               // && innerLayer.type !== CONTAINER_NODE_TYPES.component
               // && innerLayer.type !== CONTAINER_NODE_TYPES.instance
               && innerLayer.visible
-              && !innerLayer.locked
             ) {
               // non-frame or -group nodes get added to the final selection
               flatSelection.push(innerLayer);
-            } else if (innerLayer.visible && !innerLayer.locked) {
+            } else if (innerLayer.visible) {
               // frames and groups are added for their own styles to be evaluated
               flatSelection.push(innerLayer);
 
               innerLayer.children.forEach((child) => {
-                if (child.visible && !child.locked) {
+                if (child.visible) {
                   innerLayers.push(child);
                 }
               });
