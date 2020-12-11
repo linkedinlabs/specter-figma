@@ -65,6 +65,71 @@ const cleanUpAnnotations = (
   return null;
 };
 
+/** WIP
+ * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
+ * the annotation is removed.
+ *
+ * @kind function
+ * @name cleanBrokenLinks
+ *
+ * @param {Array} trackingData The page-level node tracking data.
+ * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ *
+ * @returns {null}
+ */
+const cleanBrokenLinks = (
+  frameNode: FrameNode,
+  trackingData: Array<PluginNodeTrackingData>,
+) => {
+  // ----- remove annotations with broken links
+  const crawlerForTopFrame = new Crawler({ for: [frameNode] });
+  const nodesToEvaluate = crawlerForTopFrame.all();
+  const annotationNodesToRemove: Array<string> = [];
+
+  // find nodes that do not match the tracking data
+  nodesToEvaluate.forEach((node) => {
+    const nodeLinkData: PluginNodeLinkData = JSON.parse(
+      node.getPluginData(DATA_KEYS.linkId) || null,
+    );
+    if (nodeLinkData && nodeLinkData.role === 'node') {
+      const filterIndex = 0;
+      const matchingData = trackingData.filter(
+        data => (data.linkId === nodeLinkData.id),
+      )[filterIndex];
+      if (
+        matchingData
+        && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
+      ) {
+        // final check; make sure node that corresponds to the annotation does not
+        // actually exist within the current top frame.
+        const existingNode: SceneNode = frameNode.findOne(
+          frameChild => frameChild.id === matchingData.id,
+        );
+        if (!existingNode) {
+          // all checks pass; delete the annotation node
+          annotationNodesToRemove.push(matchingData.linkId);
+        }
+      }
+    }
+  });
+
+  // find annotation nodes that match the nodes to be removed and remove them
+  nodesToEvaluate.forEach((node) => {
+    // need to re-check for a node's existence since we are deleting as we go
+    const activeNode: BaseNode = figma.getNodeById(node.id);
+    if (activeNode) {
+      const nodeLinkData: PluginNodeLinkData = JSON.parse(
+        activeNode.getPluginData(DATA_KEYS.linkId) || null,
+      );
+      if (nodeLinkData && nodeLinkData.role === 'annotation') {
+        if (annotationNodesToRemove.includes(nodeLinkData.id)) {
+          activeNode.remove();
+        }
+      }
+    }
+  });
+};
+
 /**
  * @description Checks tracking data against the provided frameNode. If any annotations
  * are missing, they are re-painted. If any links are broken/invalidated, annotations are removed.
@@ -358,54 +423,6 @@ const refreshAnnotations = (
       }
     }
   });
-
-  // ----- remove annotations with broken links
-  // const crawlerForTopFrame = new Crawler({ for: [frameNode] });
-  // const nodesToEvaluate = crawlerForTopFrame.all();
-  // const annotationNodesToRemove: Array<string> = [];
-
-  // // find nodes that do not match the tracking data
-  // nodesToEvaluate.forEach((node) => {
-  //   const nodeLinkData: PluginNodeLinkData = JSON.parse(
-  //     node.getPluginData(DATA_KEYS.linkId) || null,
-  //   );
-  //   if (nodeLinkData && nodeLinkData.role === 'node') {
-  //     const filterIndex = 0;
-  //     const matchingData = trackingData.filter(
-  //       data => (data.linkId === nodeLinkData.id),
-  //     )[filterIndex];
-  //     if (
-  //       matchingData
-  //       && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
-  //     ) {
-  //       // final check; make sure node that corresponds to the annotation does not
-  //       // actually exist within the current top frame.
-  //       const existingNode: SceneNode = frameNode.findOne(
-  //         frameChild => frameChild.id === matchingData.id,
-  //       );
-  //       if (!existingNode) {
-  //         // all checks pass; delete the annotation node
-  //         annotationNodesToRemove.push(matchingData.linkId);
-  //       }
-  //     }
-  //   }
-  // });
-
-  // // find annotation nodes that match the nodes to be removed and remove them
-  // nodesToEvaluate.forEach((node) => {
-  //   // need to re-check for a node's existence since we are deleting as we go
-  //   const activeNode: BaseNode = figma.getNodeById(node.id);
-  //   if (activeNode) {
-  //     const nodeLinkData: PluginNodeLinkData = JSON.parse(
-  //       activeNode.getPluginData(DATA_KEYS.linkId) || null,
-  //     );
-  //     if (nodeLinkData && nodeLinkData.role === 'annotation') {
-  //       if (annotationNodesToRemove.includes(nodeLinkData.id)) {
-  //         activeNode.remove();
-  //       }
-  //     }
-  //   }
-  // });
 
   return null;
 };
@@ -1531,14 +1548,18 @@ export default class App {
       isMercadoMode,
     );
 
+    // iterate through each node in a selection
+    const selectedNodes: Array<SceneNode> = selection;
+    // determine topFrames involved in the current selection
+    const crawlerForSelected = new Crawler({ for: selectedNodes });
+    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
+    topFrameNodes.forEach((topFrame: FrameNode) => {
+      cleanBrokenLinks(topFrame, trackingData);
+    });
+
     // specific to `a11y-keyboard`
     if (currentView === 'a11y-keyboard') {
-      // iterate through each node in a selection
-      const selectedNodes: Array<SceneNode> = selection;
-      // determine topFrames involved in the current selection
-      const crawlerForSelected = new Crawler({ for: selectedNodes });
-      const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
-
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const keystopNodes: Array<SceneNode> = getKeystopNodes(topFrame, trackingData);
