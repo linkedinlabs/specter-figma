@@ -36,28 +36,37 @@ export default class Crawler {
 
   /**
    * @description Looks into the selection array for any groups and pulls out individual nodes,
-   * effectively flattening the selection. NOTE: Component and Instance types are included to
-   * allow Specter to annotate at the top-level. If they are excluded, components nested within
-   * components will also be annotated.
+   * effectively flattening the selection. NOTE: Component and Instance types are included by
+   * default as single nodes to allow Specter to annotate at the top-level. If they are excluded
+   * (set `excludeComponents` to `true`), their children will be evaluated and components nested
+   * within components will also be annotated.
    *
    * @kind function
    * @name all
    *
+   * @param {boolean} excludeComponents When set to `true` (default), Component and Instance
+   * type nodes will have their children evaluated for inclusion in the flattened selection.
+   *
    * @returns {Object} All items (including children) individual in an updated array.
    */
-  all() {
+  all(excludeComponents: boolean = false) {
     const initialSelection = this.array;
     const flatSelection = [];
+    const excludedTypes: Array<string> = [
+      CONTAINER_NODE_TYPES.group,
+      CONTAINER_NODE_TYPES.frame,
+    ];
+
+    if (excludeComponents) {
+      excludedTypes.push(CONTAINER_NODE_TYPES.component);
+      excludedTypes.push(CONTAINER_NODE_TYPES.instance);
+    }
 
     // iterate through initial selection
     initialSelection.forEach((node: any) => {
       if (
-        node.type !== CONTAINER_NODE_TYPES.group
-        && node.type !== CONTAINER_NODE_TYPES.frame
-        // && node.type !== CONTAINER_NODE_TYPES.component
-        // && node.type !== CONTAINER_NODE_TYPES.instance
+        excludedTypes.filter(type => type === node.type).length < 1
         && node.visible
-        && !node.locked
       ) {
         // non-frame or -group nodes get added to the final selection
         flatSelection.push(node);
@@ -69,9 +78,9 @@ export default class Crawler {
 
         // set initial holding array and add first level of children
         let innerLayers = [];
-        if (node.visible && !node.locked) {
+        if (node.visible) {
           node.children.forEach((child) => {
-            if (child.visible && !node.locked) {
+            if (child.visible) {
               innerLayers.push(child);
             }
           });
@@ -96,7 +105,6 @@ export default class Crawler {
               id: string,
               type: string,
               visible: boolean,
-              locked: boolean,
             },
           ) => {
             if (
@@ -105,16 +113,15 @@ export default class Crawler {
               // && innerLayer.type !== CONTAINER_NODE_TYPES.component
               // && innerLayer.type !== CONTAINER_NODE_TYPES.instance
               && innerLayer.visible
-              && !innerLayer.locked
             ) {
               // non-frame or -group nodes get added to the final selection
               flatSelection.push(innerLayer);
-            } else if (innerLayer.visible && !innerLayer.locked) {
+            } else if (innerLayer.visible) {
               // frames and groups are added for their own styles to be evaluated
               flatSelection.push(innerLayer);
 
               innerLayer.children.forEach((child) => {
-                if (child.visible && !child.locked) {
+                if (child.visible) {
                   innerLayers.push(child);
                 }
               });
