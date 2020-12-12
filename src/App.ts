@@ -65,69 +65,151 @@ const cleanUpAnnotations = (
   return null;
 };
 
-/** WIP
- * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
- * the annotation is removed.
+/**
+ * @description Checks frame list data against annotations and uses linkId between annotation
+ * and original node to determine if the link is broken. Annotations for broken links are
+ * removed and new annotations are drawn, if possible.
  *
  * @kind function
- * @name cleanBrokenLinks
+ * @name repairBrokenLinks
  *
+ * @param {Object} frameNode A top frame node to evaluate for context.
  * @param {Array} trackingData The page-level node tracking data.
- * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ * @param {Object} page The Figma PageNode.
+ * @param {Object} messenger An initialized instance of the Messenger class for logging.
+ * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
  *
  * @returns {null}
  */
-const cleanBrokenLinks = (
+const repairBrokenLinks = (
   frameNode: FrameNode,
   trackingData: Array<PluginNodeTrackingData>,
+  page: PageNode,
+  messenger: any,
+  isMercadoMode: boolean,
 ) => {
   // ----- remove annotations with broken links
   const crawlerForTopFrame = new Crawler({ for: [frameNode] });
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
 
-  // find nodes that do not match the tracking data
-  nodesToEvaluate.forEach((node) => {
-    const nodeLinkData: PluginNodeLinkData = JSON.parse(
-      node.getPluginData(DATA_KEYS.linkId) || null,
-    );
-    if (nodeLinkData && nodeLinkData.role === 'node') {
-      const filterIndex = 0;
-      const matchingData = trackingData.filter(
-        data => (data.linkId === nodeLinkData.id),
-      )[filterIndex];
-      if (
-        matchingData
-        && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
-      ) {
-        // final check; make sure node that corresponds to the annotation does not
-        // actually exist within the current top frame.
-        const existingNode: SceneNode = frameNode.findOne(
-          frameChild => frameChild.id === matchingData.id,
-        );
-        if (!existingNode) {
-          // all checks pass; delete the annotation node
-          annotationNodesToRemove.push(matchingData.linkId);
-        }
-      }
-    }
-  });
+  const keystopList: Array<{
+    id: string,
+    position: number,
+  }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
 
-  // find annotation nodes that match the nodes to be removed and remove them
-  nodesToEvaluate.forEach((node) => {
-    // need to re-check for a node's existence since we are deleting as we go
-    const activeNode: BaseNode = figma.getNodeById(node.id);
-    if (activeNode) {
+  if (keystopList) {
+    const updatedKeystopList = keystopList;
+    let updatesMade = false;
+
+    // find nodes that do not match the tracking data
+    nodesToEvaluate.forEach((node) => {
       const nodeLinkData: PluginNodeLinkData = JSON.parse(
-        activeNode.getPluginData(DATA_KEYS.linkId) || null,
+        node.getPluginData(DATA_KEYS.linkId) || null,
       );
-      if (nodeLinkData && nodeLinkData.role === 'annotation') {
-        if (annotationNodesToRemove.includes(nodeLinkData.id)) {
-          activeNode.remove();
+      if (nodeLinkData && nodeLinkData.role === 'node') {
+        const filterIndex = 0;
+        const matchingData = trackingData.filter(
+          data => (data.linkId === nodeLinkData.id),
+        )[filterIndex];
+        if (
+          matchingData
+          && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
+        ) {
+          // final check; make sure node that corresponds to the annotation does not
+          // actually exist within the current top frame.
+          const existingNode: SceneNode = frameNode.findOne(
+            frameChild => frameChild.id === matchingData.id,
+          );
+          if (!existingNode) {
+            // all checks pass; delete the annotation node
+            annotationNodesToRemove.push(matchingData.linkId);
+            // updatesMade = true;
+
+            // find the index of a pre-existing `id` match on the array
+            const itemIndex: number = updatedKeystopList.findIndex(
+              foundItem => (foundItem.id === matchingData.id),
+            );
+
+            // if a match exists, update the id
+            if (itemIndex > -1) {
+              updatedKeystopList[itemIndex].id = node.id;
+            }
+          }
         }
       }
+    });
+
+    // find annotation nodes that match the nodes to be removed and remove them
+    nodesToEvaluate.forEach((node) => {
+      // need to re-check for a node's existence since we are deleting as we go
+      const activeNode: BaseNode = figma.getNodeById(node.id);
+      if (activeNode) {
+        const nodeLinkData: PluginNodeLinkData = JSON.parse(
+          activeNode.getPluginData(DATA_KEYS.linkId) || null,
+        );
+        if (nodeLinkData && nodeLinkData.role === 'annotation') {
+          if (annotationNodesToRemove.includes(nodeLinkData.id)) {
+            // remove annotation
+            activeNode.remove();
+
+            // set flag
+            updatesMade = true;
+          }
+        }
+      }
+    });
+
+    // if updates were made, we need reset the keystop list and re-paint annotations
+    if (updatesMade) {
+      // re-assign keystop with Identifier
+      const nodesToReannotate: Array<string> = [];
+      updatedKeystopList.forEach((listEntry) => {
+        // flag node for repainting
+        if (!nodesToReannotate.includes(listEntry.id)) {
+          nodesToReannotate.push(listEntry.id);
+        }
+      });
+
+      // reset the list
+      frameNode.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify([]),
+      );
+
+      // iterate nodes to re-assign and re-paint
+      nodesToReannotate.forEach((nodeId: string) => {
+        // need to re-check for a node's existence since we are deleting as we go
+        const nodeToReassign: BaseNode = figma.getNodeById(nodeId);
+        if (nodeToReassign) {
+          // set up Identifier instance for the node
+          const identifier = new Identifier({
+            for: nodeToReassign,
+            data: page,
+            isMercadoMode,
+            messenger,
+          });
+
+          // get/set the keystop info
+          const identifierResult = identifier.getSetKeystop();
+          messenger.handleResult(identifierResult, true);
+
+          if (identifierResult.status === 'success') {
+            // set up Painter instance for the node
+            const painter = new Painter({
+              for: nodeToReassign,
+              in: page,
+              isMercadoMode,
+            });
+
+            // re-draw the annotation
+            const painterResult = painter.addKeystop();
+            messenger.handleResult(painterResult, true);
+          }
+        }
+      });
     }
-  });
+  }
 };
 
 /**
@@ -1554,8 +1636,16 @@ export default class App {
     const crawlerForSelected = new Crawler({ for: selectedNodes });
     const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
 
+    // look for nodes/annotations that no longer match their topFrame and repair
+    // (this happens when copying a top-frame)
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      cleanBrokenLinks(topFrame, trackingData);
+      repairBrokenLinks(
+        topFrame,
+        trackingData,
+        page,
+        messenger,
+        isMercadoMode,
+      );
     });
 
     // specific to `a11y-keyboard`
