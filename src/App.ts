@@ -333,8 +333,6 @@ const refreshAnnotations = (
     return results;
   };
 
-  console.log('run refreshAnnotations'); // eslint-disable-line no-console
-  // console.log(trackingData)
   let updatedTrackingData: Array<PluginNodeTrackingData> = trackingData;
   const nodesToRepaint: Array<string> = [];
   trackingData.forEach((trackingEntry) => {
@@ -363,7 +361,7 @@ const refreshAnnotations = (
 
         // ----- check if position has changed
         if (deepCompare(currentNodePosition, trackingEntry.nodePosition)) {
-          console.log('something about position is different; repaint'); // eslint-disable-line no-console
+          // ---- something about position is different; repaint
           // remove annotation node
           removeNode(trackingEntry.annotationId);
 
@@ -377,7 +375,6 @@ const refreshAnnotations = (
           // ----- check if annotation node is still there
           if (!annotationNode) {
             // ----- annotation is missing; repaint
-            console.log('annotation is missing; repaint'); // eslint-disable-line no-console
             if (!nodesToRepaint.includes(node.id)) {
               nodesToRepaint.push(node.id);
             }
@@ -386,7 +383,6 @@ const refreshAnnotations = (
       } else {
         // ----- top frame has changed; remove annotation + re-order and re-paint remaining nodes
         //   --- add annotation within new top frame, if applicable
-        console.log('top frame has changed'); // eslint-disable-line no-console
 
         // --- clean up and re-paint existing top frame
         const cleanupResults = fullCleanup(
@@ -423,7 +419,6 @@ const refreshAnnotations = (
       }
     } else {
       // ----- node is missing; remove annotation + re-order and re-paint remaining nodes
-      console.log('node is missing; remove annotation'); // eslint-disable-line no-console
 
       // --- clean up and re-paint existing top frame
       const cleanupResults = fullCleanup(
