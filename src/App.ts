@@ -1889,6 +1889,29 @@ export default class App {
     }
   }
 
+  /** WIP
+   * @description Resizes the plugin UI based on either a default, or a provided
+   * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
+   *
+   * @kind function
+   * @name runCleanup
+   *
+   * @param {Object} payload Should contain `bodyHeight` as the height of the current
+   * contents calculated in the UI.
+   *
+   * @returns {Promise} Returns a promise for resolution.
+   */
+  static async runCleanup() {
+    // retrieve existing options
+    const options: PluginOptions = await getOptions();
+
+    // set `isInfo` to false
+    options.isInfo = false;
+
+    // save new options to storage
+    await figma.clientStorage.setAsync(DATA_KEYS.options, options);
+  }
+
   /**
    * @description Handles setting the UI view context based on a view type sent
    * from the UI thread. The new view type is saved to `clientStorage` and the `refreshGUI`
@@ -1961,10 +1984,12 @@ export default class App {
     // set some local options
     let action = 'showInfo';
     let timingDelay = 190;
+    let newIsInfo = true;
 
     if (!show) {
       action = 'hideInfo';
       timingDelay = 180;
+      newIsInfo = false;
     }
 
     setTimeout(() => {
@@ -1982,12 +2007,11 @@ export default class App {
     });
 
     // set `isInfo` in the options
-    options.isInfo = !options.isInfo;
+    options.isInfo = newIsInfo;
 
     // save new options to storage
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);
   }
-
 
   /**
    * @description Triggers a UI refresh and then displays the plugin UI.

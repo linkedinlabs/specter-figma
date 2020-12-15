@@ -178,6 +178,9 @@ const main = async () => {
   // set up logging
   const messenger = new Messenger({ for: figma, in: figma.currentPage });
 
+  // set initial options
+  await App.runCleanup();
+
   // set up the UI, hidden by default -----------------------------------------
   figma.showUI(__html__, { visible: false }); // eslint-disable-line no-undef
 
