@@ -1,11 +1,7 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
 import Messenger from './Messenger';
-import {
-  awaitUIReadiness,
-  loadFirstAvailableFontAsync,
-  resizeGUI,
-} from './Tools';
+import { awaitUIReadiness, loadFirstAvailableFontAsync } from './Tools';
 import { DATA_KEYS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
@@ -129,23 +125,10 @@ const dispatcher = async (action: {
         app.annotateMeasurement();
         break;
       case 'info':
-        setTimeout(() => {
-          resizeGUI('info', figma.ui);
-        }, 190);
-        figma.ui.postMessage({
-          action: 'showInfo',
-        });
+        App.showHideInfo();
         break;
       case 'info-hide': {
-        setTimeout(() => {
-          // let refresh determine size using plugin options for current view
-          App.refreshGUI();
-        }, 180);
-
-        // switch views
-        figma.ui.postMessage({
-          action: 'hideInfo',
-        });
+        App.showHideInfo(false);
         break;
       }
       case 'mercado-mode-toggle': {
@@ -153,7 +136,7 @@ const dispatcher = async (action: {
         break;
       }
       case 'resize':
-        App.resizeGUI(payload);
+        App.resizeGUIHeight(payload);
         break;
       case 'setViewContext':
         await App.setViewContext(payload);

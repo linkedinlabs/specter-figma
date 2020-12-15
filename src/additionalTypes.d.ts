@@ -28,6 +28,7 @@ declare global {
 
   type PluginOptions = {
     currentView: PluginViewTypes,
+    isInfo: boolean,
     isMercadoMode: boolean,
   };
 

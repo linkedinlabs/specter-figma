@@ -7,6 +7,7 @@ import {
   existsInArray,
   findTopFrame,
   getPeerPluginData,
+  resizeGUI,
   updateArray,
 } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
@@ -1582,7 +1583,16 @@ export default class App {
     // retrieve existing options
     const options: PluginOptions = await getOptions();
 
-    const { currentView, isMercadoMode } = options;
+    const {
+      currentView,
+      isInfo,
+      isMercadoMode,
+    } = options;
+
+    // no need to update if the info panel is open
+    if (isInfo) {
+      return null;
+    }
 
     // calculate UI size, based on view type and selection
     let { width } = GUI_SETTINGS.default;
@@ -1857,14 +1867,14 @@ export default class App {
    * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
    *
    * @kind function
-   * @name resizeGUI
+   * @name resizeGUIHeight
    *
    * @param {Object} payload Should contain `bodyHeight` as the height of the current
    * contents calculated in the UI.
    *
    * @returns {Promise} Returns a promise for resolution.
    */
-  static async resizeGUI(
+  static async resizeGUIHeight(
     payload: { bodyHeight: number },
   ) {
     const { bodyHeight } = payload;
@@ -1931,6 +1941,45 @@ export default class App {
 
     return null;
   }
+
+  /** WIP
+   * @description Resizes the plugin UI based on either a default, or a provided
+   * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
+   *
+   * @kind function
+   * @name showHideInfo
+   *
+   * @param {Object} payload Should contain `bodyHeight` as the height of the current
+   * contents calculated in the UI.
+   *
+   * @returns {Promise} Returns a promise for resolution.
+   */
+  static async showHideInfo(
+    show: boolean = true,
+  ) {
+    let action = 'showInfo';
+    let timingDelay = 190;
+
+    if (!show) {
+      action = 'hideInfo';
+      timingDelay = 180;
+    }
+
+    setTimeout(() => {
+      if (show) {
+        resizeGUI('info', figma.ui);
+      } else {
+        // let refresh determine size using plugin options for current view
+        App.refreshGUI();
+      }
+    }, timingDelay);
+
+    // switch views
+    figma.ui.postMessage({
+      action,
+    });
+  }
+
 
   /**
    * @description Triggers a UI refresh and then displays the plugin UI.
