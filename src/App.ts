@@ -628,6 +628,7 @@ const getOptions = async (): Promise<PluginOptions> => {
   let options: PluginOptions = {
     currentView: 'general',
     isMercadoMode: false,
+    isInfo: false,
   };
 
   // retrieve last used, and use if they exist
@@ -1589,11 +1590,6 @@ export default class App {
       isMercadoMode,
     } = options;
 
-    // no need to update if the info panel is open
-    if (isInfo) {
-      return null;
-    }
-
     // calculate UI size, based on view type and selection
     let { width } = GUI_SETTINGS.default;
     let { height } = GUI_SETTINGS.default;
@@ -1742,7 +1738,6 @@ export default class App {
         isMercadoMode,
         items,
         sessionKey,
-        // guiStartSize: newGUIHeight,
       },
     });
 
@@ -1751,10 +1746,13 @@ export default class App {
       (currentView !== 'a11y-keyboard')
       || ((currentView === 'a11y-keyboard') && items.length < 1)
     ) {
-      figma.ui.resize(
-        width,
-        height,
-      );
+      // no need to resize if the info panel is open
+      if (!isInfo) {
+        figma.ui.resize(
+          width,
+          height,
+        );
+      }
     }
 
     messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
@@ -1957,6 +1955,10 @@ export default class App {
   static async showHideInfo(
     show: boolean = true,
   ) {
+    // retrieve existing options
+    const options: PluginOptions = await getOptions();
+
+    // set some local options
     let action = 'showInfo';
     let timingDelay = 190;
 
@@ -1978,6 +1980,12 @@ export default class App {
     figma.ui.postMessage({
       action,
     });
+
+    // set `isInfo` in the options
+    options.isInfo = !options.isInfo;
+
+    // save new options to storage
+    await figma.clientStorage.setAsync(DATA_KEYS.options, options);
   }
 
 
