@@ -88,7 +88,7 @@ const repairBrokenLinks = (
   page: PageNode,
   messenger: any,
   isMercadoMode: boolean,
-) => {
+): void => {
   // ----- remove annotations with broken links
   const crawlerForTopFrame = new Crawler({ for: [frameNode] });
   const nodesToEvaluate = crawlerForTopFrame.all();
@@ -211,6 +211,8 @@ const repairBrokenLinks = (
       });
     }
   }
+
+  return null;
 };
 
 /**
@@ -1889,15 +1891,13 @@ export default class App {
     }
   }
 
-  /** WIP
-   * @description Resizes the plugin UI based on either a default, or a provided
-   * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
+  /**
+   * @description Runs any cleanup actions that need to happen at the beginning of a new
+   * session. We use this because Figma’s change watcher for “on close” is not guaranteed
+   * to run.
    *
    * @kind function
    * @name runCleanup
-   *
-   * @param {Object} payload Should contain `bodyHeight` as the height of the current
-   * contents calculated in the UI.
    *
    * @returns {Promise} Returns a promise for resolution.
    */
@@ -1963,15 +1963,16 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Resizes the plugin UI based on either a default, or a provided
-   * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
+  /**
+   * @description Resizes the plugin GUI depending on whether we are showing or hiding
+   * the info panel. The resize is delayed via timeout to give the UI thread a chance to
+   * show/hide some UI elements. The current state of the info panel (shown or hidden) is
+   * saved to the plugin options as `isInfo`.
    *
    * @kind function
    * @name showHideInfo
    *
-   * @param {Object} payload Should contain `bodyHeight` as the height of the current
-   * contents calculated in the UI.
+   * @param {boolean} show Whether to show or hide the info panel. The default is `true`.
    *
    * @returns {Promise} Returns a promise for resolution.
    */
