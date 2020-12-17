@@ -1,0 +1,114 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ scene navigator
+
+@mixin scene-navigator-button {
+  margin: 0;
+  padding: em(15/2) em(10);
+  height: em(40);
+  background: none;
+  border: 0;
+  outline: 0;
+}
+
+@mixin scene-navigator-button-text {
+  @include scene-navigator-button;
+  display: block;
+  white-space: nowrap;
+  width: auto;
+  @include type-02(600);
+
+  &.selected {
+    @include type-01(600);
+  }
+
+  @include hover {
+    @include type-01(600);
+  }
+
+  &:focus {
+    box-shadow: inset 0 0 0 2px $wl-action-primary;
+
+    &:active,
+    &.selected {
+      box-shadow: inset 0 0 0 0 $wl-action-primary;
+    }
+  }
+}
+
+@mixin scene-navigator-button-icon {
+  @include scene-navigator-button;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: em(36);
+
+  span {
+    display: block;
+
+    &.icon {
+      width: em(8);
+
+      svg {
+        path {
+          stroke: $wl-ctrl-primary;
+          fill: none;
+        }
+      }
+    }
+
+    &.text {
+      @include hide-visually;
+    }
+  }
+}
+
+@mixin scene-navigator {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  background-color: $wl-canvas;
+  border-bottom: 1px solid $wl-accent-tertiary;
+  z-index: $z-scene-navigator;
+
+  ul, p {
+    margin: 0;
+    padding: 0;
+  }
+
+  ul {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    list-style-type: none;
+
+    li {
+      margin: 0;
+      padding: 0;
+
+      #{$all-buttons} {
+        @include scene-navigator-button-text;
+      }
+    }
+  }
+}
+
+// apply the styles
+nav {
+  &.scene-navigator {
+    @include scene-navigator;
+    padding-left: em(8);
+  }
+}
+
+// back button
+// p {
+//   &.scene-navigator-back-arrow {
+//     #{$all-buttons} {
+//       @include scene-navigator-button-icon;
+//     }
+//   }
+// }

@@ -5,19 +5,23 @@ $black: #000;
 $white: #fff;
 $grey01: #222;
 $grey02: #9e9e9e;
-$grey03: #dfdfdf;
+$grey03: #ececec;
+$grey04: #666;
 $blue01: #18a0fb;
 $red01: #f24822;
 
 // custom colors
 $bounding-box: #bc3600;
+$figma-layer-select: #daebf7;
 
 // re-usable definitions ----- $wl = light workspace
 $wl-canvas: $white;
 $wl-canvas-invert: $grey01;
 $wl-accent: $black;
 $wl-accent-invert: $white;
+$wl-accent-secondary: $grey02;
 $wl-accent-tertiary: $grey03;
+$wl-accent-tertiary-invert: $grey04;
 
 $wl-type-01: $black;
 $wl-type-01-invert: $white;
@@ -29,8 +33,10 @@ $wl-ctrl-primary: $wl-accent;
 $wl-ctrl-primary-invert: $wl-accent-invert;
 $wl-ctrl-secondary: $wl-canvas;
 $wl-ctrl-secondary-invert: $wl-canvas-invert;
+$wl-ctrl-tertiary: $wl-accent-tertiary;
 $wl-action-primary: $blue01;
 $wl-action-destructive: $red01;
 $wl-action-secondary: $wl-accent-invert;
 $wl-action-secondary-accent: $wl-accent;
 $wl-action-tertiary: $grey02;
+$wl-action-tertiary-accent: $wl-accent-tertiary;

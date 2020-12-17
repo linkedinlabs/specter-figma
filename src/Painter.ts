@@ -4,18 +4,22 @@ import {
   getNodeSettings,
   hexToDecimalRgb,
   isInternal,
+  updateArray,
   updateNestedArray,
 } from './Tools';
 import {
   COLORS,
+  DATA_KEYS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
   SPACING_MATRIX,
 } from './constants';
 
+const uuid = require('uuid-random');
+
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
- * @description Builds the initial annotation elements in Figma.
+ * @description Builds the spacing/measure annotation elements in Figma.
  *
  * @kind function
  * @name buildMeasureIcon
@@ -161,6 +165,319 @@ const buildMeasureIcon = (
 };
 
 /**
+ * @description Builds the keystop icon.
+ *
+ * @kind function
+ * @name buildKeystopIcon
+ *
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ *
+ * @returns {Object} The icon FrameNode.
+ *
+ * @private
+ */
+const buildKeystopIcon = (
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  const icon: FrameNode = figma.createFrame();
+
+  // build horizontal rectangle
+  const rectangle1: RectangleNode = figma.createRectangle();
+  rectangle1.name = 'Rectangle';
+  rectangle1.resize(26, 2);
+  rectangle1.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // build verticle rectangle
+  const rectangle2: RectangleNode = figma.createRectangle();
+  rectangle2.name = 'Rectangle';
+  rectangle2.resize(2, 8);
+  rectangle2.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // build the diamond
+  let diamond: PolygonNode | VectorNode = figma.createPolygon();
+  diamond.name = 'Diamond';
+
+  // position and size the diamond
+  diamond.resize(9, 6);
+  diamond.rotation = -90;
+  diamond.pointCount = 3;
+
+  // style it – set the diamond type, color, and opacity
+  diamond.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // flatten and add to the icon frame
+  diamond = figma.flatten([diamond], icon);
+
+  // resize as flattened vector + position
+  diamond.resize(5, 8);
+  diamond.x = 0;
+  diamond.y = 0;
+
+  rectangle2.x = 5;
+  rectangle2.y = 0;
+
+  rectangle1.resize(30, rectangle1.height);
+  icon.appendChild(rectangle1);
+
+  const shape = figma.flatten([diamond, rectangle2], icon);
+  shape.name = 'Step Forward Icon';
+
+  // style the icon frame
+  icon.name = 'Tab Stop Icon';
+  icon.fills = [];
+
+  // set initial size
+  icon.resize(34, 8);
+
+  // auto-layout
+  icon.layoutMode = 'HORIZONTAL';
+  icon.primaryAxisSizingMode = 'AUTO';
+  icon.counterAxisAlignItems = 'CENTER';
+  icon.counterAxisSizingMode = 'AUTO';
+  icon.primaryAxisAlignItems = 'MAX';
+  icon.layoutAlign = 'INHERIT';
+  icon.layoutGrow = 0;
+
+  rectangle1.layoutAlign = 'INHERIT';
+  rectangle1.layoutGrow = 1;
+
+  // set constraints
+  shape.constraints = {
+    horizontal: 'MAX',
+    vertical: 'MIN',
+  };
+  rectangle1.constraints = {
+    horizontal: 'STRETCH',
+    vertical: 'MIN',
+  };
+
+  return icon;
+};
+
+/**
+ * @description Builds the keystop arrow icon used in the arrow key annotations.
+ *
+ * @kind function
+ * @name buildKeystopArrowIcon
+ *
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ *
+ * @returns {Object} The icon FrameNode.
+ *
+ * @private
+ */
+const buildKeystopArrowIcon = (
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  const icon: FrameNode = figma.createFrame();
+
+  // build horizontal rectangle
+  const rectangle1: RectangleNode = figma.createRectangle();
+  rectangle1.name = 'Rectangle';
+  rectangle1.resize(12, 2);
+  rectangle1.y = 3;
+  rectangle1.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // build the diamond
+  let diamond: PolygonNode | VectorNode = figma.createPolygon();
+  diamond.name = 'Diamond';
+
+  // position and size the diamond
+  diamond.resize(9, 6);
+  diamond.rotation = -90;
+  diamond.pointCount = 3;
+
+  // style it – set the diamond type, color, and opacity
+  diamond.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // flatten and add to the icon frame
+  diamond = figma.flatten([diamond], icon);
+
+  // resize as flattened vector + position
+  diamond.resize(5, 8);
+  diamond.x = 12;
+  diamond.y = 0;
+
+  const shape = figma.flatten([rectangle1, diamond], icon);
+  shape.name = 'Arrow Vector';
+  shape.x = 0;
+
+  icon.appendChild(shape);
+
+  // style the icon frame
+  icon.name = 'Arrow Icon';
+  icon.fills = [];
+  icon.resize(shape.width, shape.height);
+
+  return icon;
+};
+
+/**
+ * @description Builds the initial recntangle element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on the `type`.
+ *
+ * @kind function
+ * @name buildRectangle
+ *
+ * @param {string} type The type of annotation the rectange will be used in.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ *
+ * @returns {Object} The rectangle FrameNode.
+ *
+ * @private
+ */
+const buildRectangle = (
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'spacing'
+    | 'style',
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  // build base rectangle (used for most annotations)
+  const rectangle: FrameNode = figma.createFrame();
+  rectangle.name = 'Box / Text';
+
+  // auto-layout
+  rectangle.layoutMode = 'HORIZONTAL';
+  rectangle.primaryAxisSizingMode = 'AUTO';
+  rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  rectangle.counterAxisSizingMode = 'AUTO';
+  rectangle.counterAxisAlignItems = 'CENTER';
+  rectangle.layoutAlign = 'INHERIT';
+  rectangle.layoutGrow = 0;
+
+  // set padding and item spacing
+  rectangle.paddingLeft = 16;
+  rectangle.paddingRight = 16;
+  rectangle.paddingTop = 4.5;
+  rectangle.paddingBottom = 6;
+  rectangle.itemSpacing = 0;
+
+  // style it – set the rectangle type, color, and opacity
+  rectangle.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // set rounded corners of the rectangle
+  rectangle.cornerRadius = 2;
+
+  // ------- update rectangle for measurement annotations
+  if (
+    type === 'spacing'
+    || type === 'dimension'
+  ) {
+    rectangle.paddingLeft = 3;
+    rectangle.paddingRight = 3;
+    rectangle.paddingTop = 0.5;
+    rectangle.paddingBottom = 2;
+  }
+
+  // ------- update rectangle for keystop annotations
+  if (type === 'keystop') {
+    rectangle.layoutMode = 'VERTICAL';
+
+    rectangle.primaryAxisSizingMode = 'AUTO';
+    rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
+    rectangle.counterAxisSizingMode = 'FIXED';
+    rectangle.counterAxisAlignItems = 'MIN';
+
+    rectangle.layoutAlign = 'INHERIT';
+    rectangle.paddingLeft = 4;
+    rectangle.paddingRight = 4;
+    rectangle.paddingTop = 4;
+    rectangle.paddingBottom = 4;
+    rectangle.itemSpacing = 1;
+    rectangle.cornerRadius = 4;
+    // rectangle.resize(42, 35);
+  }
+
+  return rectangle;
+};
+
+/**
+ * @description Builds the initial text element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on the `type`.
+ *
+ * @kind function
+ * @name buildText
+ *
+ * @param {string} type The type of annotation the text will be used in.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {string} characters The text that will be set to the node.
+ *
+ * @returns {Object} The text TextNode.
+ *
+ * @private
+ */
+const buildText = (
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'spacing'
+    | 'style',
+  color: { r: number, g: number, b: number },
+  characters: string,
+): TextNode => {
+  // create empty text node
+  const text: TextNode = figma.createText();
+
+  // detect/retrieve last-loaded typeface
+  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+
+  // style text node
+  text.fontName = typefaceToUse;
+  text.fontSize = 12;
+  text.lineHeight = { value: 125, unit: 'PERCENT' };
+  text.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // set auto-layout
+  text.layoutAlign = 'INHERIT';
+  text.layoutGrow = 0;
+
+  // set text – cannot do this before defining `fontName`
+  text.characters = characters;
+
+  // position the text in the frame
+  text.textAlignVertical = 'CENTER';
+  text.textAlignHorizontal = 'CENTER';
+  text.textAutoResize = 'WIDTH_AND_HEIGHT';
+
+  // ------- update text for keystop annotations
+  if (type === 'keystop') {
+    text.fontSize = 14;
+    text.textAlignHorizontal = 'LEFT';
+    text.textAutoResize = 'WIDTH_AND_HEIGHT';
+    text.layoutAlign = 'INHERIT';
+  }
+
+  return text;
+};
+
+/**
  * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
  * and sets auto-layout and constraint properties.
  *
@@ -179,7 +496,13 @@ const buildMeasureIcon = (
 const buildAnnotation = (options: {
   mainText: string,
   secondaryText?: string,
-  type: 'component' | 'custom' | 'dimension' | 'spacing' | 'style',
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'spacing'
+    | 'style',
 }): {
   diamond: PolygonNode,
   rectangle: FrameNode,
@@ -189,26 +512,7 @@ const buildAnnotation = (options: {
   const { mainText, secondaryText, type } = options;
 
   // set the dominant color
-  let colorHex: string = null;
-  switch (type) {
-    case 'component':
-      colorHex = COLORS.component;
-      break;
-    case 'custom':
-      colorHex = COLORS.custom;
-      break;
-    case 'dimension':
-      colorHex = COLORS.dimension;
-      break;
-    case 'spacing':
-      colorHex = COLORS.spacing;
-      break;
-    case 'style':
-      colorHex = COLORS.style;
-      break;
-    default:
-      colorHex = COLORS.component;
-  }
+  const colorHex: string = COLORS[type];
 
   let setText: string = mainText;
   if (secondaryText) {
@@ -228,33 +532,7 @@ const buildAnnotation = (options: {
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle with auto-layout properties
-  const rectangle: FrameNode = figma.createFrame();
-  rectangle.name = 'Box / Text';
-
-  // auto-layout
-  rectangle.layoutMode = 'HORIZONTAL';
-  rectangle.primaryAxisSizingMode = 'AUTO';
-  rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
-  rectangle.counterAxisSizingMode = 'AUTO';
-  rectangle.counterAxisAlignItems = 'CENTER';
-  rectangle.layoutAlign = 'INHERIT';
-  rectangle.layoutGrow = 0;
-
-  // set padding and item spacing
-  rectangle.paddingLeft = isMeasurement ? 3 : 16;
-  rectangle.paddingRight = isMeasurement ? 3 : 16;
-  rectangle.paddingTop = isMeasurement ? 0.5 : 4.5;
-  rectangle.paddingBottom = isMeasurement ? 2 : 6;
-  rectangle.itemSpacing = 0;
-
-  // style it – set the rectangle type, color, and opacity
-  rectangle.fills = [{
-    type: 'SOLID',
-    color,
-  }];
-
-  // set rounded corners of the rectangle
-  rectangle.cornerRadius = 2;
+  const rectangle: FrameNode = buildRectangle(type, color);
 
   // build the dangling diamond
   const diamond: PolygonNode = figma.createPolygon();
@@ -271,37 +549,16 @@ const buildAnnotation = (options: {
     color,
   }];
 
-  // create empty text node
-  const text: TextNode = figma.createText();
-
-  // detect/retrieve last-loaded typeface
-  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
-
-  // style text node
-  text.fontName = typefaceToUse;
-  text.fontSize = 12;
-  text.lineHeight = { value: 125, unit: 'PERCENT' };
-  text.fills = [{
-    type: 'SOLID',
-    color: hexToDecimalRgb('#ffffff'),
-  }];
-
-  // set auto-layout
-  text.layoutAlign = 'INHERIT';
-  text.layoutGrow = 0;
-
-  // set text – cannot do this before defining `fontName`
-  text.characters = setText;
-
-  // position the text in the frame
-  text.textAlignVertical = 'CENTER';
-  text.textAlignHorizontal = 'CENTER';
-  text.textAutoResize = 'WIDTH_AND_HEIGHT';
+  // create text node
+  const text: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), setText);
 
   // create icon
   let icon: FrameNode = null;
   if (isMeasurement) {
     icon = buildMeasureIcon(colorHex);
+  } else if (type === 'keystop') {
+    const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
+    icon = buildKeystopIcon(iconColor);
   }
 
   // return an object with each element
@@ -311,6 +568,119 @@ const buildAnnotation = (options: {
     text,
     icon,
   };
+};
+
+/**
+ * @description Builds the auxilary annotation in Figma for a keystop annotation.
+ *
+ * @kind function
+ * @name buildAuxAnnotation
+ *
+ * @param {string} auxType The type of auxilary annotation to build: `arrows-left-right`,
+ * `arrows-up-down`, `enter`, `escape`, `space`.
+ *
+ * @returns {Object} The full auxilary annotation FrameNode.
+ *
+ * @private
+ */
+const buildAuxAnnotation = (auxType: PluginKeystopKeys): FrameNode => {
+  // set the dominant color
+  const colorHex: string = COLORS.keystop;
+
+  let setText: string = null;
+  let nameText: string = 'Key';
+  let buildIcons: boolean = false;
+  switch (auxType) {
+    case 'arrows-left-right':
+    case 'arrows-up-down':
+      buildIcons = true;
+      nameText = '<- ->';
+      break;
+    case 'enter':
+    case 'escape':
+    case 'space': {
+      setText = auxType.charAt(0).toUpperCase() + auxType.slice(1);
+      nameText = setText;
+      break;
+    }
+    default:
+      setText = null;
+  }
+
+  // set up the color object
+  // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
+  const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
+
+  // build the rounded rectangle with auto-layout properties
+  const rectangle: FrameNode = buildRectangle('keystop', color);
+
+  // create text node
+  let text: TextNode = null;
+  if (setText) {
+    text = buildText('keystop', hexToDecimalRgb('#ffffff'), setText);
+    text.fontSize = 14;
+  }
+
+  // create icon
+  let icon1: FrameNode = null;
+  let icon2: FrameNode = null;
+  if (buildIcons) {
+    const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
+    icon1 = buildKeystopArrowIcon(iconColor);
+    icon1.rotation = 180;
+    icon2 = buildKeystopArrowIcon(iconColor);
+  }
+
+  // update base rectangle for aux annotation
+  rectangle.layoutMode = 'HORIZONTAL';
+  rectangle.primaryAxisSizingMode = 'AUTO';
+  rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  rectangle.counterAxisSizingMode = 'AUTO';
+  rectangle.counterAxisAlignItems = 'CENTER';
+  rectangle.layoutAlign = 'INHERIT';
+  rectangle.layoutGrow = 0;
+
+  // initial padding
+  rectangle.paddingTop = 4;
+  rectangle.paddingBottom = 4;
+  rectangle.paddingLeft = 4;
+  rectangle.paddingRight = 4;
+  rectangle.cornerRadius = 4;
+
+  if (text) {
+    rectangle.appendChild(text);
+    text.layoutAlign = 'INHERIT';
+
+    // padding adjustments
+    rectangle.paddingTop = 3;
+    rectangle.paddingBottom = 5;
+    if (auxType === 'space') {
+      rectangle.paddingRight = 24;
+    } else {
+      rectangle.paddingRight = 12;
+    }
+  }
+
+  if (icon1 && icon2) {
+    // rectangle.counterAxisSizingMode = 'AUTO';
+    rectangle.appendChild(icon1);
+    rectangle.appendChild(icon2);
+    rectangle.itemSpacing = 10;
+    icon1.layoutAlign = 'INHERIT';
+    icon2.layoutAlign = 'INHERIT';
+
+    // padding adjustments
+    rectangle.paddingTop = 9;
+    rectangle.paddingBottom = 9;
+  }
+  rectangle.y = 0;
+
+  if (auxType === 'arrows-up-down') {
+    nameText = '↑↓';
+    rectangle.rotation = 90;
+  }
+  rectangle.name = `Key ${nameText}`;
+  return rectangle;
 };
 
 /**
@@ -368,7 +738,7 @@ const buildBoundingBox = (position: {
  * @param {string} groupName The name of the group that holds the annotation elements
  * inside the `containerGroup`.
  * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
- * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`, `index`)
+ * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`)
  * for the node receiving the annotation + the frame width/height (`frameWidth` /
  * `frameHeight`).
  * @param {string} annotationType An optional string representing the type of annotation.
@@ -394,9 +764,14 @@ const positionAnnotation = (
     height: number,
     x: number,
     y: number,
-    index: number,
   },
-  annotationType: 'component' | 'custom' | 'dimension' | 'spacing' | 'style' = 'component',
+  annotationType:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'spacing'
+    | 'style' = 'component',
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
 ) => {
   const {
@@ -457,30 +832,64 @@ const positionAnnotation = (
     bannerGroup.appendChild(diamondVector);
   }
 
-  // set up spacing / measurement
-  if (isMeasurement && icon) {
-    const measurementGroup: FrameNode = figma.createFrame();
-    measurementGroup.name = groupName;
+  // set up annotation with icon
+  if (icon) {
+    if (isMeasurement) {
+      const groupWithIcon: FrameNode = figma.createFrame();
+      groupWithIcon.name = groupName;
 
-    // auto-layout
-    measurementGroup.layoutMode = 'VERTICAL';
-    measurementGroup.primaryAxisSizingMode = 'AUTO';
-    measurementGroup.counterAxisAlignItems = 'CENTER';
-    measurementGroup.counterAxisSizingMode = 'AUTO';
-    measurementGroup.primaryAxisAlignItems = 'CENTER';
-    measurementGroup.layoutAlign = 'INHERIT';
+      // auto-layout
+      groupWithIcon.layoutMode = 'VERTICAL';
+      groupWithIcon.primaryAxisSizingMode = 'AUTO';
+      groupWithIcon.counterAxisAlignItems = 'CENTER';
+      groupWithIcon.counterAxisSizingMode = 'AUTO';
+      groupWithIcon.primaryAxisAlignItems = 'CENTER';
+      groupWithIcon.layoutAlign = 'INHERIT';
 
-    // padding / fills
-    measurementGroup.itemSpacing = 3;
-    measurementGroup.fills = [];
+      // padding / fills
+      groupWithIcon.itemSpacing = 3;
+      groupWithIcon.fills = [];
 
-    // append children
-    measurementGroup.appendChild(bannerGroup);
-    measurementGroup.appendChild(icon);
+      // append children
+      groupWithIcon.appendChild(bannerGroup);
+      groupWithIcon.appendChild(icon);
 
-    // set top level
-    group = measurementGroup;
+      // set top level
+      group = groupWithIcon;
+    } else if (annotationType === 'keystop') {
+      // ----- add icon to the rectangle frame
+      rectangle.appendChild(icon);
+
+      // ----- set up text wrapper with padding to provide minimum width
+      const textWrapper: FrameNode = figma.createFrame();
+      textWrapper.name = 'Text Wrapper';
+      textWrapper.fills = [];
+
+      // auto-layout / padding
+      textWrapper.layoutMode = 'HORIZONTAL';
+      textWrapper.primaryAxisSizingMode = 'AUTO';
+      textWrapper.counterAxisAlignItems = 'CENTER';
+      textWrapper.counterAxisSizingMode = 'AUTO';
+      textWrapper.primaryAxisAlignItems = 'CENTER';
+      textWrapper.layoutAlign = 'INHERIT';
+      textWrapper.paddingRight = 30;
+
+      // add text to wrapper
+      textWrapper.appendChild(text);
+
+      // ----- add text wrapper last to force it to the bottom
+      rectangle.appendChild(textWrapper);
+
+      // ----- set constraints / defaults
+      icon.resize(30, icon.height);
+      icon.layoutAlign = 'STRETCH';
+      rectangle.layoutAlign = 'STRETCH';
+
+      // ----- set the main group
+      group = bannerGroup;
+    }
   } else {
+    // set the main group
     group = bannerGroup;
   }
 
@@ -498,12 +907,13 @@ const positionAnnotation = (
   let frameEdgeX: string = null;
 
   // initial placement based on node to annotate
-  // for top
+  // for top (centered horizontally)
   let placementX: number = (
     nodeX + (
       (nodeWidth - rectangle.width) / 2
     )
   );
+
   // for `left` or `right`
   let placementY: number = (
     nodeY + (
@@ -527,6 +937,12 @@ const positionAnnotation = (
     default: // top
       offsetY = (isMeasurement ? 15 : 8);
       placementY = nodeY - rectangle.height - offsetY;
+  }
+
+  if (annotationType === 'keystop') {
+    if ((nodeWidth - 100) > rectangle.width) {
+      placementX = nodeX + 10;
+    }
   }
 
   // detect left edge
@@ -579,7 +995,7 @@ const positionAnnotation = (
   }
 
   // adjust the measure icon width for top-oriented annotations
-  if (orientation === 'top' && icon) {
+  if (isMeasurement && icon && (orientation === 'top')) {
     group.resize(nodeWidth, group.height);
     group.x = nodeX;
 
@@ -779,6 +1195,7 @@ const setGroupKey = (elementType: string):
   'boundingInnerGroupId'
   | 'componentInnerGroupId'
   | 'dimensionInnerGroupId'
+  | 'keystopInnerGroupId'
   | 'spacingInnerGroupId'
   | 'styleInnerGroupId'
   | 'id' => {
@@ -786,6 +1203,7 @@ const setGroupKey = (elementType: string):
     'boundingInnerGroupId'
     | 'componentInnerGroupId'
     | 'dimensionInnerGroupId'
+    | 'keystopInnerGroupId'
     | 'spacingInnerGroupId'
     | 'styleInnerGroupId'
     | 'id' = null;
@@ -799,6 +1217,9 @@ const setGroupKey = (elementType: string):
       break;
     case 'dimension':
       groupKey = 'dimensionInnerGroupId';
+      break;
+    case 'keystop':
+      groupKey = 'keystopInnerGroupId';
       break;
     case 'spacing':
       groupKey = 'spacingInnerGroupId';
@@ -832,6 +1253,7 @@ const setGroupName = (
     | 'component'
     | 'custom'
     | 'dimension'
+    | 'keystop'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -847,6 +1269,9 @@ const setGroupName = (
       break;
     case 'dimension':
       groupName = 'Dimension Annotations';
+      break;
+    case 'keystop':
+      groupName = 'Keyboard Annotations';
       break;
     case 'spacing':
       groupName = 'Spacing Annotations';
@@ -1053,6 +1478,7 @@ export const createContainerGroup = (
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
     dimensionInnerGroupId?: string,
+    keystopInnerGroupId?: string,
     frameId: string,
     spacingInnerGroupId?: string,
     styleInnerGroupId?: string,
@@ -1062,6 +1488,7 @@ export const createContainerGroup = (
     | 'component'
     | 'custom'
     | 'dimension'
+    | 'keystop'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -1073,6 +1500,7 @@ export const createContainerGroup = (
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
     dimensionInnerGroupId?: string,
+    keystopInnerGroupId?: string,
     frameId: string,
     spacingInnerGroupId?: string,
     styleInnerGroupId?: string,
@@ -1127,6 +1555,7 @@ const setNodeInContainers = (nodeToContain: {
     | 'component'
     | 'custom'
     | 'dimension'
+    | 'keystop'
     | 'spacing'
     | 'style',
 }): {
@@ -1284,7 +1713,8 @@ const getSetNodeSettings = (
   annotationType:
     'annotatedDimensions'
     | 'annotatedLayers'
-    | 'annotatedSpacings',
+    | 'annotatedSpacings'
+    | 'keystopLayers',
   nodeIdSet: {
     layerId: string,
     layerAId?: string,
@@ -1443,7 +1873,7 @@ export default class Painter {
     const nodeId = this.node.id;
     const groupName = `Annotation for ${nodeName}`;
 
-    // set document settings to track annotation
+    // set page settings to track annotation
     getSetNodeSettings('annotatedLayers', { layerId: nodeId }, this.page);
 
     // construct the base annotation elements
@@ -1459,23 +1889,13 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     const group = positionAnnotation(
@@ -1612,7 +2032,7 @@ export default class Painter {
     const nodeId = this.node.id;
     const nodeName = this.node.name;
 
-    // set document settings to track annotation
+    // set page settings to track annotation
     getSetNodeSettings('annotatedDimensions', { layerId: nodeId }, this.page);
 
     // grab the position from crawler
@@ -1621,23 +2041,13 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     // ------------------------
@@ -1754,6 +2164,185 @@ export default class Painter {
   }
 
   /**
+   * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
+   * available (`annotationText` and potential `keys` for auxilary annotations).
+   *
+   * @kind function
+   * @name addKeystop
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addKeystop() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
+
+    // retrieve the node data with our annotation text
+    const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+
+    if (!nodeData || (nodeData && !nodeData.annotationText)) {
+      result.status = 'error';
+      result.messages.log = 'Node missing annotationText';
+      return result;
+    }
+
+    // return an error if the selection is not placed in a frame
+    if (!this.frame || (this.frame.id === this.node.id)) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
+
+    // set up some information
+    const { annotationText } = nodeData;
+    const annotationType: 'keystop' = 'keystop';
+    const annotationName = `Keystop for ${this.node.name}`;
+
+    // construct the base annotation elements
+    const annotationBundle = buildAnnotation({
+      mainText: annotationText,
+      secondaryText: null,
+      type: annotationType,
+    });
+
+    const auxAnnotations: Array<FrameNode> = [];
+    if (nodeData.keys && nodeData.keys.length > 0) {
+      nodeData.keys.forEach((keyEntry) => {
+        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
+        auxAnnotation.layoutAlign = 'INHERIT';
+        auxAnnotations.push(auxAnnotation);
+      });
+    }
+
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.node] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
+    // group and position the base annotation elements
+    const nodePosition: PluginNodePosition = {
+      frameWidth: this.frame.width,
+      frameHeight: this.frame.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
+      x: relativePosition.x,
+      y: relativePosition.y,
+    };
+
+    const baseAnnotationNode = positionAnnotation(
+      this.frame,
+      annotationName,
+      annotationBundle,
+      nodePosition,
+      'keystop',
+    );
+
+    const initialX = baseAnnotationNode.x;
+    const initialY = baseAnnotationNode.y;
+
+    let annotationNode: FrameNode = baseAnnotationNode;
+    if (auxAnnotations.length > 0) {
+      annotationNode = figma.createFrame();
+      annotationNode.clipsContent = false;
+      annotationNode.layoutMode = 'HORIZONTAL';
+      annotationNode.counterAxisSizingMode = 'AUTO';
+      annotationNode.layoutAlign = 'INHERIT';
+      annotationNode.itemSpacing = 4;
+      annotationNode.fills = [];
+      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
+
+      // add the base annotation
+      annotationNode.appendChild(baseAnnotationNode);
+
+      // add the key annotations
+      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
+
+      baseAnnotationNode.layoutAlign = 'INHERIT';
+      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
+      annotationNode.x = initialX;
+      annotationNode.y = initialY;
+    }
+
+    // set it in the correct containers
+    setNodeInContainers({
+      node: annotationNode,
+      frame: this.frame,
+      page: this.page,
+      type: 'keystop',
+    });
+
+    // ---------- set node tracking data
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
+      annotationId: annotationNode.id,
+      id: this.node.id,
+      linkId,
+      topFrameId: this.frame.id,
+      nodePosition,
+    };
+
+    // update the `trackingSettings` array
+    const trackingDataRaw = JSON.parse(
+      this.page.getPluginData(DATA_KEYS.keystopAnnotations) || null,
+    );
+    let trackingData: Array<PluginNodeTrackingData> = [];
+    if (trackingDataRaw) {
+      trackingData = trackingDataRaw;
+    }
+
+    // set the node data in the `trackingData` array
+    trackingData = updateArray(
+      trackingData,
+      newAnnotatedNodeData,
+      'id',
+      'update',
+    );
+
+    // commit the `trackingData` update
+    this.page.setPluginData(
+      DATA_KEYS.keystopAnnotations,
+      JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(nodeLinkData),
+    );
+
+    // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
+    annotationNode.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(annotatedLinkData),
+    );
+
+    // return a successful result
+    result.status = 'success';
+    return result;
+  }
+
+  /**
    * @description Takes a `spacingPosition` object and creates a spacing measurement annotation
    * with the correct spacing number (“IS-X”). If the calculated spacing number is larger
    * than “IS-9”, the annotation is created with digital points/pixels.
@@ -1805,7 +2394,7 @@ export default class Painter {
     const nodeName: string = this.node.name;
     const groupName: string = `Spacing for ${nodeName} (${spacingPosition.direction})`;
 
-    // set document settings
+    // set page settings
     // use “layer” instead of “node” to match older documents
     getSetNodeSettings(
       'annotatedSpacings',
@@ -1825,23 +2414,13 @@ export default class Painter {
     });
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: spacingPosition.width,
       height: spacingPosition.height,
       x: spacingPosition.x,
       y: spacingPosition.y,
-      index: nodeIndex,
     };
 
     const annotationOrientation = (spacingPosition.orientation === 'vertical' ? 'top' : 'left');

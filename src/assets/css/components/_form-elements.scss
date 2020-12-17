@@ -1,0 +1,159 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ form elements
+
+@mixin form-element-base {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
+
+@mixin form-label {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: em(8);
+  padding-right: em(8);
+  width: 100%;
+  min-height: em(30);
+
+  &.hidden {
+    @include hide-visually;
+  }
+
+  span {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+
+    &.text {
+      @include type-01;
+      color: $wl-type-02;
+    }
+
+    &.actions {
+      margin-left: em(4);
+      height: em(24);
+
+      &.text {
+        @include hide-visually;
+      }
+
+      .item-toggle {
+        opacity: 0;
+      }
+
+      #{$all-buttons} {
+        @include button-icon($wl-action-tertiary, 16);
+        margin-right: em(3);
+        width: em(16);
+        height: em(16);
+
+        &:last-child {
+          margin-right: 0;
+        }
+
+        span {
+          &.text {
+            @include hide-visually;
+          }
+        }
+
+        // re-size restore icon
+        &.action-restore {
+          opacity: 1;
+
+          span {
+            &.icon {
+              width: em(12);
+              height: em(12);
+            }
+          }
+        }
+
+        // manage lock state
+        &.action-lock-toggle {
+          .icon.locked { display: none; }
+
+          // keep locked icon visible
+          &.locked {
+            opacity: 1;
+
+            &:disabled {
+              opacity: 0.4;
+            }
+
+            .icon.unlocked { display: none; }
+            .icon.locked { display: block; }
+          }
+        }
+      }
+    }
+  }
+
+  @include hover {
+    span {
+      &.actions {
+        .item-toggle {
+          opacity: 1;
+        }
+
+        #{$all-buttons} {
+          display: flex;
+        }
+      }
+    }
+  }
+}
+
+.form-element-holder {
+  .form-inner-row {
+    display: flex;
+    width: 100%;
+  }
+
+  .form-label {
+    @include form-label;
+  }
+
+  // style form element types
+  .form-element {
+    @include form-element-base;
+
+    &.element-type-text,
+    &.element-type-text-new,
+    &.element-type-textarea {
+      #{$all-text-inputs} { @include figma-input; }
+    }
+
+    &.element-type-text-new {
+      #{$all-text-inputs} {
+        border: 1px solid rgba($wl-ctrl-primary, 0.1);
+
+        &:disabled {
+          @include hover {
+            border: 1px solid rgba($wl-ctrl-primary, 0.1);
+          }
+        }
+      }
+    }
+
+    &.element-type-textarea {
+      #{$all-text-inputs} {
+        min-height: em(68);
+
+        &:active,
+        &:focus {
+          // min-height: em(70);
+        }
+      }
+    }
+  }
+
+  #{$all-buttons} {
+    &.inline-button {
+      @include button-icon($wl-action-secondary-accent, 28, $wl-action-tertiary-accent);
+      width: em(32);
+      height: em(32);
+    }
+  }
+}

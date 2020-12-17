@@ -1,0 +1,73 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ icon button
+// control that expects label text and an icon
+
+@mixin button-icon(
+  $iconColor: $wl-action-tertiary,
+  $iconSize-px: 12,
+  $iconColorHover: $wl-action-secondary-accent,
+) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  width: em(24);
+  height: em(24);
+  outline: none;
+  border: 2px solid rgba($wl-action-secondary-accent, 0);
+  border-radius: 2px;
+
+  .label {
+    @include hide-visually;
+  }
+
+  .icon {
+    display: block;
+    width: em($iconSize-px);
+    height: em($iconSize-px);
+
+    svg {
+      path {
+        fill: $iconColor;
+
+        &.stroke {
+          fill: none;
+          stroke: $iconColor;
+          stroke-width: 1px;
+        }
+      }
+    }
+  }
+
+  @include hover {
+    background-color: $iconColorHover;
+    border-color: $iconColorHover;
+  }
+
+  &:enabled:active,
+  &:enabled:focus {
+    border-color: $wl-action-primary;
+  }
+
+  &:enabled:active {
+    background-color: $iconColorHover;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+
+    @include hover {
+      svg {
+        path {
+          fill: $iconColor;
+
+          &.stroke {
+            fill: none;
+            stroke: blue;
+            stroke-width: 1px;
+          }
+        }
+      }
+    }
+  }
+}
