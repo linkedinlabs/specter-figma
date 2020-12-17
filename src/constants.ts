@@ -36,6 +36,7 @@ const DATA_KEYS: {
   keystopNodeData: string,
   keystopAnnotations: string,
   keystopList: string,
+  linkId: string,
   relaunch: string,
 } = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
@@ -43,6 +44,7 @@ const DATA_KEYS: {
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
+  linkId: `${PLUGIN_IDENTIFIER}.linkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 

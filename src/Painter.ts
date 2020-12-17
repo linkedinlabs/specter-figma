@@ -15,6 +15,8 @@ import {
   SPACING_MATRIX,
 } from './constants';
 
+const uuid = require('uuid-random');
+
 // --- private functions for drawing/positioning annotation elements in the Figma file
 /**
  * @description Builds the spacing/measure annotation elements in Figma.
@@ -736,7 +738,7 @@ const buildBoundingBox = (position: {
  * @param {string} groupName The name of the group that holds the annotation elements
  * inside the `containerGroup`.
  * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
- * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`, `index`)
+ * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`)
  * for the node receiving the annotation + the frame width/height (`frameWidth` /
  * `frameHeight`).
  * @param {string} annotationType An optional string representing the type of annotation.
@@ -762,7 +764,6 @@ const positionAnnotation = (
     height: number,
     x: number,
     y: number,
-    index: number,
   },
   annotationType:
     'component'
@@ -1888,23 +1889,13 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     const group = positionAnnotation(
@@ -2050,23 +2041,13 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: relativePosition.width,
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     // ------------------------
@@ -2252,7 +2233,6 @@ export default class Painter {
     const relativePosition = positionResult.payload;
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
     const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -2260,7 +2240,6 @@ export default class Painter {
       height: relativePosition.height,
       x: relativePosition.x,
       y: relativePosition.y,
-      index: nodeIndex,
     };
 
     const baseAnnotationNode = positionAnnotation(
@@ -2306,9 +2285,11 @@ export default class Painter {
     });
 
     // ---------- set node tracking data
-    const newAnnotatedNodeData = {
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
       annotationId: annotationNode.id,
       id: this.node.id,
+      linkId,
       topFrameId: this.frame.id,
       nodePosition,
     };
@@ -2317,16 +2298,12 @@ export default class Painter {
     const trackingDataRaw = JSON.parse(
       this.page.getPluginData(DATA_KEYS.keystopAnnotations) || null,
     );
-    let trackingData: Array<{
-      annotationId: string,
-      id: string,
-      topFrameId: string,
-      nodePosition: PluginNodePosition,
-    }> = [];
+    let trackingData: Array<PluginNodeTrackingData> = [];
     if (trackingDataRaw) {
       trackingData = trackingDataRaw;
     }
 
+    // set the node data in the `trackingData` array
     trackingData = updateArray(
       trackingData,
       newAnnotatedNodeData,
@@ -2338,6 +2315,26 @@ export default class Painter {
     this.page.setPluginData(
       DATA_KEYS.keystopAnnotations,
       JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(nodeLinkData),
+    );
+
+    // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
+    annotationNode.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(annotatedLinkData),
     );
 
     // return a successful result
@@ -2417,23 +2414,13 @@ export default class Painter {
     });
 
     // group and position the base annotation elements
-    const nodeIndex: number = this.node.parent.children.findIndex(node => node === this.node);
-    const nodePosition: {
-      frameWidth: number,
-      frameHeight: number,
-      width: number,
-      height: number,
-      x: number,
-      y: number,
-      index: number,
-    } = {
+    const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
       width: spacingPosition.width,
       height: spacingPosition.height,
       x: spacingPosition.x,
       y: spacingPosition.y,
-      index: nodeIndex,
     };
 
     const annotationOrientation = (spacingPosition.orientation === 'vertical' ? 'top' : 'left');

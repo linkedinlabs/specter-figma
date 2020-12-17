@@ -185,7 +185,7 @@ export default class Crawler {
    */
   static getBoundingPositition(node) {
     // find out top node
-    const topFrame: FrameNode = findTopFrame(node);
+    const topFrame: FrameNode = findTopFrame(node) as FrameNode;
 
     // clone the node that will need positioning coordinates
     const newNode: SceneNode = node.clone();
@@ -292,7 +292,7 @@ export default class Crawler {
     // check for top frames
     let allHaveTopFrames = true;
     selection.forEach((node) => {
-      const topFrame: FrameNode = findTopFrame(node);
+      const topFrame: FrameNode = findTopFrame(node) as FrameNode;
       if (!topFrame) {
         allHaveTopFrames = false;
       }
@@ -408,8 +408,8 @@ export default class Crawler {
     let nodeA = selection[firstIndex];
     let nodeB = selection[firstIndex];
 
-    const nodeATopFrame: FrameNode = findTopFrame(nodeA);
-    const nodeBTopFrame: FrameNode = findTopFrame(nodeB);
+    const nodeATopFrame: FrameNode = findTopFrame(nodeA) as FrameNode;
+    const nodeBTopFrame: FrameNode = findTopFrame(nodeB) as FrameNode;
 
     if (!nodeATopFrame || !nodeBTopFrame) {
       result.status = 'error';
@@ -799,8 +799,8 @@ export default class Crawler {
     let nodeA = selection[firstIndex];
     let nodeB = selection[selection.length - 1];
 
-    const nodeATopFrame: FrameNode = findTopFrame(nodeA);
-    const nodeBTopFrame: FrameNode = findTopFrame(nodeB);
+    const nodeATopFrame: FrameNode = findTopFrame(nodeA) as FrameNode;
+    const nodeBTopFrame: FrameNode = findTopFrame(nodeB) as FrameNode;
 
     if (!nodeATopFrame || !nodeBTopFrame) {
       result.status = 'error';
@@ -975,7 +975,7 @@ export default class Crawler {
     // set the node
     const node: FrameNode = this.first() as FrameNode;
 
-    const nodeTopFrame: FrameNode = findTopFrame(node);
+    const nodeTopFrame: FrameNode = findTopFrame(node) as FrameNode;
 
     if (!nodeTopFrame) {
       result.status = 'error';
@@ -1130,17 +1130,19 @@ export default class Crawler {
     const topFrameNodes: Array<FrameNode> = [];
     const nodes = this.array;
     nodes.forEach((node: BaseNode) => {
-      const topFrame: FrameNode = findTopFrame(node);
+      const topFrame: FrameNode = findTopFrame(node) as FrameNode;
 
-      let topFrameExists: boolean = false;
-      topFrameNodes.forEach((existingTopFrame: FrameNode) => {
-        if (existingTopFrame.id === topFrame.id) {
-          topFrameExists = true;
+      if (topFrame) {
+        let topFrameExists: boolean = false;
+        topFrameNodes.forEach((existingTopFrame: FrameNode) => {
+          if (existingTopFrame.id === topFrame.id) {
+            topFrameExists = true;
+          }
+        });
+
+        if (!topFrameExists) {
+          topFrameNodes.push(topFrame);
         }
-      });
-
-      if (!topFrameExists) {
-        topFrameNodes.push(topFrame);
       }
     });
 
@@ -1159,7 +1161,7 @@ export default class Crawler {
    */
   topFrame() {
     const node = this.first();
-    const topFrame: FrameNode = findTopFrame(node);
+    const topFrame: FrameNode = findTopFrame(node) as FrameNode;
 
     return topFrame;
   }

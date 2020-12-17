@@ -10,14 +10,14 @@
       text: 'Keyboard',
       id: 'a11y-keyboard',
     },
-    {
-      text: 'Labels',
-      id: 'a11y-labels',
-    },
-    {
-      text: 'Headings',
-      id: 'a11y-headings',
-    },
+    // {
+    //   text: 'Labels',
+    //   id: 'a11y-labels',
+    // },
+    // {
+    //   text: 'Headings',
+    //   id: 'a11y-headings',
+    // },
   ];
 
   const setCurrentViewContext = (newView) => {

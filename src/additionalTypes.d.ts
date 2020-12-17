@@ -11,18 +11,24 @@ declare global {
     height: number,
     x: number,
     y: number,
-    index: number,
   };
 
   type PluginNodeTrackingData = {
     annotationId: string,
     id: string,
+    linkId: string,
     topFrameId: string,
     nodePosition: PluginNodePosition,
   };
 
+  type PluginNodeLinkData = {
+    id: string,
+    role: 'annotation' | 'node',
+  }
+
   type PluginOptions = {
     currentView: PluginViewTypes,
+    isInfo: boolean,
     isMercadoMode: boolean,
   };
 
