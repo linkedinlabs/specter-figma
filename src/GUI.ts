@@ -5,15 +5,33 @@ import { isInternal } from './Tools';
 import './assets/css/main.scss';
 import App from './views/App.svelte'; // eslint-disable-line import/extensions
 
+const appProps: {
+  isInfoPanel: boolean,
+  isInternal: boolean,
+  isMercadoMode: boolean,
+  isUserInput: boolean,
+  items: Array<{
+    id: string,
+    name: string,
+    position?: number,
+    hasStop: boolean,
+    isSelected: boolean,
+  }>,
+  userInputValue: string,
+  viewContext: PluginViewTypes,
+} = {
+  isInfoPanel: false,
+  isInternal: isInternal(),
+  isMercadoMode: false,
+  isUserInput: false,
+  items: null,
+  userInputValue: null,
+  viewContext: null,
+};
+
 const app = new App({
   target: document.body,
-  props: {
-    isInternal: isInternal(),
-    isMercadoMode: false,
-    isUserInput: false,
-    isInfoPanel: false,
-    userInputValue: null,
-  },
+  props: appProps,
 });
 
 /**
@@ -93,28 +111,40 @@ const watchIncomingMessages = (): void => {
     },
   ) => {
     const { pluginMessage } = event.data;
-    const { payload } = pluginMessage;
+    if (pluginMessage) {
+      const { payload } = pluginMessage;
 
-    switch (pluginMessage.action) {
-      case 'showInput': {
-        const { initialValue } = payload;
-        showHideInput('show', initialValue);
-        break;
+      switch (pluginMessage.action) {
+        case 'showInput': {
+          const { initialValue } = payload;
+          showHideInput('show', initialValue);
+          break;
+        }
+        case 'hideInput':
+          showHideInput('hide');
+          break;
+        case 'showInfo':
+          showHideInfo('show');
+          break;
+        case 'hideInfo':
+          showHideInfo('hide');
+          break;
+        case 'refreshState': {
+          const {
+            currentView,
+            isMercadoMode,
+            items,
+            sessionKey,
+          } = payload;
+          app.viewContext = currentView;
+          app.isMercadoMode = isMercadoMode;
+          app.items = items;
+          app.newSessionKey = sessionKey;
+          break;
+        }
+        default:
+          return null;
       }
-      case 'hideInput':
-        showHideInput('hide');
-        break;
-      case 'showInfo':
-        showHideInfo('show');
-        break;
-      case 'hideInfo':
-        showHideInfo('hide');
-        break;
-      case 'setMercadoMode':
-        app.isMercadoMode = payload;
-        break;
-      default:
-        return null;
     }
 
     return null;

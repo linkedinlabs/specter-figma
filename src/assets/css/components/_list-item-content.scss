@@ -1,0 +1,51 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ list item content
+
+@mixin list-item-content {
+  padding: 0 0 em(6) 0;
+
+  ul {
+    margin: 0;
+
+    &.keys-list {
+      padding: 0 em(22) 0 em(44);
+      list-style-type: none;
+
+      li {
+        &.keys-item {
+          .form-element-holder {
+            .form-inner-row {
+              width: calc(100% - #{em(46)});
+            }
+          }
+
+          &.init {
+            .styled-select__button {
+              color: $wl-type-02;
+
+              @include hover {
+                color: $wl-type-01;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.items-list {
+  margin: 0 0 em(6) 0;
+
+  .single-item {
+    border-bottom: 1px solid rgba($wl-accent-tertiary, 1);
+  }
+
+  .item-content {
+    @include list-item-content;
+    border-left: 4px solid rgba($wl-accent, 0);
+
+    &.isSelected {
+      border-left: 4px solid rgba($wl-accent, 1);
+    }
+  }
+}

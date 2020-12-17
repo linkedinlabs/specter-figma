@@ -9,7 +9,7 @@
  * @name PLUGIN_IDENTIFIER
  * @type {string}
  */
-const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
+const PLUGIN_IDENTIFIER: string = 'com.linkedin.figma.specter-plugin';
 
 /**
  * @description The public-facing name for the plugin. This should match the
@@ -19,7 +19,7 @@ const PLUGIN_IDENTIFIER = 'com.linkedin.figma.specter-plugin';
  * @name PLUGIN_NAME
  * @type {string}
  */
-const PLUGIN_NAME = 'Specter';
+const PLUGIN_NAME: string = 'Specter';
 
 /**
  * @description An object containing the current string constants used as keys in plugin data.
@@ -30,9 +30,21 @@ const PLUGIN_NAME = 'Specter';
  * @name DATA_KEYS
  * @type {Object}
  */
-const DATA_KEYS = {
+const DATA_KEYS: {
+  options: string,
+  bundle: string,
+  keystopNodeData: string,
+  keystopAnnotations: string,
+  keystopList: string,
+  linkId: string,
+  relaunch: string,
+} = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
+  keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
+  keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
+  keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
+  linkId: `${PLUGIN_IDENTIFIER}.linkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 
@@ -43,10 +55,18 @@ const DATA_KEYS = {
  * @name COLORS
  * @type {Object}
  */
-const COLORS = {
+const COLORS: {
+  component: string,
+  custom: string,
+  dimension: string,
+  keystop: string,
+  spacing: string,
+  style: string,
+} = {
   component: '#6255ca',
   custom: '#c8006a',
   dimension: '#4c7100',
+  keystop: '#c8006a',
   spacing: '#007373',
   style: '#bc3600',
 };
@@ -186,9 +206,13 @@ const CONTAINER_NODE_TYPES = {
  * @type {Object}
  */
 const GUI_SETTINGS = {
+  accessibilityDefault: {
+    width: 360,
+    height: 180,
+  },
   default: {
-    width: 140,
-    height: 132,
+    width: 360,
+    height: 171,
   },
   input: {
     width: 440,
@@ -199,8 +223,8 @@ const GUI_SETTINGS = {
     height: 324,
   },
   mercadoDefault: {
-    width: 140,
-    height: 190,
+    width: 360,
+    height: 230,
   },
 };
 

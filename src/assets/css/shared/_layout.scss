@@ -2,7 +2,12 @@
 
 // some defaults
 * {
+  // border box default
   box-sizing: border-box;
+
+  // disable selection highlighting and cursor
+  cursor: default;
+  user-select: none;
 }
 
 body {
@@ -18,32 +23,39 @@ svg {
   width: 100%;
 }
 
-ul {
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
-  width: 100%;
-
-  li {
-    margin: 0;
-    width: 100%;
-  }
+.hide-visually {
+  @include hide-visually;
 }
 
 // main container
 .container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  flex-direction: column;
+  nav {
+    &.scene-navigator {
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+  }
 }
 
 .container.wide {
-  flex-direction: row;
+  // flex-direction: row;
 }
 
 .main-container {
   width: 100%;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    width: 100%;
+
+    li {
+      margin: 0;
+      width: 100%;
+    }
+  }
 
   // mercado / art-deco mode banner
   .mercado-banner {

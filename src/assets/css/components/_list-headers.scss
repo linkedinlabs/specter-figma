@@ -1,0 +1,165 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ list headers
+
+@mixin list-header-base {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: em(4) em(4) em(4) em(0);
+  width: 100%;
+  background-color: $wl-canvas;
+
+  span {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+
+    &.text {
+      @include type-01;
+    }
+
+    &.actions {
+      height: em(24);
+
+      #{$all-buttons} {
+        &.item-toggle {
+          @include button-icon(
+            $wl-action-secondary-accent,
+            16,
+            $wl-action-tertiary-accent,
+          );
+          width: em(32);
+          height: em(32);
+          // margin-left: em(-2);
+          opacity: 0;
+
+          // keep expanded toggle visible
+          &.action-open-close {
+            transform: rotate(-90deg);
+
+            &.open {
+              transform: rotate(0);
+              opacity: 1;
+            }
+          }
+        }
+      }
+    }
+
+    &.right {
+      .actions {
+        margin-right: em(-2);
+
+        #{$all-buttons} {
+          &.item-toggle {
+            margin-left: em(4);
+
+            &:first-child {
+              margin-left: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  #{$all-buttons} {
+    span {
+      &.text {
+        @include hide-visually;
+      }
+    }
+  }
+
+  // show / hide actions
+  @include hover {
+    span {
+      &.actions {
+        #{$all-buttons} {
+          &.item-toggle {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+
+  &:focus-within {
+    span {
+      &.actions {
+        #{$all-buttons} {
+          &.item-toggle {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin list-header-base-expanded {
+  border-bottom: 0;
+
+  span {
+    &.text {
+      @include type-01(600);
+    }
+  }
+}
+
+// individual style or component
+@mixin list-header-single {
+  @include list-header-base;
+  border-left: 4px solid rgba($wl-accent, 0);
+
+  &.isSelected {
+    border-left: 4px solid rgba($wl-accent, 1);
+  }
+
+  span {
+    &.text {
+      em {
+        font-style: normal;
+        color: $wl-type-02;
+
+        &:after {
+          content: "/";
+          padding-right: em(4);
+          padding-left: em(4);
+        }
+      }
+    }
+  }
+}
+
+@mixin list-header-single-expanded {
+  @include list-header-single;
+  @include list-header-base-expanded;
+
+  span {
+    &.text {
+      em {
+        color: $wl-type-01;
+      }
+    }
+  }
+}
+
+// apply the styles
+.item-header {
+  &.a11y-keyboard {
+    @include list-header-single;
+
+    &.isOpen {
+      @include list-header-single-expanded;
+    }
+
+    .form-element.element-type-text {
+      width: em(32);
+
+      input {
+        text-align: center;
+      }
+    }
+  }
+}
