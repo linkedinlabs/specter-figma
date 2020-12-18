@@ -7,7 +7,7 @@
 </script>
 
 {#if items && items.length > 0}
-  {#if (viewContext === 'a11y-keyboard')}
+  {#if (viewContext !== 'a11y-headings')}
     <ItemsList
       on:handleAction
       items={items}
