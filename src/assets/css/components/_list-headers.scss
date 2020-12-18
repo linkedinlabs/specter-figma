@@ -147,7 +147,8 @@
 
 // apply the styles
 .item-header {
-  &.a11y-keyboard {
+  &.a11y-keyboard,
+  &.a11y-labels {
     @include list-header-single;
 
     &.isOpen {

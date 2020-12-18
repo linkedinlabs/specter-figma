@@ -3,7 +3,8 @@
   import { openItems } from './stores';
 
   import ButtonAddStop from './forms-controls/ButtonAddStop';
-  import ItemExpandedContent from './ItemExpandedContent';
+  import ItemExpandedContentKeystops from './ItemExpandedContentKeystops';
+  import ItemExpandedContentLabels from './ItemExpandedContentLabels';
   import ItemHeader from './ItemHeader';
 
   // props
@@ -130,12 +131,21 @@
           type={type}
         />
         {#if checkIsOpen(item.id, type)}
-          <ItemExpandedContent
-            itemId={item.id}
-            isSelected={item.isSelected}
-            keys={item.keys}
-            type={type}
-          />
+          {#if (type === 'a11y-keyboard')}
+            <ItemExpandedContentKeystops
+              itemId={item.id}
+              isSelected={item.isSelected}
+              keys={item.keys}
+              type={type}
+            />
+          {:else if (type === 'a11y-labels')}
+            <ItemExpandedContentLabels
+              itemId={item.id}
+              isSelected={item.isSelected}
+              keys={item.keys}
+              type={type}
+            />
+          {/if}
         {/if}
       </li>
     {/each}
