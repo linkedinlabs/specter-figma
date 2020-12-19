@@ -9,15 +9,15 @@
   export let keys = null;
   export let type = null;
 
-  let newKeyValue = 'no-key';
+  let newKeyValue = 'no-role';
   let dirtyKeys = keys ? [...keys] : [];
   let originalKeys = keys ? [...keys] : [];
   let resetValue = false;
 
-  const keyboardOptionsInit = [
+  const controlRoles = [
     {
-      value: 'no-key',
-      text: 'Add key…',
+      value: 'no-role',
+      text: 'Undefined…',
       disabled: true,
     },
     {
@@ -26,46 +26,13 @@
       disabled: true,
     },
     {
-      value: 'arrows-left-right',
-      text: 'Arrow keys (left/right)',
+      value: 'image',
+      text: 'Image',
       disabled: false,
     },
     {
-      value: 'arrows-up-down',
-      text: 'Arrow keys (up/down)',
-      disabled: false,
-    },
-    {
-      value: 'enter',
-      text: 'Enter',
-      disabled: false,
-    },
-    {
-      value: 'divider--02',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'space',
-      text: 'Space',
-      disabled: false,
-    },
-    {
-      value: 'divider--03',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'escape',
-      text: 'Escape',
-      disabled: false,
-    },
-  ];
-
-  const keyboardOptions = [
-    {
-      value: 'no-key',
-      text: 'No key (remove)',
+      value: 'image-decorative',
+      text: 'Image (decorative)',
       disabled: false,
     },
     {
@@ -74,75 +41,33 @@
       disabled: true,
     },
     {
-      value: 'arrows-left-right',
-      text: 'Arrow keys (left/right)',
+      value: 'button',
+      text: 'Button',
       disabled: false,
     },
     {
-      value: 'arrows-up-down',
-      text: 'Arrow keys (up/down)',
+      value: 'checkbox',
+      text: 'Checkbox',
       disabled: false,
     },
     {
-      value: 'enter',
-      text: 'Enter',
+      value: 'link',
+      text: 'Link',
       disabled: false,
     },
     {
-      value: 'divider--02',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'space',
-      text: 'Space',
-      disabled: false,
-    },
-    {
-      value: 'divider--03',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'escape',
-      text: 'Escape',
+      value: 'option',
+      text: 'Option',
       disabled: false,
     },
   ];
 
-  const addKey = (keyToAdd) => {
-    if (keyToAdd !== 'no-key') {
-      parent.postMessage({
-        pluginMessage: {
-          action: `${type}-set-key`,
-          payload: {
-            id: itemId,
-            key: keyToAdd,
-          },
-        },
-      }, '*');
-      newKeyValue = 'no-key';
-    }
-  };
-
-  const removeKey = (keyToRemove) => {
-    parent.postMessage({
-      pluginMessage: {
-        action: `${type}-remove-key`,
-        payload: {
-          id: itemId,
-          key: keyToRemove,
-        },
-      },
-    }, '*');
-  };
-
-  const updateKey = (currentKeys, keyToUpdate, oldKeyIndex) => {
+  const updateRole = (currentKeys, keyToUpdate, oldKeyIndex) => {
     const oldKey = currentKeys[oldKeyIndex];
     if (oldKey !== keyToUpdate) {
       removeKey(oldKey);
 
-      if (keyToUpdate !== 'no-key') {
+      if (keyToUpdate !== 'no-role') {
         addKey(keyToUpdate);
       }
     }
@@ -208,65 +133,6 @@
     return isDifferent;
   };
 
-  const updateSelect = (options) => {
-    const currentKeys = options.keys;
-    const selectType = options.type;
-    let selectedValue = null;
-
-    let modifiedSelectOptions = [...keyboardOptionsInit];
-    if (selectType !== 'init') {
-      modifiedSelectOptions = [...keyboardOptions];
-      selectedValue = options.value;
-    }
-
-    if (currentKeys) {
-      // remove existing key entries
-      currentKeys.forEach((keyEntry) => {
-        const compareValue = { value: keyEntry };
-        if ((selectType === 'init') || (keyEntry !== selectedValue)) {
-          modifiedSelectOptions = updateArray(
-            modifiedSelectOptions,
-            compareValue,
-            'value',
-            'remove',
-          );
-        }
-      });
-
-      // remove double dividers
-      let lastIsDivider = false;
-      modifiedSelectOptions.forEach((optionsEntry) => {
-        const isDivider = optionsEntry.value.includes('divider--');
-
-        if (isDivider && !lastIsDivider) {
-          lastIsDivider = true;
-        } else if (isDivider && lastIsDivider) {
-          modifiedSelectOptions = updateArray(
-            modifiedSelectOptions,
-            optionsEntry,
-            'value',
-            'remove',
-          );
-        } else {
-          lastIsDivider = false;
-        }
-      });
-
-      // remove divider if it is last
-      const lastOptionIndex = modifiedSelectOptions.length - 1;
-      const lastOption = modifiedSelectOptions[lastOptionIndex];
-      if (lastOption.value.includes('divider--')) {
-        modifiedSelectOptions = updateArray(
-          modifiedSelectOptions,
-          lastOption,
-          'value',
-          'remove',
-        );
-      }
-    }
-    return modifiedSelectOptions;
-  };
-
   beforeUpdate(() => {
     // check `keys` against original to see if it was updated on the Figma side
     if (compareArrays(keys, originalKeys)) {
@@ -289,43 +155,21 @@
 
 <article class:isSelected class="item-content">
   <ul class="keys-list">
-    {#each dirtyKeys as dirtyKey, i (dirtyKey)}
-      <li class="keys-item">
-        <span class="form-element-holder">
-          <FormUnit
-            className="form-row"
-            on:deleteSignal={() => removeKey(dirtyKey)}
-            hideLabel={true}
-            isDeletable={true}
-            kind="inputSelect"
-            labelText="Key"
-            nameId={`${itemId}-key-${dirtyKey}`}
-            options={updateSelect({ keys, type: 'selected', value: dirtyKey })}
-            resetValue={resetValue}
-            selectWatchChange={true}
-            on:saveSignal={() => updateKey(originalKeys, dirtyKey, i)}
-            bind:value={dirtyKey}
-          />
-        </span>
-      </li>
-    {/each}
-    {#if updateSelect({ keys, type: 'init' }).length > 1}
-      <li class="keys-item init">
-        <span class="form-element-holder">
-          <FormUnit
-            className="form-row"
-            hideLabel={true}
-            kind="inputSelect"
-            labelText="Key"
-            nameId={`${itemId}-key-no-key`}
-            options={updateSelect({ keys, type: 'init' })}
-            resetValue={resetValue}
-            selectWatchChange={true}
-            on:saveSignal={() => addKey(newKeyValue)}
-            bind:value={newKeyValue}
-          />
-        </span>
-      </li>
-    {/if}
+    <li class="keys-item">
+      <span class="form-element-holder">
+        <FormUnit
+          className="form-row"
+          hideLabel={true}
+          kind="inputSelect"
+          labelText="Key"
+          nameId={`${itemId}-role`}
+          options={controlRoles}
+          resetValue={resetValue}
+          selectWatchChange={true}
+          on:saveSignal={() => updateRole(originalKeys, dirtyKey, i)}
+          bind:value={dirtyKey}
+        />
+      </span>
+    </li>
   </ul>
 </article>
