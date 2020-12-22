@@ -857,6 +857,117 @@ export default class Identifier {
     return result;
   }
 
+  /** WIP
+   * @description Checks the node’s settings object for the existence of keystop-related data
+   * and either updates that data with a new position, or creates the data object with the
+   * initial position and saves it to the node. Position is calculated by reading the
+   * keystop list data from the nodes top-level container frame. If `position` is _not_
+   * supplied, the main underlying assumption is that the node being set is going to be in the
+   * next highest position in the list and needs to be added to the list. If `position` is
+   * supplied, the assumption is that we are simply updating the node data, and the keystop
+   * list does not need to be touched.
+   *
+   * @kind function
+   * @name getSetLabel
+   *
+   * @param {number} position An optional number to override the counter.
+   *
+   * @returns {Object} A result object containing success/error status and log/toast messages.
+   */
+  getSetLabel(position?: number) {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    // find the top frame
+    const topFrame: FrameNode = findTopFrame(this.node);
+
+    if (!topFrame) {
+      result.status = 'error';
+      result.messages.log = `Node “${this.node.name}” needs to be in a frame`;
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
+
+    // get top frame keystop list
+    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+    let frameKeystopList: Array<{
+      id: string,
+      position: number,
+    }> = [];
+    if (frameKeystopListData) {
+      frameKeystopList = frameKeystopListData;
+    }
+
+    // set new position based on list length
+    // (we always assume `getSetKeystop` has been fed the node in order)
+    let positionToSet = frameKeystopList.length + 1;
+    if (position) {
+      positionToSet = position;
+    } else {
+      // add the new node to the list with position
+      frameKeystopList.push({
+        id: this.node.id,
+        position: positionToSet,
+      });
+
+      // set/update top frame keystop list
+      topFrame.setPluginData(
+        DATA_KEYS.keystopList,
+        JSON.stringify(frameKeystopList),
+      );
+    }
+
+    // convert position to string
+    const textToSet = `${positionToSet}`;
+
+    // retrieve the node data
+    let nodeData: {
+      annotationText: string,
+      annotationSecondaryText?: string,
+      keys?: Array<PluginKeystopKeys>,
+    } = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+
+    // set `annotationText` data on the node
+    if (!nodeData) {
+      nodeData = {
+        annotationText: textToSet,
+      };
+    } else {
+      nodeData.annotationText = textToSet;
+    }
+
+    // check for assigned keys, if none exist (`undefined` or `null`):
+    // this check will only happen if keys have never been attached to this stop.
+    // if the component is updated after this stop has been altered, the updates will be ignored.
+    if (!nodeData.keys) {
+      const peerNodeData = getPeerPluginData(this.node);
+      if (peerNodeData && peerNodeData.keys) {
+        nodeData.keys = peerNodeData.keys;
+      }
+    }
+
+    // commit the updated data
+    this.node.setPluginData(
+      DATA_KEYS.keystopNodeData,
+      JSON.stringify(nodeData),
+    );
+
+    result.status = 'success';
+    result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;
+    return result;
+  }
+
   /**
    * @description Checks the node’s settings object for the existence of `annotationText` and
    * and that `annotationType` is 'custom' (Component and Style annotations can be easily updated

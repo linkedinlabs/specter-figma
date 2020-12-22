@@ -2342,6 +2342,185 @@ export default class Painter {
     return result;
   }
 
+  /** WIP
+   * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
+   * available (`annotationText` and potential `keys` for auxilary annotations).
+   *
+   * @kind function
+   * @name addKeystop
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addLabel() {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
+
+    // retrieve the node data with our annotation text
+    const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
+
+    if (!nodeData || (nodeData && !nodeData.annotationText)) {
+      result.status = 'error';
+      result.messages.log = 'Node missing annotationText';
+      return result;
+    }
+
+    // return an error if the selection is not placed in a frame
+    if (!this.frame || (this.frame.id === this.node.id)) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
+
+    // set up some information
+    const { annotationText } = nodeData;
+    const annotationType: 'keystop' = 'keystop';
+    const annotationName = `Keystop for ${this.node.name}`;
+
+    // construct the base annotation elements
+    const annotationBundle = buildAnnotation({
+      mainText: annotationText,
+      secondaryText: null,
+      type: annotationType,
+    });
+
+    const auxAnnotations: Array<FrameNode> = [];
+    if (nodeData.keys && nodeData.keys.length > 0) {
+      nodeData.keys.forEach((keyEntry) => {
+        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
+        auxAnnotation.layoutAlign = 'INHERIT';
+        auxAnnotations.push(auxAnnotation);
+      });
+    }
+
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.node] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
+    // group and position the base annotation elements
+    const nodePosition: PluginNodePosition = {
+      frameWidth: this.frame.width,
+      frameHeight: this.frame.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
+      x: relativePosition.x,
+      y: relativePosition.y,
+    };
+
+    const baseAnnotationNode = positionAnnotation(
+      this.frame,
+      annotationName,
+      annotationBundle,
+      nodePosition,
+      'keystop',
+    );
+
+    const initialX = baseAnnotationNode.x;
+    const initialY = baseAnnotationNode.y;
+
+    let annotationNode: FrameNode = baseAnnotationNode;
+    if (auxAnnotations.length > 0) {
+      annotationNode = figma.createFrame();
+      annotationNode.clipsContent = false;
+      annotationNode.layoutMode = 'HORIZONTAL';
+      annotationNode.counterAxisSizingMode = 'AUTO';
+      annotationNode.layoutAlign = 'INHERIT';
+      annotationNode.itemSpacing = 4;
+      annotationNode.fills = [];
+      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
+
+      // add the base annotation
+      annotationNode.appendChild(baseAnnotationNode);
+
+      // add the key annotations
+      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
+
+      baseAnnotationNode.layoutAlign = 'INHERIT';
+      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
+      annotationNode.x = initialX;
+      annotationNode.y = initialY;
+    }
+
+    // set it in the correct containers
+    setNodeInContainers({
+      node: annotationNode,
+      frame: this.frame,
+      page: this.page,
+      type: 'keystop',
+    });
+
+    // ---------- set node tracking data
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
+      annotationId: annotationNode.id,
+      id: this.node.id,
+      linkId,
+      topFrameId: this.frame.id,
+      nodePosition,
+    };
+
+    // update the `trackingSettings` array
+    const trackingDataRaw = JSON.parse(
+      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
+    );
+    let trackingData: Array<PluginNodeTrackingData> = [];
+    if (trackingDataRaw) {
+      trackingData = trackingDataRaw;
+    }
+
+    // set the node data in the `trackingData` array
+    trackingData = updateArray(
+      trackingData,
+      newAnnotatedNodeData,
+      'id',
+      'update',
+    );
+
+    // commit the `trackingData` update
+    this.page.setPluginData(
+      DATA_KEYS.labelAnnotations,
+      JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(nodeLinkData),
+    );
+
+    // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
+    annotationNode.setPluginData(
+      DATA_KEYS.linkId,
+      JSON.stringify(annotatedLinkData),
+    );
+
+    // return a successful result
+    result.status = 'success';
+    return result;
+  }
+
   /**
    * @description Takes a `spacingPosition` object and creates a spacing measurement annotation
    * with the correct spacing number (“IS-X”). If the calculated spacing number is larger
