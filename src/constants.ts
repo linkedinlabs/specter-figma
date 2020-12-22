@@ -36,6 +36,9 @@ const DATA_KEYS: {
   keystopNodeData: string,
   keystopAnnotations: string,
   keystopList: string,
+  labelNodeData: string,
+  labelAnnotations: string,
+  labelList: string,
   linkId: string,
   relaunch: string,
 } = {
@@ -44,6 +47,9 @@ const DATA_KEYS: {
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
+  labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
+  labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
+  labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
   linkId: `${PLUGIN_IDENTIFIER}.linkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
