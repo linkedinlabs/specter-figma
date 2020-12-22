@@ -4,11 +4,16 @@
 
   import FormUnit from './forms-controls/FormUnit';
 
+  export let role = 'no-role';
+  // tktk
   export let isSelected = false;
   export let itemId = null;
   export let keys = null;
   export let type = null;
 
+  let newRole = 'no-role';
+  let dirtyRole = role;
+  // tktk
   let newKeyValue = 'no-role';
   let dirtyKeys = keys ? [...keys] : [];
   let originalKeys = keys ? [...keys] : [];
@@ -154,22 +159,59 @@
 </style>
 
 <article class:isSelected class="item-content">
-  <ul class="keys-list">
-    <li class="keys-item">
-      <span class="form-element-holder">
+  <span class="form-element-holder">
+    <FormUnit
+      className="form-row"
+      hideLabel={true}
+      kind="inputSelect"
+      labelText="Role"
+      nameId={`${itemId}-role`}
+      options={controlRoles}
+      resetValue={resetValue}
+      selectWatchChange={true}
+      on:saveSignal={() => updateRole(originalKeys, dirtyRole, i)}
+      bind:value={dirtyRole}
+    />
+    {#if (role !== 'image-decorative')}
+      {#if (role === 'image')}
         <FormUnit
           className="form-row"
           hideLabel={true}
-          kind="inputSelect"
-          labelText="Key"
-          nameId={`${itemId}-role`}
+          kind="inputText"
+          labelText="Alt text"
+          nameId={`${itemId}-label-alt`}
           options={controlRoles}
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateRole(originalKeys, dirtyKey, i)}
-          bind:value={dirtyKey}
+          on:saveSignal={() => updateRole(originalKeys, dirtyRole, i)}
+          bind:value={dirtyRole}
         />
-      </span>
-    </li>
-  </ul>
+      {:else}
+        <FormUnit
+          className="form-row"
+          hideLabel={true}
+          kind="inputText"
+          labelText="Visible label"
+          nameId={`${itemId}-label-visible`}
+          options={controlRoles}
+          resetValue={resetValue}
+          selectWatchChange={true}
+          on:saveSignal={() => updateRole(originalKeys, dirtyRole, i)}
+          bind:value={dirtyRole}
+        />
+        <FormUnit
+          className="form-row"
+          hideLabel={true}
+          kind="inputText"
+          labelText="A11y label"
+          nameId={`${itemId}-label-a11y`}
+          options={controlRoles}
+          resetValue={resetValue}
+          selectWatchChange={true}
+          on:saveSignal={() => updateRole(originalKeys, dirtyRole, i)}
+          bind:value={dirtyRole}
+        />
+      {/if}
+    {/if}
+  </span>
 </article>
