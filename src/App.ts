@@ -568,7 +568,7 @@ const getKeystopLabelNodes = (
  * formatted to pass along to the UI.
  *
  * @kind function
- * @name getKeystopPosition
+ * @name getKeystopLabelPosition
  *
  * @param {Object} node A SceneNode to check for Keystop data.
  *
@@ -576,15 +576,15 @@ const getKeystopLabelNodes = (
  * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
  * if they exist.
  */
-const getKeystopPosition = (node: SceneNode): {
+const getKeystopLabelPosition = (node: SceneNode, type: 'a11y-keyboard' | 'a11y-labels'): {
   hasStop: boolean,
-  keys: Array<PluginKeystopKeys>,
+  keys?: Array<PluginKeystopKeys>,
   position: number,
 } => {
   // set up keystop blank
-  const keystopPosition: {
+  const nodePosition: {
     hasStop: boolean,
-    keys: Array<PluginKeystopKeys>,
+    keys?: Array<PluginKeystopKeys>,
     position: number,
   } = {
     hasStop: false,
@@ -593,10 +593,11 @@ const getKeystopPosition = (node: SceneNode): {
   };
 
   // find keys data for selected node
-  const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+  const nodeDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+  const nodeData = JSON.parse(node.getPluginData(nodeDataType) || null);
   if (nodeData && nodeData.keys) {
     const { keys } = nodeData;
-    keystopPosition.keys = keys;
+    nodePosition.keys = keys;
   }
 
   // find top frame for selected node
@@ -605,17 +606,18 @@ const getKeystopPosition = (node: SceneNode): {
   if (topFrame) {
     // read keystop list data from top frame
     const itemIndex = 0;
-    const keystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
-    if (keystopList) {
-      const keystopItem = keystopList.filter(item => item.id === node.id)[itemIndex];
-      if (keystopItem) {
-        keystopPosition.hasStop = true;
-        keystopPosition.position = keystopItem.position;
+    const listDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const keystopLabelList = JSON.parse(topFrame.getPluginData(listDataType) || null);
+    if (keystopLabelList) {
+      const keystopLabelItem = keystopLabelList.filter(item => item.id === node.id)[itemIndex];
+      if (keystopLabelItem) {
+        nodePosition.hasStop = true;
+        nodePosition.position = keystopLabelItem.position;
       }
     }
   }
 
-  return keystopPosition;
+  return nodePosition;
 };
 
 /**
@@ -1145,7 +1147,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = painter.addLabel();
+          // paintResult = painter.addLabel();
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
@@ -1869,7 +1871,7 @@ export default class App {
           hasStop,
           keys,
           position,
-        } = getKeystopPosition(node);
+        } = getKeystopLabelPosition(node, currentView);
         const viewObject = {
           id,
           name,

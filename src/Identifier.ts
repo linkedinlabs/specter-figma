@@ -899,32 +899,32 @@ export default class Identifier {
       return result;
     }
 
-    // get top frame keystop list
-    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
-    let frameKeystopList: Array<{
+    // get top frame label list
+    const frameLabelListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.labelList) || null);
+    let frameLabelList: Array<{
       id: string,
       position: number,
     }> = [];
-    if (frameKeystopListData) {
-      frameKeystopList = frameKeystopListData;
+    if (frameLabelListData) {
+      frameLabelList = frameLabelListData;
     }
 
     // set new position based on list length
-    // (we always assume `getSetKeystop` has been fed the node in order)
-    let positionToSet = frameKeystopList.length + 1;
+    // (we always assume `getSetLabel` has been fed the node in order)
+    let positionToSet = frameLabelList.length + 1;
     if (position) {
       positionToSet = position;
     } else {
       // add the new node to the list with position
-      frameKeystopList.push({
+      frameLabelList.push({
         id: this.node.id,
         position: positionToSet,
       });
 
-      // set/update top frame keystop list
+      // set/update top frame label list
       topFrame.setPluginData(
-        DATA_KEYS.keystopList,
-        JSON.stringify(frameKeystopList),
+        DATA_KEYS.labelList,
+        JSON.stringify(frameLabelList),
       );
     }
 
@@ -935,8 +935,7 @@ export default class Identifier {
     let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
-      keys?: Array<PluginKeystopKeys>,
-    } = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+    } = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
 
     // set `annotationText` data on the node
     if (!nodeData) {
@@ -947,24 +946,14 @@ export default class Identifier {
       nodeData.annotationText = textToSet;
     }
 
-    // check for assigned keys, if none exist (`undefined` or `null`):
-    // this check will only happen if keys have never been attached to this stop.
-    // if the component is updated after this stop has been altered, the updates will be ignored.
-    if (!nodeData.keys) {
-      const peerNodeData = getPeerPluginData(this.node);
-      if (peerNodeData && peerNodeData.keys) {
-        nodeData.keys = peerNodeData.keys;
-      }
-    }
-
     // commit the updated data
     this.node.setPluginData(
-      DATA_KEYS.keystopNodeData,
+      DATA_KEYS.labelNodeData,
       JSON.stringify(nodeData),
     );
 
     result.status = 'success';
-    result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;
+    result.messages.log = `Label position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 
