@@ -287,7 +287,7 @@
   /* components/list-item-content */
 </style>
 
-<article class:isSelected class="item-content">
+<article class:isSelected class={`item-content ${type}`}>
   <ul class="keys-list">
     {#each dirtyKeys as dirtyKey, i (dirtyKey)}
       <li class="keys-item">

@@ -2,6 +2,15 @@
 
 @mixin list-item-content {
   padding: 0 0 em(6) 0;
+  border-left: 4px solid rgba($wl-accent, 0);
+
+  &.isSelected {
+    border-left: 4px solid rgba($wl-accent, 1);
+  }
+}
+
+@mixin list-item-content-keyboard {
+  @include list-item-content;
 
   ul {
     margin: 0;
@@ -33,6 +42,26 @@
   }
 }
 
+@mixin list-item-content-labels {
+  @include list-item-content;
+
+  .form-element-holder {
+    display: block;
+    padding: 0 em(22) 0 em(44);
+    width: 100%;
+
+    .form-row {
+      display: flex;
+      flex-wrap: nowrap;
+      width: 100%;
+
+      .form-label {
+        width: em(104);
+      }
+    }
+  }
+}
+
 .items-list {
   margin: 0 0 em(6) 0;
 
@@ -41,11 +70,12 @@
   }
 
   .item-content {
-    @include list-item-content;
-    border-left: 4px solid rgba($wl-accent, 0);
+    &.a11y-keyboard {
+      @include list-item-content-keyboard;
+    }
 
-    &.isSelected {
-      border-left: 4px solid rgba($wl-accent, 1);
+    &.a11y-labels {
+      @include list-item-content-labels;
     }
   }
 }
