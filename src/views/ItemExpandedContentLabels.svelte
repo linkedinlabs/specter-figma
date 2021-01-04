@@ -2,6 +2,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { updateArray } from '../Tools';
 
+  import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
 
   export let role = 'no-role';
@@ -13,6 +14,8 @@
 
   let newRole = 'no-role';
   let dirtyRole = role;
+  let dirtyLabelVisible = null;
+  let dirtyLabelA11y = null;
   // tktk
   let newKeyValue = 'no-role';
   let dirtyKeys = keys ? [...keys] : [];
@@ -66,6 +69,24 @@
       disabled: false,
     },
   ];
+
+  const handleSelect = () => {
+    // tktk
+    console.log('select layer in Figma artboard'); // eslint-disable-line no-console
+  };
+
+  const updateLabel = (currentKeys, keyToUpdate) => {
+    // tktk
+    console.log('update label'); // eslint-disable-line no-console
+    // const oldKey = currentKeys[oldKeyIndex];
+    // if (oldKey !== keyToUpdate) {
+    //   removeKey(oldKey);
+
+    //   if (keyToUpdate !== 'no-role') {
+    //     addKey(keyToUpdate);
+    //   }
+    // }
+  };
 
   const updateRole = (currentKeys, keyToUpdate) => {
     // tktk
@@ -162,17 +183,22 @@
 
 <article class:isSelected class={`item-content ${type}`}>
   <span class="form-element-holder">
-    <FormUnit
-      className="form-row"
-      kind="inputSelect"
-      labelText="Role"
-      nameId={`${itemId}-role`}
-      options={controlRoles}
-      resetValue={resetValue}
-      selectWatchChange={true}
-      on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
-      bind:value={dirtyRole}
-    />
+    <span class="form-row">
+      <FormUnit
+        className="form-inner-row"
+        kind="inputSelect"
+        labelText="Role"
+        nameId={`${itemId}-role`}
+        options={controlRoles}
+        resetValue={resetValue}
+        selectWatchChange={true}
+        on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
+        bind:value={dirtyRole}
+      />
+      <ButtonSelect
+        on:handleUpdate={() => handleSelect()}
+      />
+    </span>
     {#if (role !== 'image-decorative')}
       {#if (role === 'image')}
         <FormUnit
@@ -181,6 +207,7 @@
           labelText="Alt text"
           nameId={`${itemId}-label-alt`}
           options={controlRoles}
+          placeholder="Short description of the scene"
           resetValue={resetValue}
           selectWatchChange={true}
           on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
@@ -193,10 +220,11 @@
           labelText="Visible label"
           nameId={`${itemId}-label-visible`}
           options={controlRoles}
+          placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
-          bind:value={dirtyRole}
+          on:saveSignal={() => updateLabel(originalKeys, dirtyLabelVisible)}
+          bind:value={dirtyLabelVisible}
         />
         <FormUnit
           className="form-row"
@@ -204,10 +232,11 @@
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
           options={controlRoles}
+          placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
-          bind:value={dirtyRole}
+          on:saveSignal={() => updateLabel(originalKeys, dirtyLabelA11y)}
+          bind:value={dirtyLabelA11y}
         />
       {/if}
     {/if}
