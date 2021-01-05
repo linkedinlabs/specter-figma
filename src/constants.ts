@@ -35,22 +35,24 @@ const DATA_KEYS: {
   bundle: string,
   keystopNodeData: string,
   keystopAnnotations: string,
+  keystopLinkId: string,
   keystopList: string,
   labelNodeData: string,
   labelAnnotations: string,
+  labelLinkId: string,
   labelList: string,
-  linkId: string,
   relaunch: string,
 } = {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
+  keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
+  labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
-  linkId: `${PLUGIN_IDENTIFIER}.linkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 

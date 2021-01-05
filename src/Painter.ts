@@ -2323,7 +2323,7 @@ export default class Painter {
       role: 'node',
     };
     this.node.setPluginData(
-      DATA_KEYS.linkId,
+      DATA_KEYS.keystopLinkId,
       JSON.stringify(nodeLinkData),
     );
 
@@ -2333,7 +2333,7 @@ export default class Painter {
       role: 'annotation',
     };
     annotationNode.setPluginData(
-      DATA_KEYS.linkId,
+      DATA_KEYS.keystopLinkId,
       JSON.stringify(annotatedLinkData),
     );
 
@@ -2502,7 +2502,7 @@ export default class Painter {
       role: 'node',
     };
     this.node.setPluginData(
-      DATA_KEYS.linkId,
+      DATA_KEYS.labelLinkId,
       JSON.stringify(nodeLinkData),
     );
 
@@ -2512,7 +2512,7 @@ export default class Painter {
       role: 'annotation',
     };
     annotationNode.setPluginData(
-      DATA_KEYS.linkId,
+      DATA_KEYS.labelLinkId,
       JSON.stringify(annotatedLinkData),
     );
 

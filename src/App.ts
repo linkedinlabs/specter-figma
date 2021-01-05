@@ -108,7 +108,7 @@ const repairBrokenLinks = (
     // find nodes that do not match the tracking data
     nodesToEvaluate.forEach((node) => {
       const nodeLinkData: PluginNodeLinkData = JSON.parse(
-        node.getPluginData(DATA_KEYS.linkId) || null,
+        node.getPluginData(DATA_KEYS.keystopLinkId) || null,
       );
       if (nodeLinkData && nodeLinkData.role === 'node') {
         const filterIndex = 0;
@@ -149,7 +149,7 @@ const repairBrokenLinks = (
       const activeNode: BaseNode = figma.getNodeById(node.id);
       if (activeNode) {
         const nodeLinkData: PluginNodeLinkData = JSON.parse(
-          activeNode.getPluginData(DATA_KEYS.linkId) || null,
+          activeNode.getPluginData(DATA_KEYS.keystopLinkId) || null,
         );
         if (nodeLinkData && nodeLinkData.role === 'annotation') {
           if (annotationNodesToRemove.includes(nodeLinkData.id)) {
