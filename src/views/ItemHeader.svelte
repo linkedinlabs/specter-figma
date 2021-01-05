@@ -39,6 +39,22 @@
     }, '*');
   };
 
+  const setInputOptions = (currentItemType) => {
+    const options = {
+      className: 'form-row',
+      inputType: 'number',
+      placeholder: '0',
+    };
+
+    if (currentItemType === 'a11y-labels') {
+      options.className = 'form-row alpha-position';
+      options.inputType = 'text';
+      options.placeholder = 'a';
+    }
+
+    return options;
+  };
+
   const updatePosition = (newPosition) => {
     if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
       parent.postMessage({
@@ -96,16 +112,16 @@
   </span>
   <span class="right form-element-holder">
     <FormUnit
-      className="form-row"
+      className={setInputOptions(type).className}
       on:deleteSignal={() => removeStop()}
       hideLabel={true}
       isDeletable={true}
-      inputType="number"
+      inputType={setInputOptions(type).inputType}
       inputWatchBlur={true}
       kind="inputText"
       labelText="Position"
       nameId={`item-position-${itemId}`}
-      placeholder="0"
+      placeholder={setInputOptions(type).placeholder}
       resetValue={resetValue}
       on:saveSignal={() => updatePosition(dirtyPosition)}
       bind:value={dirtyPosition}

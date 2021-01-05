@@ -162,5 +162,13 @@
         text-align: center;
       }
     }
+
+    .form-row {
+      &.alpha-position {
+        input {
+          text-transform: uppercase;
+        }
+      }
+    }
   }
 }

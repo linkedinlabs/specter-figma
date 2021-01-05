@@ -1,3 +1,5 @@
+import convert, { ALPHABET_ASCII } from 'number-converter-alphabet';
+
 import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
@@ -1782,9 +1784,10 @@ export default class App {
     const items: Array<{
       id: string,
       name: string,
-      position?: number,
+      position?: number | string,
       hasStop: boolean,
       isSelected: boolean,
+      keys?: Array<PluginKeystopKeys>,
     }> = [];
 
     // grab tracking data for the page (currently only Keystops)
@@ -1872,10 +1875,22 @@ export default class App {
           keys,
           position,
         } = getKeystopLabelPosition(node, currentView);
-        const viewObject = {
+
+        let displayPosition = position;
+        if (currentView === 'a11y-labels') {
+          displayPosition = convert((position - 1), ALPHABET_ASCII, { implicitLeadingZero: true });
+        }
+        const viewObject: {
+          id: string,
+          name: string,
+          position: number | string,
+          hasStop: boolean,
+          isSelected: boolean,
+          keys: Array<PluginKeystopKeys>,
+        } = {
           id,
           name,
-          position,
+          position: displayPosition,
           hasStop,
           isSelected: existsInArray(selectedNodes, node.id),
           keys,
