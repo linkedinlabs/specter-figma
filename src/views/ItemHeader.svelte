@@ -107,6 +107,7 @@
       />
     </span>
     <span class="text">
+      <span class="error-flag">&#9873;&nbsp;</span>
       {labelText}
     </span>
   </span>
