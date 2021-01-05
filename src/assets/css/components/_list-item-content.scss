@@ -47,8 +47,8 @@
 
   .form-element-holder {
     display: block;
-    padding: 0 em(22) 0 em(44);
-    width: 100%;
+    padding: 0 0 0 em(44);
+    width: calc(100% - #{em(35)});
 
     .form-row {
       display: flex;
