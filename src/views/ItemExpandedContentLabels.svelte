@@ -64,8 +64,93 @@
       disabled: false,
     },
     {
+      value: 'menuitem',
+      text: 'Menu item',
+      disabled: false,
+    },
+    {
+      value: 'menuitemcheckbox',
+      text: 'Menu item (checkbox)',
+      disabled: false,
+    },
+    {
+      value: 'menuitemradio',
+      text: 'Menu item (radio)',
+      disabled: false,
+    },
+    {
       value: 'option',
       text: 'Option',
+      disabled: false,
+    },
+    {
+      value: 'progressbar',
+      text: 'Progress bar',
+      disabled: false,
+    },
+    {
+      value: 'radio',
+      text: 'Radio',
+      disabled: false,
+    },
+    {
+      value: 'searchbox',
+      text: 'Search box',
+      disabled: false,
+    },
+    {
+      value: 'slider',
+      text: 'Slider',
+      disabled: false,
+    },
+    {
+      value: 'switch',
+      text: 'Switch',
+      disabled: false,
+    },
+    {
+      value: 'tab',
+      text: 'Tab',
+      disabled: false,
+    },
+    {
+      value: 'tabpanel',
+      text: 'Tab panel',
+      disabled: false,
+    },
+    {
+      value: 'textbox',
+      text: 'Textbox',
+      disabled: false,
+    },
+    {
+      value: 'divider--03',
+      text: null,
+      disabled: true,
+    },
+    {
+      value: 'combobox',
+      text: 'Combobox',
+      disabled: false,
+    },
+    {
+      value: 'listbox',
+      text: 'Listbox',
+      disabled: false,
+    },
+    {
+      value: 'menu',
+      text: 'Menu',
+      disabled: false,
+    },
+    {
+      value: 'radiogroup',
+      text: 'Radio group',
+      disabled: false,
+    },
+    {
+      value: 'tablist',
+      text: 'Tab list',
       disabled: false,
     },
   ];
