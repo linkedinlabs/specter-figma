@@ -556,7 +556,7 @@ const getKeystopLabelNodes = (
   // reset the top frame list – list should be reset when annotations are re-painted
   if (resetData) {
     frameNode.setPluginData(
-      nodeType,
+      dataType,
       JSON.stringify([]),
     );
   }
