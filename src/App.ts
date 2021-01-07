@@ -1,5 +1,3 @@
-import convert, { ALPHABET_ASCII } from 'number-converter-alphabet';
-
 import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
@@ -13,6 +11,8 @@ import {
   updateArray,
 } from './Tools';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
+
+const alphaNumConvert = require('number-converter-alphabet');
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -1878,6 +1878,10 @@ export default class App {
 
         let displayPosition = position;
         if (currentView === 'a11y-labels') {
+          // convert numeric position to alpha for view
+          const { ALPHABET_ASCII } = alphaNumConvert;
+          const convert = alphaNumConvert.default;
+
           displayPosition = convert((position - 1), ALPHABET_ASCII, { implicitLeadingZero: true });
         }
         const viewObject: {
