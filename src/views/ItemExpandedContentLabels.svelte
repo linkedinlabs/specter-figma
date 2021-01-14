@@ -1,25 +1,25 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
-  import { updateArray } from '../Tools';
 
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
 
-  export let role = 'no-role';
-  // tktk
   export let isSelected = false;
   export let itemId = null;
-  export let keys = null;
+  export let labelA11y = null;
+  export let labelVisible = null;
+  export let role = 'no-role';
   export let type = null;
 
-  let newRole = 'no-role';
   let dirtyRole = role;
-  let dirtyLabelVisible = null;
-  let dirtyLabelA11y = null;
-  // tktk
-  let newKeyValue = 'no-role';
-  let dirtyKeys = keys ? [...keys] : [];
-  let originalKeys = keys ? [...keys] : [];
+  let originalRole = role;
+
+  let dirtyLabelA11y = labelA11y;
+  let originalLabelA11y = labelA11y;
+
+  let dirtyLabelVisible = labelVisible;
+  let originalLabelVisible = labelVisible;
+
   let resetValue = false;
 
   const controlRoles = [
@@ -160,9 +160,10 @@
     console.log('select layer in Figma artboard'); // eslint-disable-line no-console
   };
 
-  const updateLabel = (currentKeys, keyToUpdate) => {
+  const updateLabel = () => {
     // tktk
-    console.log('update label'); // eslint-disable-line no-console
+    console.log(`update label from ${originalLabelA11y}`); // eslint-disable-line no-console
+    console.log(`update label from ${originalLabelVisible}`); // eslint-disable-line no-console
     // const oldKey = currentKeys[oldKeyIndex];
     // if (oldKey !== keyToUpdate) {
     //   removeKey(oldKey);
@@ -173,9 +174,9 @@
     // }
   };
 
-  const updateRole = (currentKeys, keyToUpdate) => {
+  const updateRole = () => {
     // tktk
-    console.log('update role'); // eslint-disable-line no-console
+    console.log(`update role from ${originalRole}`); // eslint-disable-line no-console
     // const oldKey = currentKeys[oldKeyIndex];
     // if (oldKey !== keyToUpdate) {
     //   removeKey(oldKey);
@@ -184,73 +185,27 @@
     //     addKey(keyToUpdate);
     //   }
     // }
-  };
-
-  /**
-   * @description Takes two one-dimensional arrays and compare them. Returns `true` if they
-   * are different. Order of the array does not matter.
-   *
-   * @kind function
-   * @name compareArrays
-   *
-   * @param {Array} array1 A single-dimension array.
-   * @param {Array} array2 A single-dimension array to compare against.
-   *
-   * @returns {boolean} Returns `true` if the arrays are different, `false` if they have identical
-   * values.
-   */
-  const compareArrays = (array1, array2) => {
-    let isDifferent = false;
-
-    if (!array1 && !array2) {
-      return isDifferent;
-    }
-
-    if (
-      (!array1 && array2)
-      || (!array2 && array1)
-    ) {
-      isDifferent = true;
-      return isDifferent;
-    }
-
-    if (array1.length !== array2.length) {
-      isDifferent = true;
-      return isDifferent;
-    }
-
-    array1.forEach((value) => {
-      const itemIndex = array2.findIndex(
-        foundValue => (foundValue === value),
-      );
-
-      if (itemIndex < 0) {
-        isDifferent = true;
-      }
-    });
-
-    if (isDifferent) {
-      return isDifferent;
-    }
-
-    array2.forEach((value) => {
-      const itemIndex = array1.findIndex(
-        foundValue => (foundValue === value),
-      );
-
-      if (itemIndex < 0) {
-        isDifferent = true;
-      }
-    });
-
-    return isDifferent;
   };
 
   beforeUpdate(() => {
-    // check `keys` against original to see if it was updated on the Figma side
-    if (compareArrays(keys, originalKeys)) {
-      dirtyKeys = keys ? [...keys] : [];
-      originalKeys = keys ? [...keys] : [];
+    // check `role` against original to see if it was updated on the Figma side
+    if (role !== dirtyRole) {
+      dirtyRole = role;
+      originalRole = role;
+      resetValue = true;
+    }
+
+    // check `labelA11y` against original to see if it was updated on the Figma side
+    if (labelA11y !== dirtyLabelA11y) {
+      dirtyLabelA11y = labelA11y;
+      originalLabelA11y = labelA11y;
+      resetValue = true;
+    }
+
+    // check `labelVisible` against original to see if it was updated on the Figma side
+    if (labelVisible !== dirtyLabelVisible) {
+      dirtyLabelVisible = labelVisible;
+      originalLabelVisible = labelVisible;
       resetValue = true;
     }
   });
@@ -277,7 +232,7 @@
         options={controlRoles}
         resetValue={resetValue}
         selectWatchChange={true}
-        on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
+        on:saveSignal={() => updateRole()}
         bind:value={dirtyRole}
       />
       <ButtonSelect
@@ -295,7 +250,7 @@
           placeholder="Short description of the scene"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateRole(originalKeys, dirtyRole)}
+          on:saveSignal={() => updateRole()}
           bind:value={dirtyRole}
         />
       {:else}
@@ -308,7 +263,7 @@
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateLabel(originalKeys, dirtyLabelVisible)}
+          on:saveSignal={() => updateLabel()}
           bind:value={dirtyLabelVisible}
         />
         <FormUnit
@@ -320,7 +275,7 @@
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateLabel(originalKeys, dirtyLabelA11y)}
+          on:saveSignal={() => updateLabel()}
           bind:value={dirtyLabelA11y}
         />
       {/if}

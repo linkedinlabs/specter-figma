@@ -142,7 +142,6 @@
             <ItemExpandedContentLabels
               itemId={item.id}
               isSelected={item.isSelected}
-              keys={item.keys}
               role="no-role"
               type={type}
             />
