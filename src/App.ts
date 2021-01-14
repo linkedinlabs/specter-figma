@@ -1137,30 +1137,30 @@ export default class App {
         messenger,
       });
 
-      // set up Painter instance for the node
-      const painter = new Painter({
-        for: node,
-        in: page,
-        isMercadoMode: this.isMercadoMode,
-      });
+      // set up Painter instance for the node - tktk
+      // const painter = new Painter({
+      //   for: node,
+      //   in: page,
+      //   isMercadoMode: this.isMercadoMode,
+      // });
 
-      // set up function to draw annotations
-      const drawAnnotation = (hasText: boolean) => {
-        // draw the annotation (if the text exists)
-        let paintResult = null;
-        if (hasText) {
-          // paintResult = painter.addLabel();
-        }
+      // set up function to draw annotations - tktk
+      // const drawAnnotation = (hasText: boolean) => {
+      //   // draw the annotation (if the text exists)
+      //   let paintResult = null;
+      //   if (hasText) {
+      //     // paintResult = painter.addLabel();
+      //   }
 
-        // read the response from Painter; if it was unsuccessful, log and display the error
-        if (paintResult) {
-          messenger.handleResult(paintResult);
-          if (paintResult.status === 'error') {
-            return null;
-          }
-        }
-        return null;
-      };
+      //   // read the response from Painter; if it was unsuccessful, log and display the error
+      //   if (paintResult) {
+      //     messenger.handleResult(paintResult);
+      //     if (paintResult.status === 'error') {
+      //       return null;
+      //     }
+      //   }
+      //   return null;
+      // };
 
       // get/set the label info
       const identifierResult = identifier.getSetLabel();
@@ -1173,7 +1173,7 @@ export default class App {
         }
       }
 
-      drawAnnotation(true);
+      // drawAnnotation(true);
 
       return null;
     });
