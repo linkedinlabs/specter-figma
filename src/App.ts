@@ -19,7 +19,7 @@ const alphaNumConvert = require('number-converter-alphabet');
  *
  * @kind function
  * @name assemble
- * @param {Object} context The current context (event) received from Figma.
+ * @param {Object} context The current context (global `figma` event) received from Figma.
  * @returns {Object} Contains an object with the current page as a javascript object,
  * a messenger instance, and a selection array (if applicable).
  */
