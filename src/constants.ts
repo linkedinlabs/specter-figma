@@ -24,7 +24,20 @@ const PLUGIN_NAME: string = 'Specter';
 /**
  * @description An object containing the current string constants used as keys in plugin data.
  * Changing one of these keys will break data retrieval or reset data in any
- * `xPluginData` getters/setters and potentially elsewhere.
+ * `xPluginData` getters/setters and potentially elsewhere. The keys should be considered
+ * similarly to table names in a database schema or model names.
+ * * `options` – The key used for saving/retrieving plugin preferences/options. Often used in
+ * managing the state of the UI across plugin sessions.
+ * * `bundle` – Used for accessing the bundle of data shared between plugins on a node. For
+ * example, with data shared between Stapler and Specter.
+ * * `keystopNodeData` – Data directly-related to a node’s keystop annotation (i.e. position,
+ * list of current keys, etc.).
+ * * `keystopAnnotations` – A page-level list of all current keystop annotations in play. Used
+ * for diffing changes in case we need to re-paint annotations.
+ * * `keystopList` – The current list of keystops appended to a top-level frame.
+ * * `linkId` – A unique identifier allowing us to find relationships between nodes regardless
+ * of their Figma `id`.
+ * * `relaunch` – A list of current Figma Relaunch Buttons appended to a node.
  *
  * @kind constant
  * @name DATA_KEYS
