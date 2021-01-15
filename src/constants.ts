@@ -34,9 +34,16 @@ const PLUGIN_NAME: string = 'Specter';
  * list of current keys, etc.).
  * * `keystopAnnotations` – A page-level list of all current keystop annotations in play. Used
  * for diffing changes in case we need to re-paint annotations.
+ * * `keystopLinkId` – A unique identifier allowing us to find relationships between keystop nodes
+ * regardless of their Figma `id`.
  * * `keystopList` – The current list of keystops appended to a top-level frame.
- * * `linkId` – A unique identifier allowing us to find relationships between nodes regardless
- * of their Figma `id`.
+ * * `labelNodeData` – Data directly-related to a node’s label annotation (i.e. position,
+ * list of current keys, etc.).
+ * * `labelAnnotations` – A page-level list of all current label annotations in play. Used
+ * for diffing changes in case we need to re-paint annotations.
+ * * `labelLinkId` – A unique identifier allowing us to find relationships between label nodes
+ * regardless of their Figma `id`.
+ * * `labelList` – The current list of labels appended to a top-level frame.
  * * `relaunch` – A list of current Figma Relaunch Buttons appended to a node.
  *
  * @kind constant
