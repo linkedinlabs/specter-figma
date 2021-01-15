@@ -30,6 +30,17 @@
     return itemIsOpen;
   };
 
+  const isMissingData = (item) => {
+    if (type.includes('labels')) {
+      return (
+        !item.labels
+        || !item.role
+        || Object.values(item.labels).some(label => label === '')
+      );
+    }
+    return false;
+  };
+
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
     const typedId = `${typeScope}-${itemId}`;
 
@@ -129,6 +140,7 @@
           labelText={item.name}
           position={item.position}
           type={type}
+          showErrorIcon={isMissingData(item)}
         />
         {#if checkIsOpen(item.id, type)}
           {#if (type === 'a11y-keyboard')}
@@ -142,7 +154,8 @@
             <ItemExpandedContentLabels
               itemId={item.id}
               isSelected={item.isSelected}
-              role="no-role"
+              labels={item.labels}
+              role={item.role}
               type={type}
             />
           {/if}

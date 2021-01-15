@@ -1,26 +1,23 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
-
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;
   export let itemId = null;
-  export let labelA11y = null;
-  export let labelVisible = null;
   export let role = 'no-role';
   export let type = null;
-
-  let dirtyRole = role;
-  let originalRole = role;
-
-  let dirtyLabelA11y = labelA11y;
-  let originalLabelA11y = labelA11y;
-
-  let dirtyLabelVisible = labelVisible;
-  let originalLabelVisible = labelVisible;
+  export let labels = {
+    a11y: '',
+    visible: '',
+    alt: '',
+  };
 
   let resetValue = false;
+  let dirtyRole = role;
+  let originalRole = role;
+  const dirtyLabels = { ...labels };
+  const originalLabels = { ...labels };
 
   const controlRoles = [
     {
@@ -160,31 +157,18 @@
     console.log('select layer in Figma artboard'); // eslint-disable-line no-console
   };
 
-  const updateLabel = () => {
-    // tktk
-    console.log(`update label from ${originalLabelA11y}`); // eslint-disable-line no-console
-    console.log(`update label from ${originalLabelVisible}`); // eslint-disable-line no-console
-    // const oldKey = currentKeys[oldKeyIndex];
-    // if (oldKey !== keyToUpdate) {
-    //   removeKey(oldKey);
-
-    //   if (keyToUpdate !== 'no-role') {
-    //     addKey(keyToUpdate);
-    //   }
-    // }
+  const updateLabel = (key) => {
+    if (dirtyLabels[key] !== originalLabels[key]) {
+      console.log(`update label from ${originalLabels[key]}`); // eslint-disable-line no-console
+      // postMessage to update label(s) - probably all, since it accounts for initial setting
+    }
   };
 
   const updateRole = () => {
-    // tktk
-    console.log(`update role from ${originalRole}`); // eslint-disable-line no-console
-    // const oldKey = currentKeys[oldKeyIndex];
-    // if (oldKey !== keyToUpdate) {
-    //   removeKey(oldKey);
-
-    //   if (keyToUpdate !== 'no-role') {
-    //     addKey(keyToUpdate);
-    //   }
-    // }
+    if (originalRole !== dirtyRole) {
+      console.log(`update role from ${originalRole}`); // eslint-disable-line no-console
+      // postMessage for role update
+    }
   };
 
   beforeUpdate(() => {
@@ -195,19 +179,13 @@
       resetValue = true;
     }
 
-    // check `labelA11y` against original to see if it was updated on the Figma side
-    if (labelA11y !== dirtyLabelA11y) {
-      dirtyLabelA11y = labelA11y;
-      originalLabelA11y = labelA11y;
+    // check labels against the original to see if any were updated on the Figma side
+    const unsyncedLabels = Object.keys(labels).filter(key => labels[key] !== dirtyLabels[key]);
+    unsyncedLabels.forEach((key) => {
+      dirtyLabels[key] = labels[key];
+      originalLabels[key] = labels[key];
       resetValue = true;
-    }
-
-    // check `labelVisible` against original to see if it was updated on the Figma side
-    if (labelVisible !== dirtyLabelVisible) {
-      dirtyLabelVisible = labelVisible;
-      originalLabelVisible = labelVisible;
-      resetValue = true;
-    }
+    });
   });
 
   afterUpdate(() => {
@@ -250,8 +228,8 @@
           placeholder="Short description of the scene"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateRole()}
-          bind:value={dirtyRole}
+          on:saveSignal={() => updateLabel('alt')}
+          bind:value={dirtyLabels.alt}
         />
       {:else}
         <FormUnit
@@ -263,8 +241,8 @@
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateLabel()}
-          bind:value={dirtyLabelVisible}
+          on:saveSignal={() => updateLabel('visible')}
+          bind:value={dirtyLabels.visible}
         />
         <FormUnit
           className="form-row"
@@ -275,8 +253,8 @@
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           selectWatchChange={true}
-          on:saveSignal={() => updateLabel()}
-          bind:value={dirtyLabelA11y}
+          on:saveSignal={() => updateLabel('a11y')}
+          bind:value={dirtyLabels.a11y}
         />
       {/if}
     {/if}

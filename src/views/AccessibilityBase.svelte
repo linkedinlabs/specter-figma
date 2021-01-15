@@ -4,6 +4,7 @@
 
   export let items = null;
   export let viewContext = 'a11y-keyboard';
+
 </script>
 
 {#if items && items.length > 0}

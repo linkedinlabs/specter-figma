@@ -14,6 +14,7 @@
   export let labelText = 'Item name here';
   export let position = null;
   export let type = null;
+  export let showErrorIcon = false;
 
   let dirtyPosition = position;
   let originalPosition = position;
@@ -107,7 +108,9 @@
       />
     </span>
     <span class="text">
+      {#if showErrorIcon}
       <span class="error-flag">&#9873;&nbsp;</span>
+      {/if}
       {labelText}
     </span>
   </span>
