@@ -111,7 +111,6 @@
       {labelText}
     </span>
   </span>
-  <!-- comment -->
   <span class="right form-element-holder">
     <FormUnit
       className={setInputOptions(type).className}
