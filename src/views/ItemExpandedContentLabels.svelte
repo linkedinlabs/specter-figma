@@ -1,5 +1,5 @@
 <script>
-  import { afterUpdate, beforeUpdate } from 'svelte';
+  import { afterUpdate, beforeUpdate, createEventDispatcher } from 'svelte';
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
 
@@ -13,12 +13,12 @@
     alt: '',
   };
 
+  const dispatch = createEventDispatcher();
   let resetValue = false;
   let dirtyRole = role;
   let originalRole = role;
   const dirtyLabels = { ...labels };
   const originalLabels = { ...labels };
-
   const controlRoles = [
     {
       value: 'no-role',
@@ -159,33 +159,45 @@
 
   const updateLabel = (key) => {
     if (dirtyLabels[key] !== originalLabels[key]) {
-      console.log(`update label from ${originalLabels[key]}`); // eslint-disable-line no-console
+      const oldLabel = originalLabels[key];
+      originalLabels[key] = dirtyLabels[key];
+      labels[key] = dirtyLabels[key];
+
+      dispatch('handleUpdate', { name: 'labels', value: dirtyLabels });
+      console.log(`update label from '${oldLabel}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
       // postMessage to update label(s) - probably all, since it accounts for initial setting
     }
   };
 
   const updateRole = () => {
-    if (originalRole !== dirtyRole) {
-      console.log(`update role from ${originalRole}`); // eslint-disable-line no-console
+    if (dirtyRole !== originalRole) {
+      const oldRole = originalRole;
+      originalRole = dirtyRole;
+      role = dirtyRole;
+
+      dispatch('handleUpdate', { name: 'role', value: dirtyRole });
+      console.log(`update role from '${oldRole}' to '${dirtyRole}'`); // eslint-disable-line no-console
       // postMessage for role update
     }
   };
 
   beforeUpdate(() => {
     // check `role` against original to see if it was updated on the Figma side
-    if (role !== dirtyRole) {
+    if (role !== originalRole) {
       dirtyRole = role;
       originalRole = role;
       resetValue = true;
     }
 
     // check labels against the original to see if any were updated on the Figma side
-    const unsyncedLabels = Object.keys(labels).filter(key => labels[key] !== dirtyLabels[key]);
-    unsyncedLabels.forEach((key) => {
-      dirtyLabels[key] = labels[key];
-      originalLabels[key] = labels[key];
-      resetValue = true;
-    });
+    if (labels) {
+      const unsyncedLabels = Object.keys(labels).filter(key => labels[key] !== originalLabels[key]);
+      unsyncedLabels.forEach((key) => {
+        dirtyLabels[key] = labels[key];
+        originalLabels[key] = labels[key];
+        resetValue = true;
+      });
+    }
   });
 
   afterUpdate(() => {
@@ -217,8 +229,8 @@
         on:handleUpdate={() => handleSelect()}
       />
     </span>
-    {#if (role !== 'image-decorative')}
-      {#if (role === 'image')}
+    {#if (dirtyRole !== 'image-decorative')}
+      {#if (dirtyRole === 'image')}
         <FormUnit
           className="form-row"
           kind="inputText"
@@ -227,7 +239,7 @@
           options={controlRoles}
           placeholder="Short description of the scene"
           resetValue={resetValue}
-          selectWatchChange={true}
+          inputWatchBlur={true}
           on:saveSignal={() => updateLabel('alt')}
           bind:value={dirtyLabels.alt}
         />
@@ -240,7 +252,7 @@
           options={controlRoles}
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
-          selectWatchChange={true}
+          inputWatchBlur={true}
           on:saveSignal={() => updateLabel('visible')}
           bind:value={dirtyLabels.visible}
         />
@@ -252,7 +264,7 @@
           options={controlRoles}
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
-          selectWatchChange={true}
+          inputWatchBlur={true}
           on:saveSignal={() => updateLabel('a11y')}
           bind:value={dirtyLabels.a11y}
         />

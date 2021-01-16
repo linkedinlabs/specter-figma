@@ -32,10 +32,13 @@
 
   const isMissingData = (item) => {
     if (type.includes('labels')) {
+      const { labels, role } = item;
       return (
-        !item.labels
-        || !item.role
-        || Object.values(item.labels).some(label => label === '')
+        !labels
+        || !role
+        || role === 'no-role'
+        || (role === 'image' && !labels.alt)
+        || (role !== 'image' && !(labels.a11y && labels.visible))
       );
     }
     return false;
@@ -157,6 +160,7 @@
               labels={item.labels}
               role={item.role}
               type={type}
+              on:handleUpdate={() => {}}
             />
           {/if}
         {/if}
