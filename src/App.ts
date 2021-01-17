@@ -2046,6 +2046,109 @@ export default class App {
     return null;
   }
 
+  /** WIP
+   * @description Retrieves a node based on the supplied `nodeId` or uses the current selection
+   * and removes associated Keystop annotations and auxilary key annotations.
+   *
+   * @kind function
+   * @name removeLabels
+   *
+   * @param {string} nodeId The `id` of a Figma node with a Keystop annotation.
+   *
+   * @returns {null} Shows a Toast in the UI if a `nodeId` is not supplied.
+   */
+  async removeLabels(nodeId?: string) {
+    const {
+      messenger,
+      page,
+      selection,
+    } = assemble(figma);
+
+    if (!nodeId && selection.length < 1) {
+      messenger.log('Cannot remove label; missing node ID(s)', 'error');
+    }
+
+    const nodesToRepaint: Array<SceneNode> = [];
+    let nodes = selection;
+    if (nodeId) {
+      const node: BaseNode = figma.getNodeById(nodeId);
+      if (node) {
+        nodes = [node];
+      }
+    }
+
+    // determine topFrames involved in the current selection
+    const crawler = new Crawler({ for: nodes });
+    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
+
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS.labelAnnotations) || '[]',
+    );
+
+    // iterate topFrames and remove annotation(s) that match node(s)
+    topFrameNodes.forEach((frameNode: FrameNode) => {
+      // read label list data from top frame
+      const labelList: Array<{
+        id: string,
+        position: number,
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.labelList) || null);
+
+      // remove item(s) from the label list
+      // remove item(s) from the tracking data
+      let newLabelList = labelList;
+      let newTrackingData = trackingData;
+      if (labelList) {
+        nodes.forEach((node) => {
+          newLabelList = updateArray(newLabelList, node, 'id', 'remove');
+          newTrackingData = updateArray(newTrackingData, node, 'id', 'remove');
+        });
+      }
+
+      // set new label list
+      frameNode.setPluginData(
+        DATA_KEYS.labelList,
+        JSON.stringify(newLabelList),
+      );
+
+      // set new tracking data
+      page.setPluginData(
+        DATA_KEYS.labelAnnotations,
+        JSON.stringify(newTrackingData),
+      );
+
+      // use the new, sorted list to select the original nodes in figma
+      newLabelList.forEach((labelItem) => {
+        const itemNode: BaseNode = figma.getNodeById(labelItem.id);
+        if (itemNode) {
+          nodesToRepaint.push(itemNode as SceneNode);
+        }
+      });
+    });
+
+    // remove the corresponding annotations
+    const nodeIds: Array<string> = [];
+    nodes.forEach(node => nodeIds.push(node.id));
+
+    // remove the orphaned annotations
+    cleanUpAnnotations(trackingData, nodeIds);
+
+    // repaint affected nodes
+    if (nodesToRepaint.length > 0) {
+      console.log('repaint affected nodes')
+      console.log(nodesToRepaint)
+      this.annotateLabel(nodesToRepaint);
+    }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
+  }
+
   /**
    * @description Resizes the plugin UI based on either a default, or a provided
    * `bodyHeight` in the `payload` object. The object is sent from the UI thread.
