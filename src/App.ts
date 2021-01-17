@@ -90,25 +90,29 @@ const repairBrokenLinks = (
   page: PageNode,
   messenger: any,
   isMercadoMode: boolean,
+  nodeType: 'keystop' | 'label' = 'keystop',
 ): void => {
   // ----- remove annotations with broken links
   const crawlerForTopFrame = new Crawler({ for: [frameNode] });
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
 
-  const keystopList: Array<{
+  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+  const linkIdDataType = nodeType === 'keystop' ? DATA_KEYS.keystopLinkId : DATA_KEYS.labelLinkId;
+  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const list: Array<{
     id: string,
     position: number,
-  }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+  }> = JSON.parse(frameNode.getPluginData(annotationsDataType) || null);
 
-  if (keystopList) {
-    const updatedKeystopList = keystopList;
+  if (list) {
+    const updatedList = list;
     let updatesMade = false;
 
     // find nodes that do not match the tracking data
     nodesToEvaluate.forEach((node) => {
       const nodeLinkData: PluginNodeLinkData = JSON.parse(
-        node.getPluginData(DATA_KEYS.keystopLinkId) || null,
+        node.getPluginData(linkIdDataType) || null,
       );
       if (nodeLinkData && nodeLinkData.role === 'node') {
         const filterIndex = 0;
@@ -130,13 +134,13 @@ const repairBrokenLinks = (
             // updatesMade = true;
 
             // find the index of a pre-existing `id` match on the array
-            const itemIndex: number = updatedKeystopList.findIndex(
+            const itemIndex: number = updatedList.findIndex(
               foundItem => (foundItem.id === matchingData.id),
             );
 
             // if a match exists, update the id
             if (itemIndex > -1) {
-              updatedKeystopList[itemIndex].id = node.id;
+              updatedList[itemIndex].id = node.id;
             }
           }
         }
@@ -149,7 +153,7 @@ const repairBrokenLinks = (
       const activeNode: BaseNode = figma.getNodeById(node.id);
       if (activeNode) {
         const nodeLinkData: PluginNodeLinkData = JSON.parse(
-          activeNode.getPluginData(DATA_KEYS.keystopLinkId) || null,
+          activeNode.getPluginData(linkIdDataType) || null,
         );
         if (nodeLinkData && nodeLinkData.role === 'annotation') {
           if (annotationNodesToRemove.includes(nodeLinkData.id)) {
@@ -163,11 +167,11 @@ const repairBrokenLinks = (
       }
     });
 
-    // if updates were made, we need reset the keystop list and re-paint annotations
+    // if updates were made, we need reset the stop list and re-paint annotations
     if (updatesMade) {
-      // re-assign keystop with Identifier
+      // re-assign stop with Identifier
       const nodesToReannotate: Array<string> = [];
-      updatedKeystopList.forEach((listEntry) => {
+      updatedList.forEach((listEntry) => {
         // flag node for repainting
         if (!nodesToReannotate.includes(listEntry.id)) {
           nodesToReannotate.push(listEntry.id);
@@ -176,7 +180,7 @@ const repairBrokenLinks = (
 
       // reset the list
       frameNode.setPluginData(
-        DATA_KEYS.keystopList,
+        listDataType,
         JSON.stringify([]),
       );
 
@@ -193,8 +197,8 @@ const repairBrokenLinks = (
             messenger,
           });
 
-          // get/set the keystop info
-          const identifierResult = identifier.getSetKeystop();
+          // get/set the stop info
+          const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
           messenger.handleResult(identifierResult, true);
 
           if (identifierResult.status === 'success') {
@@ -206,7 +210,7 @@ const repairBrokenLinks = (
             });
 
             // re-draw the annotation
-            const painterResult = painter.addKeystop();
+            const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
             messenger.handleResult(painterResult, true);
           }
         }
@@ -236,7 +240,12 @@ const refreshAnnotations = (
   page: PageNode,
   messenger: any,
   isMercadoMode: boolean,
+  nodeType: 'keystop' | 'label' = 'keystop',
 ): void => {
+  // set data keys
+  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+
   // removes a node, if it exists
   const removeNode = (nodeId: string) => {
     const nodeToRemove: BaseNode = figma.getNodeById(nodeId);
@@ -267,31 +276,31 @@ const refreshAnnotations = (
     const topFrameNode: FrameNode = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
     const filterIndex: 0 = 0;
     if (topFrameNode) {
-      // get top frame keystop list
-      const keystopList = JSON.parse(topFrameNode.getPluginData(DATA_KEYS.keystopList) || null);
-      if (keystopList) {
+      // get top frame stop list
+      const list = JSON.parse(topFrameNode.getPluginData(listDataType) || null);
+      if (list) {
         // get current position
         let positionToRemove: number = 1;
-        const entryToRemove = keystopList.filter(
-          keystopItem => keystopItem.id === trackingEntry.id,
+        const entryToRemove = list.filter(
+          listEntry => listEntry.id === trackingEntry.id,
         )[filterIndex];
         if (entryToRemove) {
           positionToRemove = entryToRemove.position;
         }
 
         // remove item
-        let newKeystopList = keystopList;
-        newKeystopList = updateArray(newKeystopList, trackingEntry, 'id', 'remove');
+        let newList = list;
+        newList = updateArray(newList, trackingEntry, 'id', 'remove');
 
         // renumber list
-        newKeystopList.forEach((keystopEntry) => {
-          if (keystopEntry.position > positionToRemove) {
-            const updatedKeystopEntry = keystopEntry;
-            updatedKeystopEntry.position -= 1;
-            newKeystopList = updateArray(newKeystopList, updatedKeystopEntry, 'id', 'update');
+        newList.forEach((listEntry) => {
+          if (listEntry.position > positionToRemove) {
+            const updatedEntry = listEntry;
+            updatedEntry.position -= 1;
+            newList = updateArray(newList, updatedEntry, 'id', 'update');
 
             // set up Identifier instance for the node
-            const nodeToUpdate: BaseNode = figma.getNodeById(keystopEntry.id);
+            const nodeToUpdate: BaseNode = figma.getNodeById(listEntry.id);
             if (nodeToUpdate) {
               const identifier = new Identifier({
                 for: nodeToUpdate,
@@ -300,19 +309,19 @@ const refreshAnnotations = (
                 messenger,
               });
 
-              // get/set the keystop info
-              const identifierResult = identifier.getSetKeystop(updatedKeystopEntry.position);
+              // get/set the stop info
+              const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop(updatedEntry.position) : identifier.getSetLabel(updatedEntry.position);
               messenger.handleResult(identifierResult, true);
 
               if (identifierResult.status === 'success') {
                 // flag node for repainting
-                if (!newNodesToRepaint.includes(updatedKeystopEntry.id)) {
-                  newNodesToRepaint.push(updatedKeystopEntry.id);
+                if (!newNodesToRepaint.includes(updatedEntry.id)) {
+                  newNodesToRepaint.push(updatedEntry.id);
                 }
 
                 // remove existing annotation node
                 const annotationToRemoveEntry = newTrackingData.filter(
-                  currentTrackingEntry => currentTrackingEntry.id === updatedKeystopEntry.id,
+                  currentTrackingEntry => currentTrackingEntry.id === updatedEntry.id,
                 )[filterIndex];
                 if (annotationToRemoveEntry) {
                   removeNode(annotationToRemoveEntry.annotationId);
@@ -322,10 +331,10 @@ const refreshAnnotations = (
           }
         });
 
-        // set new keystop list
+        // set new stop list
         topFrameNode.setPluginData(
-          DATA_KEYS.keystopList,
-          JSON.stringify(newKeystopList),
+          listDataType,
+          JSON.stringify(newList),
         );
       }
     }
@@ -410,8 +419,8 @@ const refreshAnnotations = (
           messenger,
         });
 
-        // get/set the keystop info
-        const identifierResult = identifier.getSetKeystop();
+        // get/set the stop info
+        const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
 
         if (identifierResult.status === 'success') {
           // flag node for repainting
@@ -442,7 +451,7 @@ const refreshAnnotations = (
 
   // update the tracking data
   page.setPluginData(
-    DATA_KEYS.keystopAnnotations,
+    annotationsDataType,
     JSON.stringify(updatedTrackingData),
   );
 
@@ -459,7 +468,7 @@ const refreshAnnotations = (
       });
 
       // re-draw the annotation
-      const painterResult = painter.addKeystop();
+      const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
       messenger.handleResult(painterResult, true);
 
       if (painterResult.status === 'error') {
@@ -491,14 +500,14 @@ const refreshAnnotations = (
 
           // grab latest tracking data for the page; add the entry to the array
           const freshTrackingData: Array<PluginNodeTrackingData> = JSON.parse(
-            page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+            page.getPluginData(annotationsDataType) || '[]',
           );
           let newFreshTrackingData: Array<PluginNodeTrackingData> = freshTrackingData;
           newFreshTrackingData = updateArray(newFreshTrackingData, freshTrackingEntry, 'id', 'add');
 
           // update the tracking data
           page.setPluginData(
-            DATA_KEYS.keystopAnnotations,
+            annotationsDataType,
             JSON.stringify(newFreshTrackingData),
           );
         }
@@ -610,6 +619,7 @@ const getKeystopLabelPosition = (node: SceneNode, type: 'a11y-keyboard' | 'a11y-
     const itemIndex = 0;
     const listDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
     const keystopLabelList = JSON.parse(topFrame.getPluginData(listDataType) || null);
+
     if (keystopLabelList) {
       const keystopLabelItem = keystopLabelList.filter(item => item.id === node.id)[itemIndex];
       if (keystopLabelItem) {
@@ -1790,9 +1800,12 @@ export default class App {
       keys?: Array<PluginKeystopKeys>,
     }> = [];
 
-    // grab tracking data for the page (currently only Keystops)
+    // grab tracking data for the page (currently Keystops/Labels)
+    // tktk - fragile setting of `nodeType`
+    const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
+    const dataType = currentView === 'a11y-keyboard' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+      page.getPluginData(dataType) || '[]',
     );
 
     // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
@@ -1801,6 +1814,7 @@ export default class App {
       page,
       messenger,
       isMercadoMode,
+      nodeType,
     );
 
     // iterate through each node in a selection
@@ -1818,6 +1832,7 @@ export default class App {
         page,
         messenger,
         isMercadoMode,
+        nodeType,
       );
     });
 
@@ -1881,7 +1896,6 @@ export default class App {
           // convert numeric position to alpha for view
           const { ALPHABET_ASCII } = alphaNumConvert;
           const convert = alphaNumConvert.default;
-
           displayPosition = convert((position - 1), ALPHABET_ASCII, { implicitLeadingZero: true });
         }
         const viewObject: {
@@ -2135,8 +2149,6 @@ export default class App {
 
     // repaint affected nodes
     if (nodesToRepaint.length > 0) {
-      console.log('repaint affected nodes')
-      console.log(nodesToRepaint)
       this.annotateLabel(nodesToRepaint);
     }
 
