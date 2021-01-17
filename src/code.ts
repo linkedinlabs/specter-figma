@@ -94,6 +94,13 @@ const dispatcher = async (action: {
       case 'a11y-labels-add-stop':
         await app.annotateLabel();
         break;
+      case 'a11y-labels-remove-stop': {
+        const { id } = payload;
+        if (id) {
+          await app.removeLabels(id);
+        }
+        break;
+      }
       case 'annotate':
         app.annotateNode();
         break;
