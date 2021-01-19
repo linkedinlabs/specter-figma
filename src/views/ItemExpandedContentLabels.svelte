@@ -1,5 +1,5 @@
 <script>
-  import { afterUpdate, beforeUpdate, createEventDispatcher } from 'svelte';
+  import { afterUpdate, beforeUpdate } from 'svelte';
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
 
@@ -8,13 +8,13 @@
   export let role = 'no-role';
   export let type = null;
   export let labels = {
-    a11y: '',
-    visible: '',
-    alt: '',
+    a11y: null,
+    visible: null,
+    alt: null,
   };
 
-  const dispatch = createEventDispatcher();
   let resetValue = false;
+  let wasResetValue = false;
   let dirtyRole = role;
   let originalRole = role;
   const dirtyLabels = { ...labels };
@@ -157,51 +157,52 @@
     console.log('select layer in Figma artboard'); // eslint-disable-line no-console
   };
 
+  const handleReset = () => {
+    dirtyRole = role;
+    originalRole = role;
+    resetValue = true;
+  };
+
   const updateLabel = (key) => {
     if (dirtyLabels[key] !== originalLabels[key]) {
       const oldLabel = originalLabels[key];
       originalLabels[key] = dirtyLabels[key];
       labels[key] = dirtyLabels[key];
 
-      dispatch('handleUpdate', { name: 'labels', value: dirtyLabels });
       console.log(`update label from '${oldLabel}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
-      // postMessage to update label(s) - probably all, since it accounts for initial setting
+      // tktk: postMessage to update label(s) - probably all, since it accounts for initial setting
     }
   };
 
-  const updateRole = () => {
-    if (dirtyRole !== originalRole) {
-      const oldRole = originalRole;
-      originalRole = dirtyRole;
-      role = dirtyRole;
-
-      dispatch('handleUpdate', { name: 'role', value: dirtyRole });
-      console.log(`update role from '${oldRole}' to '${dirtyRole}'`); // eslint-disable-line no-console
-      // postMessage for role update
+  const updateRole = (newRole) => {
+    if (![originalRole, 'no-role'].includes(newRole)) {
+      console.log(`update role from '${originalRole}' to '${dirtyRole}'`); // eslint-disable-line no-console
+      parent.postMessage({
+        pluginMessage: {
+          action: `${type}-set-role`,
+          payload: {
+            id: itemId,
+            role: dirtyRole,
+          },
+        },
+      }, '*');
+      handleReset();
     }
   };
 
   beforeUpdate(() => {
-    // check `role` against original to see if it was updated on the Figma side
-    if (role !== originalRole) {
-      dirtyRole = role;
-      originalRole = role;
+    if (originalRole !== role) {
       resetValue = true;
     }
-
-    // check labels against the original to see if any were updated on the Figma side
-    if (labels) {
-      const unsyncedLabels = Object.keys(labels).filter(key => labels[key] !== originalLabels[key]);
-      unsyncedLabels.forEach((key) => {
-        dirtyLabels[key] = labels[key];
-        originalLabels[key] = labels[key];
-        resetValue = true;
-      });
+    if (resetValue) {
+      handleReset();
     }
+    // set trackers
+    wasResetValue = resetValue;
   });
 
   afterUpdate(() => {
-    if (resetValue) {
+    if (resetValue || wasResetValue) {
       resetValue = false;
     }
   });
@@ -222,7 +223,7 @@
         options={controlRoles}
         resetValue={resetValue}
         selectWatchChange={true}
-        on:saveSignal={() => updateRole()}
+        on:saveSignal={() => updateRole(dirtyRole)}
         bind:value={dirtyRole}
       />
       <ButtonSelect
