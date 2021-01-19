@@ -916,7 +916,7 @@ export default class App {
 
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true);
+      const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true, 'keystop');
       keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
     });
 
@@ -934,7 +934,7 @@ export default class App {
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedKeystops = (children) => {
-          const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true);
+          const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true, 'keystop');
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
           childNodes.forEach((childNode) => {
@@ -1076,7 +1076,7 @@ export default class App {
 
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const labelNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true);
+      const labelNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true, 'label');
       labelNodes.forEach(labelNode => nodes.push(labelNode));
     });
 
@@ -1094,7 +1094,7 @@ export default class App {
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedLabels = (children) => {
-          const labelNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true);
+          const labelNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true, 'label');
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
           childNodes.forEach((childNode) => {
