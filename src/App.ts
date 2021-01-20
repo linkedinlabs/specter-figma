@@ -540,10 +540,10 @@ const getKeystopLabelNodes = (
   nodeType: 'keystop' | 'label' = 'keystop',
 ): Array<SceneNode> => {
   const nodes: Array<SceneNode> = [];
-  const dataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
 
   // grab (or initialize) keystop list for the top frame
-  const listData = JSON.parse(frameNode.getPluginData(dataType) || null);
+  const listData = JSON.parse(frameNode.getPluginData(listDataType) || null);
   let list: Array<{
     id: string,
     position: number,
@@ -565,7 +565,7 @@ const getKeystopLabelNodes = (
   // reset the top frame list – list should be reset when annotations are re-painted
   if (resetData) {
     frameNode.setPluginData(
-      dataType,
+      listDataType,
       JSON.stringify([]),
     );
   }
@@ -898,7 +898,7 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    const dataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
 
     // need a selected node to annotate it
     if (
@@ -911,7 +911,7 @@ export default class App {
 
     // grab tracking data for the page
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(dataType) || '[]',
+      page.getPluginData(annotationsDataType) || '[]',
     );
 
     // determine topFrames involved in the current selection
@@ -1659,9 +1659,9 @@ export default class App {
     // grab tracking data for the page (currently Keystops/Labels)
     // tktk - fragile setting of `nodeType`
     const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
-    const dataType = currentView === 'a11y-keyboard' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+    const annotationsDataType = currentView === 'a11y-keyboard' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(dataType) || '[]',
+      page.getPluginData(annotationsDataType) || '[]',
     );
 
     // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
