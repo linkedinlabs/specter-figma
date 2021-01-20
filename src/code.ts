@@ -86,8 +86,9 @@ const dispatcher = async (action: {
       }
       case 'a11y-keyboard-update-stop': {
         const { id } = payload;
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-update-stop' ? 'keystop' : 'label';
         if (id) {
-          await app.updateKeystops(payload);
+          await app.updateKeystopsLabels(nodeType, payload);
         }
         break;
       }

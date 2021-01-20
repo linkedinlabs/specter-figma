@@ -2120,30 +2120,36 @@ export default class App {
     await this.showToolbar();
   }
 
-  /**
+  /** WIP
    * @description Retrieves a node based on the supplied `id` and uses the `position` to update
    * the node’s Keystop annotation. Any annotations in the top frame with new numbers are
    * re-painted.
    *
    * @kind function
-   * @name updateKeystops
+   * @name updateKeystopsLabels
    *
    * @param {Object} options Should include a Figma node `id` and the `key` to be added.
    *
    * @returns {null}
    */
-  async updateKeystops(options: {
-    id: string,
-    position: string,
-  }) {
+  async updateKeystopsLabels(
+    nodeType: 'keystop' | 'label',
+    options: {
+      id: string,
+      position: string,
+    },
+  ) {
     const { messenger } = assemble(figma);
-
     const nodeId: string = options.id;
+
+    // set data type
+    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+
     // force the new position into a positive integer
     let newPosition: number = parseInt(options.position, 10);
 
     if (!nodeId || !newPosition) {
-      messenger.log('Cannot update keystops; missing node ID or new position', 'error');
+      messenger.log(`Cannot update ${nodeType}; missing node ID or new position`, 'error');
     }
 
     const nodesToRepaint: Array<SceneNode> = [];
@@ -2159,17 +2165,17 @@ export default class App {
 
     // iterate topFrames and remove annotation(s) that match node(s)
     topFrameNodes.forEach((frameNode: FrameNode) => {
-      // read keystop list data from top frame
-      const keystopList: Array<{
+      // read stop list data from top frame
+      const stopList: Array<{
         id: string,
         position: number,
-      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+      }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
 
-      // remove item(s) from the keystop list
-      let newKeystopList = [];
-      if (keystopList) {
+      // remove item(s) from the stop list
+      let newStopList = [];
+      if (stopList) {
         // number items
-        const numberItems = keystopList.length;
+        const numberItems = stopList.length;
 
         // validate and adjust based on actual number of items
         if (newPosition > numberItems) {
@@ -2178,13 +2184,13 @@ export default class App {
 
         // find the old position
         const index = 0;
-        const selectedItem = keystopList.filter(keystopItem => keystopItem.id === nodeId)[index];
+        const selectedItem = stopList.filter(stopItem => stopItem.id === nodeId)[index];
         const oldPosition = selectedItem.position;
 
         // compare new/old positions and, if applicable, set up the new list
         if (newPosition === oldPosition) {
           // do nothing if the positions match
-          newKeystopList = keystopList;
+          newStopList = stopList;
         } else {
           const setPosition = (currentPosition: number, itemId: string): number => {
             // the selected node always gets the new position
@@ -2210,22 +2216,22 @@ export default class App {
           };
 
           // build the new list
-          keystopList.forEach((keystopItem) => {
+          stopList.forEach((stopItem) => {
             // stub in new entry based on old values
             const newItemEntry = {
-              id: keystopItem.id,
-              position: setPosition(keystopItem.position, keystopItem.id),
+              id: stopItem.id,
+              position: setPosition(stopItem.position, stopItem.id),
             };
 
-            newKeystopList.push(newItemEntry);
+            newStopList.push(newItemEntry);
           });
         }
       }
 
       // sort the new list by position
-      const sortByPosition = (keystopItemA, keystopItemB) => {
-        const aPosition = keystopItemA.position;
-        const bPosition = keystopItemB.position;
+      const sortByPosition = (stopItemA, stopItemB) => {
+        const aPosition = stopItemA.position;
+        const bPosition = stopItemB.position;
         if (aPosition < bPosition) {
           return -1;
         }
@@ -2234,17 +2240,17 @@ export default class App {
         }
         return 0;
       };
-      newKeystopList = newKeystopList.sort(sortByPosition);
+      newStopList = newStopList.sort(sortByPosition);
 
-      // commit the new keystop list
+      // commit the new stop list
       frameNode.setPluginData(
-        DATA_KEYS.keystopList,
-        JSON.stringify(newKeystopList),
+        listDataType,
+        JSON.stringify(newStopList),
       );
 
       // use the new, sorted list to select the original nodes in figma
-      newKeystopList.forEach((keystopItem) => {
-        const itemNode: BaseNode = figma.getNodeById(keystopItem.id);
+      newStopList.forEach((stopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(stopItem.id);
         if (itemNode) {
           nodesToRepaint.push(itemNode as SceneNode);
         }
@@ -2252,7 +2258,7 @@ export default class App {
     });
 
     // repaint affected nodes
-    this.annotateKeystopLabel('keystop', nodesToRepaint);
+    this.annotateKeystopLabel(nodeType, nodesToRepaint);
 
     // close or refresh UI
     if (this.shouldTerminate) {
