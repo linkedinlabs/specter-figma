@@ -876,37 +876,42 @@ export default class App {
     return this.closeOrReset();
   }
 
-  /**
+  /** WIP
    * @description Annotates a selected node or multiple nodes in a Figma file with
    * focus order keystop annotations.
    *
    * @kind function
-   * @name annotateKeystop
+   * @name annotateKeystopLabel
    *
    * @param {Array} suppliedSelection If present, this array of nodes will override the
    * nodes found in current selection.
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  async annotateKeystop(suppliedSelection?: Array<SceneNode>) {
+  async annotateKeystopLabel(
+    nodeType: 'keystop' | 'label',
+    suppliedSelection?: Array<SceneNode>,
+  ) {
     const {
       messenger,
       page,
       selection,
     } = assemble(figma);
 
+    const dataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+
     // need a selected node to annotate it
     if (
       (selection === null || selection.length === 0)
       && (suppliedSelection === null || suppliedSelection.length === 0)
     ) {
-      messenger.log('Annotate keystop: nothing selected');
+      messenger.log(`Annotate ${nodeType}: nothing selected`);
       return messenger.toast('A layer must be supplied');
     }
 
     // grab tracking data for the page
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+      page.getPluginData(dataType) || '[]',
     );
 
     // determine topFrames involved in the current selection
@@ -916,8 +921,13 @@ export default class App {
 
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true, 'keystop');
-      keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+      const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+        topFrame,
+        trackingData,
+        true,
+        nodeType,
+      );
+      stopNodes.forEach(stopNode => nodes.push(stopNode));
     });
 
     // ------- add in any directly-selected nodes that do not have annotations yet
@@ -934,7 +944,12 @@ export default class App {
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedKeystops = (children) => {
-          const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData, true, 'keystop');
+          const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+            topFrame,
+            trackingData,
+            true,
+            nodeType,
+          );
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
           childNodes.forEach((childNode) => {
@@ -942,7 +957,7 @@ export default class App {
             if (peerNodeData && peerNodeData.hasKeystop) {
               if (
                 !existsInArray(nodes, childNode.id)
-                && !existsInArray(keystopNodes, childNode.id)
+                && !existsInArray(stopNodes, childNode.id)
                 && !existsInArray(topFrameNodes, childNode.id)
               ) {
                 selectedNodes.push(childNode);
@@ -954,7 +969,8 @@ export default class App {
           });
         };
 
-        if (topFrame.children) {
+        // tktk - need to adapt for Labels
+        if (topFrame.children && nodeType === 'keystop') {
           extractAssignedKeystops(topFrame.children);
         }
       });
@@ -999,7 +1015,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = painter.addKeystop();
+          paintResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
@@ -1012,8 +1028,8 @@ export default class App {
         return null;
       };
 
-      // get/set the keystop info
-      const identifierResult = identifier.getSetKeystop();
+      // get/set the stop info
+      const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
 
       // read the response from Identifier; if it was unsuccessful, log and display the error
       if (identifierResult) {
@@ -1730,7 +1746,7 @@ export default class App {
       }
 
       // repaint the node
-      this.annotateKeystop([node as SceneNode]);
+      this.annotateKeystopLabel('keystop', [node as SceneNode]);
     }
 
     // close or refresh UI
@@ -1841,8 +1857,8 @@ export default class App {
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const keystopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData);
-        keystopNodes.forEach(keystopNode => nodes.push(keystopNode));
+        const stopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData);
+        stopNodes.forEach(stopNode => nodes.push(stopNode));
       });
 
       // iterate topFrames and select nodes that could have stops based on assignment data
@@ -2048,7 +2064,7 @@ export default class App {
 
     // repaint affected nodes
     if (nodesToRepaint.length > 0) {
-      this.annotateKeystop(nodesToRepaint);
+      this.annotateKeystopLabel('keystop', nodesToRepaint);
     }
 
     // close or refresh UI
@@ -2490,7 +2506,7 @@ export default class App {
     });
 
     // repaint affected nodes
-    this.annotateKeystop(nodesToRepaint);
+    this.annotateKeystopLabel('keystop', nodesToRepaint);
 
     // close or refresh UI
     if (this.shouldTerminate) {

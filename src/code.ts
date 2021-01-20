@@ -68,9 +68,11 @@ const dispatcher = async (action: {
   // run the action in the App class based on type
   const runAction = async (actionType: string) => {
     switch (actionType) {
-      case 'a11y-keyboard-add-stop':
-        await app.annotateKeystop();
+      case 'a11y-keyboard-add-stop': {
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-add-stop' ? 'keystop' : 'label';
+        await app.annotateKeystopLabel(nodeType);
         break;
+      }
       case 'a11y-keyboard-remove-stop': {
         const { id } = payload;
         if (id) {
