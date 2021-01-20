@@ -74,6 +74,7 @@ const dispatcher = async (action: {
         await app.annotateKeystopLabel(nodeType);
         break;
       }
+      case 'a11y-labels-remove-stop':
       case 'a11y-keyboard-remove-stop': {
         const { id } = payload;
         const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-remove-stop' ? 'keystop' : 'label';
@@ -96,13 +97,6 @@ const dispatcher = async (action: {
       case 'a11y-keyboard-remove-key':
         await app.keystopAddRemoveKeys(payload, true);
         break;
-      case 'a11y-labels-remove-stop': {
-        const { id } = payload;
-        if (id) {
-          await app.removeLabels(id);
-        }
-        break;
-      }
       case 'annotate':
         app.annotateNode();
         break;
