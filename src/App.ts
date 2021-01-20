@@ -1815,26 +1815,33 @@ export default class App {
     return null;
   }
 
-  /**
+  /** WIP
    * @description Retrieves a node based on the supplied `nodeId` or uses the current selection
    * and removes associated Keystop annotations and auxilary key annotations.
    *
    * @kind function
-   * @name removeKeystops
+   * @name removeKeystopsLabels
    *
    * @param {string} nodeId The `id` of a Figma node with a Keystop annotation.
    *
    * @returns {null} Shows a Toast in the UI if a `nodeId` is not supplied.
    */
-  async removeKeystops(nodeId?: string) {
+  async removeKeystopsLabels(
+    nodeType: 'keystop' | 'label',
+    nodeId?: string,
+  ) {
     const {
       messenger,
       page,
       selection,
     } = assemble(figma);
+    // set data types based on node type
+    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
 
+    // can’t do anything without nodes to manipulate
     if (!nodeId && selection.length < 1) {
-      messenger.log('Cannot remove keystop; missing node ID(s)', 'error');
+      messenger.log(`Cannot remove ${nodeType}; missing node ID(s)`, 'error');
     }
 
     const nodesToRepaint: Array<SceneNode> = [];
@@ -1852,43 +1859,43 @@ export default class App {
 
     // grab tracking data for the page
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+      page.getPluginData(annotationsDataType) || '[]',
     );
 
     // iterate topFrames and remove annotation(s) that match node(s)
     topFrameNodes.forEach((frameNode: FrameNode) => {
-      // read keystop list data from top frame
-      const keystopList: Array<{
+      // read stop list data from top frame
+      const stopList: Array<{
         id: string,
         position: number,
-      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS.keystopList) || null);
+      }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
 
-      // remove item(s) from the keystop list
+      // remove item(s) from the stop list
       // remove item(s) from the tracking data
-      let newKeystopList = keystopList;
+      let newStopList = stopList;
       let newTrackingData = trackingData;
-      if (keystopList) {
+      if (stopList) {
         nodes.forEach((node) => {
-          newKeystopList = updateArray(newKeystopList, node, 'id', 'remove');
+          newStopList = updateArray(newStopList, node, 'id', 'remove');
           newTrackingData = updateArray(newTrackingData, node, 'id', 'remove');
         });
       }
 
-      // set new keystop list
+      // set new stop list
       frameNode.setPluginData(
-        DATA_KEYS.keystopList,
-        JSON.stringify(newKeystopList),
+        listDataType,
+        JSON.stringify(newStopList),
       );
 
       // set new tracking data
       page.setPluginData(
-        DATA_KEYS.keystopAnnotations,
+        annotationsDataType,
         JSON.stringify(newTrackingData),
       );
 
       // use the new, sorted list to select the original nodes in figma
-      newKeystopList.forEach((keystopItem) => {
-        const itemNode: BaseNode = figma.getNodeById(keystopItem.id);
+      newStopList.forEach((stopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(stopItem.id);
         if (itemNode) {
           nodesToRepaint.push(itemNode as SceneNode);
         }
@@ -1904,7 +1911,7 @@ export default class App {
 
     // repaint affected nodes
     if (nodesToRepaint.length > 0) {
-      this.annotateKeystopLabel('keystop', nodesToRepaint);
+      this.annotateKeystopLabel(nodeType, nodesToRepaint);
     }
 
     // close or refresh UI
