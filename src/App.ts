@@ -593,18 +593,21 @@ const getStopPositionData = (
 ): {
   hasStop: boolean,
   keys?: Array<PluginKeystopKeys>,
+  labels?: PluginLabelsNames,
   position: number,
   role?: string,
 } => {
   // set up keystop blank
-  const nodePosition: {
+  const nodePositionData: {
     hasStop: boolean,
     keys?: Array<PluginKeystopKeys>,
+    labels?: PluginLabelsNames,
     position: number,
     role?: string,
   } = {
     hasStop: false,
     keys: null,
+    labels: null,
     position: null,
     role: null,
   };
@@ -616,13 +619,19 @@ const getStopPositionData = (
     // set keys
     if (nodeData.keys) {
       const { keys } = nodeData;
-      nodePosition.keys = keys;
+      nodePositionData.keys = keys;
     }
 
     // set role
     if (nodeData.role) {
       const { role } = nodeData;
-      nodePosition.role = role;
+      nodePositionData.role = role;
+    }
+
+    // set labels
+    if (nodeData.role) {
+      const { labels } = nodeData;
+      nodePositionData.labels = labels;
     }
   }
 
@@ -638,13 +647,13 @@ const getStopPositionData = (
     if (stopList) {
       const stopItem = stopList.filter(item => item.id === node.id)[itemIndex];
       if (stopItem) {
-        nodePosition.hasStop = true;
-        nodePosition.position = stopItem.position;
+        nodePositionData.hasStop = true;
+        nodePositionData.position = stopItem.position;
       }
     }
   }
 
-  return nodePosition;
+  return nodePositionData;
 };
 
 /**
@@ -1759,6 +1768,7 @@ export default class App {
         const {
           hasStop,
           keys,
+          labels,
           position,
           role,
         } = getStopPositionData(nodeType, node);
@@ -1775,6 +1785,7 @@ export default class App {
           id,
           isSelected: existsInArray(selectedNodes, node.id),
           keys,
+          labels,
           name,
           position: displayPosition,
           role,
