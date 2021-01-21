@@ -10,13 +10,7 @@ const appProps: {
   isInternal: boolean,
   isMercadoMode: boolean,
   isUserInput: boolean,
-  items: Array<{
-    id: string,
-    name: string,
-    position?: number,
-    hasStop: boolean,
-    isSelected: boolean,
-  }>,
+  items: Array<PluginViewObject>,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -136,6 +130,7 @@ const watchIncomingMessages = (): void => {
             items,
             sessionKey,
           } = payload;
+
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
           app.items = items;

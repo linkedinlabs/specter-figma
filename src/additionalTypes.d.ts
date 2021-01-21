@@ -4,6 +4,12 @@ declare global {
 
   type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'enter' | 'escape' | 'space';
 
+  type PluginLabelsNames = {
+    a11y: null,
+    visible: null,
+    alt: null,
+  }
+
   type PluginNodePosition = {
     frameWidth: number,
     frameHeight: number,
@@ -31,6 +37,17 @@ declare global {
     isInfo: boolean,
     isMercadoMode: boolean,
   };
+
+  type PluginViewObject = {
+    hasStop: boolean,
+    id: string,
+    isSelected: boolean,
+    keys?: Array<PluginKeystopKeys>,
+    labels?: PluginLabelsNames,
+    name: string,
+    position: number | string,
+    role?: string,
+  }
 
   // Vendor Declarations
 

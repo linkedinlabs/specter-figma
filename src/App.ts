@@ -524,7 +524,7 @@ const refreshAnnotations = (
  * and we need to clean up annotations that no longer exist.
  *
  * @kind function
- * @name getKeystopLabelNodes
+ * @name getStopNodes
  *
  * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
  * @param {Array} trackingData The page-level node tracking data.
@@ -533,11 +533,11 @@ const refreshAnnotations = (
  *
  * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
  */
-const getKeystopLabelNodes = (
+const getStopNodes = (
+  nodeType: 'keystop' | 'label' = 'keystop',
   frameNode: FrameNode,
   trackingData: Array<PluginNodeTrackingData>,
   resetData: boolean = false,
-  nodeType: 'keystop' | 'label' = 'keystop',
 ): Array<SceneNode> => {
   const nodes: Array<SceneNode> = [];
   const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
@@ -573,13 +573,13 @@ const getKeystopLabelNodes = (
   return nodes;
 };
 
-/**
+/** WIP
  * @description Takes a node and locates its current Keystop data (position and keys), if
  * it exists. The data is located through the node’s top-level frame. Returns an object
  * formatted to pass along to the UI.
  *
  * @kind function
- * @name getKeystopLabelPosition
+ * @name getStopData
  *
  * @param {Object} node A SceneNode to check for Keystop data.
  *
@@ -587,28 +587,52 @@ const getKeystopLabelNodes = (
  * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
  * if they exist.
  */
-const getKeystopLabelPosition = (node: SceneNode, type: 'a11y-keyboard' | 'a11y-labels'): {
+const getStopData = (
+  nodeType: 'keystop' | 'label',
+  node: SceneNode,
+): {
   hasStop: boolean,
   keys?: Array<PluginKeystopKeys>,
+  labels?: PluginLabelsNames,
   position: number,
+  role?: string,
 } => {
   // set up keystop blank
-  const nodePosition: {
+  const nodePositionData: {
     hasStop: boolean,
     keys?: Array<PluginKeystopKeys>,
+    labels?: PluginLabelsNames,
     position: number,
+    role?: string,
   } = {
     hasStop: false,
     keys: null,
+    labels: null,
     position: null,
+    role: null,
   };
 
-  // find keys data for selected node
-  const nodeDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+  // find data for selected node
+  const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
   const nodeData = JSON.parse(node.getPluginData(nodeDataType) || null);
-  if (nodeData && nodeData.keys) {
-    const { keys } = nodeData;
-    nodePosition.keys = keys;
+  if (nodeData) {
+    // set keys
+    if (nodeData.keys) {
+      const { keys } = nodeData;
+      nodePositionData.keys = keys;
+    }
+
+    // set role
+    if (nodeData.role) {
+      const { role } = nodeData;
+      nodePositionData.role = role;
+    }
+
+    // set labels
+    if (nodeData.role) {
+      const { labels } = nodeData;
+      nodePositionData.labels = labels;
+    }
   }
 
   // find top frame for selected node
@@ -617,19 +641,19 @@ const getKeystopLabelPosition = (node: SceneNode, type: 'a11y-keyboard' | 'a11y-
   if (topFrame) {
     // read keystop list data from top frame
     const itemIndex = 0;
-    const listDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
-    const keystopLabelList = JSON.parse(topFrame.getPluginData(listDataType) || null);
+    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const stopList = JSON.parse(topFrame.getPluginData(listDataType) || null);
 
-    if (keystopLabelList) {
-      const keystopLabelItem = keystopLabelList.filter(item => item.id === node.id)[itemIndex];
-      if (keystopLabelItem) {
-        nodePosition.hasStop = true;
-        nodePosition.position = keystopLabelItem.position;
+    if (stopList) {
+      const stopItem = stopList.filter(item => item.id === node.id)[itemIndex];
+      if (stopItem) {
+        nodePositionData.hasStop = true;
+        nodePositionData.position = stopItem.position;
       }
     }
   }
 
-  return nodePosition;
+  return nodePositionData;
 };
 
 /**
@@ -921,11 +945,11 @@ export default class App {
 
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+      const stopNodes: Array<SceneNode> = getStopNodes(
+        nodeType,
         topFrame,
         trackingData,
         true,
-        nodeType,
       );
       stopNodes.forEach(stopNode => nodes.push(stopNode));
     });
@@ -944,11 +968,11 @@ export default class App {
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedKeystops = (children) => {
-          const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+          const stopNodes: Array<SceneNode> = getStopNodes(
+            nodeType,
             topFrame,
             trackingData,
             true,
-            nodeType,
           );
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
@@ -1692,12 +1716,11 @@ export default class App {
       );
     });
 
-    // specific to `a11y-keyboard`
-    // if (currentView === 'a11y-keyboard') { tktk - stub in labels for the moment
+    // specific to `a11y-keyboard` and `a11y-labels`
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const stopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData);
+        const stopNodes: Array<SceneNode> = getStopNodes(nodeType, topFrame, trackingData);
         stopNodes.forEach(stopNode => nodes.push(stopNode));
       });
 
@@ -1739,13 +1762,16 @@ export default class App {
       });
 
       // set up selected bundle
+      // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const {
           hasStop,
           keys,
+          labels,
           position,
-        } = getKeystopLabelPosition(node, currentView);
+          role,
+        } = getStopData(nodeType, node);
 
         let displayPosition = position;
         if (currentView === 'a11y-labels') {
@@ -1754,20 +1780,15 @@ export default class App {
           const convert = alphaNumConvert.default;
           displayPosition = convert((position - 1), ALPHABET_ASCII, { implicitLeadingZero: true });
         }
-        const viewObject: {
-          id: string,
-          name: string,
-          position: number | string,
-          hasStop: boolean,
-          isSelected: boolean,
-          keys: Array<PluginKeystopKeys>,
-        } = {
-          id,
-          name,
-          position: displayPosition,
+        const viewObject: PluginViewObject = {
           hasStop,
+          id,
           isSelected: existsInArray(selectedNodes, node.id),
           keys,
+          labels,
+          name,
+          position: displayPosition,
+          role,
         };
 
         items.push(viewObject);
@@ -1776,10 +1797,10 @@ export default class App {
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const viewObject = {
-          id,
-          name,
           hasStop: false,
+          id,
           isSelected: true,
+          name,
         };
 
         items.push(viewObject);
@@ -1799,8 +1820,8 @@ export default class App {
 
     // commit the calculated size
     if (
-      (currentView !== 'a11y-keyboard')
-      || ((currentView === 'a11y-keyboard') && items.length < 1)
+      ((currentView !== 'a11y-keyboard') && (currentView !== 'a11y-labels'))
+      || (((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) && items.length < 1)
     ) {
       // no need to resize if the info panel is open
       if (!isInfo) {
