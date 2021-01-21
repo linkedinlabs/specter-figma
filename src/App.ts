@@ -524,7 +524,7 @@ const refreshAnnotations = (
  * and we need to clean up annotations that no longer exist.
  *
  * @kind function
- * @name getKeystopLabelNodes
+ * @name getStopNodes
  *
  * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
  * @param {Array} trackingData The page-level node tracking data.
@@ -533,7 +533,7 @@ const refreshAnnotations = (
  *
  * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
  */
-const getKeystopLabelNodes = (
+const getStopNodes = (
   nodeType: 'keystop' | 'label' = 'keystop',
   frameNode: FrameNode,
   trackingData: Array<PluginNodeTrackingData>,
@@ -945,7 +945,7 @@ export default class App {
 
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+      const stopNodes: Array<SceneNode> = getStopNodes(
         nodeType,
         topFrame,
         trackingData,
@@ -968,7 +968,7 @@ export default class App {
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedKeystops = (children) => {
-          const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+          const stopNodes: Array<SceneNode> = getStopNodes(
             nodeType,
             topFrame,
             trackingData,
@@ -1720,7 +1720,7 @@ export default class App {
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const stopNodes: Array<SceneNode> = getKeystopLabelNodes(nodeType, topFrame, trackingData);
+        const stopNodes: Array<SceneNode> = getStopNodes(nodeType, topFrame, trackingData);
         stopNodes.forEach(stopNode => nodes.push(stopNode));
       });
 
