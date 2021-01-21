@@ -1809,8 +1809,8 @@ export default class App {
 
     // commit the calculated size
     if (
-      (currentView !== 'a11y-keyboard')
-      || ((currentView === 'a11y-keyboard') && items.length < 1)
+      ((currentView !== 'a11y-keyboard') && (currentView !== 'a11y-labels'))
+      || (((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) && items.length < 1)
     ) {
       // no need to resize if the info panel is open
       if (!isInfo) {
