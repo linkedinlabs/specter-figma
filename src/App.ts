@@ -579,7 +579,7 @@ const getKeystopLabelNodes = (
  * formatted to pass along to the UI.
  *
  * @kind function
- * @name getStopPositionData
+ * @name getStopData
  *
  * @param {Object} node A SceneNode to check for Keystop data.
  *
@@ -587,7 +587,7 @@ const getKeystopLabelNodes = (
  * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
  * if they exist.
  */
-const getStopPositionData = (
+const getStopData = (
   nodeType: 'keystop' | 'label',
   node: SceneNode,
 ): {
@@ -1771,7 +1771,7 @@ export default class App {
           labels,
           position,
           role,
-        } = getStopPositionData(nodeType, node);
+        } = getStopData(nodeType, node);
 
         let displayPosition = position;
         if (currentView === 'a11y-labels') {
