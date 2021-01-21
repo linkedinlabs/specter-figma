@@ -629,7 +629,7 @@ const getStopData = (
     }
 
     // set labels
-    if (nodeData.role) {
+    if (nodeData.labels) {
       const { labels } = nodeData;
       nodePositionData.labels = labels;
     }
