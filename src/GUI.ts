@@ -130,6 +130,7 @@ const watchIncomingMessages = (): void => {
             items,
             sessionKey,
           } = payload;
+
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
           app.items = items;

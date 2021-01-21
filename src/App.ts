@@ -534,10 +534,10 @@ const refreshAnnotations = (
  * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
  */
 const getKeystopLabelNodes = (
+  nodeType: 'keystop' | 'label' = 'keystop',
   frameNode: FrameNode,
   trackingData: Array<PluginNodeTrackingData>,
   resetData: boolean = false,
-  nodeType: 'keystop' | 'label' = 'keystop',
 ): Array<SceneNode> => {
   const nodes: Array<SceneNode> = [];
   const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
@@ -946,10 +946,10 @@ export default class App {
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
       const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+        nodeType,
         topFrame,
         trackingData,
         true,
-        nodeType,
       );
       stopNodes.forEach(stopNode => nodes.push(stopNode));
     });
@@ -969,10 +969,10 @@ export default class App {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedKeystops = (children) => {
           const stopNodes: Array<SceneNode> = getKeystopLabelNodes(
+            nodeType,
             topFrame,
             trackingData,
             true,
-            nodeType,
           );
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
@@ -1720,7 +1720,7 @@ export default class App {
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const stopNodes: Array<SceneNode> = getKeystopLabelNodes(topFrame, trackingData);
+        const stopNodes: Array<SceneNode> = getKeystopLabelNodes(nodeType, topFrame, trackingData);
         stopNodes.forEach(stopNode => nodes.push(stopNode));
       });
 
