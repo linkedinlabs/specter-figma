@@ -30,6 +30,21 @@
     return itemIsOpen;
   };
 
+  // checks if the item is missing expected label values based on role
+  const isMissingData = (item) => {
+    if (type.includes('labels')) {
+      const { labels, role } = item;
+      return (
+        !labels
+        || !role
+        || role === 'no-role'
+        || (role === 'image' && !labels.alt)
+        || (role !== 'image' && !(labels.a11y || labels.visible))
+      );
+    }
+    return false;
+  };
+
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
     const typedId = `${typeScope}-${itemId}`;
 
@@ -129,6 +144,7 @@
           labelText={item.name}
           position={item.position}
           type={type}
+          showErrorIcon={isMissingData(item)}
         />
         {#if checkIsOpen(item.id, type)}
           {#if (type === 'a11y-keyboard')}
@@ -142,8 +158,10 @@
             <ItemExpandedContentLabels
               itemId={item.id}
               isSelected={item.isSelected}
-              role="no-role"
+              labels={item.labels}
+              role={item.role}
               type={type}
+              on:handleUpdate={() => {}}
             />
           {/if}
         {/if}

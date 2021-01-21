@@ -1,27 +1,24 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
-
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;
   export let itemId = null;
-  export let labelA11y = null;
-  export let labelVisible = null;
   export let role = 'no-role';
   export let type = null;
-
-  let dirtyRole = role;
-  let originalRole = role;
-
-  let dirtyLabelA11y = labelA11y;
-  let originalLabelA11y = labelA11y;
-
-  let dirtyLabelVisible = labelVisible;
-  let originalLabelVisible = labelVisible;
+  export let labels = {
+    a11y: null,
+    visible: null,
+    alt: null,
+  };
 
   let resetValue = false;
-
+  let wasResetValue = false;
+  let dirtyRole = role;
+  let originalRole = role;
+  const dirtyLabels = { ...labels };
+  const originalLabels = { ...labels };
   const controlRoles = [
     {
       value: 'no-role',
@@ -160,58 +157,52 @@
     console.log('select layer in Figma artboard'); // eslint-disable-line no-console
   };
 
-  const updateLabel = () => {
-    // tktk
-    console.log(`update label from ${originalLabelA11y}`); // eslint-disable-line no-console
-    console.log(`update label from ${originalLabelVisible}`); // eslint-disable-line no-console
-    // const oldKey = currentKeys[oldKeyIndex];
-    // if (oldKey !== keyToUpdate) {
-    //   removeKey(oldKey);
-
-    //   if (keyToUpdate !== 'no-role') {
-    //     addKey(keyToUpdate);
-    //   }
-    // }
+  const handleReset = () => {
+    dirtyRole = role;
+    originalRole = role;
+    resetValue = true;
   };
 
-  const updateRole = () => {
-    // tktk
-    console.log(`update role from ${originalRole}`); // eslint-disable-line no-console
-    // const oldKey = currentKeys[oldKeyIndex];
-    // if (oldKey !== keyToUpdate) {
-    //   removeKey(oldKey);
+  const updateLabel = (key) => {
+    if (dirtyLabels[key] !== originalLabels[key]) {
+      const oldLabel = originalLabels[key];
+      originalLabels[key] = dirtyLabels[key];
+      labels[key] = dirtyLabels[key];
 
-    //   if (keyToUpdate !== 'no-role') {
-    //     addKey(keyToUpdate);
-    //   }
-    // }
+      console.log(`update label from '${oldLabel}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
+      // tktk: postMessage to update label(s) - probably all, since it accounts for initial setting
+    }
+  };
+
+  const updateRole = (newRole) => {
+    if (![originalRole, 'no-role'].includes(newRole)) {
+      console.log(`update role from '${originalRole}' to '${dirtyRole}'`); // eslint-disable-line no-console
+      parent.postMessage({
+        pluginMessage: {
+          action: `${type}-set-role`,
+          payload: {
+            id: itemId,
+            role: dirtyRole,
+          },
+        },
+      }, '*');
+      handleReset();
+    }
   };
 
   beforeUpdate(() => {
-    // check `role` against original to see if it was updated on the Figma side
-    if (role !== dirtyRole) {
-      dirtyRole = role;
-      originalRole = role;
+    if (originalRole !== role) {
       resetValue = true;
     }
-
-    // check `labelA11y` against original to see if it was updated on the Figma side
-    if (labelA11y !== dirtyLabelA11y) {
-      dirtyLabelA11y = labelA11y;
-      originalLabelA11y = labelA11y;
-      resetValue = true;
+    if (resetValue) {
+      handleReset();
     }
-
-    // check `labelVisible` against original to see if it was updated on the Figma side
-    if (labelVisible !== dirtyLabelVisible) {
-      dirtyLabelVisible = labelVisible;
-      originalLabelVisible = labelVisible;
-      resetValue = true;
-    }
+    // set trackers
+    wasResetValue = resetValue;
   });
 
   afterUpdate(() => {
-    if (resetValue) {
+    if (resetValue || wasResetValue) {
       resetValue = false;
     }
   });
@@ -232,26 +223,25 @@
         options={controlRoles}
         resetValue={resetValue}
         selectWatchChange={true}
-        on:saveSignal={() => updateRole()}
+        on:saveSignal={() => updateRole(dirtyRole)}
         bind:value={dirtyRole}
       />
       <ButtonSelect
         on:handleUpdate={() => handleSelect()}
       />
     </span>
-    {#if (role !== 'image-decorative')}
-      {#if (role === 'image')}
+    {#if (dirtyRole !== 'image-decorative')}
+      {#if (dirtyRole === 'image')}
         <FormUnit
           className="form-row"
           kind="inputText"
           labelText="Alt text"
           nameId={`${itemId}-label-alt`}
-          options={controlRoles}
           placeholder="Short description of the scene"
           resetValue={resetValue}
-          selectWatchChange={true}
-          on:saveSignal={() => updateRole()}
-          bind:value={dirtyRole}
+          inputWatchBlur={true}
+          on:saveSignal={() => updateLabel('alt')}
+          bind:value={dirtyLabels.alt}
         />
       {:else}
         <FormUnit
@@ -259,24 +249,22 @@
           kind="inputText"
           labelText="Visible label"
           nameId={`${itemId}-label-visible`}
-          options={controlRoles}
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
-          selectWatchChange={true}
-          on:saveSignal={() => updateLabel()}
-          bind:value={dirtyLabelVisible}
+          inputWatchBlur={true}
+          on:saveSignal={() => updateLabel('visible')}
+          bind:value={dirtyLabels.visible}
         />
         <FormUnit
           className="form-row"
           kind="inputText"
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
-          options={controlRoles}
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
-          selectWatchChange={true}
-          on:saveSignal={() => updateLabel()}
-          bind:value={dirtyLabelA11y}
+          inputWatchBlur={true}
+          on:saveSignal={() => updateLabel('a11y')}
+          bind:value={dirtyLabels.a11y}
         />
       {/if}
     {/if}

@@ -98,6 +98,12 @@ const dispatcher = async (action: {
       case 'a11y-keyboard-remove-key':
         await app.keystopAddRemoveKeys(payload, true);
         break;
+      case 'a11y-labels-add-stop':
+        await app.annotateLabel();
+        break;
+      case 'a11y-labels-set-role':
+        await app.labelsSetRole(payload);
+        break;
       case 'annotate':
         app.annotateNode();
         break;

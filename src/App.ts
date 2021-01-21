@@ -1623,6 +1623,51 @@ export default class App {
   }
 
   /**
+   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Role Annotation
+   * based on the supplied `role`.
+   *
+   * @kind function
+   * @name labelsSetRole
+   *
+   * @param {Object} options Should include a Figma node `id` and the `role` to be set.
+   *
+   * @returns {null}
+   */
+  labelsSetRole(
+    options: {
+      id: string,
+      role: PluginLabelRoles,
+    },
+  ) {
+    const { id, role } = options;
+    const node: BaseNode = figma.getNodeById(id);
+
+    if (node) {
+      // retrieve the node data
+      const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.labelNodeData) || null);
+      if (nodeData) {
+        nodeData.role = role;
+        node.setPluginData(
+          DATA_KEYS.labelNodeData,
+          JSON.stringify(nodeData),
+        );
+      }
+
+      // repaint the node
+      // tktk: will uncomment the below when this side of things is confirmed
+      // this.annotateLabel([node as SceneNode]);
+    }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
+  }
+
+  /**
    * @description Triggers a UI refresh with the current selection. In the case of the
    * `a11y-keyboard` view context, the necessary data is collected and an object is passed
    * over to the UI thread.
