@@ -109,7 +109,7 @@
     </span>
     <span class="text">
       {#if showErrorIcon}
-      <span class="error-flag">&#9873;&nbsp;</span>
+        <span class="error-flag">&#9873;&nbsp;</span>
       {/if}
       {labelText}
     </span>

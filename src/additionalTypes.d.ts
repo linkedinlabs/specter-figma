@@ -6,8 +6,6 @@ declare global {
 
   type PluginLabelRoles = 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
-  // type PluginLabelRoles = 'image' | 'button' | 
-
   type PluginNodePosition = {
     frameWidth: number,
     frameHeight: number,

@@ -30,6 +30,7 @@
     return itemIsOpen;
   };
 
+  // checks if the item is missing expected label values based on role
   const isMissingData = (item) => {
     if (type.includes('labels')) {
       const { labels, role } = item;
@@ -38,7 +39,7 @@
         || !role
         || role === 'no-role'
         || (role === 'image' && !labels.alt)
-        || (role !== 'image' && !(labels.a11y && labels.visible))
+        || (role !== 'image' && !(labels.a11y || labels.visible))
       );
     }
     return false;
