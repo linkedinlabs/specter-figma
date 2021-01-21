@@ -32,6 +32,16 @@ declare global {
     isMercadoMode: boolean,
   };
 
+  type PluginViewObject = {
+    hasStop: boolean,
+    id: string,
+    isSelected: boolean,
+    keys?: Array<PluginKeystopKeys>,
+    name: string,
+    position: number | string,
+    role?: string,
+  }
+
   // Vendor Declarations
 
   // for attaching Svelte to window global

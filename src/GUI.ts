@@ -10,13 +10,7 @@ const appProps: {
   isInternal: boolean,
   isMercadoMode: boolean,
   isUserInput: boolean,
-  items: Array<{
-    id: string,
-    name: string,
-    position?: number,
-    hasStop: boolean,
-    isSelected: boolean,
-  }>,
+  items: Array<PluginViewObject>,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {

@@ -1770,15 +1770,7 @@ export default class App {
           const convert = alphaNumConvert.default;
           displayPosition = convert((position - 1), ALPHABET_ASCII, { implicitLeadingZero: true });
         }
-        const viewObject: {
-          hasStop: boolean,
-          isSelected: boolean,
-          id: string,
-          keys?: Array<PluginKeystopKeys>,
-          name: string,
-          position: number | string,
-          role?: string,
-        } = {
+        const viewObject: PluginViewObject = {
           hasStop,
           id,
           isSelected: existsInArray(selectedNodes, node.id),
@@ -1794,10 +1786,10 @@ export default class App {
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const viewObject = {
-          id,
-          name,
           hasStop: false,
+          id,
           isSelected: true,
+          name,
         };
 
         items.push(viewObject);
