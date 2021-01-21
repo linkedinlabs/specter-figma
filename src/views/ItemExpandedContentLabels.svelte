@@ -175,14 +175,13 @@
   };
 
   const updateRole = (newRole) => {
-    if (![originalRole, 'no-role'].includes(newRole)) {
-      console.log(`update role from '${originalRole}' to '${dirtyRole}'`); // eslint-disable-line no-console
+    if (originalRole !== newRole) {
       parent.postMessage({
         pluginMessage: {
           action: `${type}-set-role`,
           payload: {
             id: itemId,
-            role: dirtyRole,
+            role: newRole,
           },
         },
       }, '*');
