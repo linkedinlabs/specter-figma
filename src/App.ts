@@ -1692,8 +1692,7 @@ export default class App {
       );
     });
 
-    // specific to `a11y-keyboard`
-    // if (currentView === 'a11y-keyboard') { tktk - stub in labels for the moment
+    // specific to `a11y-keyboard` and `a11y-labels`
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
@@ -1755,19 +1754,19 @@ export default class App {
           displayPosition = convert((position - 1), ALPHABET_ASCII, { implicitLeadingZero: true });
         }
         const viewObject: {
-          id: string,
-          name: string,
-          position: number | string,
           hasStop: boolean,
           isSelected: boolean,
-          keys: Array<PluginKeystopKeys>,
+          id: string,
+          keys?: Array<PluginKeystopKeys>,
+          name: string,
+          position: number | string,
         } = {
-          id,
-          name,
-          position: displayPosition,
           hasStop,
+          id,
           isSelected: existsInArray(selectedNodes, node.id),
           keys,
+          name,
+          position: displayPosition,
         };
 
         items.push(viewObject);
