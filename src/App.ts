@@ -573,13 +573,13 @@ const getKeystopLabelNodes = (
   return nodes;
 };
 
-/**
+/** WIP
  * @description Takes a node and locates its current Keystop data (position and keys), if
  * it exists. The data is located through the node’s top-level frame. Returns an object
  * formatted to pass along to the UI.
  *
  * @kind function
- * @name getKeystopLabelPosition
+ * @name getStopPositionData
  *
  * @param {Object} node A SceneNode to check for Keystop data.
  *
@@ -587,28 +587,43 @@ const getKeystopLabelNodes = (
  * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
  * if they exist.
  */
-const getKeystopLabelPosition = (node: SceneNode, type: 'a11y-keyboard' | 'a11y-labels'): {
+const getStopPositionData = (
+  nodeType: 'keystop' | 'label',
+  node: SceneNode,
+): {
   hasStop: boolean,
   keys?: Array<PluginKeystopKeys>,
   position: number,
+  role?: string,
 } => {
   // set up keystop blank
   const nodePosition: {
     hasStop: boolean,
     keys?: Array<PluginKeystopKeys>,
     position: number,
+    role?: string,
   } = {
     hasStop: false,
     keys: null,
     position: null,
+    role: null,
   };
 
-  // find keys data for selected node
-  const nodeDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+  // find data for selected node
+  const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
   const nodeData = JSON.parse(node.getPluginData(nodeDataType) || null);
-  if (nodeData && nodeData.keys) {
-    const { keys } = nodeData;
-    nodePosition.keys = keys;
+  if (nodeData) {
+    // set keys
+    if (nodeData.keys) {
+      const { keys } = nodeData;
+      nodePosition.keys = keys;
+    }
+
+    // set role
+    if (nodeData.role) {
+      const { role } = nodeData;
+      nodePosition.role = role;
+    }
   }
 
   // find top frame for selected node
@@ -617,14 +632,14 @@ const getKeystopLabelPosition = (node: SceneNode, type: 'a11y-keyboard' | 'a11y-
   if (topFrame) {
     // read keystop list data from top frame
     const itemIndex = 0;
-    const listDataType = type === 'a11y-keyboard' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
-    const keystopLabelList = JSON.parse(topFrame.getPluginData(listDataType) || null);
+    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const stopList = JSON.parse(topFrame.getPluginData(listDataType) || null);
 
-    if (keystopLabelList) {
-      const keystopLabelItem = keystopLabelList.filter(item => item.id === node.id)[itemIndex];
-      if (keystopLabelItem) {
+    if (stopList) {
+      const stopItem = stopList.filter(item => item.id === node.id)[itemIndex];
+      if (stopItem) {
         nodePosition.hasStop = true;
-        nodePosition.position = keystopLabelItem.position;
+        nodePosition.position = stopItem.position;
       }
     }
   }
@@ -1738,13 +1753,15 @@ export default class App {
       });
 
       // set up selected bundle
+      // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const {
           hasStop,
           keys,
           position,
-        } = getKeystopLabelPosition(node, currentView);
+          role,
+        } = getStopPositionData(nodeType, node);
 
         let displayPosition = position;
         if (currentView === 'a11y-labels') {
@@ -1760,6 +1777,7 @@ export default class App {
           keys?: Array<PluginKeystopKeys>,
           name: string,
           position: number | string,
+          role?: string,
         } = {
           hasStop,
           id,
@@ -1767,6 +1785,7 @@ export default class App {
           keys,
           name,
           position: displayPosition,
+          role,
         };
 
         items.push(viewObject);
