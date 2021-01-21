@@ -1733,16 +1733,13 @@ export default class App {
   }
 
   /**
-   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Key Annotation
-   * based on the supplied `key`.
+   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Role Annotation
+   * based on the supplied `role`.
    *
    * @kind function
-   * @name keystopAddRemoveKeys
+   * @name labelsSetRole
    *
-   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
-   * @param {boolean} removeKey Default is `false`. If set to `true`, the list of keystops will not
-   * be re-painted after an update, effectively removing the annotation that corresponds to the
-   * supplied `id` in `options`.
+   * @param {Object} options Should include a Figma node `id` and the `role` to be set.
    *
    * @returns {null}
    */

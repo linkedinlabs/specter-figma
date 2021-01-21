@@ -237,7 +237,6 @@
           kind="inputText"
           labelText="Alt text"
           nameId={`${itemId}-label-alt`}
-          options={controlRoles}
           placeholder="Short description of the scene"
           resetValue={resetValue}
           inputWatchBlur={true}
@@ -250,7 +249,6 @@
           kind="inputText"
           labelText="Visible label"
           nameId={`${itemId}-label-visible`}
-          options={controlRoles}
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           inputWatchBlur={true}
@@ -262,7 +260,6 @@
           kind="inputText"
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
-          options={controlRoles}
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           inputWatchBlur={true}
