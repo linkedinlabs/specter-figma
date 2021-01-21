@@ -7,7 +7,9 @@
   export let itemId = null;
   export let role = null;
   export let type = null;
-  export let labels = {
+  export let labels = null;
+
+  const labelsInit = {
     a11y: null,
     visible: null,
     alt: null,
@@ -17,8 +19,8 @@
   let wasResetValue = false;
   let dirtyRole = role || 'no-role';
   let originalRole = role || 'no-role';
-  const dirtyLabels = { ...labels };
-  const originalLabels = { ...labels };
+  let dirtyLabels = labels ? { ...labels } : labelsInit;
+  let originalLabels = labels ? { ...labels } : labelsInit;
   const controlRoles = [
     {
       value: 'no-role',
@@ -158,19 +160,36 @@
   };
 
   const handleReset = () => {
+    // role
     dirtyRole = role || 'no-role';
     originalRole = role || 'no-role';
+
+    // labels
+    dirtyLabels = labels ? { ...labels } : labelsInit;
+    originalLabels = labels ? { ...labels } : labelsInit;
+
     resetValue = true;
   };
 
   const updateLabel = (key) => {
     if (dirtyLabels[key] !== originalLabels[key]) {
-      const oldLabel = originalLabels[key];
-      originalLabels[key] = dirtyLabels[key];
-      labels[key] = dirtyLabels[key];
+      // const oldLabel = originalLabels[key];
+      // originalLabels[key] = dirtyLabels[key];
+      // labels[key] = dirtyLabels[key];
 
-      console.log(`update label from '${oldLabel}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
+      console.log(`update label from '${originalLabels[key]}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
       // tktk: postMessage to update label(s) - probably all, since it accounts for initial setting
+
+      // parent.postMessage({
+      //   pluginMessage: {
+      //     action: `${type}-set-role`,
+      //     payload: {
+      //       id: itemId,
+      //       role: dirtyLabels,
+      //     },
+      //   },
+      // }, '*');
+      // handleReset();
     }
   };
 
@@ -193,9 +212,11 @@
     if (originalRole !== role) {
       resetValue = true;
     }
+
     if (resetValue) {
       handleReset();
     }
+
     // set trackers
     wasResetValue = resetValue;
   });
