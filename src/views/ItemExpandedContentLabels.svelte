@@ -5,7 +5,7 @@
 
   export let isSelected = false;
   export let itemId = null;
-  export let role = 'no-role';
+  export let role = null;
   export let type = null;
   export let labels = {
     a11y: null,
@@ -15,8 +15,8 @@
 
   let resetValue = false;
   let wasResetValue = false;
-  let dirtyRole = role;
-  let originalRole = role;
+  let dirtyRole = role || 'no-role';
+  let originalRole = role || 'no-role';
   const dirtyLabels = { ...labels };
   const originalLabels = { ...labels };
   const controlRoles = [
@@ -158,8 +158,8 @@
   };
 
   const handleReset = () => {
-    dirtyRole = role;
-    originalRole = role;
+    dirtyRole = role || 'no-role';
+    originalRole = role || 'no-role';
     resetValue = true;
   };
 
