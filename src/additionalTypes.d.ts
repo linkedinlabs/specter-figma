@@ -6,6 +6,12 @@ declare global {
 
   type PluginLabelRoles = 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
+  type PluginLabelsNames = {
+    a11y: null,
+    visible: null,
+    alt: null,
+  }
+
   type PluginNodePosition = {
     frameWidth: number,
     frameHeight: number,
@@ -33,6 +39,17 @@ declare global {
     isInfo: boolean,
     isMercadoMode: boolean,
   };
+
+  type PluginViewObject = {
+    hasStop: boolean,
+    id: string,
+    isSelected: boolean,
+    keys?: Array<PluginKeystopKeys>,
+    labels?: PluginLabelsNames,
+    name: string,
+    position: number | string,
+    role?: string,
+  }
 
   // Vendor Declarations
 

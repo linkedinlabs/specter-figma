@@ -2397,14 +2397,14 @@ export default class Painter {
       type: annotationType,
     });
 
-    const auxAnnotations: Array<FrameNode> = [];
-    if (nodeData.keys && nodeData.keys.length > 0) {
-      nodeData.keys.forEach((keyEntry) => {
-        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-        auxAnnotation.layoutAlign = 'INHERIT';
-        auxAnnotations.push(auxAnnotation);
-      });
-    }
+    // const auxAnnotations: Array<FrameNode> = [];
+    // if (nodeData.keys && nodeData.keys.length > 0) {
+    //   nodeData.keys.forEach((keyEntry) => {
+    //     const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
+    //     auxAnnotation.layoutAlign = 'INHERIT';
+    //     auxAnnotations.push(auxAnnotation);
+    //   });
+    // }
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -2429,31 +2429,31 @@ export default class Painter {
       'keystop',
     );
 
-    const initialX = baseAnnotationNode.x;
-    const initialY = baseAnnotationNode.y;
+    // const initialX = baseAnnotationNode.x;
+    // const initialY = baseAnnotationNode.y;
 
-    let annotationNode: FrameNode = baseAnnotationNode;
-    if (auxAnnotations.length > 0) {
-      annotationNode = figma.createFrame();
-      annotationNode.clipsContent = false;
-      annotationNode.layoutMode = 'HORIZONTAL';
-      annotationNode.counterAxisSizingMode = 'AUTO';
-      annotationNode.layoutAlign = 'INHERIT';
-      annotationNode.itemSpacing = 4;
-      annotationNode.fills = [];
-      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
+    const annotationNode: FrameNode = baseAnnotationNode;
+    // if (auxAnnotations.length > 0) {
+    //   annotationNode = figma.createFrame();
+    //   annotationNode.clipsContent = false;
+    //   annotationNode.layoutMode = 'HORIZONTAL';
+    //   annotationNode.counterAxisSizingMode = 'AUTO';
+    //   annotationNode.layoutAlign = 'INHERIT';
+    //   annotationNode.itemSpacing = 4;
+    //   annotationNode.fills = [];
+    //   annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
 
-      // add the base annotation
-      annotationNode.appendChild(baseAnnotationNode);
+    //   // add the base annotation
+    //   annotationNode.appendChild(baseAnnotationNode);
 
-      // add the key annotations
-      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
+    //   // add the key annotations
+    //   auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
 
-      baseAnnotationNode.layoutAlign = 'INHERIT';
-      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
-      annotationNode.x = initialX;
-      annotationNode.y = initialY;
-    }
+    //   baseAnnotationNode.layoutAlign = 'INHERIT';
+    //   annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
+    //   annotationNode.x = initialX;
+    //   annotationNode.y = initialY;
+    // }
 
     // set it in the correct containers
     setNodeInContainers({

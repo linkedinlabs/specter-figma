@@ -68,20 +68,27 @@ const dispatcher = async (action: {
   // run the action in the App class based on type
   const runAction = async (actionType: string) => {
     switch (actionType) {
-      case 'a11y-keyboard-add-stop':
-        await app.annotateKeystop();
+      case 'a11y-labels-add-stop':
+      case 'a11y-keyboard-add-stop': {
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-add-stop' ? 'keystop' : 'label';
+        await app.annotateKeystopLabel(nodeType);
         break;
+      }
+      case 'a11y-labels-remove-stop':
       case 'a11y-keyboard-remove-stop': {
         const { id } = payload;
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-remove-stop' ? 'keystop' : 'label';
+
         if (id) {
-          await app.removeKeystops(id);
+          await app.removeKeystopsLabels(nodeType, id);
         }
         break;
       }
       case 'a11y-keyboard-update-stop': {
         const { id } = payload;
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-update-stop' ? 'keystop' : 'label';
         if (id) {
-          await app.updateKeystops(payload);
+          await app.updateKeystopsLabels(nodeType, payload);
         }
         break;
       }
@@ -90,9 +97,6 @@ const dispatcher = async (action: {
         break;
       case 'a11y-keyboard-remove-key':
         await app.keystopAddRemoveKeys(payload, true);
-        break;
-      case 'a11y-labels-add-stop':
-        await app.annotateLabel();
         break;
       case 'a11y-labels-set-role':
         await app.labelsSetRole(payload);
