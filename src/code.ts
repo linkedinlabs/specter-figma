@@ -151,7 +151,7 @@ const dispatcher = async (action: {
       case 'setViewContext':
         await App.setViewContext(payload);
         break;
-      default:
+      default: // case 'tools'
         await App.showToolbar();
     }
   };
