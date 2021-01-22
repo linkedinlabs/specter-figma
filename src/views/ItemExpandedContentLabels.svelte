@@ -19,8 +19,8 @@
   let wasResetValue = false;
   let dirtyRole = role || 'no-role';
   let originalRole = role || 'no-role';
-  let dirtyLabels = labels ? { ...labels } : labelsInit;
-  let originalLabels = labels ? { ...labels } : labelsInit;
+  let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
+  let originalLabels = labels ? { ...labels } : { ...labelsInit };
   const controlRoles = [
     {
       value: 'no-role',
@@ -165,19 +165,19 @@
     originalRole = role || 'no-role';
 
     // labels
-    dirtyLabels = labels ? { ...labels } : labelsInit;
-    originalLabels = labels ? { ...labels } : labelsInit;
+    dirtyLabels = labels ? { ...labels } : { ...labelsInit };
+    originalLabels = labels ? { ...labels } : { ...labelsInit };
 
     resetValue = true;
   };
 
-  const updateLabel = (key) => {
-    if (dirtyLabels[key] !== originalLabels[key]) {
+  const updateLabel = (newLabels, key) => {
+    if (originalLabels[key] !== newLabels[key]) {
       // const oldLabel = originalLabels[key];
       // originalLabels[key] = dirtyLabels[key];
       // labels[key] = dirtyLabels[key];
 
-      console.log(`update label from '${originalLabels[key]}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
+      console.log(`update label “${key}” from '${originalLabels[key]}' to '${newLabels[key]}'`); // eslint-disable-line no-console
       // tktk: postMessage to update label(s) - probably all, since it accounts for initial setting
 
       // parent.postMessage({
@@ -209,7 +209,7 @@
   };
 
   beforeUpdate(() => {
-    if (originalRole !== role) {
+    if (role && (originalRole !== role)) {
       resetValue = true;
     }
 
@@ -260,7 +260,7 @@
           placeholder="Short description of the scene"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel('alt')}
+          on:saveSignal={() => updateLabel(dirtyLabels, 'alt')}
           bind:value={dirtyLabels.alt}
         />
       {:else}
@@ -272,7 +272,7 @@
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel('visible')}
+          on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
           bind:value={dirtyLabels.visible}
         />
         <FormUnit
@@ -283,7 +283,7 @@
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel('a11y')}
+          on:saveSignal={() => updateLabel(dirtyLabels, 'a11y')}
           bind:value={dirtyLabels.a11y}
         />
       {/if}
