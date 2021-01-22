@@ -2,6 +2,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
+  import { deepCompare } from '../Tools';
 
   export let isSelected = false;
   export let itemId = null;
@@ -202,7 +203,10 @@
   };
 
   beforeUpdate(() => {
-    if (role && (originalRole !== role)) {
+    if (
+      (role && (originalRole !== role))
+      || (labels && deepCompare(originalLabels, labels))
+    ) {
       resetValue = true;
     }
 
