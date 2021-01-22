@@ -2,12 +2,15 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
+  import { deepCompare } from '../Tools';
 
   export let isSelected = false;
   export let itemId = null;
-  export let role = 'no-role';
+  export let role = null;
   export let type = null;
-  export let labels = {
+  export let labels = null;
+
+  const labelsInit = {
     a11y: null,
     visible: null,
     alt: null,
@@ -15,10 +18,10 @@
 
   let resetValue = false;
   let wasResetValue = false;
-  let dirtyRole = role;
-  let originalRole = role;
-  const dirtyLabels = { ...labels };
-  const originalLabels = { ...labels };
+  let dirtyRole = role || 'no-role';
+  let originalRole = role || 'no-role';
+  let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
+  let originalLabels = labels ? { ...labels } : { ...labelsInit };
   const controlRoles = [
     {
       value: 'no-role',
@@ -158,31 +161,40 @@
   };
 
   const handleReset = () => {
-    dirtyRole = role;
-    originalRole = role;
+    // role
+    dirtyRole = role || 'no-role';
+    originalRole = role || 'no-role';
+
+    // labels
+    dirtyLabels = labels ? { ...labels } : { ...labelsInit };
+    originalLabels = labels ? { ...labels } : { ...labelsInit };
+
     resetValue = true;
   };
 
-  const updateLabel = (key) => {
-    if (dirtyLabels[key] !== originalLabels[key]) {
-      const oldLabel = originalLabels[key];
-      originalLabels[key] = dirtyLabels[key];
-      labels[key] = dirtyLabels[key];
-
-      console.log(`update label from '${oldLabel}' to '${dirtyLabels[key]}'`); // eslint-disable-line no-console
-      // tktk: postMessage to update label(s) - probably all, since it accounts for initial setting
+  const updateLabel = (newLabels, key) => {
+    if (originalLabels[key] !== newLabels[key]) {
+      parent.postMessage({
+        pluginMessage: {
+          action: `${type}-set-text`,
+          payload: {
+            id: itemId,
+            labels: newLabels,
+          },
+        },
+      }, '*');
+      handleReset();
     }
   };
 
   const updateRole = (newRole) => {
-    if (![originalRole, 'no-role'].includes(newRole)) {
-      console.log(`update role from '${originalRole}' to '${dirtyRole}'`); // eslint-disable-line no-console
+    if (originalRole !== newRole) {
       parent.postMessage({
         pluginMessage: {
           action: `${type}-set-role`,
           payload: {
             id: itemId,
-            role: dirtyRole,
+            role: newRole,
           },
         },
       }, '*');
@@ -191,12 +203,17 @@
   };
 
   beforeUpdate(() => {
-    if (originalRole !== role) {
+    if (
+      (role && (originalRole !== role))
+      || (labels && deepCompare(originalLabels, labels))
+    ) {
       resetValue = true;
     }
+
     if (resetValue) {
       handleReset();
     }
+
     // set trackers
     wasResetValue = resetValue;
   });
@@ -240,7 +257,7 @@
           placeholder="Short description of the scene"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel('alt')}
+          on:saveSignal={() => updateLabel(dirtyLabels, 'alt')}
           bind:value={dirtyLabels.alt}
         />
       {:else}
@@ -252,7 +269,7 @@
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel('visible')}
+          on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
           bind:value={dirtyLabels.visible}
         />
         <FormUnit
@@ -263,7 +280,7 @@
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel('a11y')}
+          on:saveSignal={() => updateLabel(dirtyLabels, 'a11y')}
           bind:value={dirtyLabels.a11y}
         />
       {/if}

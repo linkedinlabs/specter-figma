@@ -68,7 +68,7 @@ const cleanUpAnnotations = (
   return null;
 };
 
-/**
+/** WIP
  * @description Checks frame list data against annotations and uses linkId between annotation
  * and original node to determine if the link is broken. Annotations for broken links are
  * removed and new annotations are drawn, if possible.
@@ -85,14 +85,23 @@ const cleanUpAnnotations = (
  * @returns {null}
  */
 const repairBrokenLinks = (
-  frameNode: FrameNode,
-  trackingData: Array<PluginNodeTrackingData>,
-  page: PageNode,
-  messenger: any,
-  isMercadoMode: boolean,
   nodeType: 'keystop' | 'label' = 'keystop',
+  options: {
+    isMercadoMode: boolean,
+    frameNode: FrameNode,
+    messenger: any,
+    page: PageNode,
+    trackingData: Array<PluginNodeTrackingData>,
+  },
 ): void => {
   // ----- remove annotations with broken links
+  const {
+    isMercadoMode,
+    frameNode,
+    messenger,
+    page,
+    trackingData,
+  } = options;
   const crawlerForTopFrame = new Crawler({ for: [frameNode] });
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
@@ -221,7 +230,7 @@ const repairBrokenLinks = (
   return null;
 };
 
-/**
+/** WIP
  * @description Checks tracking data against the provided frameNode. If any annotations
  * are missing, they are re-painted. If any links are broken/invalidated, annotations are removed.
  *
@@ -236,12 +245,21 @@ const repairBrokenLinks = (
  * @returns {null}
  */
 const refreshAnnotations = (
-  trackingData: Array<PluginNodeTrackingData>,
-  page: PageNode,
-  messenger: any,
-  isMercadoMode: boolean,
   nodeType: 'keystop' | 'label' = 'keystop',
+  options: {
+    isMercadoMode: boolean,
+    trackingData: Array<PluginNodeTrackingData>,
+    messenger: any,
+    page: PageNode,
+  },
 ): void => {
+  const {
+    isMercadoMode,
+    trackingData,
+    messenger,
+    page,
+  } = options;
+
   // set data keys
   const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
   const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
@@ -535,10 +553,15 @@ const refreshAnnotations = (
  */
 const getStopNodes = (
   nodeType: 'keystop' | 'label' = 'keystop',
-  frameNode: FrameNode,
-  trackingData: Array<PluginNodeTrackingData>,
-  resetData: boolean = false,
+  options: {
+    frameNode: FrameNode,
+    resetData: boolean,
+  },
 ): Array<SceneNode> => {
+  const {
+    frameNode,
+    resetData,
+  } = options;
   const nodes: Array<SceneNode> = [];
   const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
 
@@ -629,7 +652,7 @@ const getStopData = (
     }
 
     // set labels
-    if (nodeData.role) {
+    if (nodeData.labels) {
       const { labels } = nodeData;
       nodePositionData.labels = labels;
     }
@@ -945,12 +968,11 @@ export default class App {
 
     // iterate topFrames and select nodes that already have annotations
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      const stopNodes: Array<SceneNode> = getStopNodes(
-        nodeType,
-        topFrame,
-        trackingData,
-        true,
-      );
+      const getStopOptions = {
+        frameNode: topFrame,
+        resetData: true,
+      };
+      const stopNodes: Array<SceneNode> = getStopNodes(nodeType, getStopOptions);
       stopNodes.forEach(stopNode => nodes.push(stopNode));
     });
 
@@ -968,12 +990,11 @@ export default class App {
     if (!suppliedSelection) {
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const extractAssignedKeystops = (children) => {
-          const stopNodes: Array<SceneNode> = getStopNodes(
-            nodeType,
-            topFrame,
-            trackingData,
-            true,
-          );
+          const getStopOptions = {
+            frameNode: topFrame,
+            resetData: true,
+          };
+          const stopNodes: Array<SceneNode> = getStopNodes(nodeType, getStopOptions);
           const crawlerForChildren = new Crawler({ for: children });
           const childNodes = crawlerForChildren.all();
           childNodes.forEach((childNode) => {
@@ -1622,31 +1643,33 @@ export default class App {
     return null;
   }
 
-  /**
+  /** WIP
    * @description Retrieves a node based on the supplied `id` and draws an auxilarly Role Annotation
    * based on the supplied `role`.
    *
    * @kind function
-   * @name labelsSetRole
+   * @name labelsSetData
    *
    * @param {Object} options Should include a Figma node `id` and the `role` to be set.
    *
    * @returns {null}
    */
-  labelsSetRole(
+  labelsSetData(
+    key: 'role' | 'labels',
     options: {
       id: string,
-      role: PluginLabelRoles,
+      labels?: PluginLabelsNames,
+      role?: PluginLabelRoles,
     },
   ) {
-    const { id, role } = options;
+    const { id } = options;
     const node: BaseNode = figma.getNodeById(id);
 
     if (node) {
       // retrieve the node data
       const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.labelNodeData) || null);
       if (nodeData) {
-        nodeData.role = role;
+        nodeData[key] = options[key];
         node.setPluginData(
           DATA_KEYS.labelNodeData,
           JSON.stringify(nodeData),
@@ -1734,13 +1757,13 @@ export default class App {
     );
 
     // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
-    refreshAnnotations(
+    const refreshOptions = {
       trackingData,
       page,
       messenger,
       isMercadoMode,
-      nodeType,
-    );
+    };
+    refreshAnnotations(nodeType, refreshOptions);
 
     // iterate through each node in a selection
     const selectedNodes: Array<SceneNode> = selection;
@@ -1751,21 +1774,25 @@ export default class App {
     // look for nodes/annotations that no longer match their topFrame and repair
     // (this happens when copying a top-frame)
     topFrameNodes.forEach((topFrame: FrameNode) => {
-      repairBrokenLinks(
-        topFrame,
-        trackingData,
-        page,
-        messenger,
+      const repairOptions = {
         isMercadoMode,
-        nodeType,
-      );
+        frameNode: topFrame,
+        messenger,
+        page,
+        trackingData,
+      };
+      repairBrokenLinks(nodeType, repairOptions);
     });
 
     // specific to `a11y-keyboard` and `a11y-labels`
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
-        const stopNodes: Array<SceneNode> = getStopNodes(nodeType, topFrame, trackingData);
+        const getStopOptions = {
+          frameNode: topFrame,
+          resetData: false,
+        };
+        const stopNodes: Array<SceneNode> = getStopNodes(nodeType, getStopOptions);
         stopNodes.forEach(stopNode => nodes.push(stopNode));
       });
 
