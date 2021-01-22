@@ -1622,31 +1622,33 @@ export default class App {
     return null;
   }
 
-  /**
+  /** WIP
    * @description Retrieves a node based on the supplied `id` and draws an auxilarly Role Annotation
    * based on the supplied `role`.
    *
    * @kind function
-   * @name labelsSetRole
+   * @name labelsSetData
    *
    * @param {Object} options Should include a Figma node `id` and the `role` to be set.
    *
    * @returns {null}
    */
-  labelsSetRole(
+  labelsSetData(
+    key: 'role' | 'labels',
     options: {
       id: string,
-      role: PluginLabelRoles,
+      labels?: PluginLabelsNames,
+      role?: PluginLabelRoles,
     },
   ) {
-    const { id, role } = options;
+    const { id } = options;
     const node: BaseNode = figma.getNodeById(id);
 
     if (node) {
       // retrieve the node data
       const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.labelNodeData) || null);
       if (nodeData) {
-        nodeData.role = role;
+        nodeData[key] = options[key];
         node.setPluginData(
           DATA_KEYS.labelNodeData,
           JSON.stringify(nodeData),

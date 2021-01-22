@@ -173,23 +173,16 @@
 
   const updateLabel = (newLabels, key) => {
     if (originalLabels[key] !== newLabels[key]) {
-      // const oldLabel = originalLabels[key];
-      // originalLabels[key] = dirtyLabels[key];
-      // labels[key] = dirtyLabels[key];
-
-      console.log(`update label “${key}” from '${originalLabels[key]}' to '${newLabels[key]}'`); // eslint-disable-line no-console
-      // tktk: postMessage to update label(s) - probably all, since it accounts for initial setting
-
-      // parent.postMessage({
-      //   pluginMessage: {
-      //     action: `${type}-set-role`,
-      //     payload: {
-      //       id: itemId,
-      //       role: dirtyLabels,
-      //     },
-      //   },
-      // }, '*');
-      // handleReset();
+      parent.postMessage({
+        pluginMessage: {
+          action: `${type}-set-text`,
+          payload: {
+            id: itemId,
+            labels: newLabels,
+          },
+        },
+      }, '*');
+      handleReset();
     }
   };
 
