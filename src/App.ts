@@ -219,7 +219,7 @@ const repairBrokenLinks = (
             });
 
             // re-draw the annotation
-            const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+            const painterResult = painter.addStop(nodeType);
             messenger.handleResult(painterResult, true);
           }
         }
@@ -486,7 +486,7 @@ const refreshAnnotations = (
       });
 
       // re-draw the annotation
-      const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+      const painterResult = painter.addStop(nodeType);
       messenger.handleResult(painterResult, true);
 
       if (painterResult.status === 'error') {
@@ -1060,7 +1060,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+          paintResult = painter.addStop(nodeType);
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
