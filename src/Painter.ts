@@ -2163,9 +2163,10 @@ export default class Painter {
     return result;
   }
 
-  /** WIP
-   * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
-   * available (`annotationText` and potential `keys` for auxilary annotations).
+  /**
+   * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
+   * be available (`annotationText`, `labels`, and potential `keys` for auxilary annotations).
+   * Note: the `labels` and Label annotation portions are WIP.
    *
    * @kind function
    * @name addStop
@@ -2236,7 +2237,8 @@ export default class Painter {
     const positionResult = crawler.position();
     const relativePosition = positionResult.payload;
 
-    // group and position the base annotation elements
+    // ---------- group and position the base annotation elements
+    // set up `nodePosition` based on `frame` and `relativePosition` from `Crawler`
     const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -2246,6 +2248,7 @@ export default class Painter {
       y: relativePosition.y,
     };
 
+    // position the base annotation on the artboard
     const baseAnnotationNode = positionAnnotation(
       this.frame,
       annotationName,
@@ -2253,10 +2256,10 @@ export default class Painter {
       nodePosition,
       'keystop',
     );
-
     const initialX = baseAnnotationNode.x;
     const initialY = baseAnnotationNode.y;
 
+    // if applicable, add auxilary annotations (currently `keys`)
     let annotationNode: FrameNode = baseAnnotationNode;
     if (auxAnnotations.length > 0) {
       annotationNode = figma.createFrame();
@@ -2280,7 +2283,7 @@ export default class Painter {
       annotationNode.y = initialY;
     }
 
-    // set it in the correct containers
+    // set the annotation frame(s) into the correct container group layers in Figma
     setNodeInContainers({
       node: annotationNode,
       frame: this.frame,
@@ -2289,6 +2292,8 @@ export default class Painter {
     });
 
     // ---------- set node tracking data
+    // node tracking data is used for diffing changes to the source nodes and re-drawing or
+    // removing annotations as necessary
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
       annotationId: annotationNode.id,
