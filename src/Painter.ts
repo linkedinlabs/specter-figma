@@ -2222,7 +2222,7 @@ export default class Painter {
       type: annotationType,
     });
 
-    // set individual key annotations for keystops
+    // set individual `keys` annotations for keystops
     const auxAnnotations: Array<FrameNode> = [];
     if (nodeData.keys && nodeData.keys.length > 0) {
       nodeData.keys.forEach((keyEntry) => {
@@ -2254,7 +2254,7 @@ export default class Painter {
       annotationName,
       annotationBundle,
       nodePosition,
-      'keystop',
+      'keystop', // tktk - hardcoded to keystop for now
     );
     const initialX = baseAnnotationNode.x;
     const initialY = baseAnnotationNode.y;
@@ -2303,9 +2303,13 @@ export default class Painter {
       nodePosition,
     };
 
+    // set data types
+    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+    const linkIdDataType = nodeType === 'keystop' ? DATA_KEYS.keystopLinkId : DATA_KEYS.labelLinkId;
+
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS.keystopAnnotations) || null,
+      this.page.getPluginData(annotationsDataType) || null,
     );
     let trackingData: Array<PluginNodeTrackingData> = [];
     if (trackingDataRaw) {
@@ -2322,7 +2326,7 @@ export default class Painter {
 
     // commit the `trackingData` update
     this.page.setPluginData(
-      DATA_KEYS.keystopAnnotations,
+      annotationsDataType,
       JSON.stringify(trackingData),
     );
 
@@ -2332,7 +2336,7 @@ export default class Painter {
       role: 'node',
     };
     this.node.setPluginData(
-      DATA_KEYS.keystopLinkId,
+      linkIdDataType,
       JSON.stringify(nodeLinkData),
     );
 
@@ -2342,7 +2346,7 @@ export default class Painter {
       role: 'annotation',
     };
     annotationNode.setPluginData(
-      DATA_KEYS.keystopLinkId,
+      linkIdDataType,
       JSON.stringify(annotatedLinkData),
     );
 
