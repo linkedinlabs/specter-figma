@@ -536,19 +536,19 @@ const refreshAnnotations = (
   return null;
 };
 
-/** WIP
- * @description Takes a node and locates its current Keystop data (position and keys), if
- * it exists. The data is located through the node’s top-level frame. Returns an object
- * formatted to pass along to the UI.
+/**
+ * @description Compares current tracking data for Keystop and Label nodes against the nodes
+ * themselves. If the nodes have changed size/position, we update the node’s corresponding
+ * annotation. If the node has not changed, but its annotation is missing, we re-paint it.
  *
  * @kind function
  * @name diffChanges
  *
- * @param {Object} node A SceneNode to check for Keystop data.
+ * @param {string} nodeType The type of annotations to diff. Currently: `keystop` or `label`.
+ * @param {Object} options An options bundle that contains the current `selection`, current `page`,
+ * an initiated `messenger`, and the `isMercadoMode` boolean.
  *
- * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
- * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
- * if they exist.
+ * @returns {null}
  */
 const diffChanges = (
   nodeType: 'keystop' | 'label',
@@ -600,6 +600,8 @@ const diffChanges = (
     };
     repairBrokenLinks(nodeType, repairOptions);
   });
+
+  return null;
 };
 
 /** WIP
@@ -1802,7 +1804,8 @@ export default class App {
         return null;
     }
 
-    // ---------- track and re-draw annotations for nodes that have moved/changed
+    // ---------- track and re-draw annotations for nodes that have moved/changed/damaged
+    // currently we only track/repair for Labels and Keystops
     const diffChangesFor: Array<'keystop' | 'label'> = ['keystop', 'label'];
     const diffChangesOptions = {
       isMercadoMode,
