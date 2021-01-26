@@ -328,6 +328,125 @@ const buildKeystopArrowIcon = (
 };
 
 /**
+ * @description Builds the initial text element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on the `type`.
+ *
+ * @kind function
+ * @name buildText
+ *
+ * @param {string} type The type of annotation the text will be used in.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {string} characters The text that will be set to the node.
+ *
+ * @returns {Object} The text TextNode.
+ *
+ * @private
+ */
+const buildText = (
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'label'
+    | 'spacing'
+    | 'style',
+  color: { r: number, g: number, b: number },
+  characters: string,
+): TextNode => {
+  // create empty text node
+  const text: TextNode = figma.createText();
+
+  // detect/retrieve last-loaded typeface
+  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+
+  // style text node
+  text.fontName = typefaceToUse;
+  text.fontSize = 12;
+  text.lineHeight = { value: 125, unit: 'PERCENT' };
+  text.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // set auto-layout
+  text.layoutAlign = 'INHERIT';
+  text.layoutGrow = 0;
+
+  // set text – cannot do this before defining `fontName`
+  text.characters = characters;
+
+  // position the text in the frame
+  text.textAlignVertical = 'CENTER';
+  text.textAlignHorizontal = 'CENTER';
+  text.textAutoResize = 'WIDTH_AND_HEIGHT';
+
+  // ------- update text for certain annotations
+  if (type === 'keystop') {
+    text.fontSize = 14;
+    text.textAlignHorizontal = 'LEFT';
+    text.textAutoResize = 'WIDTH_AND_HEIGHT';
+    text.layoutAlign = 'INHERIT';
+  } else if (type === 'label') {
+    text.fontSize = 18;
+    text.lineHeight = { value: 100, unit: 'PERCENT' };
+  }
+
+  return text;
+};
+
+/**
+ * @description Builds an inner rectangle element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on `align`.
+ *
+ * @kind function
+ * @name buildRectangleInnerHalf
+ *
+ * @param {string} align Whether the frame style should be for left or right alignment.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ *
+ * @returns {Object} The rectangle FrameNode.
+ *
+ * @private
+ */
+const buildRectangleInnerHalf = (
+  align: 'left' | 'right',
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  // set inner half frames for label annotation
+  const frame: FrameNode = figma.createFrame();
+  frame.name = `${align.charAt(0).toUpperCase()}${align.slice(1)} Half`;
+
+  // auto-layout
+  frame.layoutMode = 'HORIZONTAL';
+  frame.primaryAxisSizingMode = 'AUTO';
+  frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  frame.counterAxisSizingMode = 'FIXED';
+  frame.counterAxisAlignItems = 'CENTER';
+  frame.layoutAlign = 'STRETCH';
+  frame.layoutGrow = 0;
+
+  // set padding and item spacing
+  const paddingPx = align === 'left' ? 6 : 8;
+  frame.paddingLeft = paddingPx;
+  frame.paddingRight = paddingPx;
+  frame.paddingTop = 2;
+  frame.paddingBottom = 2;
+  frame.itemSpacing = 0;
+  frame.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  if (align === 'right') {
+    // set rounded corners of the rectangle
+    frame.topRightRadius = 3;
+    frame.bottomRightRadius = 3;
+  }
+  return frame;
+};
+
+/**
  * @description Builds the initial recntangle element in Figma and sets auto-layout
  * and constraint properties. Tweaks are made based on the `type`.
  *
@@ -336,6 +455,7 @@ const buildKeystopArrowIcon = (
  *
  * @param {string} type The type of annotation the rectange will be used in.
  * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {Object} innerText An optional string to accept inner rectangle text for labels.
  *
  * @returns {Object} The rectangle FrameNode.
  *
@@ -347,9 +467,11 @@ const buildRectangle = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
+  innerText?: string,
 ): FrameNode => {
   // build base rectangle (used for most annotations)
   const rectangle: FrameNode = figma.createFrame();
@@ -389,12 +511,9 @@ const buildRectangle = (
     rectangle.paddingRight = 3;
     rectangle.paddingTop = 0.5;
     rectangle.paddingBottom = 2;
-  }
-
-  // ------- update rectangle for keystop annotations
-  if (type === 'keystop') {
+  } else if (type === 'keystop') {
+    // ------- update rectangle for keystop annotations
     rectangle.layoutMode = 'VERTICAL';
-
     rectangle.primaryAxisSizingMode = 'AUTO';
     rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
     rectangle.counterAxisSizingMode = 'FIXED';
@@ -408,73 +527,25 @@ const buildRectangle = (
     rectangle.itemSpacing = 1;
     rectangle.cornerRadius = 4;
     // rectangle.resize(42, 35);
-  }
+  } else if (type === 'label') {
+    rectangle.paddingLeft = 0;
+    rectangle.paddingRight = 2;
+    rectangle.paddingTop = 2;
+    rectangle.paddingBottom = 2;
+    rectangle.cornerRadius = 4;
 
+    // ----- set up inner halves content
+    const rectLeft: FrameNode = buildRectangleInnerHalf('left', { r: 0.4, g: 0.6, b: 0.8 });
+    const rectRight: FrameNode = buildRectangleInnerHalf('right', { r: 1, g: 1, b: 1 });
+    const textLeft: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), 'L');
+    const textRight: TextNode = buildText(type, hexToDecimalRgb('#000000'), innerText);
+
+    rectLeft.appendChild(textLeft);
+    rectRight.appendChild(textRight);
+    rectangle.appendChild(rectLeft);
+    rectangle.appendChild(rectRight);
+  }
   return rectangle;
-};
-
-/**
- * @description Builds the initial text element in Figma and sets auto-layout
- * and constraint properties. Tweaks are made based on the `type`.
- *
- * @kind function
- * @name buildText
- *
- * @param {string} type The type of annotation the text will be used in.
- * @param {Object} color An object representing a color in RGB decimal notation.
- * @param {string} characters The text that will be set to the node.
- *
- * @returns {Object} The text TextNode.
- *
- * @private
- */
-const buildText = (
-  type:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'spacing'
-    | 'style',
-  color: { r: number, g: number, b: number },
-  characters: string,
-): TextNode => {
-  // create empty text node
-  const text: TextNode = figma.createText();
-
-  // detect/retrieve last-loaded typeface
-  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
-
-  // style text node
-  text.fontName = typefaceToUse;
-  text.fontSize = 12;
-  text.lineHeight = { value: 125, unit: 'PERCENT' };
-  text.fills = [{
-    type: 'SOLID',
-    color,
-  }];
-
-  // set auto-layout
-  text.layoutAlign = 'INHERIT';
-  text.layoutGrow = 0;
-
-  // set text – cannot do this before defining `fontName`
-  text.characters = characters;
-
-  // position the text in the frame
-  text.textAlignVertical = 'CENTER';
-  text.textAlignHorizontal = 'CENTER';
-  text.textAutoResize = 'WIDTH_AND_HEIGHT';
-
-  // ------- update text for keystop annotations
-  if (type === 'keystop') {
-    text.fontSize = 14;
-    text.textAlignHorizontal = 'LEFT';
-    text.textAutoResize = 'WIDTH_AND_HEIGHT';
-    text.layoutAlign = 'INHERIT';
-  }
-
-  return text;
 };
 
 /**
@@ -501,13 +572,14 @@ const buildAnnotation = (options: {
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
     | 'spacing'
     | 'style',
 }): {
   diamond: PolygonNode,
   rectangle: FrameNode,
   text: TextNode,
-  icon: FrameNode,
+  icon: FrameNode
 } => {
   const { mainText, secondaryText, type } = options;
 
@@ -515,8 +587,15 @@ const buildAnnotation = (options: {
   const colorHex: string = COLORS[type];
 
   let setText: string = mainText;
+  let innerText: string = '';
   if (secondaryText) {
     setText = `${mainText}\n${secondaryText}`;
+  }
+
+  if (type === 'label') {
+    // clear the direct child text and set inner text value for rectangle
+    innerText = setText;
+    setText = '';
   }
 
   let isMeasurement: boolean = false;
@@ -532,7 +611,7 @@ const buildAnnotation = (options: {
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle with auto-layout properties
-  const rectangle: FrameNode = buildRectangle(type, color);
+  const rectangle: FrameNode = buildRectangle(type, color, innerText);
 
   // build the dangling diamond
   const diamond: PolygonNode = figma.createPolygon();
@@ -550,7 +629,7 @@ const buildAnnotation = (options: {
   }];
 
   // create text node
-  const text: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), setText);
+  const text: TextNode = setText ? buildText(type, hexToDecimalRgb('#ffffff'), setText) : null;
 
   // create icon
   let icon: FrameNode = null;
@@ -754,8 +833,8 @@ const positionAnnotation = (
   annotation: {
     diamond: PolygonNode,
     rectangle: FrameNode,
-    text: TextNode,
-    icon: FrameNode,
+    text?: TextNode,
+    icon: FrameNode
   },
   nodePosition: {
     frameWidth: number,
@@ -770,6 +849,7 @@ const positionAnnotation = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
     | 'spacing'
     | 'style' = 'component',
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
@@ -2343,6 +2423,7 @@ export default class Painter {
   }
 
   /** WIP
+   *
    * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
    * available (`annotationText` and potential `keys` for auxilary annotations).
    *
@@ -2385,10 +2466,22 @@ export default class Painter {
       return result;
     }
 
+    // convert order number into letter-based ordering
+    // tktk: move to tools and import
+    function numberToLetters(num) {
+      let number = num;
+      let letters = '';
+      while (number >= 0) {
+        letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[number % 26] + letters;
+        number = Math.floor(num / 26) - 1;
+      }
+      return letters;
+    }
+
     // set up some information
-    const { annotationText } = nodeData;
-    const annotationType: 'keystop' = 'keystop';
-    const annotationName = `Keystop for ${this.node.name}`;
+    const annotationText = numberToLetters(+nodeData.annotationText);
+    const annotationType: 'label' = 'label';
+    const annotationName = `Label for ${this.node.name}`;
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({
@@ -2426,7 +2519,7 @@ export default class Painter {
       annotationName,
       annotationBundle,
       nodePosition,
-      'keystop',
+      'label',
     );
 
     // const initialX = baseAnnotationNode.x;
