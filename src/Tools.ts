@@ -891,6 +891,25 @@ const toSentenceCase = (anyString: string): string => {
   return titleCaseString;
 };
 
+/**
+ * @description Takes a number and converts it to a letter(s) representation for labels.
+ *
+ * @kind function
+ * @name toSentenceCase
+ * @param {number} num The order number of the annotation.
+ *
+ * @returns {string} The letter version of that number.
+ */
+const numberToLetters = (num) => {
+  let number = num - 1;
+  let letters = '';
+  while (number >= 0) {
+    letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[number % 26] + letters;
+    number = Math.floor(num / 26) - 1;
+  }
+  return letters;
+};
+
 export {
   asyncForEach,
   awaitUIReadiness,
@@ -915,4 +934,5 @@ export {
   toSentenceCase,
   updateArray,
   updateNestedArray,
+  numberToLetters,
 };

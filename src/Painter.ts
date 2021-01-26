@@ -6,6 +6,7 @@ import {
   isInternal,
   updateArray,
   updateNestedArray,
+  numberToLetters,
 } from './Tools';
 import {
   COLORS,
@@ -2464,18 +2465,6 @@ export default class Painter {
       result.messages.log = 'Selection not on frame';
       result.messages.toast = 'Your selection needs to be in an outer frame';
       return result;
-    }
-
-    // convert order number into letter-based ordering
-    // tktk: move to tools and import
-    function numberToLetters(num) {
-      let number = num;
-      let letters = '';
-      while (number >= 0) {
-        letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[number % 26] + letters;
-        number = Math.floor(num / 26) - 1;
-      }
-      return letters;
     }
 
     // set up some information
