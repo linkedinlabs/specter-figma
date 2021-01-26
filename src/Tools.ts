@@ -901,13 +901,16 @@ const toSentenceCase = (anyString: string): string => {
  * @returns {string} The letter version of that number.
  */
 const numberToLetters = (num) => {
-  let number = num - 1;
+  let number = num;
   let letters = '';
-  while (number >= 0) {
-    letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[number % 26] + letters;
-    number = Math.floor(num / 26) - 1;
+  let counter;
+
+  while (number > 0) {
+    counter = (number - 1) % 26;
+    letters = String.fromCharCode(65 + counter) + letters;
+    number = Math.floor((number - counter) / 26);
   }
-  return letters;
+  return letters || undefined;
 };
 
 export {
