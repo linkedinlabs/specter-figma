@@ -391,6 +391,7 @@ const buildText = (
   } else if (type === 'label') {
     text.fontSize = 18;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
+    text.textCase = 'UPPER';
   }
 
   return text;
@@ -580,7 +581,7 @@ const buildAnnotation = (options: {
   diamond: PolygonNode,
   rectangle: FrameNode,
   text: TextNode,
-  icon: FrameNode
+  icon: FrameNode,
 } => {
   const { mainText, secondaryText, type } = options;
 
