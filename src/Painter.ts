@@ -6,7 +6,6 @@ import {
   isInternal,
   updateArray,
   updateNestedArray,
-  numberToLetters,
 } from './Tools';
 import {
   COLORS,
@@ -2256,7 +2255,11 @@ export default class Painter {
    *
    * @returns {undefined}
    */
-  setTrackingData(annotationNode, nodePosition, type) {
+  setTrackingData(
+    annotationNode,
+    nodePosition,
+    nodeType,
+  ) {
     // ---------- set node tracking data
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
@@ -2267,9 +2270,13 @@ export default class Painter {
       nodePosition,
     };
 
+    // set data types
+    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+    const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
+
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null,
+      this.page.getPluginData(annotationsDataType) || null,
     );
     let trackingData: Array<PluginNodeTrackingData> = [];
     if (trackingDataRaw) {
@@ -2286,7 +2293,7 @@ export default class Painter {
 
     // commit the `trackingData` update
     this.page.setPluginData(
-      DATA_KEYS[`${type}Annotations`],
+      annotationsDataType,
       JSON.stringify(trackingData),
     );
 
@@ -2296,7 +2303,7 @@ export default class Painter {
       role: 'node',
     };
     this.node.setPluginData(
-      DATA_KEYS[`${type}LinkId`],
+      linkIdDataType,
       JSON.stringify(nodeLinkData),
     );
 
@@ -2306,22 +2313,22 @@ export default class Painter {
       role: 'annotation',
     };
     annotationNode.setPluginData(
-      DATA_KEYS[`${type}LinkId`],
+      linkIdDataType,
       JSON.stringify(annotatedLinkData),
     );
   }
 
-
   /**
-   * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
-   * available (`annotationText` and potential `keys` for auxilary annotations).
+   * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
+   * be available (`annotationText`, `labels`, and potential `keys` for auxilary annotations).
+   * Note: the `labels` and Label annotation portions are WIP.
    *
    * @kind function
-   * @name addKeystop
+   * @name addStop
    *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
-  addKeystop() {
+  addStop(nodeType: 'keystop' | 'label') {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -2336,10 +2343,11 @@ export default class Painter {
       },
     };
 
-    result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
+    result.messages.log = `Draw the ${nodeType} stop annotation for “${this.node.name}”`;
 
     // retrieve the node data with our annotation text
-    const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
+    const nodeData = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
     if (!nodeData || (nodeData && !nodeData.annotationText)) {
       result.status = 'error';
@@ -2357,16 +2365,17 @@ export default class Painter {
 
     // set up some information
     const { annotationText } = nodeData;
-    const annotationType: 'keystop' = 'keystop';
-    const annotationName = `Keystop for ${this.node.name}`;
+    const typeCapitalized = nodeType.charAt(0).toUpperCase() + nodeType.slice;
+    const annotationName = `${typeCapitalized} for ${this.node.name}`;
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({
       mainText: annotationText,
       secondaryText: null,
-      type: annotationType,
+      type: nodeType,
     });
 
+    // set individual `keys` annotations for keystops
     const auxAnnotations: Array<FrameNode> = [];
     if (nodeData.keys && nodeData.keys.length > 0) {
       nodeData.keys.forEach((keyEntry) => {
@@ -2381,7 +2390,8 @@ export default class Painter {
     const positionResult = crawler.position();
     const relativePosition = positionResult.payload;
 
-    // group and position the base annotation elements
+    // ---------- group and position the base annotation elements
+    // set up `nodePosition` based on `frame` and `relativePosition` from `Crawler`
     const nodePosition: PluginNodePosition = {
       frameWidth: this.frame.width,
       frameHeight: this.frame.height,
@@ -2391,19 +2401,20 @@ export default class Painter {
       y: relativePosition.y,
     };
 
+    // position the base annotation on the artboard
     const baseAnnotationNode = positionAnnotation(
       this.frame,
       annotationName,
       annotationBundle,
       nodePosition,
-      'keystop',
+      nodeType,
     );
-
     const initialX = baseAnnotationNode.x;
     const initialY = baseAnnotationNode.y;
 
+    // if applicable, add auxilary annotations (currently `keys`)
     let annotationNode: FrameNode = baseAnnotationNode;
-    if (auxAnnotations.length) {
+    if (auxAnnotations.length > 0) {
       annotationNode = figma.createFrame();
       annotationNode.clipsContent = false;
       annotationNode.layoutMode = 'HORIZONTAL';
@@ -2425,115 +2436,124 @@ export default class Painter {
       annotationNode.y = initialY;
     }
 
-    // set it in the correct containers
+    // set the annotation frame(s) into the correct container group layers in Figma
     setNodeInContainers({
       node: annotationNode,
       frame: this.frame,
       page: this.page,
-      type: 'keystop',
+      type: nodeType as 'boundingBox'
+    | 'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'spacing'
+    | 'style',
     });
 
-    this.setTrackingData(annotationNode, nodePosition, 'keystop');
-
-    // return a successful result
-    result.status = 'success';
-    return result;
-  }
-
-  /**
-   *
-   * @description Builds a Label Annotation in Figma. Expects label node data to be
-   * available (`annotationText`).
-   *
-   * @kind function
-   * @name addLabel
-   *
-   * @returns {Object} A result object container success/error status and log/toast messages.
-   */
-  addLabel() {
-    const result: {
-      status: 'error' | 'success',
-      messages: {
-        toast: string,
-        log: string,
-      },
-    } = {
-      status: null,
-      messages: {
-        toast: null,
-        log: null,
-      },
-    };
-
-    result.messages.log = `Draw the label annotation for “${this.node.name}”`;
-
-    // retrieve the node data with our annotation text
-    const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
-
-    if (!nodeData || (nodeData && !nodeData.annotationText)) {
-      result.status = 'error';
-      result.messages.log = 'Node missing annotationText';
-      return result;
-    }
-
-    // return an error if the selection is not placed in a frame
-    if (!this.frame || (this.frame.id === this.node.id)) {
-      result.status = 'error';
-      result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be in an outer frame';
-      return result;
-    }
-
-    // set up some information
-    const annotationText = numberToLetters(parseInt(nodeData.annotationText, 10));
-    const annotationName = `Label for ${this.node.name}`;
-
-    // construct the base annotation elements
-    const annotationBundle = buildAnnotation({
-      mainText: annotationText,
-      secondaryText: null,
-      type: 'label',
-    });
-
-    // grab the position from crawler
-    const crawler = new Crawler({ for: [this.node] });
-    const positionResult = crawler.position();
-    const relativePosition = positionResult.payload;
-
-    // group and position the base annotation elements
-    const nodePosition: PluginNodePosition = {
-      frameWidth: this.frame.width,
-      frameHeight: this.frame.height,
-      width: relativePosition.width,
-      height: relativePosition.height,
-      x: relativePosition.x,
-      y: relativePosition.y,
-    };
-
-    const baseAnnotationNode = positionAnnotation(
-      this.frame,
-      annotationName,
-      annotationBundle,
-      nodePosition,
-      'label',
-    );
-
-    const annotationNode: FrameNode = baseAnnotationNode;
-
-    // set it in the correct containers
-    setNodeInContainers({
-      node: annotationNode,
-      frame: this.frame,
-      page: this.page,
-      type: 'keystop',
-    });
-
+    // ---------- set node tracking data
+    // node tracking data is used for diffing changes to the source nodes and re-drawing or
+    // removing annotations as necessary
     this.setTrackingData(annotationNode, nodePosition, 'label');
 
     // return a successful result
     result.status = 'success';
     return result;
   }
+
+  // /**
+  //  *
+  //  * @description Builds a Label Annotation in Figma. Expects label node data to be
+  //  * available (`annotationText`).
+  //  *
+  //  * @kind function
+  //  * @name addLabel
+  //  *
+  //  * @returns {Object} A result object container success/error status and log/toast messages.
+  //  */
+  // addLabel() {
+  //   const result: {
+  //     status: 'error' | 'success',
+  //     messages: {
+  //       toast: string,
+  //       log: string,
+  //     },
+  //   } = {
+  //     status: null,
+  //     messages: {
+  //       toast: null,
+  //       log: null,
+  //     },
+  //   };
+
+  //   result.messages.log = `Draw the label annotation for “${this.node.name}”`;
+
+  //   // retrieve the node data with our annotation text
+  //   const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
+
+  //   if (!nodeData || (nodeData && !nodeData.annotationText)) {
+  //     result.status = 'error';
+  //     result.messages.log = 'Node missing annotationText';
+  //     return result;
+  //   }
+
+  //   // return an error if the selection is not placed in a frame
+  //   if (!this.frame || (this.frame.id === this.node.id)) {
+  //     result.status = 'error';
+  //     result.messages.log = 'Selection not on frame';
+  //     result.messages.toast = 'Your selection needs to be in an outer frame';
+  //     return result;
+  //   }
+
+  //   // set up some information
+  //   const annotationText = numberToLetters(parseInt(nodeData.annotationText, 10));
+  //   const annotationName = `Label for ${this.node.name}`;
+
+  //   // construct the base annotation elements
+  //   const annotationBundle = buildAnnotation({
+  //     mainText: annotationText,
+  //     secondaryText: null,
+  //     type: 'label',
+  //   });
+
+  //   // grab the position from crawler
+  //   const crawler = new Crawler({ for: [this.node] });
+  //   const positionResult = crawler.position();
+  //   const relativePosition = positionResult.payload;
+
+  //   // group and position the base annotation elements
+  //   const nodePosition: PluginNodePosition = {
+  //     frameWidth: this.frame.width,
+  //     frameHeight: this.frame.height,
+  //     width: relativePosition.width,
+  //     height: relativePosition.height,
+  //     x: relativePosition.x,
+  //     y: relativePosition.y,
+  //   };
+
+  //   const baseAnnotationNode = positionAnnotation(
+  //     this.frame,
+  //     annotationName,
+  //     annotationBundle,
+  //     nodePosition,
+  //     'label',
+  //   );
+
+  //   const annotationNode: FrameNode = baseAnnotationNode;
+
+  //   // set it in the correct containers
+  //   setNodeInContainers({
+  //     node: annotationNode,
+  //     frame: this.frame,
+  //     page: this.page,
+  //     type: 'keystop',
+  //   });
+
+  //   this.setTrackingData(annotationNode, nodePosition, 'label');
+
+  //   // return a successful result
+  //   result.status = 'success';
+  //   return result;
+  // }
 
   /**
    * @description Takes a `spacingPosition` object and creates a spacing measurement annotation

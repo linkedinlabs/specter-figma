@@ -106,9 +106,9 @@ const repairBrokenLinks = (
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
 
-  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-  const linkIdDataType = nodeType === 'keystop' ? DATA_KEYS.keystopLinkId : DATA_KEYS.labelLinkId;
-  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+  const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
+  const listDataType = DATA_KEYS[`${nodeType}List`];
   const list: Array<{
     id: string,
     position: number,
@@ -207,7 +207,7 @@ const repairBrokenLinks = (
           });
 
           // get/set the stop info
-          const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
+          const identifierResult = identifier.getSetStop(nodeType);
           messenger.handleResult(identifierResult, true);
 
           if (identifierResult.status === 'success') {
@@ -219,7 +219,7 @@ const repairBrokenLinks = (
             });
 
             // re-draw the annotation
-            const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+            const painterResult = painter.addStop(nodeType);
             messenger.handleResult(painterResult, true);
           }
         }
@@ -261,8 +261,8 @@ const refreshAnnotations = (
   } = options;
 
   // set data keys
-  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+  const listDataType = DATA_KEYS[`${nodeType}List`];
 
   // removes a node, if it exists
   const removeNode = (nodeId: string) => {
@@ -328,7 +328,7 @@ const refreshAnnotations = (
               });
 
               // get/set the stop info
-              const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop(updatedEntry.position) : identifier.getSetLabel(updatedEntry.position);
+              const identifierResult = identifier.getSetStop(nodeType, updatedEntry.position);
               messenger.handleResult(identifierResult, true);
 
               if (identifierResult.status === 'success') {
@@ -438,7 +438,7 @@ const refreshAnnotations = (
         });
 
         // get/set the stop info
-        const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
+        const identifierResult = identifier.getSetStop(nodeType);
 
         if (identifierResult.status === 'success') {
           // flag node for repainting
@@ -486,7 +486,7 @@ const refreshAnnotations = (
       });
 
       // re-draw the annotation
-      const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+      const painterResult = painter.addStop(nodeType);
       messenger.handleResult(painterResult, true);
 
       if (painterResult.status === 'error') {
@@ -536,6 +536,74 @@ const refreshAnnotations = (
   return null;
 };
 
+/**
+ * @description Compares current tracking data for Keystop and Label nodes against the nodes
+ * themselves. If the nodes have changed size/position, we update the node’s corresponding
+ * annotation. If the node has not changed, but its annotation is missing, we re-paint it.
+ *
+ * @kind function
+ * @name diffChanges
+ *
+ * @param {string} nodeType The type of annotations to diff. Currently: `keystop` or `label`.
+ * @param {Object} options An options bundle that contains the current `selection`, current `page`,
+ * an initiated `messenger`, and the `isMercadoMode` boolean.
+ *
+ * @returns {null}
+ */
+const diffChanges = (
+  nodeType: 'keystop' | 'label',
+  options: {
+    isMercadoMode: boolean,
+    messenger: any,
+    page: PageNode,
+    selection: Array<any>,
+  },
+) => {
+  const {
+    isMercadoMode,
+    messenger,
+    page,
+    selection,
+  } = options;
+
+  // grab tracking data for the page (currently Keystops/Labels)
+  // tktk - fragile setting of `nodeType`
+  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+  const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+    page.getPluginData(annotationsDataType) || '[]',
+  );
+
+  // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
+  const refreshOptions = {
+    trackingData,
+    page,
+    messenger,
+    isMercadoMode,
+  };
+  refreshAnnotations(nodeType, refreshOptions);
+
+  // iterate through each node in a selection
+  const selectedNodes: Array<SceneNode> = selection;
+  // determine topFrames involved in the current selection
+  const crawlerForSelected = new Crawler({ for: selectedNodes });
+  const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
+  // look for nodes/annotations that no longer match their topFrame and repair
+  // (this happens when copying a top-frame)
+  topFrameNodes.forEach((topFrame: FrameNode) => {
+    const repairOptions = {
+      isMercadoMode,
+      frameNode: topFrame,
+      messenger,
+      page,
+      trackingData,
+    };
+    repairBrokenLinks(nodeType, repairOptions);
+  });
+
+  return null;
+};
+
 /** WIP
  * @description Takes a frame node and uses its list data to create an array of nodes that
  * currently have Keystop Annotations. The `trackingData` is used in case the list is stale
@@ -563,7 +631,7 @@ const getStopNodes = (
     resetData,
   } = options;
   const nodes: Array<SceneNode> = [];
-  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const listDataType = DATA_KEYS[`${nodeType}List`];
 
   // grab (or initialize) keystop list for the top frame
   const listData = JSON.parse(frameNode.getPluginData(listDataType) || null);
@@ -636,7 +704,7 @@ const getStopData = (
   };
 
   // find data for selected node
-  const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+  const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
   const nodeData = JSON.parse(node.getPluginData(nodeDataType) || null);
   if (nodeData) {
     // set keys
@@ -664,7 +732,7 @@ const getStopData = (
   if (topFrame) {
     // read keystop list data from top frame
     const itemIndex = 0;
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const listDataType = DATA_KEYS[`${nodeType}List`];
     const stopList = JSON.parse(topFrame.getPluginData(listDataType) || null);
 
     if (stopList) {
@@ -945,7 +1013,7 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
 
     // need a selected node to annotate it
     if (
@@ -1060,7 +1128,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+          paintResult = painter.addStop(nodeType);
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
@@ -1074,7 +1142,7 @@ export default class App {
       };
 
       // get/set the stop info
-      const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
+      const identifierResult = identifier.getSetStop(nodeType);
 
       // read the response from Identifier; if it was unsuccessful, log and display the error
       if (identifierResult) {
@@ -1709,7 +1777,6 @@ export default class App {
 
     // retrieve existing options
     const options: PluginOptions = await getOptions();
-
     const {
       currentView,
       isInfo,
@@ -1737,8 +1804,26 @@ export default class App {
         return null;
     }
 
+    // ---------- track and re-draw annotations for nodes that have moved/changed/damaged
+    // currently we only track/repair for Labels and Keystops
+    const diffChangesFor: Array<'keystop' | 'label'> = ['keystop', 'label'];
+    const diffChangesOptions = {
+      isMercadoMode,
+      messenger,
+      page,
+      selection,
+    };
+    diffChangesFor.forEach(diffType => diffChanges(diffType, diffChangesOptions));
+
+    // ---------- set up selected items bundle for view
     const nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
+    const selectedNodes: Array<SceneNode> = selection;
+
+    // determine topFrames involved in the current selection
+    const crawlerForSelected = new Crawler({ for: selectedNodes });
+    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
     const items: Array<{
       id: string,
       name: string,
@@ -1748,44 +1833,10 @@ export default class App {
       keys?: Array<PluginKeystopKeys>,
     }> = [];
 
-    // grab tracking data for the page (currently Keystops/Labels)
-    // tktk - fragile setting of `nodeType`
-    const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
-    const annotationsDataType = currentView === 'a11y-keyboard' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(annotationsDataType) || '[]',
-    );
-
-    // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
-    const refreshOptions = {
-      trackingData,
-      page,
-      messenger,
-      isMercadoMode,
-    };
-    refreshAnnotations(nodeType, refreshOptions);
-
-    // iterate through each node in a selection
-    const selectedNodes: Array<SceneNode> = selection;
-    // determine topFrames involved in the current selection
-    const crawlerForSelected = new Crawler({ for: selectedNodes });
-    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
-
-    // look for nodes/annotations that no longer match their topFrame and repair
-    // (this happens when copying a top-frame)
-    topFrameNodes.forEach((topFrame: FrameNode) => {
-      const repairOptions = {
-        isMercadoMode,
-        frameNode: topFrame,
-        messenger,
-        page,
-        trackingData,
-      };
-      repairBrokenLinks(nodeType, repairOptions);
-    });
-
     // specific to `a11y-keyboard` and `a11y-labels`
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
+      const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
+
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const getStopOptions = {
@@ -1833,7 +1884,6 @@ export default class App {
         }
       });
 
-      // set up selected bundle
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
@@ -1890,7 +1940,7 @@ export default class App {
       },
     });
 
-    // commit the calculated size
+    // commit the calculated size (re-size the actual plugin frame)
     if (
       ((currentView !== 'a11y-keyboard') && (currentView !== 'a11y-labels'))
       || (((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) && items.length < 1)
@@ -1929,8 +1979,8 @@ export default class App {
       selection,
     } = assemble(figma);
     // set data types based on node type
-    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+    const listDataType = DATA_KEYS[`${nodeType}List`];
 
     // can’t do anything without nodes to manipulate
     if (!nodeId && selection.length < 1) {
@@ -2236,7 +2286,7 @@ export default class App {
     const nodeId: string = options.id;
 
     // set data type
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const listDataType = DATA_KEYS[`${nodeType}List`];
 
     // force the new position into a positive integer
     let newPosition: number = parseInt(options.position, 10);
