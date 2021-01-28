@@ -4,6 +4,7 @@ import {
   getNodeSettings,
   hexToDecimalRgb,
   isInternal,
+  numberToLetters,
   updateArray,
   updateNestedArray,
 } from './Tools';
@@ -2258,7 +2259,7 @@ export default class Painter {
   setTrackingData(
     annotationNode,
     nodePosition,
-    nodeType,
+    nodeType: 'keystop' | 'label',
   ) {
     // ---------- set node tracking data
     const linkId: string = uuid();
@@ -2364,9 +2365,14 @@ export default class Painter {
     }
 
     // set up some information
-    const { annotationText } = nodeData;
+    let { annotationText } = nodeData;
     const typeCapitalized = nodeType.charAt(0).toUpperCase() + nodeType.slice;
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
+
+    // label exception
+    if (nodeType === 'label') {
+      annotationText = numberToLetters(parseInt(annotationText, 10));
+    }
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({
