@@ -207,7 +207,7 @@ const repairBrokenLinks = (
           });
 
           // get/set the stop info
-          const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
+          const identifierResult = identifier.getSetStop(nodeType);
           messenger.handleResult(identifierResult, true);
 
           if (identifierResult.status === 'success') {
@@ -328,7 +328,7 @@ const refreshAnnotations = (
               });
 
               // get/set the stop info
-              const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop(updatedEntry.position) : identifier.getSetLabel(updatedEntry.position);
+              const identifierResult = identifier.getSetStop(nodeType, updatedEntry.position);
               messenger.handleResult(identifierResult, true);
 
               if (identifierResult.status === 'success') {
@@ -438,7 +438,7 @@ const refreshAnnotations = (
         });
 
         // get/set the stop info
-        const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
+        const identifierResult = identifier.getSetStop(nodeType);
 
         if (identifierResult.status === 'success') {
           // flag node for repainting
@@ -1142,7 +1142,7 @@ export default class App {
       };
 
       // get/set the stop info
-      const identifierResult = nodeType === 'keystop' ? identifier.getSetKeystop() : identifier.getSetLabel();
+      const identifierResult = identifier.getSetStop(nodeType);
 
       // read the response from Identifier; if it was unsuccessful, log and display the error
       if (identifierResult) {

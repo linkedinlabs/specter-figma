@@ -295,7 +295,7 @@ const main = async () => {
    * the Figma level, or if there has not been a change in several minutes.
    *
    * @kind function
-   * @name compareTrackingData
+   * @name watchSelection
    */
   const watchSelection = (): void => {
     // update immediately on a selection change
