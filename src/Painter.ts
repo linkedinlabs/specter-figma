@@ -4,6 +4,7 @@ import {
   getNodeSettings,
   hexToDecimalRgb,
   isInternal,
+  numberToLetters,
   updateArray,
   updateNestedArray,
 } from './Tools';
@@ -328,6 +329,126 @@ const buildKeystopArrowIcon = (
 };
 
 /**
+ * @description Builds the initial text element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on the `type`.
+ *
+ * @kind function
+ * @name buildText
+ *
+ * @param {string} type The type of annotation the text will be used in.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {string} characters The text that will be set to the node.
+ *
+ * @returns {Object} The text TextNode.
+ *
+ * @private
+ */
+const buildText = (
+  type:
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'label'
+    | 'spacing'
+    | 'style',
+  color: { r: number, g: number, b: number },
+  characters: string,
+): TextNode => {
+  // create empty text node
+  const text: TextNode = figma.createText();
+
+  // detect/retrieve last-loaded typeface
+  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+
+  // style text node
+  text.fontName = typefaceToUse;
+  text.fontSize = 12;
+  text.lineHeight = { value: 125, unit: 'PERCENT' };
+  text.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  // set auto-layout
+  text.layoutAlign = 'INHERIT';
+  text.layoutGrow = 0;
+
+  // set text – cannot do this before defining `fontName`
+  text.characters = characters;
+
+  // position the text in the frame
+  text.textAlignVertical = 'CENTER';
+  text.textAlignHorizontal = 'CENTER';
+  text.textAutoResize = 'WIDTH_AND_HEIGHT';
+
+  // ------- update text for certain annotations
+  if (type === 'keystop') {
+    text.fontSize = 14;
+    text.textAlignHorizontal = 'LEFT';
+    text.textAutoResize = 'WIDTH_AND_HEIGHT';
+    text.layoutAlign = 'INHERIT';
+  } else if (type === 'label') {
+    text.fontSize = 18;
+    text.lineHeight = { value: 100, unit: 'PERCENT' };
+    text.textCase = 'UPPER';
+  }
+
+  return text;
+};
+
+/**
+ * @description Builds an inner rectangle element in Figma and sets auto-layout
+ * and constraint properties. Tweaks are made based on `align`.
+ *
+ * @kind function
+ * @name buildRectangleInnerHalf
+ *
+ * @param {string} align Whether the frame style should be for left or right alignment.
+ * @param {Object} color An object representing a color in RGB decimal notation.
+ *
+ * @returns {Object} The rectangle FrameNode.
+ *
+ * @private
+ */
+const buildRectangleInnerHalf = (
+  align: 'left' | 'right',
+  color: { r: number, g: number, b: number },
+): FrameNode => {
+  // set inner half frames for label annotation
+  const frame: FrameNode = figma.createFrame();
+  frame.name = `${align.charAt(0).toUpperCase()}${align.slice(1)} Half`;
+
+  // auto-layout
+  frame.layoutMode = 'HORIZONTAL';
+  frame.primaryAxisSizingMode = 'AUTO';
+  frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  frame.counterAxisSizingMode = 'FIXED';
+  frame.counterAxisAlignItems = 'CENTER';
+  frame.layoutAlign = 'STRETCH';
+  frame.layoutGrow = 0;
+
+  // set padding and item spacing
+  const paddingPx = align === 'left' ? 6 : 8;
+  frame.paddingLeft = paddingPx;
+  frame.paddingRight = paddingPx;
+  frame.paddingTop = 2;
+  frame.paddingBottom = 2;
+  frame.itemSpacing = 0;
+  frame.fills = [{
+    type: 'SOLID',
+    color,
+  }];
+
+  if (align === 'right') {
+    // set rounded corners of the rectangle
+    frame.topRightRadius = 3;
+    frame.bottomRightRadius = 3;
+  }
+  return frame;
+};
+
+/**
  * @description Builds the initial recntangle element in Figma and sets auto-layout
  * and constraint properties. Tweaks are made based on the `type`.
  *
@@ -336,6 +457,7 @@ const buildKeystopArrowIcon = (
  *
  * @param {string} type The type of annotation the rectange will be used in.
  * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {Object} innerText An optional string to accept inner rectangle text for labels.
  *
  * @returns {Object} The rectangle FrameNode.
  *
@@ -347,9 +469,11 @@ const buildRectangle = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
+  innerText?: string,
 ): FrameNode => {
   // build base rectangle (used for most annotations)
   const rectangle: FrameNode = figma.createFrame();
@@ -389,12 +513,9 @@ const buildRectangle = (
     rectangle.paddingRight = 3;
     rectangle.paddingTop = 0.5;
     rectangle.paddingBottom = 2;
-  }
-
-  // ------- update rectangle for keystop annotations
-  if (type === 'keystop') {
+  } else if (type === 'keystop') {
+    // ------- update rectangle for keystop annotations
     rectangle.layoutMode = 'VERTICAL';
-
     rectangle.primaryAxisSizingMode = 'AUTO';
     rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
     rectangle.counterAxisSizingMode = 'FIXED';
@@ -408,73 +529,25 @@ const buildRectangle = (
     rectangle.itemSpacing = 1;
     rectangle.cornerRadius = 4;
     // rectangle.resize(42, 35);
-  }
+  } else if (type === 'label') {
+    rectangle.paddingLeft = 0;
+    rectangle.paddingRight = 2;
+    rectangle.paddingTop = 2;
+    rectangle.paddingBottom = 2;
+    rectangle.cornerRadius = 4;
 
+    // ----- set up inner halves content
+    const rectLeft: FrameNode = buildRectangleInnerHalf('left', { r: 0.4, g: 0.6, b: 0.8 });
+    const rectRight: FrameNode = buildRectangleInnerHalf('right', { r: 1, g: 1, b: 1 });
+    const textLeft: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), 'L');
+    const textRight: TextNode = buildText(type, hexToDecimalRgb('#000000'), innerText);
+
+    rectLeft.appendChild(textLeft);
+    rectRight.appendChild(textRight);
+    rectangle.appendChild(rectLeft);
+    rectangle.appendChild(rectRight);
+  }
   return rectangle;
-};
-
-/**
- * @description Builds the initial text element in Figma and sets auto-layout
- * and constraint properties. Tweaks are made based on the `type`.
- *
- * @kind function
- * @name buildText
- *
- * @param {string} type The type of annotation the text will be used in.
- * @param {Object} color An object representing a color in RGB decimal notation.
- * @param {string} characters The text that will be set to the node.
- *
- * @returns {Object} The text TextNode.
- *
- * @private
- */
-const buildText = (
-  type:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'spacing'
-    | 'style',
-  color: { r: number, g: number, b: number },
-  characters: string,
-): TextNode => {
-  // create empty text node
-  const text: TextNode = figma.createText();
-
-  // detect/retrieve last-loaded typeface
-  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
-
-  // style text node
-  text.fontName = typefaceToUse;
-  text.fontSize = 12;
-  text.lineHeight = { value: 125, unit: 'PERCENT' };
-  text.fills = [{
-    type: 'SOLID',
-    color,
-  }];
-
-  // set auto-layout
-  text.layoutAlign = 'INHERIT';
-  text.layoutGrow = 0;
-
-  // set text – cannot do this before defining `fontName`
-  text.characters = characters;
-
-  // position the text in the frame
-  text.textAlignVertical = 'CENTER';
-  text.textAlignHorizontal = 'CENTER';
-  text.textAutoResize = 'WIDTH_AND_HEIGHT';
-
-  // ------- update text for keystop annotations
-  if (type === 'keystop') {
-    text.fontSize = 14;
-    text.textAlignHorizontal = 'LEFT';
-    text.textAutoResize = 'WIDTH_AND_HEIGHT';
-    text.layoutAlign = 'INHERIT';
-  }
-
-  return text;
 };
 
 /**
@@ -501,6 +574,7 @@ const buildAnnotation = (options: {
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
     | 'spacing'
     | 'style',
 }): {
@@ -515,8 +589,15 @@ const buildAnnotation = (options: {
   const colorHex: string = COLORS[type];
 
   let setText: string = mainText;
+  let innerText: string = '';
   if (secondaryText) {
     setText = `${mainText}\n${secondaryText}`;
+  }
+
+  if (type === 'label') {
+    // clear the direct child text and set inner text value for rectangle
+    innerText = setText;
+    setText = '';
   }
 
   let isMeasurement: boolean = false;
@@ -532,7 +613,7 @@ const buildAnnotation = (options: {
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
 
   // build the rounded rectangle with auto-layout properties
-  const rectangle: FrameNode = buildRectangle(type, color);
+  const rectangle: FrameNode = buildRectangle(type, color, innerText);
 
   // build the dangling diamond
   const diamond: PolygonNode = figma.createPolygon();
@@ -550,7 +631,7 @@ const buildAnnotation = (options: {
   }];
 
   // create text node
-  const text: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), setText);
+  const text: TextNode = setText ? buildText(type, hexToDecimalRgb('#ffffff'), setText) : null;
 
   // create icon
   let icon: FrameNode = null;
@@ -754,8 +835,8 @@ const positionAnnotation = (
   annotation: {
     diamond: PolygonNode,
     rectangle: FrameNode,
-    text: TextNode,
-    icon: FrameNode,
+    text?: TextNode,
+    icon: FrameNode
   },
   nodePosition: {
     frameWidth: number,
@@ -770,6 +851,7 @@ const positionAnnotation = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
     | 'spacing'
     | 'style' = 'component',
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
@@ -2164,136 +2246,22 @@ export default class Painter {
   }
 
   /**
-   * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
-   * be available (`annotationText`, `labels`, and potential `keys` for auxilary annotations).
-   * Note: the `labels` and Label annotation portions are WIP.
+   * @description Sets tracking data for an annotation to establish link with the relevant node.
    *
    * @kind function
-   * @name addStop
+   * @name setTrackingData
+   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
+   * for the box.
+   * * @param {Object} annotationNode The node containing the annotation layers.
    *
-   * @returns {Object} A result object container success/error status and log/toast messages.
+   * @returns {undefined}
    */
-  addStop(nodeType: 'keystop' | 'label') {
-    const result: {
-      status: 'error' | 'success',
-      messages: {
-        toast: string,
-        log: string,
-      },
-    } = {
-      status: null,
-      messages: {
-        toast: null,
-        log: null,
-      },
-    };
-
-    result.messages.log = `Draw the ${nodeType} stop annotation for “${this.node.name}”`;
-
-    // retrieve the node data with our annotation text
-    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
-    const nodeData = JSON.parse(this.node.getPluginData(nodeDataType) || null);
-
-    if (!nodeData || (nodeData && !nodeData.annotationText)) {
-      result.status = 'error';
-      result.messages.log = 'Node missing annotationText';
-      return result;
-    }
-
-    // return an error if the selection is not placed in a frame
-    if (!this.frame || (this.frame.id === this.node.id)) {
-      result.status = 'error';
-      result.messages.log = 'Selection not on frame';
-      result.messages.toast = 'Your selection needs to be in an outer frame';
-      return result;
-    }
-
-    // set up some information
-    const { annotationText } = nodeData;
-    // const annotationType: 'keystop' | 'label' = nodeType; // tktk
-    const annotationType: 'keystop' = 'keystop';
-    const typeCapitalized = annotationType.charAt(0).toUpperCase() + annotationType.slice;
-    const annotationName = `${typeCapitalized} for ${this.node.name}`;
-
-    // construct the base annotation elements
-    const annotationBundle = buildAnnotation({
-      mainText: annotationText,
-      secondaryText: null,
-      type: annotationType,
-    });
-
-    // set individual `keys` annotations for keystops
-    const auxAnnotations: Array<FrameNode> = [];
-    if (nodeData.keys && nodeData.keys.length > 0) {
-      nodeData.keys.forEach((keyEntry) => {
-        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-        auxAnnotation.layoutAlign = 'INHERIT';
-        auxAnnotations.push(auxAnnotation);
-      });
-    }
-
-    // grab the position from crawler
-    const crawler = new Crawler({ for: [this.node] });
-    const positionResult = crawler.position();
-    const relativePosition = positionResult.payload;
-
-    // ---------- group and position the base annotation elements
-    // set up `nodePosition` based on `frame` and `relativePosition` from `Crawler`
-    const nodePosition: PluginNodePosition = {
-      frameWidth: this.frame.width,
-      frameHeight: this.frame.height,
-      width: relativePosition.width,
-      height: relativePosition.height,
-      x: relativePosition.x,
-      y: relativePosition.y,
-    };
-
-    // position the base annotation on the artboard
-    const baseAnnotationNode = positionAnnotation(
-      this.frame,
-      annotationName,
-      annotationBundle,
-      nodePosition,
-      'keystop', // tktk - hardcoded to keystop for now
-    );
-    const initialX = baseAnnotationNode.x;
-    const initialY = baseAnnotationNode.y;
-
-    // if applicable, add auxilary annotations (currently `keys`)
-    let annotationNode: FrameNode = baseAnnotationNode;
-    if (auxAnnotations.length > 0) {
-      annotationNode = figma.createFrame();
-      annotationNode.clipsContent = false;
-      annotationNode.layoutMode = 'HORIZONTAL';
-      annotationNode.counterAxisSizingMode = 'AUTO';
-      annotationNode.layoutAlign = 'INHERIT';
-      annotationNode.itemSpacing = 4;
-      annotationNode.fills = [];
-      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
-
-      // add the base annotation
-      annotationNode.appendChild(baseAnnotationNode);
-
-      // add the key annotations
-      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
-
-      baseAnnotationNode.layoutAlign = 'INHERIT';
-      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
-      annotationNode.x = initialX;
-      annotationNode.y = initialY;
-    }
-
-    // set the annotation frame(s) into the correct container group layers in Figma
-    setNodeInContainers({
-      node: annotationNode,
-      frame: this.frame,
-      page: this.page,
-      type: annotationType,
-    });
-
+  setTrackingData(
+    annotationNode,
+    nodePosition,
+    nodeType: 'keystop' | 'label',
+  ) {
     // ---------- set node tracking data
-    // node tracking data is used for diffing changes to the source nodes and re-drawing or
-    // removing annotations as necessary
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
       annotationId: annotationNode.id,
@@ -2349,11 +2317,249 @@ export default class Painter {
       linkIdDataType,
       JSON.stringify(annotatedLinkData),
     );
+  }
+
+  /**
+   * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
+   * be available (`annotationText`, `labels`, and potential `keys` for auxilary annotations).
+   * Note: the `labels` and Label annotation portions are WIP.
+   *
+   * @kind function
+   * @name addStop
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  addStop(nodeType: 'keystop' | 'label') {
+    const result: {
+      status: 'error' | 'success',
+      messages: {
+        toast: string,
+        log: string,
+      },
+    } = {
+      status: null,
+      messages: {
+        toast: null,
+        log: null,
+      },
+    };
+
+    result.messages.log = `Draw the ${nodeType} stop annotation for “${this.node.name}”`;
+
+    // retrieve the node data with our annotation text
+    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
+    const nodeData = JSON.parse(this.node.getPluginData(nodeDataType) || null);
+
+    if (!nodeData || (nodeData && !nodeData.annotationText)) {
+      result.status = 'error';
+      result.messages.log = 'Node missing annotationText';
+      return result;
+    }
+
+    // return an error if the selection is not placed in a frame
+    if (!this.frame || (this.frame.id === this.node.id)) {
+      result.status = 'error';
+      result.messages.log = 'Selection not on frame';
+      result.messages.toast = 'Your selection needs to be in an outer frame';
+      return result;
+    }
+
+    // set up some information
+    let { annotationText } = nodeData;
+    const typeCapitalized = nodeType.charAt(0).toUpperCase() + nodeType.slice;
+    const annotationName = `${typeCapitalized} for ${this.node.name}`;
+
+    // label exception
+    if (nodeType === 'label') {
+      annotationText = numberToLetters(parseInt(annotationText, 10));
+    }
+
+    // construct the base annotation elements
+    const annotationBundle = buildAnnotation({
+      mainText: annotationText,
+      secondaryText: null,
+      type: nodeType,
+    });
+
+    // set individual `keys` annotations for keystops
+    const auxAnnotations: Array<FrameNode> = [];
+    if (nodeData.keys && nodeData.keys.length > 0) {
+      nodeData.keys.forEach((keyEntry) => {
+        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
+        auxAnnotation.layoutAlign = 'INHERIT';
+        auxAnnotations.push(auxAnnotation);
+      });
+    }
+
+    // grab the position from crawler
+    const crawler = new Crawler({ for: [this.node] });
+    const positionResult = crawler.position();
+    const relativePosition = positionResult.payload;
+
+    // ---------- group and position the base annotation elements
+    // set up `nodePosition` based on `frame` and `relativePosition` from `Crawler`
+    const nodePosition: PluginNodePosition = {
+      frameWidth: this.frame.width,
+      frameHeight: this.frame.height,
+      width: relativePosition.width,
+      height: relativePosition.height,
+      x: relativePosition.x,
+      y: relativePosition.y,
+    };
+
+    // position the base annotation on the artboard
+    const baseAnnotationNode = positionAnnotation(
+      this.frame,
+      annotationName,
+      annotationBundle,
+      nodePosition,
+      nodeType,
+    );
+    const initialX = baseAnnotationNode.x;
+    const initialY = baseAnnotationNode.y;
+
+    // if applicable, add auxilary annotations (currently `keys`)
+    let annotationNode: FrameNode = baseAnnotationNode;
+    if (auxAnnotations.length > 0) {
+      annotationNode = figma.createFrame();
+      annotationNode.clipsContent = false;
+      annotationNode.layoutMode = 'HORIZONTAL';
+      annotationNode.counterAxisSizingMode = 'AUTO';
+      annotationNode.layoutAlign = 'INHERIT';
+      annotationNode.itemSpacing = 4;
+      annotationNode.fills = [];
+      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
+
+      // add the base annotation
+      annotationNode.appendChild(baseAnnotationNode);
+
+      // add the key annotations
+      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
+
+      baseAnnotationNode.layoutAlign = 'INHERIT';
+      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
+      annotationNode.x = initialX;
+      annotationNode.y = initialY;
+    }
+
+    // set the annotation frame(s) into the correct container group layers in Figma
+    setNodeInContainers({
+      node: annotationNode,
+      frame: this.frame,
+      page: this.page,
+      type: nodeType as 'boundingBox'
+    | 'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'spacing'
+    | 'style',
+    });
+
+    // ---------- set node tracking data
+    // node tracking data is used for diffing changes to the source nodes and re-drawing or
+    // removing annotations as necessary
+    this.setTrackingData(annotationNode, nodePosition, nodeType);
 
     // return a successful result
     result.status = 'success';
     return result;
   }
+
+  // /**
+  //  *
+  //  * @description Builds a Label Annotation in Figma. Expects label node data to be
+  //  * available (`annotationText`).
+  //  *
+  //  * @kind function
+  //  * @name addLabel
+  //  *
+  //  * @returns {Object} A result object container success/error status and log/toast messages.
+  //  */
+  // addLabel() {
+  //   const result: {
+  //     status: 'error' | 'success',
+  //     messages: {
+  //       toast: string,
+  //       log: string,
+  //     },
+  //   } = {
+  //     status: null,
+  //     messages: {
+  //       toast: null,
+  //       log: null,
+  //     },
+  //   };
+
+  //   result.messages.log = `Draw the label annotation for “${this.node.name}”`;
+
+  //   // retrieve the node data with our annotation text
+  //   const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
+
+  //   if (!nodeData || (nodeData && !nodeData.annotationText)) {
+  //     result.status = 'error';
+  //     result.messages.log = 'Node missing annotationText';
+  //     return result;
+  //   }
+
+  //   // return an error if the selection is not placed in a frame
+  //   if (!this.frame || (this.frame.id === this.node.id)) {
+  //     result.status = 'error';
+  //     result.messages.log = 'Selection not on frame';
+  //     result.messages.toast = 'Your selection needs to be in an outer frame';
+  //     return result;
+  //   }
+
+  //   // set up some information
+  //   const annotationText = numberToLetters(parseInt(nodeData.annotationText, 10));
+  //   const annotationName = `Label for ${this.node.name}`;
+
+  //   // construct the base annotation elements
+  //   const annotationBundle = buildAnnotation({
+  //     mainText: annotationText,
+  //     secondaryText: null,
+  //     type: 'label',
+  //   });
+
+  //   // grab the position from crawler
+  //   const crawler = new Crawler({ for: [this.node] });
+  //   const positionResult = crawler.position();
+  //   const relativePosition = positionResult.payload;
+
+  //   // group and position the base annotation elements
+  //   const nodePosition: PluginNodePosition = {
+  //     frameWidth: this.frame.width,
+  //     frameHeight: this.frame.height,
+  //     width: relativePosition.width,
+  //     height: relativePosition.height,
+  //     x: relativePosition.x,
+  //     y: relativePosition.y,
+  //   };
+
+  //   const baseAnnotationNode = positionAnnotation(
+  //     this.frame,
+  //     annotationName,
+  //     annotationBundle,
+  //     nodePosition,
+  //     'label',
+  //   );
+
+  //   const annotationNode: FrameNode = baseAnnotationNode;
+
+  //   // set it in the correct containers
+  //   setNodeInContainers({
+  //     node: annotationNode,
+  //     frame: this.frame,
+  //     page: this.page,
+  //     type: 'keystop',
+  //   });
+
+  //   this.setTrackingData(annotationNode, nodePosition, 'label');
+
+  //   // return a successful result
+  //   result.status = 'success';
+  //   return result;
+  // }
 
   /**
    * @description Takes a `spacingPosition` object and creates a spacing measurement annotation
