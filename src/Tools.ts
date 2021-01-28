@@ -539,9 +539,9 @@ const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
  *
  * @returns {string} The letter version of that number.
  */
-const numberToLetters = (num) => {
-  let number = num;
-  let letters = '';
+const numberToLetters = (num: number): string => {
+  let number: number = num;
+  let letters: string = '';
   let counter;
 
   while (number > 0) {
