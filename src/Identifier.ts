@@ -746,7 +746,7 @@ export default class Identifier {
     return result;
   }
 
-  /**
+  /** WIP
    * @description Checks the node’s settings object for the existence of keystop-related data
    * and either updates that data with a new position, or creates the data object with the
    * initial position and saves it to the node. Position is calculated by reading the
@@ -757,13 +757,16 @@ export default class Identifier {
    * list does not need to be touched.
    *
    * @kind function
-   * @name getSetKeystop
+   * @name getSetStop
    *
    * @param {number} position An optional number to override the counter.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
-  getSetKeystop(position?: number) {
+  getSetStop(
+    nodeType: 'keystop' | 'label',
+    position?: number,
+  ) {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -788,8 +791,9 @@ export default class Identifier {
       return result;
     }
 
-    // get top frame keystop list
-    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+    // get top frame stop list
+    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const frameKeystopListData = JSON.parse(topFrame.getPluginData(listDataType) || null);
     let frameKeystopList: Array<{
       id: string,
       position: number,
@@ -810,9 +814,9 @@ export default class Identifier {
         position: positionToSet,
       });
 
-      // set/update top frame keystop list
+      // set/update top frame stop list
       topFrame.setPluginData(
-        DATA_KEYS.keystopList,
+        listDataType,
         JSON.stringify(frameKeystopList),
       );
     }
@@ -821,11 +825,14 @@ export default class Identifier {
     const textToSet = `${positionToSet}`;
 
     // retrieve the node data
+    const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
     let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
       keys?: Array<PluginKeystopKeys>,
-    } = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+      labels?: PluginLabelsNames,
+      role?: string,
+    } = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
     // set `annotationText` data on the node
     if (!nodeData) {
@@ -848,112 +855,12 @@ export default class Identifier {
 
     // commit the updated data
     this.node.setPluginData(
-      DATA_KEYS.keystopNodeData,
+      nodeDataType,
       JSON.stringify(nodeData),
     );
 
     result.status = 'success';
-    result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;
-    return result;
-  }
-
-  /** WIP
-   * @description Checks the node’s settings object for the existence of keystop-related data
-   * and either updates that data with a new position, or creates the data object with the
-   * initial position and saves it to the node. Position is calculated by reading the
-   * keystop list data from the nodes top-level container frame. If `position` is _not_
-   * supplied, the main underlying assumption is that the node being set is going to be in the
-   * next highest position in the list and needs to be added to the list. If `position` is
-   * supplied, the assumption is that we are simply updating the node data, and the keystop
-   * list does not need to be touched.
-   *
-   * @kind function
-   * @name getSetLabel
-   *
-   * @param {number} position An optional number to override the counter.
-   *
-   * @returns {Object} A result object containing success/error status and log/toast messages.
-   */
-  getSetLabel(position?: number) {
-    const result: {
-      status: 'error' | 'success',
-      messages: {
-        toast: string,
-        log: string,
-      },
-    } = {
-      status: null,
-      messages: {
-        toast: null,
-        log: null,
-      },
-    };
-
-    // find the top frame
-    const topFrame: FrameNode = findTopFrame(this.node);
-
-    if (!topFrame) {
-      result.status = 'error';
-      result.messages.log = `Node “${this.node.name}” needs to be in a frame`;
-      result.messages.toast = 'Your selection needs to be in an outer frame';
-      return result;
-    }
-
-    // get top frame label list
-    const frameLabelListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.labelList) || null);
-    let frameLabelList: Array<{
-      id: string,
-      position: number,
-    }> = [];
-    if (frameLabelListData) {
-      frameLabelList = frameLabelListData;
-    }
-
-    // set new position based on list length
-    // (we always assume `getSetLabel` has been fed the node in order)
-    let positionToSet = frameLabelList.length + 1;
-    if (position) {
-      positionToSet = position;
-    } else {
-      // add the new node to the list with position
-      frameLabelList.push({
-        id: this.node.id,
-        position: positionToSet,
-      });
-
-      // set/update top frame label list
-      topFrame.setPluginData(
-        DATA_KEYS.labelList,
-        JSON.stringify(frameLabelList),
-      );
-    }
-
-    // convert position to string
-    const textToSet = `${positionToSet}`;
-
-    // retrieve the node data
-    let nodeData: {
-      annotationText: string,
-      annotationSecondaryText?: string,
-    } = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
-
-    // set `annotationText` data on the node
-    if (!nodeData) {
-      nodeData = {
-        annotationText: textToSet,
-      };
-    } else {
-      nodeData.annotationText = textToSet;
-    }
-
-    // commit the updated data
-    this.node.setPluginData(
-      DATA_KEYS.labelNodeData,
-      JSON.stringify(nodeData),
-    );
-
-    result.status = 'success';
-    result.messages.log = `Label position ${textToSet} set for “${this.node.name}”`;
+    result.messages.log = `${nodeType} stop position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 
