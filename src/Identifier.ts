@@ -792,7 +792,7 @@ export default class Identifier {
     }
 
     // get top frame stop list
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const listDataType = DATA_KEYS[`${nodeType}List`];
     const frameKeystopListData = JSON.parse(topFrame.getPluginData(listDataType) || null);
     let frameKeystopList: Array<{
       id: string,
@@ -825,7 +825,7 @@ export default class Identifier {
     const textToSet = `${positionToSet}`;
 
     // retrieve the node data
-    const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
     let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
