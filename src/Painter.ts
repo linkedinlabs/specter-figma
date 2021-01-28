@@ -2171,6 +2171,8 @@ export default class Painter {
    * @kind function
    * @name addStop
    *
+   * @param {string} nodeType The type of annotation to add (currently: `kesytop` or `label`).
+   *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
   addStop(nodeType: 'keystop' | 'label') {
