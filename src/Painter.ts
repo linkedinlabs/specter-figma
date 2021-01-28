@@ -2142,72 +2142,6 @@ export default class Painter {
   }
 
   /**
-   * @description Sets tracking data for an annotation to establish link with the relevant node.
-   *
-   * @kind function
-   * @name setTrackingData
-   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
-   * for the box.
-   * * @param {Object} annotationNode The node containing the annotation layers.
-   *
-   * @returns {Object} A result object container success/error status and log/toast messages.
-   */
-  setTrackingData(annotationNode, nodePosition) {
-    // ---------- set node tracking data
-    const linkId: string = uuid();
-    const newAnnotatedNodeData: PluginNodeTrackingData = {
-      annotationId: annotationNode.id,
-      id: this.node.id,
-      linkId,
-      topFrameId: this.frame.id,
-      nodePosition,
-    };
-
-    // update the `trackingSettings` array
-    const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
-    );
-    let trackingData: Array<PluginNodeTrackingData> = [];
-    if (trackingDataRaw) {
-      trackingData = trackingDataRaw;
-    }
-
-    // set the node data in the `trackingData` array
-    trackingData = updateArray(
-      trackingData,
-      newAnnotatedNodeData,
-      'id',
-      'update',
-    );
-
-    // commit the `trackingData` update
-    this.page.setPluginData(
-      DATA_KEYS.labelAnnotations,
-      JSON.stringify(trackingData),
-    );
-
-    // set the `linkId` on the annotated node
-    const nodeLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'node',
-    };
-    this.node.setPluginData(
-      DATA_KEYS.labelLinkId,
-      JSON.stringify(nodeLinkData),
-    );
-
-    // set the `linkId` on the annotation node
-    const annotatedLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'annotation',
-    };
-    annotationNode.setPluginData(
-      DATA_KEYS.labelLinkId,
-      JSON.stringify(annotatedLinkData),
-    );
-  }
-
-  /**
    * @description Adds a semi-transparent rectangle to a specific frame based on the parameters
    * received in the `frame` object.
    *
@@ -2427,6 +2361,72 @@ export default class Painter {
   }
 
   /**
+   * @description Sets tracking data for an annotation to establish link with the relevant node.
+   *
+   * @kind function
+   * @name setTrackingData
+   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
+   * for the box.
+   * * @param {Object} annotationNode The node containing the annotation layers.
+   *
+   * @returns {undefined}
+   */
+  setTrackingData(annotationNode, nodePosition, type) {
+    // ---------- set node tracking data
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
+      annotationId: annotationNode.id,
+      id: this.node.id,
+      linkId,
+      topFrameId: this.frame.id,
+      nodePosition,
+    };
+
+    // update the `trackingSettings` array
+    const trackingDataRaw = JSON.parse(
+      this.page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null,
+    );
+    let trackingData: Array<PluginNodeTrackingData> = [];
+    if (trackingDataRaw) {
+      trackingData = trackingDataRaw;
+    }
+
+    // set the node data in the `trackingData` array
+    trackingData = updateArray(
+      trackingData,
+      newAnnotatedNodeData,
+      'id',
+      'update',
+    );
+
+    // commit the `trackingData` update
+    this.page.setPluginData(
+      DATA_KEYS[`${type}Annotations`],
+      JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS[`${type}LinkId`],
+      JSON.stringify(nodeLinkData),
+    );
+
+    // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
+    annotationNode.setPluginData(
+      DATA_KEYS[`${type}LinkId`],
+      JSON.stringify(annotatedLinkData),
+    );
+  }
+
+  /**
    * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
    * available (`annotationText` and potential `keys` for auxilary annotations).
    *
@@ -2547,7 +2547,7 @@ export default class Painter {
       type: 'keystop',
     });
 
-    this.setTrackingData(annotationNode, nodePosition);
+    this.setTrackingData(annotationNode, nodePosition, 'keystop');
 
     // return a successful result
     result.status = 'success';
@@ -2642,7 +2642,7 @@ export default class Painter {
       type: 'keystop',
     });
 
-    this.setTrackingData(annotationNode, nodePosition);
+    this.setTrackingData(annotationNode, nodePosition, 'label');
 
     // return a successful result
     result.status = 'success';
