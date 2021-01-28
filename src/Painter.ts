@@ -2191,7 +2191,7 @@ export default class Painter {
     result.messages.log = `Draw the ${nodeType} stop annotation for “${this.node.name}”`;
 
     // retrieve the node data with our annotation text
-    const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
     const nodeData = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
     if (!nodeData || (nodeData && !nodeData.annotationText)) {
@@ -2304,8 +2304,8 @@ export default class Painter {
     };
 
     // set data types
-    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-    const linkIdDataType = nodeType === 'keystop' ? DATA_KEYS.keystopLinkId : DATA_KEYS.labelLinkId;
+    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+    const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
 
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
