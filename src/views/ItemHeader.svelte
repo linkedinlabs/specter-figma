@@ -75,7 +75,11 @@
 
   beforeUpdate(() => {
     // check `position` against original to see if it was updated on the Figma side
-    if (parseInt(originalPosition, 10) !== parseInt(position, 10)) {
+    if (type === 'keystop') {
+      if (parseInt(originalPosition, 10) !== parseInt(position, 10)) {
+        resetValue = true;
+      }
+    } else if (originalPosition !== position) {
       resetValue = true;
     }
 
