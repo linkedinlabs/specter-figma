@@ -219,7 +219,7 @@ const repairBrokenLinks = (
             });
 
             // re-draw the annotation
-            const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+            const painterResult = painter.addStop(nodeType);
             messenger.handleResult(painterResult, true);
           }
         }
@@ -486,7 +486,7 @@ const refreshAnnotations = (
       });
 
       // re-draw the annotation
-      const painterResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+      const painterResult = painter.addStop(nodeType);
       messenger.handleResult(painterResult, true);
 
       if (painterResult.status === 'error') {
@@ -531,6 +531,74 @@ const refreshAnnotations = (
         }
       }
     }
+  });
+
+  return null;
+};
+
+/**
+ * @description Compares current tracking data for Keystop and Label nodes against the nodes
+ * themselves. If the nodes have changed size/position, we update the node’s corresponding
+ * annotation. If the node has not changed, but its annotation is missing, we re-paint it.
+ *
+ * @kind function
+ * @name diffChanges
+ *
+ * @param {string} nodeType The type of annotations to diff. Currently: `keystop` or `label`.
+ * @param {Object} options An options bundle that contains the current `selection`, current `page`,
+ * an initiated `messenger`, and the `isMercadoMode` boolean.
+ *
+ * @returns {null}
+ */
+const diffChanges = (
+  nodeType: 'keystop' | 'label',
+  options: {
+    isMercadoMode: boolean,
+    messenger: any,
+    page: PageNode,
+    selection: Array<any>,
+  },
+) => {
+  const {
+    isMercadoMode,
+    messenger,
+    page,
+    selection,
+  } = options;
+
+  // grab tracking data for the page (currently Keystops/Labels)
+  // tktk - fragile setting of `nodeType`
+  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+  const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+    page.getPluginData(annotationsDataType) || '[]',
+  );
+
+  // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
+  const refreshOptions = {
+    trackingData,
+    page,
+    messenger,
+    isMercadoMode,
+  };
+  refreshAnnotations(nodeType, refreshOptions);
+
+  // iterate through each node in a selection
+  const selectedNodes: Array<SceneNode> = selection;
+  // determine topFrames involved in the current selection
+  const crawlerForSelected = new Crawler({ for: selectedNodes });
+  const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
+  // look for nodes/annotations that no longer match their topFrame and repair
+  // (this happens when copying a top-frame)
+  topFrameNodes.forEach((topFrame: FrameNode) => {
+    const repairOptions = {
+      isMercadoMode,
+      frameNode: topFrame,
+      messenger,
+      page,
+      trackingData,
+    };
+    repairBrokenLinks(nodeType, repairOptions);
   });
 
   return null;
@@ -1060,7 +1128,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = nodeType === 'keystop' ? painter.addKeystop() : painter.addLabel();
+          paintResult = painter.addStop(nodeType);
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
@@ -1709,7 +1777,6 @@ export default class App {
 
     // retrieve existing options
     const options: PluginOptions = await getOptions();
-
     const {
       currentView,
       isInfo,
@@ -1737,8 +1804,26 @@ export default class App {
         return null;
     }
 
+    // ---------- track and re-draw annotations for nodes that have moved/changed/damaged
+    // currently we only track/repair for Labels and Keystops
+    const diffChangesFor: Array<'keystop' | 'label'> = ['keystop', 'label'];
+    const diffChangesOptions = {
+      isMercadoMode,
+      messenger,
+      page,
+      selection,
+    };
+    diffChangesFor.forEach(diffType => diffChanges(diffType, diffChangesOptions));
+
+    // ---------- set up selected items bundle for view
     const nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
+    const selectedNodes: Array<SceneNode> = selection;
+
+    // determine topFrames involved in the current selection
+    const crawlerForSelected = new Crawler({ for: selectedNodes });
+    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
+
     const items: Array<{
       id: string,
       name: string,
@@ -1748,44 +1833,10 @@ export default class App {
       keys?: Array<PluginKeystopKeys>,
     }> = [];
 
-    // grab tracking data for the page (currently Keystops/Labels)
-    // tktk - fragile setting of `nodeType`
-    const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
-    const annotationsDataType = currentView === 'a11y-keyboard' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(annotationsDataType) || '[]',
-    );
-
-    // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
-    const refreshOptions = {
-      trackingData,
-      page,
-      messenger,
-      isMercadoMode,
-    };
-    refreshAnnotations(nodeType, refreshOptions);
-
-    // iterate through each node in a selection
-    const selectedNodes: Array<SceneNode> = selection;
-    // determine topFrames involved in the current selection
-    const crawlerForSelected = new Crawler({ for: selectedNodes });
-    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
-
-    // look for nodes/annotations that no longer match their topFrame and repair
-    // (this happens when copying a top-frame)
-    topFrameNodes.forEach((topFrame: FrameNode) => {
-      const repairOptions = {
-        isMercadoMode,
-        frameNode: topFrame,
-        messenger,
-        page,
-        trackingData,
-      };
-      repairBrokenLinks(nodeType, repairOptions);
-    });
-
     // specific to `a11y-keyboard` and `a11y-labels`
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
+      const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
+
       // iterate topFrames and select nodes that already have annotations
       topFrameNodes.forEach((topFrame: FrameNode) => {
         const getStopOptions = {
@@ -1833,7 +1884,6 @@ export default class App {
         }
       });
 
-      // set up selected bundle
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
@@ -1890,7 +1940,7 @@ export default class App {
       },
     });
 
-    // commit the calculated size
+    // commit the calculated size (re-size the actual plugin frame)
     if (
       ((currentView !== 'a11y-keyboard') && (currentView !== 'a11y-labels'))
       || (((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) && items.length < 1)
