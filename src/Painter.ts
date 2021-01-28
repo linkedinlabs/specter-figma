@@ -2246,6 +2246,73 @@ export default class Painter {
   }
 
   /**
+   * @description Sets tracking data for an annotation to establish link with the relevant node.
+   *
+   * @kind function
+   * @name setTrackingData
+   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
+   * for the box.
+   * * @param {Object} annotationNode The node containing the annotation layers.
+   *
+   * @returns {undefined}
+   */
+  setTrackingData(annotationNode, nodePosition) {
+    // ---------- set node tracking data
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
+      annotationId: annotationNode.id,
+      id: this.node.id,
+      linkId,
+      topFrameId: this.frame.id,
+      nodePosition,
+    };
+
+    // update the `trackingSettings` array
+    const trackingDataRaw = JSON.parse(
+      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
+    );
+    let trackingData: Array<PluginNodeTrackingData> = [];
+    if (trackingDataRaw) {
+      trackingData = trackingDataRaw;
+    }
+
+    // set the node data in the `trackingData` array
+    trackingData = updateArray(
+      trackingData,
+      newAnnotatedNodeData,
+      'id',
+      'update',
+    );
+
+    // commit the `trackingData` update
+    this.page.setPluginData(
+      DATA_KEYS.labelAnnotations,
+      JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS.labelLinkId,
+      JSON.stringify(nodeLinkData),
+    );
+
+    // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
+    annotationNode.setPluginData(
+      DATA_KEYS.labelLinkId,
+      JSON.stringify(annotatedLinkData),
+    );
+  }
+
+
+  /**
    * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
    * available (`annotationText` and potential `keys` for auxilary annotations).
    *
@@ -2336,7 +2403,7 @@ export default class Painter {
     const initialY = baseAnnotationNode.y;
 
     let annotationNode: FrameNode = baseAnnotationNode;
-    if (auxAnnotations.length > 0) {
+    if (auxAnnotations.length) {
       annotationNode = figma.createFrame();
       annotationNode.clipsContent = false;
       annotationNode.layoutMode = 'HORIZONTAL';
@@ -2366,71 +2433,20 @@ export default class Painter {
       type: 'keystop',
     });
 
-    // ---------- set node tracking data
-    const linkId: string = uuid();
-    const newAnnotatedNodeData: PluginNodeTrackingData = {
-      annotationId: annotationNode.id,
-      id: this.node.id,
-      linkId,
-      topFrameId: this.frame.id,
-      nodePosition,
-    };
-
-    // update the `trackingSettings` array
-    const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS.keystopAnnotations) || null,
-    );
-    let trackingData: Array<PluginNodeTrackingData> = [];
-    if (trackingDataRaw) {
-      trackingData = trackingDataRaw;
-    }
-
-    // set the node data in the `trackingData` array
-    trackingData = updateArray(
-      trackingData,
-      newAnnotatedNodeData,
-      'id',
-      'update',
-    );
-
-    // commit the `trackingData` update
-    this.page.setPluginData(
-      DATA_KEYS.keystopAnnotations,
-      JSON.stringify(trackingData),
-    );
-
-    // set the `linkId` on the annotated node
-    const nodeLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'node',
-    };
-    this.node.setPluginData(
-      DATA_KEYS.keystopLinkId,
-      JSON.stringify(nodeLinkData),
-    );
-
-    // set the `linkId` on the annotation node
-    const annotatedLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'annotation',
-    };
-    annotationNode.setPluginData(
-      DATA_KEYS.keystopLinkId,
-      JSON.stringify(annotatedLinkData),
-    );
+    this.setTrackingData(annotationNode, nodePosition);
 
     // return a successful result
     result.status = 'success';
     return result;
   }
 
-  /** WIP
+  /**
    *
-   * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
-   * available (`annotationText` and potential `keys` for auxilary annotations).
+   * @description Builds a Label Annotation in Figma. Expects label node data to be
+   * available (`annotationText`).
    *
    * @kind function
-   * @name addKeystop
+   * @name addLabel
    *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
@@ -2449,7 +2465,7 @@ export default class Painter {
       },
     };
 
-    result.messages.log = `Draw the keyboard stop annotation for “${this.node.name}”`;
+    result.messages.log = `Draw the label annotation for “${this.node.name}”`;
 
     // retrieve the node data with our annotation text
     const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS.labelNodeData) || null);
@@ -2469,25 +2485,15 @@ export default class Painter {
     }
 
     // set up some information
-    const annotationText = numberToLetters(+nodeData.annotationText);
-    const annotationType: 'label' = 'label';
+    const annotationText = numberToLetters(parseInt(nodeData.annotationText, 10));
     const annotationName = `Label for ${this.node.name}`;
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({
       mainText: annotationText,
       secondaryText: null,
-      type: annotationType,
+      type: 'label',
     });
-
-    // const auxAnnotations: Array<FrameNode> = [];
-    // if (nodeData.keys && nodeData.keys.length > 0) {
-    //   nodeData.keys.forEach((keyEntry) => {
-    //     const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-    //     auxAnnotation.layoutAlign = 'INHERIT';
-    //     auxAnnotations.push(auxAnnotation);
-    //   });
-    // }
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -2512,31 +2518,7 @@ export default class Painter {
       'label',
     );
 
-    // const initialX = baseAnnotationNode.x;
-    // const initialY = baseAnnotationNode.y;
-
     const annotationNode: FrameNode = baseAnnotationNode;
-    // if (auxAnnotations.length > 0) {
-    //   annotationNode = figma.createFrame();
-    //   annotationNode.clipsContent = false;
-    //   annotationNode.layoutMode = 'HORIZONTAL';
-    //   annotationNode.counterAxisSizingMode = 'AUTO';
-    //   annotationNode.layoutAlign = 'INHERIT';
-    //   annotationNode.itemSpacing = 4;
-    //   annotationNode.fills = [];
-    //   annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
-
-    //   // add the base annotation
-    //   annotationNode.appendChild(baseAnnotationNode);
-
-    //   // add the key annotations
-    //   auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
-
-    //   baseAnnotationNode.layoutAlign = 'INHERIT';
-    //   annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
-    //   annotationNode.x = initialX;
-    //   annotationNode.y = initialY;
-    // }
 
     // set it in the correct containers
     setNodeInContainers({
@@ -2546,58 +2528,7 @@ export default class Painter {
       type: 'keystop',
     });
 
-    // ---------- set node tracking data
-    const linkId: string = uuid();
-    const newAnnotatedNodeData: PluginNodeTrackingData = {
-      annotationId: annotationNode.id,
-      id: this.node.id,
-      linkId,
-      topFrameId: this.frame.id,
-      nodePosition,
-    };
-
-    // update the `trackingSettings` array
-    const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
-    );
-    let trackingData: Array<PluginNodeTrackingData> = [];
-    if (trackingDataRaw) {
-      trackingData = trackingDataRaw;
-    }
-
-    // set the node data in the `trackingData` array
-    trackingData = updateArray(
-      trackingData,
-      newAnnotatedNodeData,
-      'id',
-      'update',
-    );
-
-    // commit the `trackingData` update
-    this.page.setPluginData(
-      DATA_KEYS.labelAnnotations,
-      JSON.stringify(trackingData),
-    );
-
-    // set the `linkId` on the annotated node
-    const nodeLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'node',
-    };
-    this.node.setPluginData(
-      DATA_KEYS.labelLinkId,
-      JSON.stringify(nodeLinkData),
-    );
-
-    // set the `linkId` on the annotation node
-    const annotatedLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'annotation',
-    };
-    annotationNode.setPluginData(
-      DATA_KEYS.labelLinkId,
-      JSON.stringify(annotatedLinkData),
-    );
+    this.setTrackingData(annotationNode, nodePosition);
 
     // return a successful result
     result.status = 'success';
