@@ -350,6 +350,7 @@ const buildText = (
     | 'dimension'
     | 'keystop'
     | 'label'
+    | 'legend'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -392,6 +393,13 @@ const buildText = (
     text.fontSize = 18;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
+  } else if (type === 'legend') {
+    text.fontSize = 14;
+    text.textCase = 'LOWER';
+    // text.textAlignHorizontal = 'LEFT';
+    text.textAutoResize = 'WIDTH_AND_HEIGHT';
+    text.layoutAlign = 'INHERIT';
+    text.paragraphIndent = !characters.includes(':') ? 5 : 0;
   }
 
   return text;
@@ -807,7 +815,7 @@ const buildBoundingBox = (position: {
   return boundingBox;
 };
 
-/**
+/** WIP
  * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
  * and sets auto-layout and constraint properties.
  *
@@ -824,19 +832,72 @@ const buildBoundingBox = (position: {
  * @private
  */
 const buildLabelLegend = (
-  originFrame: FrameNode,
-  labelSets: Array<PluginAriaLabels>,
+  labelSets?: Array<any>,
 ) => {
   let legend: FrameNode = figma.createFrame();
+  // auto-layout
+  legend.layoutMode = 'VERTICAL';
+  legend.primaryAxisSizingMode = 'AUTO';
+  legend.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  legend.counterAxisSizingMode = 'FIXED';
+  legend.counterAxisAlignItems = 'CENTER';
+  legend.layoutAlign = 'STRETCH';
+  legend.layoutGrow = 0;
+
+  // set padding and item spacing
+  const paddingPx = 6;
+  legend.paddingLeft = paddingPx;
+  legend.paddingRight = paddingPx;
+  legend.paddingTop = 2;
+  legend.paddingBottom = 2;
+  legend.itemSpacing = 0;
 
   labelSets.forEach(labels => {
     const legendItem: FrameNode = figma.createFrame();
+    legendItem.name = 'Label item';
+
+      // auto-layout
+    legendItem.layoutMode = 'VERTICAL';
+    legendItem.primaryAxisSizingMode = 'AUTO';
+    legendItem.primaryAxisAlignItems = 'SPACE_BETWEEN';
+    legendItem.counterAxisSizingMode = 'AUTO';
+    legendItem.counterAxisAlignItems = 'CENTER';
+    legendItem.layoutAlign = 'STRETCH';
+    legendItem.layoutGrow = 0;
+
+    // set padding and item spacing
+    legendItem.paddingLeft = 6;
+    legendItem.paddingRight = 6;
+    legendItem.paddingTop = 2;
+    legendItem.paddingBottom = 2;
+    legendItem.itemSpacing = 0;
+
     //add styling
     Object.entries(labels).forEach(([key, val]) => {
-      const title: TextNode = buildText('label', hexToDecimalRgb('#000000'), key+':');
-      const value: TextNode = buildText('label', hexToDecimalRgb('#000000'), val ? val : 'none');
-      legendItem.appendChild(title);
-      legendItem.appendChild(value);
+      const line: FrameNode = figma.createFrame();
+      line.name = key + ' label';
+      // auto-layout
+      line.layoutMode = 'HORIZONTAL';
+      line.primaryAxisSizingMode = 'AUTO';
+      line.primaryAxisAlignItems = 'MIN';
+      line.counterAxisSizingMode = 'AUTO';
+      line.counterAxisAlignItems = 'CENTER';
+      line.layoutAlign = 'STRETCH';
+      line.layoutGrow = 0;
+
+      // set padding and item spacing
+      line.paddingLeft = 0;
+      line.paddingRight = 0;
+      line.paddingTop = 2;
+      line.paddingBottom = 2;
+      line.itemSpacing = 0;
+
+      const title: TextNode = buildText('legend', hexToDecimalRgb('#000000'), key+':');
+      const value: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val ? val : 'none');
+
+      line.appendChild(title);
+      line.appendChild(value);
+      legendItem.appendChild(line);
     })
     legend.appendChild(legendItem);
   })
@@ -845,13 +906,11 @@ const buildLabelLegend = (
   return legend;
 };
 
-/**
- * @description Takes the individual annotation elements, the specs for the node(s) receiving
- * the annotation, and adds the annotation to the container group in the proper position,
- * orientation, and with the correct auto-layout settings and constraints.
+/** WIP
+ * @description W
  *
  * @kind function
- * @name positionAnnotation
+ * @name positionLegend
  *
  * @param {Object} frame The Figma `frame` that contains the annotation.
  * @param {string} groupName The name of the group that holds the annotation elements
@@ -868,56 +927,51 @@ const buildLabelLegend = (
  * @private
  */
 const positionLegend = (
-  frame: FrameNode,
+  legend: FrameNode,
   originFramePosition: {
-    frameWidth: number,
-    frameHeight: number,
     width: number,
     height: number,
     x: number,
     y: number,
   },
 ) => {
-  const legend: FrameNode = figma.createFrame();
-  legend.name = frame.name + ' - Label Legend';
 
   console.log(legend)
 
   // auto-layout
   legend.layoutMode = 'VERTICAL';
   legend.primaryAxisSizingMode = 'AUTO';
-  legend.primaryAxisAlignItems = 'CENTER';
+  legend.primaryAxisAlignItems = 'MIN';
   legend.counterAxisSizingMode = 'AUTO';
   legend.counterAxisAlignItems = 'CENTER';
   legend.layoutAlign = 'INHERIT';
 
   // padding / fills
-  legend.fills = [];
+  legend.fills = [{
+    type: 'SOLID',
+    color: {r: 0.2, g: 0.1, b: 0.6},
+  }];
 
-  // set outer constraints
-  legend.constraints = {
-    horizontal: 'CENTER',
-    vertical: 'MAX',
-  };
 
   // set outer clipping
   legend.clipsContent = false;
 
   let placementX: number = (
-    originFramePosition.x 
+    originFramePosition.x + (
+      (originFramePosition.width + 20)
+    )
   );
 
   let placementY: number = (
-    originFramePosition.y + (
-      (originFramePosition.width + 20)
-    )
+    originFramePosition.y 
+    
   );
 
   // set annotation group placement, relative to container group
   legend.x = placementX;
   legend.y = placementY;
 
-  legend.appendChild(frame);
+  // legend.appendChild(origin);
 
   return legend;
 };
@@ -2368,10 +2422,11 @@ export default class Painter {
    * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
    * for the box.
    * * @param {Object} annotationNode The node containing the annotation layers.
+   * * * @param {string} type The annotation type e.g. keystop vs label.
    *
    * @returns {undefined}
    */
-  setTrackingData(annotationNode, nodePosition, type) {
+  setTrackingData(annotationNode, nodePosition: PluginNodePosition, type: string) {
     // ---------- set node tracking data
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
@@ -2643,6 +2698,17 @@ export default class Painter {
     });
 
     this.setTrackingData(annotationNode, nodePosition, 'label');
+
+    const legend = buildLabelLegend([{visible: 'hi there', a11y: '', alt: 'i am a pic'}]);
+    // set a new crawler on the frame to get all nodes & their component data => labels?
+
+    // console.log(this.frame)
+    console.log(legend)
+    const { x, y, width, height } = this.frame;
+    const pos = positionLegend(legend, { x, y, width, height });
+    this.page.appendChild(pos);
+    // find the frame's legend data, or create if not there
+    // add new label data to it
 
     // return a successful result
     result.status = 'success';
