@@ -2256,7 +2256,7 @@ export default class Painter {
    *
    * @returns {undefined}
    */
-  setTrackingData(annotationNode, nodePosition) {
+  setTrackingData(annotationNode, nodePosition, type) {
     // ---------- set node tracking data
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
@@ -2269,7 +2269,7 @@ export default class Painter {
 
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
+      this.page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null,
     );
     let trackingData: Array<PluginNodeTrackingData> = [];
     if (trackingDataRaw) {
@@ -2286,7 +2286,7 @@ export default class Painter {
 
     // commit the `trackingData` update
     this.page.setPluginData(
-      DATA_KEYS.labelAnnotations,
+      DATA_KEYS[`${type}Annotations`],
       JSON.stringify(trackingData),
     );
 
@@ -2296,7 +2296,7 @@ export default class Painter {
       role: 'node',
     };
     this.node.setPluginData(
-      DATA_KEYS.labelLinkId,
+      DATA_KEYS[`${type}LinkId`],
       JSON.stringify(nodeLinkData),
     );
 
@@ -2306,7 +2306,7 @@ export default class Painter {
       role: 'annotation',
     };
     annotationNode.setPluginData(
-      DATA_KEYS.labelLinkId,
+      DATA_KEYS[`${type}LinkId`],
       JSON.stringify(annotatedLinkData),
     );
   }
@@ -2433,7 +2433,7 @@ export default class Painter {
       type: 'keystop',
     });
 
-    this.setTrackingData(annotationNode, nodePosition);
+    this.setTrackingData(annotationNode, nodePosition, 'keystop');
 
     // return a successful result
     result.status = 'success';
@@ -2528,7 +2528,7 @@ export default class Painter {
       type: 'keystop',
     });
 
-    this.setTrackingData(annotationNode, nodePosition);
+    this.setTrackingData(annotationNode, nodePosition, 'label');
 
     // return a successful result
     result.status = 'success';
