@@ -2453,7 +2453,7 @@ export default class Painter {
     // ---------- set node tracking data
     // node tracking data is used for diffing changes to the source nodes and re-drawing or
     // removing annotations as necessary
-    this.setTrackingData(annotationNode, nodePosition, 'label');
+    this.setTrackingData(annotationNode, nodePosition, nodeType);
 
     // return a successful result
     result.status = 'success';
