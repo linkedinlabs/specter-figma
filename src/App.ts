@@ -106,9 +106,9 @@ const repairBrokenLinks = (
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
 
-  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-  const linkIdDataType = nodeType === 'keystop' ? DATA_KEYS.keystopLinkId : DATA_KEYS.labelLinkId;
-  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+  const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
+  const listDataType = DATA_KEYS[`${nodeType}List`];
   const list: Array<{
     id: string,
     position: number,
@@ -261,8 +261,8 @@ const refreshAnnotations = (
   } = options;
 
   // set data keys
-  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+  const listDataType = DATA_KEYS[`${nodeType}List`];
 
   // removes a node, if it exists
   const removeNode = (nodeId: string) => {
@@ -568,7 +568,7 @@ const diffChanges = (
 
   // grab tracking data for the page (currently Keystops/Labels)
   // tktk - fragile setting of `nodeType`
-  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
   const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
     page.getPluginData(annotationsDataType) || '[]',
   );
@@ -631,7 +631,7 @@ const getStopNodes = (
     resetData,
   } = options;
   const nodes: Array<SceneNode> = [];
-  const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+  const listDataType = DATA_KEYS[`${nodeType}List`];
 
   // grab (or initialize) keystop list for the top frame
   const listData = JSON.parse(frameNode.getPluginData(listDataType) || null);
@@ -704,7 +704,7 @@ const getStopData = (
   };
 
   // find data for selected node
-  const nodeDataType = nodeType === 'keystop' ? DATA_KEYS.keystopNodeData : DATA_KEYS.labelNodeData;
+  const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
   const nodeData = JSON.parse(node.getPluginData(nodeDataType) || null);
   if (nodeData) {
     // set keys
@@ -732,7 +732,7 @@ const getStopData = (
   if (topFrame) {
     // read keystop list data from top frame
     const itemIndex = 0;
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const listDataType = DATA_KEYS[`${nodeType}List`];
     const stopList = JSON.parse(topFrame.getPluginData(listDataType) || null);
 
     if (stopList) {
@@ -1013,7 +1013,7 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
 
     // need a selected node to annotate it
     if (
@@ -1979,8 +1979,8 @@ export default class App {
       selection,
     } = assemble(figma);
     // set data types based on node type
-    const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
+    const listDataType = DATA_KEYS[`${nodeType}List`];
 
     // can’t do anything without nodes to manipulate
     if (!nodeId && selection.length < 1) {
@@ -2286,7 +2286,7 @@ export default class App {
     const nodeId: string = options.id;
 
     // set data type
-    const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+    const listDataType = DATA_KEYS[`${nodeType}List`];
 
     // force the new position into a positive integer
     let newPosition: number = parseInt(options.position, 10);
