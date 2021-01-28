@@ -88,6 +88,7 @@ const COLORS: {
   custom: string,
   dimension: string,
   keystop: string,
+  label: string,
   spacing: string,
   style: string,
 } = {
@@ -95,6 +96,7 @@ const COLORS: {
   custom: '#c8006a',
   dimension: '#4c7100',
   keystop: '#c8006a',
+  label: '#6699cc',
   spacing: '#007373',
   style: '#bc3600',
 };
