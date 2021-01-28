@@ -394,7 +394,7 @@ const buildText = (
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
   } else if (type === 'legend') {
-    text.fontSize = 14;
+    text.fontSize = 13;
     text.textCase = 'LOWER';
     // text.textAlignHorizontal = 'LEFT';
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
@@ -861,14 +861,14 @@ const buildLabelLegend = (
     legendItem.primaryAxisSizingMode = 'AUTO';
     legendItem.primaryAxisAlignItems = 'SPACE_BETWEEN';
     legendItem.counterAxisSizingMode = 'AUTO';
-    legendItem.counterAxisAlignItems = 'CENTER';
+    legendItem.counterAxisAlignItems = 'MIN';
     legendItem.layoutAlign = 'STRETCH';
     legendItem.layoutGrow = 0;
 
     // set padding and item spacing
     legendItem.paddingLeft = 6;
     legendItem.paddingRight = 6;
-    legendItem.paddingTop = 2;
+    legendItem.paddingTop = 0;
     legendItem.paddingBottom = 2;
     legendItem.itemSpacing = 0;
 
@@ -936,8 +936,6 @@ const positionLegend = (
   },
 ) => {
 
-  console.log(legend)
-
   // auto-layout
   legend.layoutMode = 'VERTICAL';
   legend.primaryAxisSizingMode = 'AUTO';
@@ -947,31 +945,24 @@ const positionLegend = (
   legend.layoutAlign = 'INHERIT';
 
   // padding / fills
-  legend.fills = [{
-    type: 'SOLID',
-    color: {r: 0.2, g: 0.1, b: 0.6},
-  }];
-
+  legend.fills = [];
 
   // set outer clipping
   legend.clipsContent = false;
 
-  let placementX: number = (
+  const placementX: number = (
     originFramePosition.x + (
       (originFramePosition.width + 20)
     )
   );
 
-  let placementY: number = (
+  const placementY: number = (
     originFramePosition.y 
-    
   );
 
   // set annotation group placement, relative to container group
   legend.x = placementX;
   legend.y = placementY;
-
-  // legend.appendChild(origin);
 
   return legend;
 };
@@ -2060,6 +2051,7 @@ const getSetNodeSettings = (
  */
 export default class Painter {
   frame: FrameNode;
+  legend?: FrameNode;
   isMercadoMode: boolean;
   node: SceneNode;
   page: PageNode;
@@ -2070,6 +2062,7 @@ export default class Painter {
   }) {
     this.isMercadoMode = isMercadoMode;
     this.frame = findTopFrame(node);
+    // this.legend = findLegendFrame(this.frame);
     this.node = node;
     this.page = page;
   }
@@ -2426,59 +2419,85 @@ export default class Painter {
    *
    * @returns {undefined}
    */
-  setTrackingData(annotationNode, nodePosition: PluginNodePosition, type: string) {
+  setTrackingData(annotationNode, position: PluginNodePosition, type: string) {
     // ---------- set node tracking data
     const linkId: string = uuid();
-    const newAnnotatedNodeData: PluginNodeTrackingData = {
-      annotationId: annotationNode.id,
-      id: this.node.id,
-      linkId,
-      topFrameId: this.frame.id,
-      nodePosition,
-    };
 
-    // update the `trackingSettings` array
-    const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null,
-    );
-    let trackingData: Array<PluginNodeTrackingData> = [];
-    if (trackingDataRaw) {
-      trackingData = trackingDataRaw;
+    if (['keystop', 'label'].includes(type)) {
+      const newAnnotatedNodeData: PluginNodeTrackingData = {
+        annotationId: annotationNode.id,
+        id: this.node.id,
+        linkId,
+        topFrameId: this.frame.id,
+        // legendId: '',
+        nodePosition: position,
+      };
+  
+      // update the `trackingSettings` array
+      const trackingDataRaw = JSON.parse(
+        this.page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null,
+      );
+      let trackingData: Array<PluginNodeTrackingData> = [];
+      if (trackingDataRaw) {
+        trackingData = trackingDataRaw;
+      }
+  
+      // set the node data in the `trackingData` array
+      trackingData = updateArray(
+        trackingData,
+        newAnnotatedNodeData,
+        'id',
+        'update',
+      );
+  
+      // commit the `trackingData` update
+      this.page.setPluginData(
+        DATA_KEYS[`${type}Annotations`],
+        JSON.stringify(trackingData),
+      );
+  
+      // set the `linkId` on the annotated node
+      const nodeLinkData: PluginNodeLinkData = {
+        id: linkId,
+        role: 'node',
+      };
+      this.node.setPluginData(
+        DATA_KEYS[`${type}LinkId`],
+        JSON.stringify(nodeLinkData),
+      );
+  
+    } else {
+      const newFrameData: PluginFrameTrackingData = {
+        frameId: node.id,
+        id: this.frame.id,
+        linkId,
+        framePosition: position,
+      };
+
+      // update the `trackingSettings` array
+      const trackingDataRaw = JSON.parse(
+        this.page.getPluginData(DATA_KEYS.labelLegends) || null,
+      );
+      let trackingData: Array<PluginNodeTrackingData> = [];
+      if (trackingDataRaw) {
+        trackingData = trackingDataRaw;
+      }
+  
+      // set the node data in the `trackingData` array
+      trackingData = updateArray(
+        trackingData,
+        newFrameData,
+        'id',
+        'update',
+      );
+  
+      // commit the `trackingData` update
+      this.page.setPluginData(
+        DATA_KEYS.labelLegends,
+        JSON.stringify(trackingData),
+      );
+
     }
-
-    // set the node data in the `trackingData` array
-    trackingData = updateArray(
-      trackingData,
-      newAnnotatedNodeData,
-      'id',
-      'update',
-    );
-
-    // commit the `trackingData` update
-    this.page.setPluginData(
-      DATA_KEYS[`${type}Annotations`],
-      JSON.stringify(trackingData),
-    );
-
-    // set the `linkId` on the annotated node
-    const nodeLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'node',
-    };
-    this.node.setPluginData(
-      DATA_KEYS[`${type}LinkId`],
-      JSON.stringify(nodeLinkData),
-    );
-
-    // set the `linkId` on the annotation node
-    const annotatedLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'annotation',
-    };
-    annotationNode.setPluginData(
-      DATA_KEYS[`${type}LinkId`],
-      JSON.stringify(annotatedLinkData),
-    );
   }
 
   /**
@@ -2698,7 +2717,18 @@ export default class Painter {
     });
 
     this.setTrackingData(annotationNode, nodePosition, 'label');
+    this.updateLegend();
 
+    // return a successful result
+    result.status = 'success';
+    return result;
+  }
+
+  updateLegend() {
+    // if we can't find a legend corresponding to the frame ID create a new one
+    // if we can, feel it the new label
+
+    // get up to date info of all labels with crawler?  or just add this one?
     const legend = buildLabelLegend([{visible: 'hi there', a11y: '', alt: 'i am a pic'}]);
     // set a new crawler on the frame to get all nodes & their component data => labels?
 
@@ -2709,10 +2739,6 @@ export default class Painter {
     this.page.appendChild(pos);
     // find the frame's legend data, or create if not there
     // add new label data to it
-
-    // return a successful result
-    result.status = 'success';
-    return result;
   }
 
   /**

@@ -261,8 +261,12 @@ const refreshAnnotations = (
   } = options;
 
   // set data keys
-  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations;
+  const annotationsDataType = nodeType === 'keystop' ? DATA_KEYS.keystopAnnotations : DATA_KEYS.labelAnnotations; // this gets the tracking data
   const listDataType = nodeType === 'keystop' ? DATA_KEYS.keystopList : DATA_KEYS.labelList;
+
+  console.log(JSON.parse(page.getPluginData(annotationsDataType)));
+  // console.log(annotationsDataType) //xxxlabelAnnotations-001 string, gets page-level list of tracking details for design components with label annotations
+  // console.log(listDataType) //just a string that points to labelList-001 thing
 
   // removes a node, if it exists
   const removeNode = (nodeId: string) => {
@@ -296,6 +300,7 @@ const refreshAnnotations = (
     if (topFrameNode) {
       // get top frame stop list
       const list = JSON.parse(topFrameNode.getPluginData(listDataType) || null);
+
       if (list) {
         // get current position
         let positionToRemove: number = 1;
@@ -369,6 +374,7 @@ const refreshAnnotations = (
   const nodesToRepaint: Array<string> = [];
   trackingData.forEach((trackingEntry) => {
     const node: BaseNode = figma.getNodeById(trackingEntry.id);
+    console.log(node)
 
     // ----- check if main node still exists
     if (node) {

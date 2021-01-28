@@ -21,12 +21,26 @@ declare global {
     y: number,
   };
 
+  type PluginFramePosition = {
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+  };
+
   type PluginNodeTrackingData = {
-    annotationId: string,
-    id: string,
-    linkId: string,
+    annotationId: string, // ID of node containing the annotation itself
+    id: string, // ID of node containing the design element
+    linkId: string,  // shared link between the above 2 (cus those may change via Figma)
     topFrameId: string,
     nodePosition: PluginNodePosition,
+  };
+
+  type PluginFrameTrackingData = {
+    frameId: string,
+    id: string,
+    linkId: string,
+    framePosition: PluginFramePosition,
   };
 
   type PluginNodeLinkData = {
