@@ -616,7 +616,7 @@ const getStopData = (
 ): {
   hasStop: boolean,
   keys?: Array<PluginKeystopKeys>,
-  labels?: PluginLabelsNames,
+  labels?: PluginAriaLabels,
   position: number,
   role?: string,
 } => {
@@ -624,7 +624,7 @@ const getStopData = (
   const nodePositionData: {
     hasStop: boolean,
     keys?: Array<PluginKeystopKeys>,
-    labels?: PluginLabelsNames,
+    labels?: PluginAriaLabels,
     position: number,
     role?: string,
   } = {
@@ -1658,7 +1658,7 @@ export default class App {
     key: 'role' | 'labels',
     options: {
       id: string,
-      labels?: PluginLabelsNames,
+      labels?: PluginAriaLabels,
       role?: PluginLabelRoles,
     },
   ) {

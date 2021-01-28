@@ -808,6 +808,121 @@ const buildBoundingBox = (position: {
 };
 
 /**
+ * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
+ * and sets auto-layout and constraint properties.
+ *
+ * @kind function
+ * @name buildAnnotation
+ *
+ * @param {Object} options Object that includes `text` – the text for the annotation,
+ * `secondaryText` – optional secondary text for the annotation, and `type` – a string
+ * representing the type of annotation (component or foundation).
+ *
+ * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
+ * and `icon`).
+ *
+ * @private
+ */
+const buildLabelLegend = (
+  originFrame: FrameNode,
+  labelSets: Array<PluginAriaLabels>,
+) => {
+  let legend: FrameNode = figma.createFrame();
+
+  labelSets.forEach(labels => {
+    const legendItem: FrameNode = figma.createFrame();
+    //add styling
+    Object.entries(labels).forEach(([key, val]) => {
+      const title: TextNode = buildText('label', hexToDecimalRgb('#000000'), key+':');
+      const value: TextNode = buildText('label', hexToDecimalRgb('#000000'), val ? val : 'none');
+      legendItem.appendChild(title);
+      legendItem.appendChild(value);
+    })
+    legend.appendChild(legendItem);
+  })
+
+  // return an object with each element
+  return legend;
+};
+
+/**
+ * @description Takes the individual annotation elements, the specs for the node(s) receiving
+ * the annotation, and adds the annotation to the container group in the proper position,
+ * orientation, and with the correct auto-layout settings and constraints.
+ *
+ * @kind function
+ * @name positionAnnotation
+ *
+ * @param {Object} frame The Figma `frame` that contains the annotation.
+ * @param {string} groupName The name of the group that holds the annotation elements
+ * inside the `containerGroup`.
+ * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
+ * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`)
+ * for the node receiving the annotation + the frame width/height (`frameWidth` /
+ * `frameHeight`).
+ * @param {string} annotationType An optional string representing the type of annotation.
+ * @param {string} orientation An optional string representing the orientation of the
+ * annotation (`top` or `left`).
+ *
+ * @returns {Object} The final annotation as a node group.
+ * @private
+ */
+const positionLegend = (
+  frame: FrameNode,
+  originFramePosition: {
+    frameWidth: number,
+    frameHeight: number,
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+  },
+) => {
+  const legend: FrameNode = figma.createFrame();
+  legend.name = frame.name + ' - Label Legend';
+
+  console.log(legend)
+
+  // auto-layout
+  legend.layoutMode = 'VERTICAL';
+  legend.primaryAxisSizingMode = 'AUTO';
+  legend.primaryAxisAlignItems = 'CENTER';
+  legend.counterAxisSizingMode = 'AUTO';
+  legend.counterAxisAlignItems = 'CENTER';
+  legend.layoutAlign = 'INHERIT';
+
+  // padding / fills
+  legend.fills = [];
+
+  // set outer constraints
+  legend.constraints = {
+    horizontal: 'CENTER',
+    vertical: 'MAX',
+  };
+
+  // set outer clipping
+  legend.clipsContent = false;
+
+  let placementX: number = (
+    originFramePosition.x 
+  );
+
+  let placementY: number = (
+    originFramePosition.y + (
+      (originFramePosition.width + 20)
+    )
+  );
+
+  // set annotation group placement, relative to container group
+  legend.x = placementX;
+  legend.y = placementY;
+
+  legend.appendChild(frame);
+
+  return legend;
+};
+
+/**
  * @description Takes the individual annotation elements, the specs for the node(s) receiving
  * the annotation, and adds the annotation to the container group in the proper position,
  * orientation, and with the correct auto-layout settings and constraints.
@@ -2027,6 +2142,72 @@ export default class Painter {
   }
 
   /**
+   * @description Sets tracking data for an annotation to establish link with the relevant node.
+   *
+   * @kind function
+   * @name setTrackingData
+   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
+   * for the box.
+   * * @param {Object} annotationNode The node containing the annotation layers.
+   *
+   * @returns {Object} A result object container success/error status and log/toast messages.
+   */
+  setTrackingData(annotationNode, nodePosition) {
+    // ---------- set node tracking data
+    const linkId: string = uuid();
+    const newAnnotatedNodeData: PluginNodeTrackingData = {
+      annotationId: annotationNode.id,
+      id: this.node.id,
+      linkId,
+      topFrameId: this.frame.id,
+      nodePosition,
+    };
+
+    // update the `trackingSettings` array
+    const trackingDataRaw = JSON.parse(
+      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
+    );
+    let trackingData: Array<PluginNodeTrackingData> = [];
+    if (trackingDataRaw) {
+      trackingData = trackingDataRaw;
+    }
+
+    // set the node data in the `trackingData` array
+    trackingData = updateArray(
+      trackingData,
+      newAnnotatedNodeData,
+      'id',
+      'update',
+    );
+
+    // commit the `trackingData` update
+    this.page.setPluginData(
+      DATA_KEYS.labelAnnotations,
+      JSON.stringify(trackingData),
+    );
+
+    // set the `linkId` on the annotated node
+    const nodeLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'node',
+    };
+    this.node.setPluginData(
+      DATA_KEYS.labelLinkId,
+      JSON.stringify(nodeLinkData),
+    );
+
+    // set the `linkId` on the annotation node
+    const annotatedLinkData: PluginNodeLinkData = {
+      id: linkId,
+      role: 'annotation',
+    };
+    annotationNode.setPluginData(
+      DATA_KEYS.labelLinkId,
+      JSON.stringify(annotatedLinkData),
+    );
+  }
+
+  /**
    * @description Adds a semi-transparent rectangle to a specific frame based on the parameters
    * received in the `frame` object.
    *
@@ -2244,73 +2425,6 @@ export default class Painter {
     result.messages.log = `Dimensions annotated for “${this.node.name}”`;
     return result;
   }
-
-  /**
-   * @description Sets tracking data for an annotation to establish link with the relevant node.
-   *
-   * @kind function
-   * @name setTrackingData
-   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
-   * for the box.
-   * * @param {Object} annotationNode The node containing the annotation layers.
-   *
-   * @returns {undefined}
-   */
-  setTrackingData(annotationNode, nodePosition) {
-    // ---------- set node tracking data
-    const linkId: string = uuid();
-    const newAnnotatedNodeData: PluginNodeTrackingData = {
-      annotationId: annotationNode.id,
-      id: this.node.id,
-      linkId,
-      topFrameId: this.frame.id,
-      nodePosition,
-    };
-
-    // update the `trackingSettings` array
-    const trackingDataRaw = JSON.parse(
-      this.page.getPluginData(DATA_KEYS.labelAnnotations) || null,
-    );
-    let trackingData: Array<PluginNodeTrackingData> = [];
-    if (trackingDataRaw) {
-      trackingData = trackingDataRaw;
-    }
-
-    // set the node data in the `trackingData` array
-    trackingData = updateArray(
-      trackingData,
-      newAnnotatedNodeData,
-      'id',
-      'update',
-    );
-
-    // commit the `trackingData` update
-    this.page.setPluginData(
-      DATA_KEYS.labelAnnotations,
-      JSON.stringify(trackingData),
-    );
-
-    // set the `linkId` on the annotated node
-    const nodeLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'node',
-    };
-    this.node.setPluginData(
-      DATA_KEYS.labelLinkId,
-      JSON.stringify(nodeLinkData),
-    );
-
-    // set the `linkId` on the annotation node
-    const annotatedLinkData: PluginNodeLinkData = {
-      id: linkId,
-      role: 'annotation',
-    };
-    annotationNode.setPluginData(
-      DATA_KEYS.labelLinkId,
-      JSON.stringify(annotatedLinkData),
-    );
-  }
-
 
   /**
    * @description Builds a Keystop Annotation in Figma. Expects keystop node data to be
@@ -2832,4 +2946,5 @@ export default class Painter {
     result.messages.log = `Spacing (${directions.join(', ')}) annotated for “${this.node.name}”`;
     return result;
   }
+
 }

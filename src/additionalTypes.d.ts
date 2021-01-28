@@ -6,7 +6,7 @@ declare global {
 
   type PluginLabelRoles = 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
-  type PluginLabelsNames = {
+  type PluginAriaLabels = {
     a11y: null,
     visible: null,
     alt: null,
@@ -45,7 +45,7 @@ declare global {
     id: string,
     isSelected: boolean,
     keys?: Array<PluginKeystopKeys>,
-    labels?: PluginLabelsNames,
+    labels?: PluginAriaLabels,
     name: string,
     position: number | string,
     role?: string,
