@@ -759,6 +759,7 @@ export default class Identifier {
    * @kind function
    * @name getSetStop
    *
+   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
    * @param {number} position An optional number to override the counter.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.

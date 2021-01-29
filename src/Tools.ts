@@ -803,7 +803,7 @@ const isVisible = (node: SceneNode): boolean => {
  *
  * @kind function
  * @name lettersToNumbers
- * @param {string} num The string of letters representing a number.
+ * @param {string} letterset The string of letters representing a number.
  *
  * @returns {number} The integer based on the letterset.
  */

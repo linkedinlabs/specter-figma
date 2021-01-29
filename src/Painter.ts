@@ -2250,9 +2250,11 @@ export default class Painter {
    *
    * @kind function
    * @name setTrackingData
+   *
+   * @param {Object} annotationNode The node containing the annotation layers.
    * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
    * for the box.
-   * * @param {Object} annotationNode The node containing the annotation layers.
+   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
    *
    * @returns {undefined}
    */
