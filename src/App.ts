@@ -106,13 +106,12 @@ const repairBrokenLinks = (
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
 
-  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
   const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
   const listDataType = DATA_KEYS[`${nodeType}List`];
   const list: Array<{
     id: string,
     position: number,
-  }> = JSON.parse(frameNode.getPluginData(annotationsDataType) || null);
+  }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
 
   if (list) {
     const updatedList = list;
