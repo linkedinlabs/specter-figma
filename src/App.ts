@@ -672,6 +672,7 @@ const getStopNodes = (
  * @kind function
  * @name getStopData
  *
+ * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
  * @param {Object} node A SceneNode to check for Keystop data.
  *
  * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
@@ -998,6 +999,7 @@ export default class App {
    * @kind function
    * @name annotateKeystopLabel
    *
+   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
    * @param {Array} suppliedSelection If present, this array of nodes will override the
    * nodes found in current selection.
    *
@@ -1719,7 +1721,10 @@ export default class App {
    * @kind function
    * @name labelsSetData
    *
-   * @param {Object} options Should include a Figma node `id` and the `role` to be set.
+   * @param {string} key The type of data to set (`role` or `labels`). Used as a `key` on
+   * the `nodeData` object.
+   * @param {Object} options Should include a Figma node `id` and optionally the `role`
+   * or `labels` to be updated.
    *
    * @returns {null}
    */
@@ -1965,6 +1970,7 @@ export default class App {
    * @kind function
    * @name removeKeystopsLabels
    *
+   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
    * @param {string} nodeId The `id` of a Figma node with a Keystop annotation.
    *
    * @returns {null} Shows a Toast in the UI if a `nodeId` is not supplied.
@@ -2271,6 +2277,7 @@ export default class App {
    * @kind function
    * @name updateKeystopsLabels
    *
+   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
    * @param {Object} options Should include a Figma node `id` and the `position` to be updated.
    *
    * @returns {null}
