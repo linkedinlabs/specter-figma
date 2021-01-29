@@ -2250,9 +2250,11 @@ export default class Painter {
    *
    * @kind function
    * @name setTrackingData
+   *
+   * @param {Object} annotationNode The node containing the annotation layers.
    * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
    * for the box.
-   * * @param {Object} annotationNode The node containing the annotation layers.
+   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
    *
    * @returns {undefined}
    */
@@ -2321,11 +2323,13 @@ export default class Painter {
 
   /**
    * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
-   * be available (`annotationText`, `labels`, and potential `keys` for auxilary annotations).
-   * Note: the `labels` and Label annotation portions are WIP.
+   * be available (`annotationText`, `labels`, and potentially `keys` for auxilary annotations).
+   * Note: the `labels` legend portions are WIP.
    *
    * @kind function
    * @name addStop
+   *
+   * @param {string} nodeType The type of annotation to add (currently: `kesytop` or `label`).
    *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
