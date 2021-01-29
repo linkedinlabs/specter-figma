@@ -7,6 +7,7 @@ import {
   existsInArray,
   findTopFrame,
   getPeerPluginData,
+  lettersToNumbers,
   numberToLetters,
   resizeGUI,
   updateArray,
@@ -1894,7 +1895,7 @@ export default class App {
           role,
         } = getStopData(nodeType, node);
 
-        let displayPosition: string = position.toString();
+        let displayPosition: string = position ? position.toString() : '';
         if (currentView === 'a11y-labels') {
           // convert numeric position to alpha for view
           displayPosition = numberToLetters(position);
@@ -2287,6 +2288,9 @@ export default class App {
 
     // force the new position into a positive integer
     let newPosition: number = parseInt(options.position, 10);
+    if (newPosition.toString() === 'NaN') {
+      newPosition = lettersToNumbers(options.position);
+    }
 
     if (!nodeId || !newPosition) {
       messenger.log(`Cannot update ${nodeType}; missing node ID or new position`, 'error');
