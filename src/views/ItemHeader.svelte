@@ -57,7 +57,17 @@
   };
 
   const updatePosition = (newPosition) => {
-    if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
+    // only update if the positions are different
+    let sendPositionUpdate = false;
+    if (type === 'keystop') {
+      if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
+        sendPositionUpdate = true;
+      }
+    } else if (originalPosition !== newPosition) {
+      sendPositionUpdate = true;
+    }
+
+    if (sendPositionUpdate) {
       parent.postMessage({
         pluginMessage: {
           action: `${type}-update-stop`,
