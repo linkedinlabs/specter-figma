@@ -68,7 +68,7 @@ const cleanUpAnnotations = (
   return null;
 };
 
-/** WIP
+/**
  * @description Checks frame list data against annotations and uses linkId between annotation
  * and original node to determine if the link is broken. Annotations for broken links are
  * removed and new annotations are drawn, if possible.
@@ -76,11 +76,11 @@ const cleanUpAnnotations = (
  * @kind function
  * @name repairBrokenLinks
  *
- * @param {Object} frameNode A top frame node to evaluate for context.
- * @param {Array} trackingData The page-level node tracking data.
- * @param {Object} page The Figma PageNode.
- * @param {Object} messenger An initialized instance of the Messenger class for logging.
- * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
+ * @param {Object} options Includes `frameNode`: a top frame node to evaluate for context;
+ * `trackingData`: the page-level node tracking data; `page`: the Figma PageNode;
+ * `messenger`: an initialized instance of the Messenger class for logging; and
+ * `isMercadoMode`: designates whether “Mercado” rules apply.
  *
  * @returns {null}
  */
@@ -230,17 +230,17 @@ const repairBrokenLinks = (
   return null;
 };
 
-/** WIP
+/**
  * @description Checks tracking data against the provided frameNode. If any annotations
  * are missing, they are re-painted. If any links are broken/invalidated, annotations are removed.
  *
  * @kind function
  * @name refreshAnnotations
  *
- * @param {Array} trackingData The page-level node tracking data.
- * @param {Object} page The Figma PageNode.
- * @param {Object} messenger An initialized instance of the Messenger class for logging.
- * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
+ * @param {Object} options Includes `trackingData`: the page-level node tracking data;
+ * `page`: the Figma PageNode; `messenger`: an initialized instance of the Messenger class for
+ * logging; and `isMercadoMode`: designates whether “Mercado” rules apply.
  *
  * @returns {null}
  */
@@ -604,7 +604,7 @@ const diffChanges = (
   return null;
 };
 
-/** WIP
+/**
  * @description Takes a frame node and uses its list data to create an array of nodes that
  * currently have Keystop Annotations. The `trackingData` is used in case the list is stale
  * and we need to clean up annotations that no longer exist.
@@ -612,9 +612,9 @@ const diffChanges = (
  * @kind function
  * @name getStopNodes
  *
- * @param {Object} frameNode The top-level frame node we want to locate Keystops within.
- * @param {Array} trackingData The page-level node tracking data.
- * @param {boolean} resetData Set to true if we know annotations are being re-painted and
+ * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
+ * @param {Object} options Includes `frameNode`: the top-level frame node we want to locate
+ * stops within; `resetData`: set to true if we know annotations are being re-painted and
  * the top-level frame node’s list data should be cleared out.
  *
  * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
@@ -664,9 +664,9 @@ const getStopNodes = (
   return nodes;
 };
 
-/** WIP
- * @description Takes a node and locates its current Keystop data (position and keys), if
- * it exists. The data is located through the node’s top-level frame. Returns an object
+/**
+ * @description Takes a node and locates its current stop data (position, keys, labels, etc.),
+ * if it exists. The data is located through the node’s top-level frame. Returns an object
  * formatted to pass along to the UI.
  *
  * @kind function
@@ -676,7 +676,7 @@ const getStopNodes = (
  *
  * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
  * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
- * if they exist.
+ * if they exist or labels (if they exist).
  */
 const getStopData = (
   nodeType: 'keystop' | 'label',
@@ -991,9 +991,9 @@ export default class App {
     return this.closeOrReset();
   }
 
-  /** WIP
+  /**
    * @description Annotates a selected node or multiple nodes in a Figma file with
-   * focus order keystop annotations.
+   * focus order keystop annotations or Aria label annotations.
    *
    * @kind function
    * @name annotateKeystopLabel
@@ -1711,9 +1711,10 @@ export default class App {
     return null;
   }
 
-  /** WIP
-   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Role Annotation
-   * based on the supplied `role`.
+  /**
+   * @description Retrieves a node based on the supplied `id` and updates the `role` or text
+   * `labels` based on input from the UI.
+   * Note: the legend portion of Labels is currentl WIP, so repainting is disabled.
    *
    * @kind function
    * @name labelsSetData
@@ -1745,7 +1746,7 @@ export default class App {
       }
 
       // repaint the node
-      // tktk: will uncomment the below when this side of things is confirmed
+      // tktk: will uncomment the below when legend stuff is implemented
       // this.annotateLabel([node as SceneNode]);
     }
 
@@ -1956,9 +1957,10 @@ export default class App {
     return null;
   }
 
-  /** WIP
+  /**
    * @description Retrieves a node based on the supplied `nodeId` or uses the current selection
-   * and removes associated Keystop annotations and auxilary key annotations.
+   * and removes associated stop annotations and auxilary annotations based on node type
+   * (currently `keystop` or `label`).
    *
    * @kind function
    * @name removeKeystopsLabels
@@ -2261,15 +2263,15 @@ export default class App {
     await this.showToolbar();
   }
 
-  /** WIP
-   * @description Retrieves a node based on the supplied `id` and uses the `position` to update
-   * the node’s Keystop annotation. Any annotations in the top frame with new numbers are
-   * re-painted.
+  /**
+   * @description Retrieves a node based on the type (`keystop` or `label`) and supplied `id` and
+   * uses the `position` to update the node’s stop annotation. Any annotations in the top frame
+   * with new numbers are re-painted.
    *
    * @kind function
    * @name updateKeystopsLabels
    *
-   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
+   * @param {Object} options Should include a Figma node `id` and the `position` to be updated.
    *
    * @returns {null}
    */
