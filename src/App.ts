@@ -71,7 +71,10 @@ const cleanUpAnnotations = (
 /**
  * @description Checks frame list data against annotations and uses linkId between annotation
  * and original node to determine if the link is broken. Annotations for broken links are
- * removed and new annotations are drawn, if possible.
+ * removed and new annotations are drawn, if possible. The main use-case for this is when
+ * an artboard (top frame) containing annotations is duplicated. We want to re-initialize
+ * our data so that the Specter UI accurately represents the annotations on the _new_ top
+ * frame.
  *
  * @kind function
  * @name repairBrokenLinks
@@ -106,13 +109,12 @@ const repairBrokenLinks = (
   const nodesToEvaluate = crawlerForTopFrame.all();
   const annotationNodesToRemove: Array<string> = [];
 
-  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
   const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
   const listDataType = DATA_KEYS[`${nodeType}List`];
   const list: Array<{
     id: string,
     position: number,
-  }> = JSON.parse(frameNode.getPluginData(annotationsDataType) || null);
+  }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
 
   if (list) {
     const updatedList = list;
