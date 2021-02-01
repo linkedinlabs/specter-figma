@@ -29,7 +29,7 @@
     resetValue = true;
   };
 
-  const removeStop = () => {
+  const removeStopAnnotation = () => {
     parent.postMessage({
       pluginMessage: {
         action: `${type}-remove-stop`,
@@ -117,7 +117,7 @@
   <span class="right form-element-holder">
     <FormUnit
       className={setInputOptions(type).className}
-      on:deleteSignal={() => removeStop()}
+      on:deleteSignal={() => removeStopAnnotation()}
       hideLabel={true}
       isDeletable={true}
       inputType={setInputOptions(type).inputType}

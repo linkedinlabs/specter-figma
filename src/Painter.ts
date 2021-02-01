@@ -815,26 +815,22 @@ const buildBoundingBox = (position: {
   return boundingBox;
 };
 
-/** WIP
- * @description Builds the initial annotation elements in Figma (diamond, rectangle, text),
- * and sets auto-layout and constraint properties.
+/**
+ * @description Builds the initial legend frame for label annotation legend items.
  *
  * @kind function
- * @name buildAnnotation
+ * @name buildLabelLegend
  *
- * @param {Object} options Object that includes `text` – the text for the annotation,
- * `secondaryText` – optional secondary text for the annotation, and `type` – a string
- * representing the type of annotation (component or foundation).
+ * @param {Array} labelSets List of label data to include in the legend.
  *
- * @returns {Object} Each annotation element as a node (`diamond`, `rectangle`, `text`,
- * and `icon`).
+ * @returns {Object} Returns the legend frame.
  *
  * @private
  */
 const buildLabelLegend = (
   labelSets?: Array<any>,
 ) => {
-  let legend: FrameNode = figma.createFrame();
+  const legend: FrameNode = figma.createFrame();
   // auto-layout
   legend.layoutMode = 'VERTICAL';
   legend.primaryAxisSizingMode = 'AUTO';
@@ -852,11 +848,11 @@ const buildLabelLegend = (
   legend.paddingBottom = 2;
   legend.itemSpacing = 0;
 
-  labelSets.forEach(labels => {
+  labelSets.forEach((labels) => {
     const legendItem: FrameNode = figma.createFrame();
     legendItem.name = 'Label item';
 
-      // auto-layout
+    // auto-layout
     legendItem.layoutMode = 'VERTICAL';
     legendItem.primaryAxisSizingMode = 'AUTO';
     legendItem.primaryAxisAlignItems = 'SPACE_BETWEEN';
@@ -872,10 +868,10 @@ const buildLabelLegend = (
     legendItem.paddingBottom = 2;
     legendItem.itemSpacing = 0;
 
-    //add styling
-    Object.entries(labels).forEach(([key, val]) => {
+    // add styling
+    Object.entries(labels).forEach(([key, value]: Array<any>) => {
       const line: FrameNode = figma.createFrame();
-      line.name = key + ' label';
+      line.name = `${key} label`;
       // auto-layout
       line.layoutMode = 'HORIZONTAL';
       line.primaryAxisSizingMode = 'AUTO';
@@ -892,38 +888,30 @@ const buildLabelLegend = (
       line.paddingBottom = 2;
       line.itemSpacing = 0;
 
-      const title: TextNode = buildText('legend', hexToDecimalRgb('#000000'), key+':');
-      const value: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val ? val : 'none');
+      const labelTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${key}:`);
+      const LabelValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), value || 'none');
 
-      line.appendChild(title);
-      line.appendChild(value);
+      line.appendChild(labelTitle);
+      line.appendChild(LabelValue);
       legendItem.appendChild(line);
-    })
+    });
     legend.appendChild(legendItem);
-  })
+  });
 
   // return an object with each element
   return legend;
 };
 
-/** WIP
- * @description W
+/**
+ * @description Positions the legend frame respective to the design frame it corresponds with.
  *
  * @kind function
  * @name positionLegend
  *
- * @param {Object} frame The Figma `frame` that contains the annotation.
- * @param {string} groupName The name of the group that holds the annotation elements
- * inside the `containerGroup`.
- * @param {Object} annotation Each annotation element (`diamond`, `rectangle`, `text`, and `icon`).
- * @param {Object} nodePosition The position specifications (`width`, `height`, `x`, `y`)
- * for the node receiving the annotation + the frame width/height (`frameWidth` /
- * `frameHeight`).
- * @param {string} annotationType An optional string representing the type of annotation.
- * @param {string} orientation An optional string representing the orientation of the
- * annotation (`top` or `left`).
+ * @param {Object} legend The Figma frame that contains the annotation legend.
+ * @param {string} originFramePosition The position of the design frame the legend pertains to.
  *
- * @returns {Object} The final annotation as a node group.
+ * @returns {Object} The final legend after positioning.
  * @private
  */
 const positionLegend = (
@@ -935,36 +923,30 @@ const positionLegend = (
     y: number,
   },
 ) => {
+  const legendFrame = legend;
 
   // auto-layout
-  legend.layoutMode = 'VERTICAL';
-  legend.primaryAxisSizingMode = 'AUTO';
-  legend.primaryAxisAlignItems = 'MIN';
-  legend.counterAxisSizingMode = 'AUTO';
-  legend.counterAxisAlignItems = 'CENTER';
-  legend.layoutAlign = 'INHERIT';
+  legendFrame.layoutMode = 'VERTICAL';
+  legendFrame.primaryAxisSizingMode = 'AUTO';
+  legendFrame.primaryAxisAlignItems = 'MIN';
+  legendFrame.counterAxisSizingMode = 'AUTO';
+  legendFrame.counterAxisAlignItems = 'CENTER';
+  legendFrame.layoutAlign = 'INHERIT';
 
   // padding / fills
-  legend.fills = [];
+  legendFrame.fills = [];
 
   // set outer clipping
-  legend.clipsContent = false;
+  legendFrame.clipsContent = false;
 
-  const placementX: number = (
-    originFramePosition.x + (
-      (originFramePosition.width + 20)
-    )
-  );
-
-  const placementY: number = (
-    originFramePosition.y 
-  );
+  const placementX: number = originFramePosition.x + (originFramePosition.width + 20);
+  const placementY: number = originFramePosition.y;
 
   // set annotation group placement, relative to container group
-  legend.x = placementX;
-  legend.y = placementY;
+  legendFrame.x = placementX;
+  legendFrame.y = placementY;
 
-  return legend;
+  return legendFrame;
 };
 
 /**
@@ -2408,21 +2390,21 @@ export default class Painter {
   }
 
   /**
-   * @description Sets tracking data for an annotation to establish link with the relevant node.
+   * @description This sets tracking data for an annotation to establish link with relevant node.
    *
    * @kind function
    * @name setTrackingData
-   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
-   * for the box.
-   * * @param {Object} annotationNode The node containing the annotation layers.
-   * * * @param {string} type The annotation type e.g. keystop vs label.
+   *
+   * @param {Object} annotationNode The node containing the annotation layers.
+   * @param {Object} nodePosition The position coordinates for the box.
+   * @param {string} type The annotation type e.g. keystop vs label.
    *
    * @returns {undefined}
    */
   setTrackingData(
     annotationNode,
     nodePosition,
-    nodeType: 'keystop' | 'label',
+    type: PluginStopType,
   ) {
     // ---------- set node tracking data
     const linkId: string = uuid();
@@ -2435,8 +2417,8 @@ export default class Painter {
     };
 
     // set data types
-    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
-    const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
+    const annotationsDataType = DATA_KEYS[`${type}Annotations`];
+    const linkIdDataType = DATA_KEYS[`${type}LinkId`];
 
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
@@ -2490,9 +2472,11 @@ export default class Painter {
    * @kind function
    * @name addStop
    *
+   * @param {string} type The tyope of stop we are adding.
+   *
    * @returns {Object} A result object container success/error status and log/toast messages.
    */
-  addStop(nodeType: 'keystop' | 'label') {
+  addStop(type: PluginStopType) {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -2506,11 +2490,12 @@ export default class Painter {
         log: null,
       },
     };
+    console.log(type)
 
-    result.messages.log = `Draw the ${nodeType} stop annotation for “${this.node.name}”`;
+    result.messages.log = `Draw the ${type} stop annotation for “${this.node.name}”`;
 
     // retrieve the node data with our annotation text
-    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
+    const nodeDataType = DATA_KEYS[`${type}NodeData`];
     const nodeData = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
     if (!nodeData || (nodeData && !nodeData.annotationText)) {
@@ -2529,11 +2514,11 @@ export default class Painter {
 
     // set up some information
     let { annotationText } = nodeData;
-    const typeCapitalized = nodeType.charAt(0).toUpperCase() + nodeType.slice;
+    const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
 
     // label exception
-    if (nodeType === 'label') {
+    if (type === 'label') {
       annotationText = numberToLetters(parseInt(annotationText, 10));
     }
 
@@ -2541,7 +2526,7 @@ export default class Painter {
     const annotationBundle = buildAnnotation({
       mainText: annotationText,
       secondaryText: null,
-      type: nodeType,
+      type,
     });
 
     // set individual `keys` annotations for keystops
@@ -2576,7 +2561,7 @@ export default class Painter {
       annotationName,
       annotationBundle,
       nodePosition,
-      nodeType,
+      type,
     );
     const initialX = baseAnnotationNode.x;
     const initialY = baseAnnotationNode.y;
@@ -2610,7 +2595,7 @@ export default class Painter {
       node: annotationNode,
       frame: this.frame,
       page: this.page,
-      type: nodeType as 'boundingBox'
+      type: type as 'boundingBox'
     | 'component'
     | 'custom'
     | 'dimension'
@@ -2622,25 +2607,36 @@ export default class Painter {
     // ---------- set node tracking data
     // node tracking data is used for diffing changes to the source nodes and re-drawing or
     // removing annotations as necessary
-    this.setTrackingData(annotationNode, nodePosition, nodeType);
+    this.setTrackingData(annotationNode, nodePosition, type);
 
     // return a successful result
     result.status = 'success';
     return result;
   }
 
+  /** WIP
+   * @description Updates the annotation legend.
+   *
+   * @kind function
+   * @name updateLegend
+   *
+   * @returns {undefined}
+   */
   updateLegend() {
     // if we can't find a legend corresponding to the frame ID create a new one
     // if we can, feel it the new label
 
     // get up to date info of all labels with crawler?  or just add this one?
-    const legend = buildLabelLegend([{visible: 'hi there', a11y: '', alt: 'i am a pic'}]);
+    const legend = buildLabelLegend([{ visible: 'hi there', a11y: '', alt: 'i am a pic' }]);
     // set a new crawler on the frame to get all nodes & their component data => labels?
 
     // console.log(this.frame)
-    console.log(legend)
-    const { x, y, width, height } = this.frame;
-    const pos = positionLegend(legend, { x, y, width, height });
+    const {
+      x, y, width, height,
+    } = this.frame;
+    const pos = positionLegend(legend, {
+      x, y, width, height,
+    });
     this.page.appendChild(pos);
     // find the frame's legend data, or create if not there
     // add new label data to it
@@ -2943,5 +2939,4 @@ export default class Painter {
     result.messages.log = `Spacing (${directions.join(', ')}) annotated for “${this.node.name}”`;
     return result;
   }
-
 }

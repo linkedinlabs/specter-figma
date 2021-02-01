@@ -759,12 +759,13 @@ export default class Identifier {
    * @kind function
    * @name getSetStop
    *
+   * @param {string} type The type of stop annotation we are setting.
    * @param {number} position An optional number to override the counter.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   getSetStop(
-    nodeType: 'keystop' | 'label',
+    type: PluginStopType,
     position?: number,
   ) {
     const result: {
@@ -792,7 +793,7 @@ export default class Identifier {
     }
 
     // get top frame stop list
-    const listDataType = DATA_KEYS[`${nodeType}List`];
+    const listDataType = DATA_KEYS[`${type}List`];
     const frameKeystopListData = JSON.parse(topFrame.getPluginData(listDataType) || null);
     let frameKeystopList: Array<{
       id: string,
@@ -825,7 +826,7 @@ export default class Identifier {
     const textToSet = `${positionToSet}`;
 
     // retrieve the node data
-    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
+    const nodeDataType = DATA_KEYS[`${type}NodeData`];
     let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
@@ -860,7 +861,7 @@ export default class Identifier {
     );
 
     result.status = 'success';
-    result.messages.log = `${nodeType} stop position ${textToSet} set for “${this.node.name}”`;
+    result.messages.log = `${type} stop position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 

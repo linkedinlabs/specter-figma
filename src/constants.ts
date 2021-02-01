@@ -66,16 +66,16 @@ const DATA_KEYS: {
   // page-level (e.g. in case an annotated element is moved out of a frame?)
   options: `${PLUGIN_IDENTIFIER}.options-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
-  labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`, 
+  labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
   // top-frame level
-  keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`, 
+  keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
   // node-level and up
-  bundle: `${PLUGIN_IDENTIFIER}.bundle-001`, 
+  bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
-  labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`, 
+  labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
   keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
-  labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`, 
+  labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 

@@ -6,6 +6,8 @@ declare global {
 
   type PluginLabelRoles = 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
+  type PluginStopType = 'keystop' | 'label';
+
   type PluginAriaLabels = {
     a11y: null,
     visible: null,
@@ -21,12 +23,12 @@ declare global {
     y: number,
   };
 
-  type PluginFramePosition = {
-    width: number,
-    height: number,
-    x: number,
-    y: number,
-  };
+  // type PluginFramePosition = {
+  //   width: number,
+  //   height: number,
+  //   x: number,
+  //   y: number,
+  // };
 
   type PluginNodeTrackingData = {
     annotationId: string, // ID of node containing the annotation itself
@@ -36,17 +38,18 @@ declare global {
     nodePosition: PluginNodePosition,
   };
 
-  type PluginFrameTrackingData = {
-    frameId: string,
-    id: string,
-    linkId: string,
-    framePosition: PluginFramePosition,
-  };
+  // type PluginFrameTrackingData = {
+  //   frameId: string,
+  //   id: string,
+  //   linkId: string,
+  //   framePosition: PluginFramePosition,
+  // };
 
   type PluginNodeLinkData = {
     id: string,
     role: 'annotation' | 'node',
   }
+
 
   type PluginOptions = {
     currentView: PluginViewTypes,

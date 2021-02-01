@@ -71,7 +71,7 @@ const dispatcher = async (action: {
       case 'a11y-labels-add-stop':
       case 'a11y-keyboard-add-stop': {
         const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-add-stop' ? 'keystop' : 'label';
-        await app.annotateKeystopLabel(nodeType);
+        await app.annotateStops(nodeType);
         break;
       }
       case 'a11y-labels-remove-stop':
@@ -80,15 +80,15 @@ const dispatcher = async (action: {
         const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-remove-stop' ? 'keystop' : 'label';
 
         if (id) {
-          await app.removeKeystopsLabels(nodeType, id);
+          await app.removeStopAnnotation(nodeType, id);
         }
         break;
       }
       case 'a11y-keyboard-update-stop': {
-        const { id } = payload;
+        const { id, position } = payload;
         const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-update-stop' ? 'keystop' : 'label';
         if (id) {
-          await app.updateKeystopsLabels(nodeType, payload);
+          await app.updateStopAnnotation(nodeType, id, position);
         }
         break;
       }
