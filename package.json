@@ -21,7 +21,7 @@
     "genmanifest": "cp manifest.example.json manifest.json && plugin_id=$(cat '.plugin-id') && sed -i.tmp s/PLUGIN_ID/$plugin_id/ manifest.json && rm manifest.json.tmp",
     "postinstall": "npm run build",
     "lint": "npm run lint:js && npm run lint:css",
-    "lint:eslint": "eslint . --fix --ext .js,.tsx,.ts,.svelte",
+    "lint:eslint": "eslint . --ext .js,.tsx,.ts,.svelte",
     "lint:stylelint": "stylelint './src/assets/css/**/*.scss'",
     "lint:js": "npm run lint:eslint",
     "lint:css": "npm run lint:stylelint",

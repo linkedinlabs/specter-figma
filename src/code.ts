@@ -234,7 +234,7 @@ const main = async () => {
    * of data to track (id, x/y, width/height, parent).
    *
    * @kind function
-   * @name compareTrackingData
+   * @name setTrackingData
    *
    * @param {Array} selectedNodes An array of Figma nodes.
    *
@@ -284,6 +284,55 @@ const main = async () => {
 
     return tempTrackingData;
   };
+
+  /**
+   * @description A helper function. It takes an array of top frames and sets up an array
+   * of data to track (id, x/y, width/height).
+   *
+   * @kind function
+   * @name setFrameTrackingData
+   *
+   * @param {Array} topFrames An array of Figma top frames for the selection.
+   *
+   * @returns {Array} An array of tracking data.
+   */
+  // const setFrameTrackingData = (topFrames: Array<FrameNode>): Array<{
+  //   id: string,
+  //   x: number,
+  //   y: number,
+  //   width: number,
+  //   height: number,
+  // }> => {
+  //   const tempTrackingData = [];
+  //   topFrames.forEach((frame) => {
+  //     const {
+  //       height,
+  //       id,
+  //       width,
+  //       x,
+  //       y,
+  //     } = frame;
+
+  //     const data: {
+  //       id: string,
+  //       x: number,
+  //       y: number,
+  //       width: number,
+  //       height: number,
+  //     } = {
+  //       id,
+  //       x,
+  //       y,
+  //       width,
+  //       height,
+  //     };
+
+  //     tempTrackingData.push(data);
+  //   });
+
+  //   return tempTrackingData;
+  // };
+
 
   // set the initial timestamp; this is used as a global to update over time and prevent race cases
   let initialStamp = new Date().getTime();

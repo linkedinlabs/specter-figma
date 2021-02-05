@@ -350,7 +350,7 @@ const findParentInstance = (node: any) => {
   return currentTopInstance;
 };
 
-/** 
+/**
  * @description Takes a frame and uses it's tracking data to find and return
  * a corresponding legend frame if it exists.
  *
@@ -368,7 +368,7 @@ const findLegendFrame = (frameId: string, page: PageNode) => {
 
   if (trackingEntry?.legendId) {
     legendFrame = figma.getNodeById(trackingEntry.legendId);
-  } 
+  }
   return legendFrame;
 };
 
@@ -879,7 +879,7 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
 
   // load the typeface
   await figma.loadFontAsync(typefaceToUse);
-  await figma.loadFontAsync({...typefaceToUse, style: 'Regular'});
+  await figma.loadFontAsync({ ...typefaceToUse, style: 'Regular' });
 
   return typefaceToUse;
 };
@@ -969,7 +969,7 @@ const toSentenceCase = (anyString: string): string => {
  *
  * @kind function
  * @name sortByPosition
- * 
+ *
  * @param {Object} itemA First item for comparison.
  * @param {Object} itemB Second item for comparison.
  *
@@ -1014,5 +1014,5 @@ export {
   toSentenceCase,
   updateArray,
   updateNestedArray,
-  sortByPosition
+  sortByPosition,
 };

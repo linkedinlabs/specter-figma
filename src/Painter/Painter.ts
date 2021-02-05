@@ -14,7 +14,15 @@ import {
   PLUGIN_NAME,
   SPACING_MATRIX,
 } from '../constants';
-import { buildAnnotation, positionAnnotation, buildBoundingBox, buildAuxAnnotation, buildLegendEntry, buildLegend, positionLegend } from './nodeCreators';
+import {
+  buildAnnotation,
+  positionAnnotation,
+  buildBoundingBox,
+  buildAuxAnnotation,
+  buildLegendEntry,
+  buildLegend,
+  positionLegend,
+} from './nodeCreators';
 
 const uuid = require('uuid-random');
 
@@ -1009,9 +1017,9 @@ export default class Painter {
    * @name setTrackingData
    *
    * @param {Object} annotationNode The node containing the annotation layers.
-   * @param {Object} nodePosition The position coordinates (`x`, `y`, `width`, and `height`)
-   * for the box.
+   * @param {Object} nodePosition The box coordinates (`x`, `y`, `width`, and `height`).
    * @param {string} type The type of annotation to repair (`keystop` or `label`).
+   * @param {Object} legendNode The node containing the legend entry for the annotation.
    *
    * @returns {undefined}
    */
@@ -1019,7 +1027,7 @@ export default class Painter {
     annotationNode: FrameNode,
     nodePosition,
     type: PluginStopType,
-    legendNode: FrameNode
+    legendNode: FrameNode,
   ) {
     // ---------- set node tracking data
     const linkId: string = uuid();
@@ -1095,7 +1103,6 @@ export default class Painter {
   /**
    * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
    * be available (`annotationText`, `labels`, and potentially `keys` for auxilary annotations).
-   * Note: the `labels` legend portions are WIP.
    *
    * @kind function
    * @name addStop
@@ -1139,7 +1146,8 @@ export default class Painter {
     }
 
     // set up some information
-    let { annotationText, keys, role } = nodeData;
+    const { keys } = nodeData;
+    let { annotationText } = nodeData;
     const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
 
@@ -1217,9 +1225,23 @@ export default class Painter {
       annotationNode.y = initialY;
     }
 
-    if (type === 'label' && role) {
-      const icon = annotationNode.clone();
-      legendNode = buildLegendEntry(nodeData, icon, `L${annotationText}`);
+    if (type === 'label') {
+      const legendIconElements = buildAnnotation({
+        mainText: annotationText,
+        secondaryText: null,
+        type: 'legendIcon',
+      });
+      const legendIcon: FrameNode = figma.createFrame();
+
+      legendIcon.layoutMode = 'VERTICAL';
+      legendIcon.primaryAxisSizingMode = 'AUTO';
+      legendIcon.primaryAxisAlignItems = 'CENTER';
+      legendIcon.counterAxisSizingMode = 'AUTO';
+      legendIcon.counterAxisAlignItems = 'CENTER';
+      legendIcon.layoutAlign = 'INHERIT';
+
+      legendIcon.appendChild(legendIconElements.rectangle);
+      legendNode = buildLegendEntry(nodeData, legendIcon, `L${annotationText}`);
       this.addEntryToLegend(legendNode);
     }
 
@@ -1245,12 +1267,13 @@ export default class Painter {
   }
 
   /**
-   * @description Updates the annotation legend, creating it and setting tracking if it doesn't exist yet.
+   * @description Updates the annotation legend, creating it and setting tracking if it
+   * doesn't exist yet.
    *
    * @kind function
    * @name addEntryToLegend
-   * 
-   * @param {FrameNode} legendNode The newly created legend entry for the annotation.
+   *
+   * @param {Object} legendNode The newly created legend entry for the annotation.
    *
    * @returns {undefined}
    */
@@ -1258,7 +1281,7 @@ export default class Painter {
     let legend = findLegendFrame(this.frame.id, this.page);
     if (!legend) {
       legend = buildLegend();
-      legend.name = '+++ Specter +++ ' + this.frame.name + ' Legend';
+      legend.name = `+++ Specter +++ ${this.frame.name} Legend`;
 
       const {
         x, y, width, height,
@@ -1268,19 +1291,21 @@ export default class Painter {
       });
 
       this.page.appendChild(positionedLegend);
-      
+
       const legendLinkId: string = uuid(); // specifically for legend frame
-      legend.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify({id: legendLinkId, role: 'legend'}));
-      this.frame.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify({id: legendLinkId, role: 'frame'}));
-      
+      legend.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify({ id: legendLinkId, role: 'legend' }));
+      this.frame.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify({ id: legendLinkId, role: 'frame' }));
+
       // update frame tracking data
       const frameTrackingData = JSON.parse(this.page.getPluginData(DATA_KEYS.legendFrames) || '[]');
       frameTrackingData.push({
-        id: this.frame.id, 
-        legendId: legend.id, 
-        linkId: legendLinkId, 
-        framePosition: { x, y, width, height }
-      })
+        id: this.frame.id,
+        legendId: legend.id,
+        linkId: legendLinkId,
+        framePosition: {
+          x, y, width, height,
+        },
+      });
       this.page.setPluginData(DATA_KEYS.legendFrames, JSON.stringify(frameTrackingData));
     }
 

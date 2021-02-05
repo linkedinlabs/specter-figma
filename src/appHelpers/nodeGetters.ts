@@ -1,6 +1,6 @@
-import { DATA_KEYS } from "../constants";
-import Crawler from "../Crawler";
-import { existsInArray, getPeerPluginData } from "../Tools";
+import { DATA_KEYS } from '../constants';
+import Crawler from '../Crawler';
+import { existsInArray, getPeerPluginData } from '../Tools';
 
 /**
  * @description Takes a frame node and uses its list data to create an array of design nodes that
@@ -92,10 +92,10 @@ const getAssignedChildNodes = (
 };
 
 /**
- * @description Gets a list of all nodes to annotate in the order we want them:
- * 1. Nodes that have already been annotated
- * 2. Additional nodes that have stop data attached to them
- * 3. Additional nodes that are in the selection
+ * @description Gets a list of all nodes to annotate in the order we want them.
+ * Nodes that have already been annotated.
+ * Additional nodes that have stop data attached to them.
+ * Additional nodes that are in the selection.
  *
  * @kind function
  * @name getOrderedStopNodes
@@ -153,5 +153,5 @@ const getOrderedStopNodes = (
 export {
   getFrameAnnotatedNodes,
   getOrderedStopNodes,
-  getAssignedChildNodes
-}
+  getAssignedChildNodes,
+};

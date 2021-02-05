@@ -96,6 +96,7 @@ const COLORS: {
   dimension: string,
   keystop: string,
   label: string,
+  legendIcon: string,
   spacing: string,
   style: string,
 } = {
@@ -104,6 +105,7 @@ const COLORS: {
   dimension: '#4c7100',
   keystop: '#c8006a',
   label: '#6699cc',
+  legendIcon: '#6699cc',
   spacing: '#007373',
   style: '#bc3600',
 };
