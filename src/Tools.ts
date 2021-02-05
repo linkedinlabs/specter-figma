@@ -350,6 +350,28 @@ const findParentInstance = (node: any) => {
   return currentTopInstance;
 };
 
+/** 
+ * @description Takes a frame and uses it's tracking data to find and return
+ * a corresponding legend frame if it exists.
+ *
+ * @kind function
+ * @name findLegendFrame
+ * @param {Object} frameId The design top frame we're looking for a legend for.
+ * @param {Object} page The Figma page the frame belongs to.
+ *
+ * @returns {Object} The legend for the frame (or null, if it doesn't exist).
+ */
+const findLegendFrame = (frameId: string, page: PageNode) => {
+  let legendFrame = null;
+  const frameTrackingData = JSON.parse(page.getPluginData(DATA_KEYS.legendFrames) || '[]');
+  const trackingEntry = frameTrackingData.find(entry => entry.id === frameId);
+
+  if (trackingEntry?.legendId) {
+    legendFrame = figma.getNodeById(trackingEntry.legendId);
+  } 
+  return legendFrame;
+};
+
 /**
  * @description Takes a node object and traverses parent relationships until the top-level
  * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
@@ -367,8 +389,8 @@ const findTopFrame = (node: any) => {
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
     if (
-      (node.type === CONTAINER_NODE_TYPES.frame)
-      || (node.type === CONTAINER_NODE_TYPES.component)
+      (node?.type === CONTAINER_NODE_TYPES.frame)
+      || (node?.type === CONTAINER_NODE_TYPES.component)
     ) {
       return node;
     }
@@ -528,6 +550,28 @@ const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
   }
 
   return mainPeerNode;
+};
+
+/**
+ * @description Takes a number and converts it to a letterset representation (A, AA, BA, etc.).
+ *
+ * @kind function
+ * @name numberToLetters
+ * @param {number} num The order number of the annotation.
+ *
+ * @returns {string} The letter version of that number.
+ */
+const numberToLetters = (num: number): string => {
+  let number: number = num;
+  let letters: string = '';
+  let counter;
+
+  while (number > 0) {
+    counter = (number - 1) % 26;
+    letters = String.fromCharCode(65 + counter) + letters;
+    number = Math.floor((number - counter) / 26);
+  }
+  return letters || undefined;
 };
 
 /**
@@ -777,6 +821,33 @@ const isVisible = (node: SceneNode): boolean => {
 };
 
 /**
+ * @description Takes a letterset (A, AA, BA) and converts it to an integer.
+ *
+ * @kind function
+ * @name lettersToNumbers
+ * @param {string} letterset The string of letters representing a number.
+ *
+ * @returns {number} The integer based on the letterset.
+ */
+const lettersToNumbers = (letterset: string): number => {
+  let totalNumber: number = 0;
+  const lettersArray: Array<string> = letterset.toUpperCase().split('');
+  const numbersArray: Array<number> = [];
+
+  // iterate through each letter and convert to a number
+  lettersArray.forEach((letter) => {
+    const number: number = (letter.charCodeAt(0) - 64);
+    numbersArray.push(number);
+  });
+
+  // iterate the numbers and calculate the position
+  numbersArray.forEach((number) => {
+    totalNumber = (totalNumber * 26 + number);
+  });
+  return totalNumber;
+};
+
+/**
  * @description Takes an array of typefaces (`FontName`), iterates through the array, checking
  * the system available of each typeface and loading the first available.
  *
@@ -808,6 +879,7 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
 
   // load the typeface
   await figma.loadFontAsync(typefaceToUse);
+  await figma.loadFontAsync({...typefaceToUse, style: 'Regular'});
 
   return typefaceToUse;
 };
@@ -892,25 +964,27 @@ const toSentenceCase = (anyString: string): string => {
 };
 
 /**
- * @description Takes a number and converts it to a letter(s) representation for labels.
+ * @description Takes a string and converts everything except for the first alpha-letter to
+ * lowercase. It also capitalizes the first alpha-letter.
  *
  * @kind function
- * @name toSentenceCase
- * @param {number} num The order number of the annotation.
+ * @name sortByPosition
+ * 
+ * @param {Object} itemA First item for comparison.
+ * @param {Object} itemB Second item for comparison.
  *
- * @returns {string} The letter version of that number.
+ * @returns {string} The title-cased string.
  */
-const numberToLetters = (num) => {
-  let number = num;
-  let letters = '';
-  let counter;
-
-  while (number > 0) {
-    counter = (number - 1) % 26;
-    letters = String.fromCharCode(65 + counter) + letters;
-    number = Math.floor((number - counter) / 26);
+const sortByPosition = (itemA, itemB) => {
+  const aPosition = itemA.position;
+  const bPosition = itemB.position;
+  if (aPosition < bPosition) {
+    return -1;
   }
-  return letters || undefined;
+  if (aPosition > bPosition) {
+    return 1;
+  }
+  return 0;
 };
 
 export {
@@ -921,6 +995,7 @@ export {
   existsInArray,
   findParentInstance,
   findTopFrame,
+  findLegendFrame,
   findTopInstance,
   findTopComponent,
   getNodeSettings,
@@ -930,12 +1005,14 @@ export {
   hexToDecimalRgb,
   isInternal,
   isVisible,
+  lettersToNumbers,
   loadFirstAvailableFontAsync,
   matchMasterPeerNode,
+  numberToLetters,
   resizeGUI,
   setNodeSettings,
   toSentenceCase,
   updateArray,
   updateNestedArray,
-  numberToLetters,
+  sortByPosition
 };

@@ -4,7 +4,7 @@ declare global {
 
   type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'enter' | 'escape' | 'space';
 
-  type PluginLabelRoles = 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
+  type PluginLabelRole = 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
   type PluginStopType = 'keystop' | 'label';
 
@@ -23,33 +23,38 @@ declare global {
     y: number,
   };
 
-  // type PluginFramePosition = {
-  //   width: number,
-  //   height: number,
-  //   x: number,
-  //   y: number,
-  // };
+  type PluginFramePosition = {
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+  };
 
   type PluginNodeTrackingData = {
-    annotationId: string, // ID of node containing the annotation itself
     id: string, // ID of node containing the design element
+    annotationId: string, // ID of node containing the annotation itself
+    legendItemId?: string, // ID of node containing the legend entry
     linkId: string,  // shared link between the above 2 (cus those may change via Figma)
     topFrameId: string,
     nodePosition: PluginNodePosition,
   };
 
-  // type PluginFrameTrackingData = {
-  //   frameId: string,
-  //   id: string,
-  //   linkId: string,
-  //   framePosition: PluginFramePosition,
-  // };
-
+  type PluginFrameTrackingData = {
+    id: string,
+    legendId: string,
+    linkId: string,
+    framePosition: PluginFramePosition,
+  };
+  
   type PluginNodeLinkData = {
     id: string,
-    role: 'annotation' | 'node',
+    role: 'annotation' | 'node' | 'legendItem',
   }
-
+  
+    type PluginFrameLinkData = {
+      id: string,
+      role: 'frame' | 'legend',
+    }
 
   type PluginOptions = {
     currentView: PluginViewTypes,

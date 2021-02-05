@@ -84,7 +84,8 @@ const dispatcher = async (action: {
         }
         break;
       }
-      case 'a11y-keyboard-update-stop': {
+      case 'a11y-keyboard-update-stop':
+      case 'a11y-labels-update-stop': {
         const { id, position } = payload;
         const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-update-stop' ? 'keystop' : 'label';
         if (id) {
@@ -93,22 +94,22 @@ const dispatcher = async (action: {
         break;
       }
       case 'a11y-keyboard-set-key':
-        await app.keystopAddRemoveKeys(payload);
+        await app.updateNodeDataKeys(payload);
         break;
       case 'a11y-keyboard-remove-key':
-        await app.keystopAddRemoveKeys(payload, true);
+        await app.updateNodeDataKeys(payload, true);
         break;
       case 'a11y-labels-set-text':
-        await app.labelsSetData('labels', payload);
+        await app.updateNodeDataLabels('labels', payload);
         break;
       case 'a11y-labels-set-role':
-        await app.labelsSetData('role', payload);
+        await app.updateNodeDataLabels('role', payload);
         break;
       case 'annotate':
-        app.annotateNode();
+        app.annotateGeneral();
         break;
       case 'annotate-custom':
-        app.annotateNodeCustom();
+        app.annotateCustom();
         break;
       case 'annotate-spacing-left':
         app.annotateSpacingOnly('left');

@@ -54,8 +54,10 @@ const DATA_KEYS: {
   options: string,
   keystopAnnotations: string,
   labelAnnotations: string,
+  legendFrames: string,
   keystopList: string,
   labelList: string,
+  legendLinkId: string,
   bundle: string,
   keystopNodeData: string,
   labelNodeData: string,
@@ -67,9 +69,11 @@ const DATA_KEYS: {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
+  legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
   // top-frame level
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
+  legendLinkId: `${PLUGIN_IDENTIFIER}.legendLinkId-001`,
   // node-level and up
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
