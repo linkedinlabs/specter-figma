@@ -5,7 +5,6 @@ import Painter from './Painter/Painter';
 import {
   deepCompare,
   existsInArray,
-  findTopFrame,
   getPeerPluginData,
   lettersToNumbers,
   numberToLetters,
@@ -14,10 +13,13 @@ import {
   updateArray,
 } from './Tools';
 import {
+  findLegendFrame,
+  findTopFrame,
   getFrameAnnotatedNodes,
   getOrderedStopNodes,
 } from './appHelpers/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
+import { positionLegend } from './Painter/nodeCreators';
 
 
 /**
@@ -83,7 +85,7 @@ const removeLinkedAnnotationNodes = (
  * @param {Object} frame The top frame for the selection.
  * @param {Object} trackingData The page-level legend tracking data.
  *
- * @returns {undefined}
+ * @returns {boolean} The result of the check a.k.a. whether the legend should be rebuilt.
  */
 const checkLegendLink = (
   page: PageNode,
@@ -109,6 +111,20 @@ const checkLegendLink = (
         orphanedLegend.remove(); // remove as a new one will build
       }
       frame.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify(null));
+    } else if (trackingEntry?.id === frame.id && trackingEntry?.legendId) {
+      // check if the position moved, and move if so
+      const currentFramePosition: PluginFramePosition = {
+        x: frame.x,
+        y: frame.y,
+        width: frame.width,
+        height: frame.height,
+      };
+      if (deepCompare(currentFramePosition, trackingEntry.framePosition)) {
+        const legendFrame = figma.getNodeById(trackingEntry.legendId) as FrameNode;
+        if (legendFrame) {
+          positionLegend(legendFrame, currentFramePosition);
+        }
+      }
     }
   }
 };
@@ -433,8 +449,12 @@ const refreshAnnotations = (
     if (node) {
       const topFrame: FrameNode = findTopFrame(node);
 
-      // ----- check if topFrame is still the same
-      if (topFrame && topFrame.id === trackingEntry.topFrameId) {
+      // ----- check if topFrame is still the same and still has a legend if labels
+      if (
+        topFrame
+        && topFrame.id === trackingEntry.topFrameId
+        && !(type === 'label' && !findLegendFrame(topFrame.id, page))
+      ) {
         // grab the position from crawler
         const crawler = new Crawler({ for: [node] });
         const positionResult = crawler.position();
@@ -1703,9 +1723,10 @@ export default class App {
 
     // force the new position into a positive integer
     let newPosition: number = parseInt(position, 10);
-    if (newPosition.toString() === 'NaN') {
-      newPosition = lettersToNumbers(position);
-    }
+    // TKTK: delete below
+    // if (newPosition.toString() === 'NaN') {
+    //   newPosition = lettersToNumbers(position);
+    // }
 
     if (!id || !newPosition) {
       messenger.log(`Cannot update ${type}; missing node ID or new position`, 'error');
@@ -1954,10 +1975,11 @@ export default class App {
         } = getStopData(nodeType, node);
 
         let displayPosition: string = position ? position.toString() : '';
-        if (currentView === 'a11y-labels') {
-          // convert numeric position to alpha for view
-          displayPosition = numberToLetters(position);
-        }
+        // TKTK: delete below
+        // if (currentView === 'a11y-labels') { 
+        //   // convert numeric position to alpha for view
+        //   displayPosition = numberToLetters(position);
+        // }
         const viewObject: PluginViewObject = {
           id,
           name,

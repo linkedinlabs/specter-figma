@@ -400,10 +400,10 @@ const buildText = (
  * @name buildRectangleInnerHalf
  *
  * @param {string} align A string that indicates whether the frame should be left or right aligned.
- * @param {Object} color An object representing a color in RGB decimal notation.
+ * @param {Object} color An object that represents a color in RGB decimal notation.
  * @param {string} type The type of annotation we are building this for (e.g. keystop vs label).
  *
- * @returns {Object} The rectangle FrameNode.
+ * @returns {Object} The rectangle FrameNode for the annotation.
  */
 const buildRectangleInnerHalf = (
   align: 'left' | 'right',
@@ -539,8 +539,8 @@ const buildRectangle = (
     }
 
     // ----- set up inner halves content
-    const rectLeft: FrameNode = buildRectangleInnerHalf('left', { r: 0.4, g: 0.6, b: 0.8 }, type);
-    const rectRight: FrameNode = buildRectangleInnerHalf('right', { r: 1, g: 1, b: 1 }, type);
+    const rectLeft: FrameNode = buildRectangleInnerHalf('left', hexToDecimalRgb(COLORS.label), type);
+    const rectRight: FrameNode = buildRectangleInnerHalf('right', hexToDecimalRgb('#ffffff'), type);
     const textLeft: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), 'L');
     const textRight: TextNode = buildText(type, hexToDecimalRgb('#000000'), innerText);
 
@@ -587,65 +587,43 @@ const buildAnnotation = (options: {
   icon: FrameNode,
 } => {
   const { mainText, secondaryText, type } = options;
-
-  // set the dominant color
   const colorHex: string = COLORS[type];
-
-  let setText: string = mainText;
-  let innerText: string = '';
-  if (secondaryText) {
-    setText = `${mainText}\n${secondaryText}`;
-  }
-
-  if (['label', 'legendIcon'].includes(type)) {
-    // clear the direct child text and set inner text value for rectangle
-    innerText = setText;
-    setText = '';
-  }
-
-  let isMeasurement: boolean = false;
-  if (
-    type === 'spacing'
-    || type === 'dimension'
-  ) {
-    isMeasurement = true;
-  }
-
-  // set up the color object
-  // with each color in decimal format: `{r: 1, g: 0.4, b: 0.4}`
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
-
-  // build the rounded rectangle with auto-layout properties
-  const rectangle: FrameNode = buildRectangle(type, color, innerText);
-
-  // build the dangling diamond
-  const diamond: PolygonNode = figma.createPolygon();
-  diamond.name = 'Diamond';
-
-  // position and size the diamond
-  diamond.resize(10, 6);
-  diamond.rotation = 180;
-  diamond.pointCount = 3;
-
-  // style it – set the diamond type, color, and opacity
-  diamond.fills = [{
-    type: 'SOLID',
-    color,
-  }];
-
-  // create text node
-  const text: TextNode = setText ? buildText(type, hexToDecimalRgb('#ffffff'), setText) : null;
-
-  // create icon
   let icon: FrameNode = null;
-  if (isMeasurement) {
-    icon = buildMeasureIcon(colorHex);
-  } else if (type === 'keystop') {
-    const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
-    icon = buildKeystopIcon(iconColor);
+  let diamond: PolygonNode = null;
+  let text: TextNode = null;
+  let innerText: string = '';
+  
+  if (['label', 'legendIcon'].includes(type)) {
+    innerText = mainText;
   }
 
-  // return an object with each element
+  const rectangle: FrameNode = buildRectangle(type, color, innerText);
+  
+  if (type !== 'legendIcon') {
+    diamond = figma.createPolygon();
+    diamond.name = 'Diamond';
+    diamond.resize(10, 6);
+    diamond.rotation = 180;
+    diamond.pointCount = 3;
+    diamond.fills = [{
+      type: 'SOLID',
+      color,
+    }];
+
+    if (mainText && !innerText) {
+      const finalText: string = !secondaryText ? mainText : `${mainText}\n${secondaryText}`;
+      text = buildText(type, hexToDecimalRgb('#ffffff'), finalText);
+    }
+
+    if (['spacing', 'dimension'].includes(type)) {
+      icon = buildMeasureIcon(colorHex);
+    } else if (type === 'keystop') {
+      const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
+      icon = buildKeystopIcon(iconColor);
+    }
+  }
+
   return {
     diamond,
     rectangle,
@@ -920,22 +898,22 @@ const getLegendEntryFields = (data) => {
         val: role.charAt(0).toUpperCase() + role.slice(1),
       },
       {
-        name: 'Label (visible)',
+        name: 'Visible label',
         val: labels?.visible ? 'Yes' : 'No',
       },
       {
-        name: 'Label (a11y)',
-        val: labels?.visible ? labels?.a11y || 'n/a' : 'undefined',
+        name: 'A11y label',
+        val: labels?.a11y || (labels?.visible ? 'n/a' : 'undefined'),
       },
     ];
   } else if (!role) {
     fields = [
       {
-        name: 'Label (visible)',
+        name: 'Visible label',
         val: labels?.visible ? 'Yes' : 'No',
       }, {
-        name: 'Label (a11y)',
-        val: labels?.visible ? labels?.a11y || 'n/a' : 'undefined',
+        name: 'A11y label',
+        val: labels?.a11y || (labels?.visible ? 'n/a' : 'undefined'),
       },
     ];
   }
@@ -949,14 +927,29 @@ const getLegendEntryFields = (data) => {
  * @name buildLegendEntry
  *
  * @param {Object} nodeData The note data to be rendered in the legend.
- * @param {Object} icon A copy of the annotation image for reference.
  * @param {string} text The name/main text of the annotation.
  *
  * @returns {Object} The final legend after positioning.
  */
-const buildLegendEntry = (nodeData: PluginViewObject, icon: SceneNode, text: string) => {
+const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
   const legendItem: FrameNode = figma.createFrame();
-  legendItem.name = `${text} Annotation`;
+  legendItem.name = `L${text} Annotation`;
+
+  const iconElements = buildAnnotation({
+    mainText: text,
+    secondaryText: null,
+    type: 'legendIcon',
+  });
+  const icon: FrameNode = figma.createFrame();
+
+  icon.layoutMode = 'VERTICAL';
+  icon.primaryAxisSizingMode = 'AUTO';
+  icon.primaryAxisAlignItems = 'CENTER';
+  icon.counterAxisSizingMode = 'AUTO';
+  icon.counterAxisAlignItems = 'CENTER';
+  icon.layoutAlign = 'INHERIT';
+
+  icon.appendChild(iconElements.rectangle);
 
   // auto-layout
   legendItem.layoutMode = 'HORIZONTAL';
@@ -1498,6 +1491,49 @@ const positionAnnotation = (
   return group;
 };
 
+/**
+ * @description Sets up the individual elements for a container group (inner or outer) and
+ * adds the child node to the group.
+ *
+ * @kind function
+ * @name drawContainerGroup
+ *
+ * @param {Object} groupSettings Object containing the `name`, `position`,
+ * `child` and `parent` nodes, and `locked` status.
+ *
+ * @returns {Object} The container group node object.
+ * @private
+ */
+const drawContainerGroup = (groupSettings: {
+  name: string,
+  position: {
+    x: number,
+    y: number,
+  },
+  parent: any,
+  child: any,
+  locked: boolean,
+}): GroupNode => {
+  const {
+    name,
+    position,
+    parent,
+    child,
+    locked,
+  } = groupSettings;
+
+  // set new group
+  const containerGroup: GroupNode = figma.group([child], parent);
+
+  // position, name, and lock new group
+  containerGroup.x = position.x;
+  containerGroup.y = position.y;
+  containerGroup.name = name;
+  containerGroup.locked = locked;
+
+  return containerGroup;
+};
+
 export {
   buildAnnotation,
   buildAuxAnnotation,
@@ -1512,4 +1548,5 @@ export {
   buildText,
   positionAnnotation,
   positionLegend,
+  drawContainerGroup,
 };

@@ -1,7 +1,5 @@
 import Crawler from '../Crawler';
 import {
-  findTopFrame,
-  findLegendFrame,
   getNodeSettings,
   isInternal,
   numberToLetters,
@@ -22,7 +20,9 @@ import {
   buildLegendEntry,
   buildLegend,
   positionLegend,
+  drawContainerGroup,
 } from './nodeCreators';
+import { findTopFrame, findLegendFrame } from '../appHelpers/nodeGetters';
 
 const uuid = require('uuid-random');
 
@@ -258,49 +258,6 @@ const orderContainerNodes = (outerGroupId: string, page): void => {
   }
 
   return null;
-};
-
-/**
- * @description Sets up the individual elements for a container group (inner or outer) and
- * adds the child node to the group.
- *
- * @kind function
- * @name drawContainerGroup
- *
- * @param {Object} groupSettings Object containing the `name`, `position`,
- * `child` and `parent` nodes, and `locked` status.
- *
- * @returns {Object} The container group node object.
- * @private
- */
-const drawContainerGroup = (groupSettings: {
-  name: string,
-  position: {
-    x: number,
-    y: number,
-  },
-  parent: any,
-  child: any,
-  locked: boolean,
-}): GroupNode => {
-  const {
-    name,
-    position,
-    parent,
-    child,
-    locked,
-  } = groupSettings;
-
-  // set new group
-  const containerGroup: GroupNode = figma.group([child], parent);
-
-  // position, name, and lock new group
-  containerGroup.x = position.x;
-  containerGroup.y = position.y;
-  containerGroup.name = name;
-  containerGroup.locked = locked;
-
-  return containerGroup;
 };
 
 /**
@@ -1151,10 +1108,11 @@ export default class Painter {
     const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
 
+    // TKTK: delete below
     // label exception
-    if (type === 'label') {
-      annotationText = numberToLetters(parseInt(annotationText, 10));
-    }
+    // if (type === 'label') {
+    //   annotationText = numberToLetters(parseInt(annotationText, 10));
+    // }
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({
@@ -1226,22 +1184,7 @@ export default class Painter {
     }
 
     if (type === 'label') {
-      const legendIconElements = buildAnnotation({
-        mainText: annotationText,
-        secondaryText: null,
-        type: 'legendIcon',
-      });
-      const legendIcon: FrameNode = figma.createFrame();
-
-      legendIcon.layoutMode = 'VERTICAL';
-      legendIcon.primaryAxisSizingMode = 'AUTO';
-      legendIcon.primaryAxisAlignItems = 'CENTER';
-      legendIcon.counterAxisSizingMode = 'AUTO';
-      legendIcon.counterAxisAlignItems = 'CENTER';
-      legendIcon.layoutAlign = 'INHERIT';
-
-      legendIcon.appendChild(legendIconElements.rectangle);
-      legendNode = buildLegendEntry(nodeData, legendIcon, `L${annotationText}`);
+      legendNode = buildLegendEntry(nodeData, annotationText);
       this.addEntryToLegend(legendNode);
     }
 

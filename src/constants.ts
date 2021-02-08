@@ -104,8 +104,8 @@ const COLORS: {
   custom: '#c8006a',
   dimension: '#4c7100',
   keystop: '#c8006a',
-  label: '#6699cc',
-  legendIcon: '#6699cc',
+  label: '#0066bf',
+  legendIcon: '#0066bf',
   spacing: '#007373',
   style: '#bc3600',
 };

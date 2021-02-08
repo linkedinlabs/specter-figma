@@ -1,7 +1,5 @@
 import {
   existsInArray,
-  findTopFrame,
-  findParentInstance,
   getNodeSettings,
   getPeerPluginData,
   isInternal,
@@ -16,6 +14,7 @@ import {
   DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
+import { findParentInstance, findTopFrame } from './appHelpers/nodeGetters';
 
 // --- private functions
 /**

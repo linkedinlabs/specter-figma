@@ -2,6 +2,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
   import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
+  import FigmaSwitch from './forms-controls/FigmaSwitch.svelte';
   import { deepCompare } from '../Tools';
 
   export let isSelected = false;
@@ -263,7 +264,7 @@
       {:else}
         <FormUnit
           className="form-row"
-          kind="inputText"
+          kind="inputSwitch"
           labelText="Visible label"
           nameId={`${itemId}-label-visible`}
           placeholder="Leave empty to use a11y label"
@@ -272,6 +273,16 @@
           on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
           bind:value={dirtyLabels.visible}
         />
+        <!-- <span class="form-row">
+          <FigmaSwitch
+            className="form-element element-type-switch"
+            labelText="Visible label"
+            nameId={`${itemId}-label-visible`}
+            resetValue={resetValue}
+            on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
+            bind:value={dirtyLabels.visible}
+          />
+        </span> -->
         <FormUnit
           className="form-row"
           kind="inputText"

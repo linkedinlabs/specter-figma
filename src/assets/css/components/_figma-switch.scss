@@ -1,0 +1,167 @@
+// ++++++++++++++++++++++++++++++++++++++++++++++ figma switch
+// a figma-style switch (tries to match Figma’s UI with few modifications)
+// original source: https://www.figma.com/plugin-docs/figma-components/
+
+@mixin figma-switch-base {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  height: em(32);
+  @include type-01;
+  letter-spacing: 0.005em;
+  cursor: default;
+}
+
+@mixin figma-switch-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+
+  &:checked + label {
+    &:before {
+      background-color: $wl-ctrl-primary;
+    }
+
+    &:after {
+      transform: translateX(14px);
+    }
+  }
+
+  &:enabled:focus + label {
+    &:before,
+    &:after {
+      border-color: $wl-action-primary;
+    }
+  }
+
+  &:enabled:focus:checked + label {
+    &:before {
+      background-color: $wl-action-primary;
+    }
+  }
+
+  &:disabled + label {
+    opacity: 0.3;
+
+    &:before {
+      opacity: 0.3;
+    }
+
+    &:after {
+      opacity: 0.2;
+    }
+  }
+}
+
+@mixin figma-switch-toggle-grey {
+  @include figma-switch-toggle;
+
+  &:checked + label {
+    &:before {
+      background-color: $wl-action-tertiary;
+    }
+  }
+
+  &:enabled + label {
+    &:before,
+    &:after {
+      border-color: $wl-action-tertiary;
+    }
+  }
+
+  &:enabled:focus + label {
+    color: $wl-ctrl-primary;
+
+    &:before,
+    &:after {
+      border-color: $wl-action-primary;
+    }
+  }
+
+  &:enabled:active + label {
+    color: $wl-ctrl-primary;
+  }
+}
+
+@mixin figma-switch-toggle-inverted {
+  @include figma-switch-toggle;
+
+  &:checked + label {
+    &:before {
+      background-color: rgba($wl-action-tertiary, 0.3);
+    }
+
+    &:after {
+      background-color: rgba($wl-ctrl-primary, 0.8);
+    }
+  }
+
+  &:enabled + label {
+    &:before,
+    &:after {
+      border-color: $wl-action-tertiary;
+    }
+  }
+
+  &:enabled + label:hover {
+    &:before,
+    &:after {
+      border-color: $wl-ctrl-primary-invert;
+    }
+  }
+
+  &:enabled:focus + label {
+    color: $wl-type-01-invert;
+
+    &:before,
+    &:after {
+      border-color: $wl-action-primary;
+      background-color: $wl-ctrl-primary;
+    }
+  }
+
+  &:enabled:active + label {
+    color: $wl-type-01-invert;
+  }
+}
+
+@mixin figma-switch-label {
+  display: flex;
+  align-items: center;
+  padding-left: em(36);
+  width: 100%;
+  user-select: none;
+
+  &:before,
+  &:after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: em(10);
+    left: em(8);
+    border: 1px solid $wl-ctrl-primary;
+    background-color: $wl-canvas;
+  }
+
+  &:before {
+    width: em(24);
+    height: em(10);
+    transition: background-color 0 0.2s;
+    border-radius: 6px;
+  }
+
+  &:after {
+    width: em(10);
+    height: em(10);
+    transition: transform 0.2s;
+    border-radius: 50%;
+  }
+}
+
+
+.switch { @include figma-switch-base; }
+.switch__toggle { @include figma-switch-toggle-grey; }
+.switch__label { @include figma-switch-label; }
