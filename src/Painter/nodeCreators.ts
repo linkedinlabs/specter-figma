@@ -377,11 +377,11 @@ const buildText = (
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
     text.layoutAlign = 'INHERIT';
   } else if (['label', 'legendIcon'].includes(type)) {
-    text.fontSize = 18;
+    text.fontSize = 14;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
   } else if (type === 'legend') {
-    text.fontSize = 13;
+    text.fontSize = 12;
     text.lineHeight = { value: 135, unit: 'PERCENT' };
     text.textCase = 'ORIGINAL';
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
@@ -424,7 +424,7 @@ const buildRectangleInnerHalf = (
   frame.layoutGrow = 0;
 
   // set padding and item spacing
-  const paddingPx = align === 'left' ? 6 : 8;
+  const paddingPx = align === 'left' ? 5 : 5;
   frame.paddingLeft = paddingPx;
   frame.paddingRight = paddingPx;
   frame.paddingTop = 2;
