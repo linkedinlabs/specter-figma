@@ -374,28 +374,6 @@ const matchMasterPeerNode = (node: any, topNode: InstanceNode) => {
 };
 
 /**
- * @description Takes a number and converts it to a letterset representation (A, AA, BA, etc.).
- *
- * @kind function
- * @name numberToLetters
- * @param {number} num The order number of the annotation.
- *
- * @returns {string} The letter version of that number.
- */
-const numberToLetters = (num: number): string => {
-  let number: number = num;
-  let letters: string = '';
-  let counter;
-
-  while (number > 0) {
-    counter = (number - 1) % 26;
-    letters = String.fromCharCode(65 + counter) + letters;
-    number = Math.floor((number - counter) / 26);
-  }
-  return letters || undefined;
-};
-
-/**
  * @description Takes a Figma page object and a `nodeId` and uses the Figma API’s
  * `getPluginData` to extract and return a specific node’s settings.
  *
@@ -718,33 +696,6 @@ const isVisible = (node: SceneNode): boolean => {
 };
 
 /**
- * @description Takes a letterset (A, AA, BA) and converts it to an integer.
- *
- * @kind function
- * @name lettersToNumbers
- * @param {string} letterset The string of letters representing a number.
- *
- * @returns {number} The integer based on the letterset.
- */
-const lettersToNumbers = (letterset: string): number => {
-  let totalNumber: number = 0;
-  const lettersArray: Array<string> = letterset.toUpperCase().split('');
-  const numbersArray: Array<number> = [];
-
-  // iterate through each letter and convert to a number
-  lettersArray.forEach((letter) => {
-    const number: number = (letter.charCodeAt(0) - 64);
-    numbersArray.push(number);
-  });
-
-  // iterate the numbers and calculate the position
-  numbersArray.forEach((number) => {
-    totalNumber = (totalNumber * 26 + number);
-  });
-  return totalNumber;
-};
-
-/**
  * @description Takes an array of typefaces (`FontName`), iterates through the array, checking
  * the system available of each typeface and loading the first available.
  *
@@ -898,10 +849,8 @@ export {
   hexToDecimalRgb,
   isInternal,
   isVisible,
-  lettersToNumbers,
   loadFirstAvailableFontAsync,
   matchMasterPeerNode,
-  numberToLetters,
   resizeGUI,
   setNodeSettings,
   toSentenceCase,

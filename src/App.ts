@@ -1804,10 +1804,6 @@ export default class App {
 
     // force the new position into a positive integer
     let newPosition: number = parseInt(position, 10);
-    // TKTK: delete below
-    // if (newPosition.toString() === 'NaN') {
-    //   newPosition = lettersToNumbers(position);
-    // }
 
     if (!id || !newPosition) {
       messenger.log(`Cannot update ${type}; missing node ID or new position`, 'error');
