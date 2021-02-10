@@ -116,25 +116,23 @@
     border-left: 4px solid rgba($wl-accent, 1);
   }
 
-  span {
-    &.text {
-      em {
-        font-style: normal;
-        color: $wl-type-02;
+  span .text {
+    em {
+      font-style: normal;
+      color: $wl-type-02;
 
-        &:after {
-          content: "/";
-          padding-right: em(4);
-          padding-left: em(4);
-        }
-      }
-
-      .error-flag,
-      em .error-flag {
-        color: $wl-type-03;
-        font-size: 110%;
+      &:after {
+        content: "/";
+        padding-right: em(4);
+        padding-left: em(4);
       }
     }
+  }
+
+  .error-flag,
+  em .error-flag {
+    color: $wl-type-03;
+    font-size: 110%;
   }
 }
 

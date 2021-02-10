@@ -9,6 +9,7 @@
   import FormUnit from './forms-controls/FormUnit';
 
   export let isOpen = false;
+  export let ariaNamed = false;
   export let isSelected = false;
   export let itemId = null;
   export let labelText = 'Item name here';
@@ -111,23 +112,41 @@
 
 <style>
   /* components/list-headers */
+  .left {
+    display: flex;
+    align-items: center;
+  }
+  .text {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    max-width: 250px;
+  }
+  .text.isOpen {
+    font-weight: 600;
+  }
+  .text.ariaNamed {
+    font-style: italic;
+  }
 </style>
 
 <header class:isOpen class:isSelected class={`item-header ${type}`}>
-  <span class="left">
+  <div class="left">
     <span class="actions">
       <ButtonOpenClose
         on:handleUpdate={() => dispatch('handleUpdate', 'toggleOpen')}
         isOpen={isOpen}
       />
     </span>
-    <span class="text">
-      {#if showErrorIcon}
-        <span class="error-flag">&#9873;&nbsp;</span>
-      {/if}
+    {#if showErrorIcon}
+      <span class="error-flag">&#9873;&nbsp;</span>
+    {/if}
+    <p class="text" class:isOpen class:ariaNamed>
       {labelText}
-    </span>
-  </span>
+    </p>
+  </div>
   <span class="right form-element-holder">
     <FormUnit
       className={setInputOptions(type).className}

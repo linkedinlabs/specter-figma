@@ -1,4 +1,3 @@
-import { findTopInstance } from './appHelpers/nodeGetters';
 import {
   CONTAINER_NODE_TYPES,
   DATA_KEYS,
@@ -421,6 +420,82 @@ const getNodeSettings = (page: any, nodeId: string) => {
 };
 
 /**
+ * @description Takes a node object and traverses parent relationships until the top-level
+ * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
+ *
+ * @kind function
+ * @name findTopFrame
+ * @param {Object} node A Figma node object.
+ *
+ * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
+ */
+//
+const findTopFrame = (node: any) => {
+  let { parent } = node;
+
+  // if the parent is a page, we're done
+  if (parent && parent.type === 'PAGE') {
+    if (
+      (node?.type === CONTAINER_NODE_TYPES.frame)
+      || (node?.type === CONTAINER_NODE_TYPES.component)
+    ) {
+      return node;
+    }
+    return null;
+  }
+
+  // loop through each parent until we find the outermost FRAME
+  if (parent) {
+    while (parent && parent.parent.type !== 'PAGE') {
+      parent = parent.parent;
+    }
+  }
+  return parent;
+};
+
+
+/**
+ * @description Reverse iterates the node tree to determine the top-level component instance
+ * (if one exists) for the node. This allows you to easily find a Master Component when dealing
+ * with an instance that may be nested within several component instances.
+ *
+ * @kind function
+ * @name findTopInstance
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
+ */
+const findTopInstance = (node: any): InstanceNode => {
+  let { parent } = node;
+  let currentNode = node;
+  let currentTopInstance: InstanceNode = null;
+
+  // set first; top instance may be self
+  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+    currentTopInstance = currentNode;
+  }
+
+  if (parent) {
+    // iterate until the parent is a page
+    while (parent && parent.type !== 'PAGE') {
+      currentNode = parent;
+      if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+        // update the top-most main component with the current one
+        currentTopInstance = currentNode;
+      }
+      parent = parent.parent;
+    }
+  }
+
+  if (currentTopInstance) {
+    return currentTopInstance;
+  }
+  return null;
+};
+
+
+/**
  * @description A shared helper function to retrieve plugin data on a node from a
  * peer plugin (Stapler). The check is always done on a component node to get the
  * latest data.
@@ -815,6 +890,7 @@ export {
   compareArrays,
   deepCompare,
   existsInArray,
+  findTopFrame,
   getNodeSettings,
   getPeerPluginData,
   getRelativeIndex,

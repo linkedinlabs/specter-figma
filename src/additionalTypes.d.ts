@@ -70,7 +70,7 @@ declare global {
     labels?: PluginAriaLabels,
     name: string,
     position: number | string,
-    role?: string,
+    role?: PluginLabelRole,
   }
 
   // Vendor Declarations

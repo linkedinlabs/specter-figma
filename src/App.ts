@@ -6,21 +6,21 @@ import {
   deepCompare,
   existsInArray,
   getPeerPluginData,
-  lettersToNumbers,
-  numberToLetters,
   resizeGUI,
   sortByPosition,
+  findTopFrame,
   updateArray,
 } from './Tools';
 import {
   findLegendFrame,
-  findTopFrame,
+  findOrphanedLegendFrame,
   getFrameAnnotatedNodes,
   getOrderedStopNodes,
 } from './appHelpers/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 import { positionLegend } from './Painter/nodeCreators';
 
+const uuid = require('uuid-random');
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -75,60 +75,145 @@ const removeLinkedAnnotationNodes = (
 };
 
 /**
- * @description Checks the tracking data for the legend and removes any legend records
- * that are out of sync.  They will be rebuilt once the method to fix node links runs.
+ * @description Updates the name, position, tracking data of an orphaned legend and removes
+ * associated child entry nodes to trigger repainting with new node-level tracking.
  *
  * @kind function
- * @name checkLegendLink
+ * @name reconnectLegend
  *
- * @param {Object} page The type page the selections are on.
+ * @param {Object} legendFrame The detected orphaned legend to reconnect.
  * @param {Object} frame The top frame for the selection.
- * @param {Object} trackingData The page-level legend tracking data.
+ * @param {Object} framePosition The current position of the top frame to align to.
+ * @param {string} legendLinkId The tracking link ID for the topFrame-legend relationship.
  *
- * @returns {boolean} The result of the check a.k.a. whether the legend should be rebuilt.
+ * @returns {undefined}
  */
-const checkLegendLink = (
-  page: PageNode,
+const reconnectLegend = (
+  legendFrame: FrameNode,
   frame: FrameNode,
-  trackingData: Array<PluginFrameTrackingData>,
+  framePosition: PluginFramePosition,
+  legendLinkId: string,
 ): void => {
-  const frameLinkData: PluginFrameLinkData = JSON.parse(
-    frame.getPluginData(DATA_KEYS.legendLinkId) || null,
-  );
-  if (frameLinkData?.role === 'frame') {
-    const trackingEntry = trackingData.find(entry => entry.linkId === frameLinkData.id);
-    if (trackingEntry && trackingEntry.id !== frame.id) {
-      // likely this frame was copied, possibly with the legend
-      const orphanedLegend = page.children.find((child) => {
-        const childLinkData = JSON.parse(child.getPluginData(DATA_KEYS.legendLinkId) || null);
-        return (
-          childLinkData?.role === 'legend'
-          && childLinkData?.id === frameLinkData.id
-          && !trackingData.map(entry => entry.legendId).includes(child.id)
-        );
-      });
-      if (orphanedLegend) {
-        orphanedLegend.remove(); // remove as a new one will build
-      }
-      frame.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify(null));
-    } else if (trackingEntry?.id === frame.id && trackingEntry?.legendId) {
-      // check if the position moved, and move if so
-      const currentFramePosition: PluginFramePosition = {
-        x: frame.x,
-        y: frame.y,
-        width: frame.width,
-        height: frame.height,
-      };
-      if (deepCompare(currentFramePosition, trackingEntry.framePosition)) {
-        const legendFrame = figma.getNodeById(trackingEntry.legendId) as FrameNode;
-        if (legendFrame) {
-          positionLegend(legendFrame, currentFramePosition);
-        }
-      }
+  const legend = legendFrame;
+  positionLegend(legend, framePosition);
+  legend.name = `+++ Specter +++ ${frame.name} Legend`;
+  legend.children.forEach(entry => entry.remove());
+  frame.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify({ role: 'frame', legendLinkId }));
+  legend.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify({ role: 'legend', legendLinkId }));
+};
+
+/**
+ * @description Checks the position of the frame against tracking data to detect whether
+ * it has moved, and updates the legend frame position if so.
+ *
+ * @kind function
+ * @name diffTopFramePosition
+ *
+ * @param {Object} currentPosition The current position of the frame.
+ * @param {Object} trackedPosition The frame position last saved in tracking data.
+ * @param {string} legendId The legend ID listed in the tracking data.
+ *
+ * @returns {undefined}
+ */
+const diffTopFramePosition = (
+  currentPosition: PluginFramePosition,
+  trackedPosition: PluginFramePosition,
+  legendId: string,
+): void => {
+  if (deepCompare(currentPosition, trackedPosition)) {
+    const legendFrame = figma.getNodeById(legendId) as FrameNode;
+    if (legendFrame) {
+      positionLegend(legendFrame, currentPosition);
     }
   }
 };
 
+/**
+ * @description Updates the legend tracking data list with any new entries and removal of existing
+ * entries by their ID.
+ *
+ * @kind function
+ * @name updateLegendTrackingData
+ *
+ * @param {Object} page The type page the selections are on.
+ * @param {Array} data The original page-level legend tracking data.
+ * @param {Array} newEntries The list of tracking data for any new entries.
+ * @param {Array} idsToRemove The list of existing tracking entry IDs we want to remove.
+ *
+ * @returns {undefined}
+ */
+const updateLegendTrackingData = (
+  page: PageNode,
+  data: Array<PluginFrameTrackingData>,
+  newEntries: Array<PluginFrameTrackingData>,
+  idsToRemove: Array<string>,
+): void => {
+  let updatedData = idsToRemove.length
+    ? data.filter(({ id }) => !idsToRemove.includes(id))
+    : data;
+  updatedData = [...updatedData, ...newEntries];
+  page.setPluginData(DATA_KEYS.legendFrames, JSON.stringify(updatedData));
+};
+
+/**
+ * @description Checks the tracking data for the legend and removes any legend records
+ * that are out of sync.  They will be rebuilt once the method to fix node links runs.
+ *
+ * @kind function
+ * @name checkLegendLinks
+ *
+ * @param {Object} page The type page the selections are on.
+ * @param {Object} topFrames The top frames for the selection.
+ *
+ * @returns {undefined}
+ */
+const checkLegendLinks = (
+  page: PageNode,
+  topFrames: Array<FrameNode>,
+): void => {
+  const trackingData: Array<PluginFrameTrackingData> = JSON.parse(
+    page.getPluginData(DATA_KEYS.legendFrames) || '[]',
+  );
+  const newTrackingEntries = [];
+  const trackingEntriesToRemove = [];
+
+  topFrames.forEach((frame) => {
+    const frameLinkData: PluginFrameLinkData = JSON.parse(
+      frame.getPluginData(DATA_KEYS.legendLinkId) || null,
+    );
+    if (frameLinkData?.role === 'frame') {
+      const trackingEntry = trackingData.find(entry => entry.linkId === frameLinkData.id);
+      const {
+        x, y, width, height,
+      } = frame;
+      const framePosition: PluginFramePosition = {
+        x, y, width, height,
+      };
+
+      if (trackingEntry && trackingEntry.id !== frame.id) {
+        // likely this frame was copied, possibly with the legend
+        const orphanedLegend = findOrphanedLegendFrame(page, trackingData, frameLinkData.id);
+        if (orphanedLegend) {
+          const linkId: string = uuid();
+          reconnectLegend(orphanedLegend, frame, framePosition, linkId);
+          newTrackingEntries.push({
+            id: frame.id,
+            legendId: orphanedLegend.id,
+            linkId,
+            framePosition,
+          });
+        } else {
+          trackingEntriesToRemove.push(trackingEntry.id);
+          frame.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify(null));
+        }
+      } else if (trackingEntry?.id === frame.id && trackingEntry?.legendId) {
+        diffTopFramePosition(framePosition, trackingEntry.framePosition, trackingEntry.legendId);
+      }
+    }
+  });
+
+  updateLegendTrackingData(page, trackingData, newTrackingEntries, trackingEntriesToRemove);
+};
 
 /**
  * @description Checks frame list data against annotations and uses linkId between annotation
@@ -482,9 +567,10 @@ const refreshAnnotations = (
           }
         } else {
           const annotationNode: BaseNode = figma.getNodeById(trackingEntry.annotationId);
-
+          const legendItemNode: BaseNode = trackingEntry.legendItemId
+            && figma.getNodeById(trackingEntry.legendItemId);
           // ----- check if annotation node is still there
-          if (!annotationNode) {
+          if (!annotationNode || (type === 'label' && !legendItemNode)) {
             // ----- annotation is missing; repaint
             if (!nodesToRepaint.includes(node.id)) {
               nodesToRepaint.push(node.id);
@@ -593,6 +679,7 @@ const refreshAnnotations = (
           };
           const freshTrackingEntry: PluginNodeTrackingData = {
             annotationId: null,
+            legendItemId: null,
             id: nodeToTrack.id,
             linkId: null,
             topFrameId: nodeToRepaint.parent.id,
@@ -649,13 +736,13 @@ const diffChanges = (
     selection,
   } = options;
 
+  // check the links between frames and legend frames (removes unsynced)
+  checkLegendLinks(page, new Crawler({ for: selection }).topFrames());
+
   // grab tracking data for the page (currently Keystops/Labels)
   const annotationsDataType = DATA_KEYS[`${type}Annotations`];
   const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
     page.getPluginData(annotationsDataType) || '[]',
-  );
-  const legendTrackingData: Array<PluginFrameTrackingData> = JSON.parse(
-    page.getPluginData(DATA_KEYS.legendFrames) || '[]',
   );
 
   // iterate through each node in a selection
@@ -664,15 +751,9 @@ const diffChanges = (
   const crawlerForSelected = new Crawler({ for: selectedNodes });
   const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
 
-  // check the links between frames and legend frames (removes unsynced)
-  topFrameNodes.forEach((topFrame) => {
-    checkLegendLink(page, topFrame, legendTrackingData);
-  });
-
   // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
   const refreshOptions = {
     trackingData,
-    legendTrackingData,
     page,
     messenger,
     isMercadoMode,
@@ -823,7 +904,7 @@ const getStopData = (
   keys?: Array<PluginKeystopKeys>,
   labels?: PluginAriaLabels,
   position: number,
-  role?: string,
+  role?: PluginLabelRole,
 } => {
   // set up keystop blank
   const nodePositionData: {
@@ -831,7 +912,7 @@ const getStopData = (
     keys?: Array<PluginKeystopKeys>,
     labels?: PluginAriaLabels,
     position: number,
-    role?: string,
+    role?: PluginLabelRole,
   } = {
     hasStop: false,
     keys: null,
@@ -1910,6 +1991,8 @@ export default class App {
       hasStop: boolean,
       isSelected: boolean,
       keys?: Array<PluginKeystopKeys>,
+      role?: PluginLabelRole,
+      labels?: PluginAriaLabels
     }> = [];
 
     // specific to `a11y-keyboard` and `a11y-labels`
@@ -1974,12 +2057,7 @@ export default class App {
           position,
         } = getStopData(nodeType, node);
 
-        let displayPosition: string = position ? position.toString() : '';
-        // TKTK: delete below
-        // if (currentView === 'a11y-labels') { 
-        //   // convert numeric position to alpha for view
-        //   displayPosition = numberToLetters(position);
-        // }
+        const displayPosition: string = position ? position.toString() : '';
         const viewObject: PluginViewObject = {
           id,
           name,
@@ -2020,16 +2098,16 @@ export default class App {
 
     // commit the calculated size (re-size the actual plugin frame)
     if (
-      ((currentView !== 'a11y-keyboard') && (currentView !== 'a11y-labels'))
-      || (((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) && items.length < 1)
+      !isInfo
+      && (
+        !['a11y-keyboard', 'a11y-labels'].includes(currentView)
+        || (['a11y-keyboard', 'a11y-labels'].includes(currentView) && !items.length)
+      )
     ) {
-      // no need to resize if the info panel is open
-      if (!isInfo) {
-        figma.ui.resize(
-          width,
-          height,
-        );
-      }
+      figma.ui.resize(
+        width,
+        height,
+      );
     }
 
     messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);

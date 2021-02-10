@@ -2,7 +2,6 @@ import { CONTAINER_NODE_TYPES, DATA_KEYS } from '../constants';
 import { existsInArray, getPeerPluginData } from '../Tools';
 import Crawler from '../Crawler';
 
-
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
  * (if one exists) for the node.
@@ -69,77 +68,31 @@ const findLegendFrame = (frameId: string, page: PageNode) => {
 };
 
 /**
- * @description Takes a node object and traverses parent relationships until the top-level
- * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
+ * @description Checks all page children for a child that has an assigned role of legend
+ * and matching link ID, but is not yet listed in our tracking data.
  *
  * @kind function
- * @name findTopFrame
- * @param {Object} node A Figma node object.
+ * @name findOrphanedLegendFrame
  *
- * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
+ * @param {Object} page The type page the selections are on.
+ * @param {Array} trackingData The page-level legend tracking data.
+ * @param {string} frameLinkId The shared linkId originally assigned to the frame and legend.
+ *
+ * @returns {Object} The frame/page child that matches our criteria for a matching orphaned legend.
  */
-//
-const findTopFrame = (node: any) => {
-  let { parent } = node;
-
-  // if the parent is a page, we're done
-  if (parent && parent.type === 'PAGE') {
-    if (
-      (node?.type === CONTAINER_NODE_TYPES.frame)
-      || (node?.type === CONTAINER_NODE_TYPES.component)
-    ) {
-      return node;
-    }
-    return null;
-  }
-
-  // loop through each parent until we find the outermost FRAME
-  if (parent) {
-    while (parent && parent.parent.type !== 'PAGE') {
-      parent = parent.parent;
-    }
-  }
-  return parent;
-};
-
-/**
- * @description Reverse iterates the node tree to determine the top-level component instance
- * (if one exists) for the node. This allows you to easily find a Master Component when dealing
- * with an instance that may be nested within several component instances.
- *
- * @kind function
- * @name findTopInstance
- *
- * @param {Object} node A Figma node object (`SceneNode`).
- *
- * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
- */
-const findTopInstance = (node: any): InstanceNode => {
-  let { parent } = node;
-  let currentNode = node;
-  let currentTopInstance: InstanceNode = null;
-
-  // set first; top instance may be self
-  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
-    currentTopInstance = currentNode;
-  }
-
-  if (parent) {
-    // iterate until the parent is a page
-    while (parent && parent.type !== 'PAGE') {
-      currentNode = parent;
-      if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
-        // update the top-most main component with the current one
-        currentTopInstance = currentNode;
-      }
-      parent = parent.parent;
-    }
-  }
-
-  if (currentTopInstance) {
-    return currentTopInstance;
-  }
-  return null;
+const findOrphanedLegendFrame = (
+  page: PageNode,
+  trackingData: Array<PluginFrameTrackingData>,
+  frameLinkId: string,
+) => {
+  const match = page.children.find((child) => {
+    const childLinkData = JSON.parse(child.getPluginData(DATA_KEYS.legendLinkId) || null);
+    const isMatch = childLinkData?.role === 'legend'
+      && childLinkData?.id === frameLinkId
+      && !trackingData.map(entry => entry.legendId).includes(child.id);
+    return isMatch;
+  }) as FrameNode;
+  return match;
 };
 
 /**
@@ -223,16 +176,16 @@ const getFrameAnnotatedNodes = (
 };
 
 /**
- * @description Recurses through a list of nodes to gather those with assigned metadata.
+ * @description Recurses through a list of nodes and gathers those with assigned metadata.
  *
  * @kind function
  * @name getAssignedChildNodes
  *
- * @param {Array} children The child nodes we will check for attached metdata.
+ * @param {Array} children The child nodes to check for attached metdata.
  * @param {Array} currentList The existing list of nodes to check against when adding additional.
  * @param {string} type The type of stop data we are checking for (e.g. label or keystop).
  *
- * @returns {Array} Flat list of child nodes with data assigned to them.
+ * @returns {Array} A flat list of child nodes with data assigned to them.
  */
 const getAssignedChildNodes = (
   children: Array<SceneNode>,
@@ -273,9 +226,6 @@ const getAssignedChildNodes = (
 
 /**
  * @description A function that gets a list of all nodes to annotate in the order we want them.
- * Nodes that have already been annotated.
- * Additional nodes that have stop data attached to them.
- * Additional nodes that are in the selection.
  *
  * @kind function
  * @name getOrderedStopNodes
@@ -332,9 +282,8 @@ const getOrderedStopNodes = (
 
 export {
   findParentInstance,
-  findTopFrame,
   findLegendFrame,
-  findTopInstance,
+  findOrphanedLegendFrame,
   findTopComponent,
   getFrameAnnotatedNodes,
   getOrderedStopNodes,

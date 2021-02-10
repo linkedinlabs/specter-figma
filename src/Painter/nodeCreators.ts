@@ -383,27 +383,29 @@ const buildText = (
   } else if (type === 'legend') {
     text.fontSize = 12;
     text.lineHeight = { value: 135, unit: 'PERCENT' };
+    text.textAlignVertical = 'TOP';
+    text.textAlignHorizontal = 'LEFT';
     text.textCase = 'ORIGINAL';
-    text.textAutoResize = 'WIDTH_AND_HEIGHT';
-    text.layoutAlign = 'INHERIT';
-    text.paragraphIndent = !characters.includes(':') ? 5 : 0;
     text.fontName = !characters.includes(':')
       ? { family: typefaceToUse.family, style: 'Regular' } : typefaceToUse;
+    if (!characters.includes(':')) {
+      text.resize(225, text.height);
+    }
   }
   return text;
 };
 
 /**
- * @description Builds an inner rectangle element in Figma.
+ * @description Builds an inner rectangle element in Figma for label annotations.
  *
  * @kind function
  * @name buildRectangleInnerHalf
  *
- * @param {string} align A string that indicates whether the frame should be left or right aligned.
+ * @param {string} align Indicates whether the frame should be left or right aligned.
  * @param {Object} color An object that represents a color in RGB decimal notation.
- * @param {string} type The type of annotation we are building this for (e.g. keystop vs label).
+ * @param {string} type The type of annotation we are building.
  *
- * @returns {Object} The rectangle FrameNode for the annotation.
+ * @returns {Object} The inner rectangle FrameNode for the annotation.
  */
 const buildRectangleInnerHalf = (
   align: 'left' | 'right',
@@ -593,13 +595,13 @@ const buildAnnotation = (options: {
   let diamond: PolygonNode = null;
   let text: TextNode = null;
   let innerText: string = '';
-  
+
   if (['label', 'legendIcon'].includes(type)) {
     innerText = mainText;
   }
 
   const rectangle: FrameNode = buildRectangle(type, color, innerText);
-  
+
   if (type !== 'legendIcon') {
     diamond = figma.createPolygon();
     diamond.name = 'Diamond';
@@ -860,6 +862,28 @@ const positionLegend = (
 };
 
 /**
+ * @description Gets the text to display for legend entries.
+ *
+ * @kind function
+ * @name getLegendLabelText
+ *
+ * @param {Object} labels The entry's label data.
+ * @param {Object} labelName The name of the particular label we need text for.
+ *
+ * @returns {Array} Returns the formatted field data to be used in the legend entry.
+ */
+const getLegendLabelText = (labels, labelName) => {
+  const { visible, alt, a11y } = labels;
+  if (labelName === 'alt') {
+    return alt ? `"${alt}"` : 'undefined';
+  }
+  if (a11y) {
+    return `"${a11y}"`;
+  }
+  return visible ? 'n/a' : 'undefined';
+};
+
+/**
  * @description Builds the initial legend frame for label annotation legend items.
  *
  * @kind function
@@ -888,10 +912,10 @@ const getLegendEntryFields = (data) => {
       },
       {
         name: 'Alt text',
-        val: labels?.alt || 'undefined',
+        val: getLegendLabelText(labels, 'alt'),
       },
     ];
-  } else if (role) {
+  } else if (role && role !== 'no-role') {
     fields = [
       {
         name: 'Role',
@@ -903,17 +927,17 @@ const getLegendEntryFields = (data) => {
       },
       {
         name: 'A11y label',
-        val: labels?.a11y || (labels?.visible ? 'n/a' : 'undefined'),
+        val: getLegendLabelText(labels, 'a11y'),
       },
     ];
-  } else if (!role) {
+  } else if (!role || role === 'no-role') {
     fields = [
       {
         name: 'Visible label',
         val: labels?.visible ? 'Yes' : 'No',
       }, {
         name: 'A11y label',
-        val: labels?.a11y || (labels?.visible ? 'n/a' : 'undefined'),
+        val: getLegendLabelText(labels, 'a11y'),
       },
     ];
   }
@@ -989,8 +1013,9 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
   legendData.bottomLeftRadius = 6;
   legendData.fills = [{
     type: 'SOLID',
-    color: { r: 0.4, g: 0.6, b: 0.8 },
+    color: hexToDecimalRgb(COLORS.label),
   }];
+  legendData.resize(300, legendData.height);
 
   const fields = getLegendEntryFields(nodeData);
 
@@ -1003,7 +1028,7 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
     line.primaryAxisSizingMode = 'FIXED';
     line.primaryAxisAlignItems = 'MIN';
     line.counterAxisSizingMode = 'AUTO';
-    line.counterAxisAlignItems = 'CENTER';
+    line.counterAxisAlignItems = 'MIN';
     line.layoutAlign = 'STRETCH';
 
     // set padding and item spacing
@@ -1011,10 +1036,11 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
     line.paddingRight = 10;
     line.paddingTop = 2;
     line.paddingBottom = 2;
-    line.itemSpacing = 0;
+    line.itemSpacing = 5;
 
     const labelTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
-    const LabelValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
+    const labelValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
+    // labelValue.
 
     if (index === 0) {
       line.topRightRadius = 5;
@@ -1025,7 +1051,7 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
     }
 
     line.appendChild(labelTitle);
-    line.appendChild(LabelValue);
+    line.appendChild(labelValue);
     legendData.appendChild(line);
   });
 

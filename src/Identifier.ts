@@ -7,6 +7,7 @@ import {
   resizeGUI,
   setNodeSettings,
   toSentenceCase,
+  findTopFrame,
   updateArray,
 } from './Tools';
 import {
@@ -14,7 +15,7 @@ import {
   DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
-import { findParentInstance, findTopFrame } from './appHelpers/nodeGetters';
+import { findParentInstance } from './appHelpers/nodeGetters';
 
 // --- private functions
 /**

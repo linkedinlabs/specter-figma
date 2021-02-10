@@ -2,9 +2,9 @@ import Crawler from '../Crawler';
 import {
   getNodeSettings,
   isInternal,
-  numberToLetters,
   updateArray,
   updateNestedArray,
+  findTopFrame,
 } from '../Tools';
 import {
   DATA_KEYS,
@@ -22,7 +22,7 @@ import {
   positionLegend,
   drawContainerGroup,
 } from './nodeCreators';
-import { findTopFrame, findLegendFrame } from '../appHelpers/nodeGetters';
+import { findLegendFrame } from '../appHelpers/nodeGetters';
 
 const uuid = require('uuid-random');
 
@@ -1104,15 +1104,9 @@ export default class Painter {
 
     // set up some information
     const { keys } = nodeData;
-    let { annotationText } = nodeData;
+    const { annotationText } = nodeData;
     const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
-
-    // TKTK: delete below
-    // label exception
-    // if (type === 'label') {
-    //   annotationText = numberToLetters(parseInt(annotationText, 10));
-    // }
 
     // construct the base annotation elements
     const annotationBundle = buildAnnotation({

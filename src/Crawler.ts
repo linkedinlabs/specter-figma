@@ -1,6 +1,6 @@
-import { findTopFrame } from './appHelpers/nodeGetters';
 import { CONTAINER_NODE_TYPES } from './constants';
 import {
+  findTopFrame,
   getRelativeIndex,
   getRelativePosition,
 } from './Tools';

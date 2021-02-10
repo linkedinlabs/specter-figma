@@ -1,8 +1,6 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
-  import ButtonSelect from './forms-controls/ButtonSelect';
   import FormUnit from './forms-controls/FormUnit';
-  import FigmaSwitch from './forms-controls/FigmaSwitch.svelte';
   import { deepCompare } from '../Tools';
 
   export let isSelected = false;
@@ -156,11 +154,6 @@
     },
   ];
 
-  const handleSelect = () => {
-    // tktk
-    console.log('select layer in Figma artboard'); // eslint-disable-line no-console
-  };
-
   const handleReset = () => {
     // role
     dirtyRole = role || 'no-role';
@@ -244,9 +237,6 @@
         on:saveSignal={() => updateRole(dirtyRole)}
         bind:value={dirtyRole}
       />
-      <ButtonSelect
-        on:handleUpdate={() => handleSelect()}
-      />
     </span>
     {#if (dirtyRole !== 'image-decorative')}
       {#if (dirtyRole === 'image')}
@@ -273,16 +263,6 @@
           on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
           bind:value={dirtyLabels.visible}
         />
-        <!-- <span class="form-row">
-          <FigmaSwitch
-            className="form-element element-type-switch"
-            labelText="Visible label"
-            nameId={`${itemId}-label-visible`}
-            resetValue={resetValue}
-            on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
-            bind:value={dirtyLabels.visible}
-          />
-        </span> -->
         <FormUnit
           className="form-row"
           kind="inputText"

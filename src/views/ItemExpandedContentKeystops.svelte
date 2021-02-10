@@ -1,7 +1,6 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
   import { updateArray } from '../Tools';
-
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;

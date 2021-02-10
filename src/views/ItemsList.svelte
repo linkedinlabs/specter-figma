@@ -30,14 +30,11 @@
     return itemIsOpen;
   };
 
-  // checks if the item is missing expected label values based on role
   const isMissingData = (item) => {
-    if (type.includes('labels')) {
+    if (type.includes('labels') && item.role !== 'image-decorative') {
       const { labels, role } = item;
       return (
         !labels
-        || !role
-        || role === 'no-role'
         || (role === 'image' && !labels.alt)
         || (role !== 'image' && !(labels.a11y || labels.visible))
       );
@@ -118,12 +115,30 @@
 
   const setAddStopButton = (currentItems) => {
     addNumber = 0;
-
     currentItems.forEach((item) => {
       if (!item.hasStop) {
         addNumber += 1;
       }
     });
+  };
+
+  const getHeaderName = (item) => {
+    const { name, role } = item;
+    const { a11y, visible, alt } = item.labels || {};
+    const mainText = role && role !== 'no-role' ? `${role.charAt(0).toUpperCase() + role.slice(1)} ` : '';
+    let headerName = name;
+
+    if (role === 'image-decorative') {
+      headerName = name;
+    } else if (role === 'image') {
+      const secondaryText = alt ? `"${alt}"` : '(missing alt text)';
+      headerName = `${mainText}${secondaryText}`;
+    } else if (a11y) {
+      headerName = `${mainText}"${a11y}"`;
+    } else if (!visible) {
+      headerName = `${name} (missing label)`;
+    }
+    return headerName;
   };
 
   beforeUpdate(() => {
@@ -139,9 +154,10 @@
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
+          ariaNamed={type.includes('labels') && !getHeaderName(item).includes(item.name)}
           isSelected={item.isSelected}
           itemId={item.id}
-          labelText={item.name}
+          labelText={type.includes('labels') ? getHeaderName(item) : item.name}
           position={item.position}
           type={type}
           showErrorIcon={isMissingData(item)}
