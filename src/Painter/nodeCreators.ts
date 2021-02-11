@@ -837,24 +837,17 @@ const positionLegend = (
 ) => {
   const legendFrame = legend;
 
-  // auto-layout
   legendFrame.layoutMode = 'VERTICAL';
   legendFrame.primaryAxisSizingMode = 'AUTO';
   legendFrame.primaryAxisAlignItems = 'MIN';
   legendFrame.counterAxisSizingMode = 'AUTO';
   legendFrame.counterAxisAlignItems = 'CENTER';
   legendFrame.layoutAlign = 'INHERIT';
-
-  // padding / fills
   legendFrame.fills = [];
-
-  // set outer clipping
   legendFrame.clipsContent = false;
 
   const placementX: number = originFramePosition.x + (originFramePosition.width + 20);
   const placementY: number = originFramePosition.y;
-
-  // set annotation group placement, relative to container group
   legendFrame.x = placementX;
   legendFrame.y = placementY;
 
@@ -975,7 +968,6 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
 
   icon.appendChild(iconElements.rectangle);
 
-  // auto-layout
   legendItem.layoutMode = 'HORIZONTAL';
   legendItem.primaryAxisSizingMode = 'FIXED';
   legendItem.primaryAxisAlignItems = 'MIN';
@@ -983,8 +975,6 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
   legendItem.counterAxisAlignItems = 'MIN';
   legendItem.layoutAlign = 'STRETCH';
   legendItem.layoutGrow = 0;
-
-  // set padding and item spacing
   legendItem.paddingLeft = 15;
   legendItem.paddingRight = 15;
   legendItem.paddingTop = 15;
@@ -993,16 +983,12 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
 
   const legendData: FrameNode = figma.createFrame();
   legendData.name = 'Data';
-
-  // auto-layout
   legendData.layoutMode = 'VERTICAL';
   legendData.primaryAxisSizingMode = 'AUTO';
   legendData.primaryAxisAlignItems = 'MIN';
   legendData.counterAxisSizingMode = 'AUTO';
   legendData.counterAxisAlignItems = 'MIN';
   legendData.layoutAlign = 'STRETCH';
-
-  // set padding and item spacing
   legendData.paddingLeft = 2;
   legendData.paddingRight = 2;
   legendData.paddingTop = 2;
@@ -1011,27 +997,22 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
   legendData.topRightRadius = 6;
   legendData.bottomRightRadius = 6;
   legendData.bottomLeftRadius = 6;
+  legendData.resize(300, legendData.height);
   legendData.fills = [{
     type: 'SOLID',
     color: hexToDecimalRgb(COLORS.label),
   }];
-  legendData.resize(300, legendData.height);
 
   const fields = getLegendEntryFields(nodeData);
-
   fields.forEach(({ name, val }, index) => {
     const line: FrameNode = figma.createFrame();
     line.name = `${name} label`;
-
-    // auto-layout
     line.layoutMode = 'HORIZONTAL';
     line.primaryAxisSizingMode = 'FIXED';
     line.primaryAxisAlignItems = 'MIN';
     line.counterAxisSizingMode = 'AUTO';
     line.counterAxisAlignItems = 'MIN';
     line.layoutAlign = 'STRETCH';
-
-    // set padding and item spacing
     line.paddingLeft = 10;
     line.paddingRight = 10;
     line.paddingTop = 2;
@@ -1040,7 +1021,6 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
 
     const labelTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
     const labelValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
-    // labelValue.
 
     if (index === 0) {
       line.topRightRadius = 5;
