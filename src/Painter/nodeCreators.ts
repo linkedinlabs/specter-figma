@@ -873,7 +873,7 @@ const positionLegend = (
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
 const getLegendLabelText = (labels, labelName) => {
-  const { visible, alt, a11y } = labels;
+  const { visible, alt, a11y } = labels || {};
   if (labelName === 'alt') {
     return alt ? `"${alt}"` : 'undefined';
   }
