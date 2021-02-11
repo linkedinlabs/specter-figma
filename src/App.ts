@@ -378,16 +378,10 @@ const repairBrokenLinks = (
 };
 
 // removes a node, if it exists
-const removeNode = (nodeId: string, legendNodeId: string) => {
+const removeNodeById = (nodeId: string) => {
   const nodeToRemove: BaseNode = figma.getNodeById(nodeId);
   if (nodeToRemove) {
     nodeToRemove.remove();
-
-    const legendNodeToRemove: BaseNode = legendNodeId && figma.getNodeById(legendNodeId);
-
-    if (legendNodeToRemove) {
-      legendNodeToRemove.remove();
-    }
   }
 };
 
@@ -408,8 +402,10 @@ const fullCleanup = (
   const newNodesToRepaint: Array<string> = [];
 
   // remove annotation and legend nodes
-  removeNode(trackingEntry.annotationId, trackingEntry.legendItemId);
-
+  removeNodeById(trackingEntry.annotationId);
+  if (trackingEntry.legendItemId) {
+    removeNodeById(trackingEntry.legendItemId);
+  }
   // --- remove from tracking data
   let newTrackingData = initialTrackingData;
   newTrackingData = updateArray(newTrackingData, trackingEntry, 'id', 'remove');
@@ -464,14 +460,12 @@ const fullCleanup = (
               }
 
               // remove existing annotation node
-              const annotationToRemoveEntry = newTrackingData.find(
-                currentTrackingEntry => currentTrackingEntry.id === updatedEntry.id,
-              );
-              if (annotationToRemoveEntry) {
-                removeNode(
-                  annotationToRemoveEntry.annotationId,
-                  annotationToRemoveEntry.legendItemId,
-                );
+              const annotationEntry = newTrackingData.find(({ id }) => id === updatedEntry.id);
+              if (annotationEntry) {
+                removeNodeById(annotationEntry.annotationId);
+                if (annotationEntry.legendItemId) {
+                  removeNodeById(annotationEntry.legendItemId);
+                }
               }
             }
           }
@@ -558,8 +552,11 @@ const refreshAnnotations = (
         // ----- check if position has changed
         if (deepCompare(currentNodePosition, trackingEntry.nodePosition)) {
           // ---- something about position is different; repaint
-          // remove annotation node
-          removeNode(trackingEntry.annotationId, trackingEntry.legendItemId);
+          // remove annotation and legend nodes
+          removeNodeById(trackingEntry.annotationId);
+          if (trackingEntry.legendItemId) {
+            removeNodeById(trackingEntry.legendItemId);
+          }
 
           // queue for repaint
           if (!nodesToRepaint.includes(node.id)) {
