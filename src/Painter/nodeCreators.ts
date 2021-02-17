@@ -1,5 +1,5 @@
 import { COLORS } from '../constants';
-import { hexToDecimalRgb } from '../Tools';
+import { hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 

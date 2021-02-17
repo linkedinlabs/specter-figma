@@ -1,7 +1,7 @@
 /**
  * @description A set of functions to operate the plugin GUI.
  */
-import { isInternal } from './Tools';
+import { isInternal } from './utils/tools';
 import './assets/css/main.scss';
 import App from './views/App.svelte'; // eslint-disable-line import/extensions
 

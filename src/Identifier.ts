@@ -9,13 +9,13 @@ import {
   toSentenceCase,
   findTopFrame,
   updateArray,
-} from './Tools';
+} from './utils/tools';
 import {
   CONTAINER_NODE_TYPES,
   DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
-import { findParentInstance } from './appHelpers/nodeGetters';
+import { findParentInstance } from './utils/nodeGetters';
 
 // --- private functions
 /**

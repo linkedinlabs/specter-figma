@@ -1,5 +1,5 @@
 import { CONTAINER_NODE_TYPES, DATA_KEYS } from '../constants';
-import { existsInArray, getPeerPluginData } from '../Tools';
+import { existsInArray, getPeerPluginData } from './tools';
 import Crawler from '../Crawler';
 
 /**

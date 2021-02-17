@@ -5,7 +5,7 @@ import {
   updateArray,
   updateNestedArray,
   findTopFrame,
-} from '../Tools';
+} from '../utils/tools';
 import {
   DATA_KEYS,
   PLUGIN_IDENTIFIER,
@@ -22,7 +22,7 @@ import {
   positionLegend,
   drawContainerGroup,
 } from './nodeCreators';
-import { getLegendFrame } from '../appHelpers/nodeGetters';
+import { getLegendFrame } from '../utils/nodeGetters';
 
 const uuid = require('uuid-random');
 

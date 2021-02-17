@@ -1,7 +1,7 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
   import FormUnit from './forms-controls/FormUnit';
-  import { deepCompare } from '../Tools';
+  import { deepCompare } from '../utils/tools';
 
   export let isSelected = false;
   export let itemId = null;

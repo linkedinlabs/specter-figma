@@ -9,10 +9,10 @@ import {
   sortByPosition,
   findTopFrame,
   updateArray,
-} from './Tools';
+} from './utils/tools';
 import {
   getOrderedStopNodes,
-} from './appHelpers/nodeGetters';
+} from './utils/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 import { positionLegend } from './Painter/nodeCreators';
 

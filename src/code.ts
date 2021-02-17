@@ -1,7 +1,7 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
 import Messenger from './Messenger';
-import { awaitUIReadiness, loadFirstAvailableFontAsync } from './Tools';
+import { awaitUIReadiness, loadFirstAvailableFontAsync } from './utils/tools';
 import { DATA_KEYS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------

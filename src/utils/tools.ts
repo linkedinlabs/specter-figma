@@ -3,7 +3,7 @@ import {
   DATA_KEYS,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
-} from './constants';
+} from '../constants';
 
 const hexRgb = require('hex-rgb');
 

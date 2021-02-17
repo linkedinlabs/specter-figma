@@ -1,4 +1,4 @@
-import { isInternal } from './Tools';
+import { isInternal } from './utils/tools';
 import { PLUGIN_NAME } from './constants';
 
 /**
