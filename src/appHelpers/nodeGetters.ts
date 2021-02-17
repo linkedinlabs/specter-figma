@@ -50,13 +50,13 @@ const findParentInstance = (node: any) => {
  * a corresponding legend frame if it exists.
  *
  * @kind function
- * @name findLegendFrame
+ * @name getLegendFrame
  * @param {Object} frameId The design top frame we're looking for a legend for.
  * @param {Object} page The Figma page the frame belongs to.
  *
  * @returns {Object} The legend for the frame (or null, if it doesn't exist).
  */
-const findLegendFrame = (frameId: string, page: PageNode) => {
+const getLegendFrame = (frameId: string, page: PageNode) => {
   let legendFrame = null;
   const frameTrackingData = JSON.parse(page.getPluginData(DATA_KEYS.legendFrames) || '[]');
   const trackingEntry = frameTrackingData.find(entry => entry.id === frameId);
@@ -65,34 +65,6 @@ const findLegendFrame = (frameId: string, page: PageNode) => {
     legendFrame = figma.getNodeById(trackingEntry.legendId);
   }
   return legendFrame;
-};
-
-/**
- * @description Checks all page children for a child that has an assigned role of legend
- * and matching link ID, but is not yet listed in our tracking data.
- *
- * @kind function
- * @name findOrphanedLegendFrame
- *
- * @param {Object} page The type page the selections are on.
- * @param {Array} trackingData The page-level legend tracking data.
- * @param {string} frameLinkId The shared linkId originally assigned to the frame and legend.
- *
- * @returns {Object} The frame/page child that matches our criteria for a matching orphaned legend.
- */
-const findOrphanedLegendFrame = (
-  page: PageNode,
-  trackingData: Array<PluginFrameTrackingData>,
-  frameLinkId: string,
-) => {
-  const match = page.children.find((child) => {
-    const childLinkData = JSON.parse(child.getPluginData(DATA_KEYS.legendLinkId) || null);
-    const isMatch = childLinkData?.role === 'legend'
-      && childLinkData?.id === frameLinkId
-      && !trackingData.map(entry => entry.legendId).includes(child.id);
-    return isMatch;
-  }) as FrameNode;
-  return match;
 };
 
 /**
@@ -183,7 +155,7 @@ const getFrameAnnotatedNodes = (
  *
  * @param {Array} children The child nodes to check for attached metdata.
  * @param {Array} currentList The existing list of nodes to check against when adding additional.
- * @param {string} type The type of stop data we are checking for (e.g. label or keystop).
+ * @param {string} type The type of stop data we are checking for (eg: label or keystop).
  *
  * @returns {Array} A flat list of child nodes with data assigned to them.
  */
@@ -195,19 +167,24 @@ const getAssignedChildNodes = (
   const childNodes = new Crawler({ for: children }).all();
   return childNodes.reduce((acc, node) => {
     let list = acc;
-    const sourceData = getPeerPluginData(node);
+    const {
+      hasKeystop,
+      allowKeystopPassthrough,
+      role,
+    } = getPeerPluginData(node) || {};
+
     if (!existsInArray(currentList, node.id)
       && (
-        (type === 'keystop' && sourceData?.hasKeystop)
-        || (type === 'label' && sourceData?.role)
+        (type === 'keystop' && hasKeystop)
+        || (type === 'label' && role && role !== 'none') // 'none' ignore is a temp workaround for accidental setting in Stapler
       )
     ) {
       list.push(node);
       if (
         node.children
         && (
-          type === 'label'
-          || (type === 'keystop' && sourceData.allowKeystopPassthrough)
+          (type === 'keystop' && allowKeystopPassthrough)
+          // || type === 'label'
         )
       ) {
         list = [
@@ -230,16 +207,18 @@ const getAssignedChildNodes = (
  * @kind function
  * @name getOrderedStopNodes
  *
+ * @param {string} type The type of stops we are annotating (eg: label or keystop).
  * @param {Array} selection The current Figma selection of nodes.
+ * @param {boolean} resetData Indicates whether the data should be cleared in annotated nodes.
  * @param {Array} suppliedNodes A list of supplied nodes if they are passed in.
- * @param {string} type The type of stops we are annotating (e.g. label or keystop).
  *
  * @returns {Array}  A list of nodes to annotate in the correct order.
  */
 const getOrderedStopNodes = (
-  selection: Array<SceneNode>,
-  suppliedNodes: Array<SceneNode>,
   type: PluginStopType,
+  selection: Array<SceneNode>,
+  resetData: boolean,
+  suppliedNodes?: Array<SceneNode>,
 ) => {
   // determine top Frames involved in the current selection
   const selectionCrawler = new Crawler({ for: selection });
@@ -252,9 +231,8 @@ const getOrderedStopNodes = (
   // gather annotated nodes in top Frames and add selection children if not supplied
   const nodesToAnnotate: Array<SceneNode> = selectionTopFrames.reduce((acc, frame) => {
     let list = acc;
-    const options = { frame, resetData: true };
     // add previously annotated nodes to the result list
-    const annotatedFrameNodes = getFrameAnnotatedNodes(type, options);
+    const annotatedFrameNodes = getFrameAnnotatedNodes(type, { frame, resetData });
     list = [...list, ...annotatedFrameNodes];
 
     // if not annotating supplied nodes, add Figma selection children to selected list
@@ -282,10 +260,7 @@ const getOrderedStopNodes = (
 
 export {
   findParentInstance,
-  findLegendFrame,
-  findOrphanedLegendFrame,
+  getLegendFrame,
   findTopComponent,
-  getFrameAnnotatedNodes,
   getOrderedStopNodes,
-  getAssignedChildNodes,
 };

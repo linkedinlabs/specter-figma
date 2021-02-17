@@ -8,6 +8,7 @@
   export let role = null;
   export let type = null;
   export let labels = null;
+  export let roleOptions;
 
   const labelsInit = {
     a11y: null,
@@ -21,138 +22,6 @@
   let originalRole = role || 'no-role';
   let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
   let originalLabels = labels ? { ...labels } : { ...labelsInit };
-  const controlRoles = [
-    {
-      value: 'no-role',
-      text: 'Undefined…',
-      disabled: false,
-    },
-    {
-      value: 'divider--01',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'image',
-      text: 'Image',
-      disabled: false,
-    },
-    {
-      value: 'image-decorative',
-      text: 'Image (decorative)',
-      disabled: false,
-    },
-    {
-      value: 'divider--02',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'button',
-      text: 'Button',
-      disabled: false,
-    },
-    {
-      value: 'checkbox',
-      text: 'Checkbox',
-      disabled: false,
-    },
-    {
-      value: 'link',
-      text: 'Link',
-      disabled: false,
-    },
-    {
-      value: 'menuitem',
-      text: 'Menu item',
-      disabled: false,
-    },
-    {
-      value: 'menuitemcheckbox',
-      text: 'Menu item (checkbox)',
-      disabled: false,
-    },
-    {
-      value: 'menuitemradio',
-      text: 'Menu item (radio)',
-      disabled: false,
-    },
-    {
-      value: 'option',
-      text: 'Option',
-      disabled: false,
-    },
-    {
-      value: 'progressbar',
-      text: 'Progress bar',
-      disabled: false,
-    },
-    {
-      value: 'radio',
-      text: 'Radio',
-      disabled: false,
-    },
-    {
-      value: 'searchbox',
-      text: 'Search box',
-      disabled: false,
-    },
-    {
-      value: 'slider',
-      text: 'Slider',
-      disabled: false,
-    },
-    {
-      value: 'switch',
-      text: 'Switch',
-      disabled: false,
-    },
-    {
-      value: 'tab',
-      text: 'Tab',
-      disabled: false,
-    },
-    {
-      value: 'tabpanel',
-      text: 'Tab panel',
-      disabled: false,
-    },
-    {
-      value: 'textbox',
-      text: 'Textbox',
-      disabled: false,
-    },
-    {
-      value: 'divider--03',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'combobox',
-      text: 'Combobox',
-      disabled: false,
-    },
-    {
-      value: 'listbox',
-      text: 'Listbox',
-      disabled: false,
-    },
-    {
-      value: 'menu',
-      text: 'Menu',
-      disabled: false,
-    },
-    {
-      value: 'radiogroup',
-      text: 'Radio group',
-      disabled: false,
-    },
-    {
-      value: 'tablist',
-      text: 'Tab list',
-      disabled: false,
-    },
-  ];
 
   const handleReset = () => {
     // role
@@ -231,7 +100,7 @@
         kind="inputSelect"
         labelText="Role"
         nameId={`${itemId}-role`}
-        options={controlRoles}
+        options={roleOptions}
         resetValue={resetValue}
         selectWatchChange={true}
         on:saveSignal={() => updateRole(dirtyRole)}

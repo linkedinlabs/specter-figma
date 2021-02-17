@@ -22,7 +22,6 @@
     "postinstall": "npm run build",
     "lint": "npm run lint:js && npm run lint:css",
     "lint:eslint": "eslint . --ext .js,.tsx,.ts,.svelte",
-    "lint:eslintfix": "eslint . --fix",
     "lint:stylelint": "stylelint './src/assets/css/**/*.scss'",
     "lint:js": "npm run lint:eslint",
     "lint:css": "npm run lint:stylelint",

@@ -1260,6 +1260,10 @@ const positionAnnotation = (
     if ((nodeWidth - 100) > rectangle.width) {
       placementX = nodeX + 10;
     }
+  } else if (annotationType === 'label') {
+    if ((nodeWidth - 100) > rectangle.width) {
+      placementX = (nodeX + nodeWidth) - 50;
+    }
   }
 
   // detect left edge

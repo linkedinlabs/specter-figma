@@ -112,7 +112,7 @@
 
 <style>
   /* components/list-headers */
-  .left {
+  /* .left {
     display: flex;
     align-items: center;
   }
@@ -126,27 +126,27 @@
   }
   .text.isOpen {
     font-weight: 600;
-  }
+  } */
   .text.ariaNamed {
     font-style: italic;
   }
 </style>
 
 <header class:isOpen class:isSelected class={`item-header ${type}`}>
-  <div class="left">
+  <span class="left">
     <span class="actions">
       <ButtonOpenClose
         on:handleUpdate={() => dispatch('handleUpdate', 'toggleOpen')}
         isOpen={isOpen}
       />
     </span>
-    {#if showErrorIcon}
-      <span class="error-flag">&#9873;&nbsp;</span>
-    {/if}
-    <p class="text" class:isOpen class:ariaNamed>
+    <span class="text" class:isOpen class:ariaNamed>
+      {#if showErrorIcon}
+        <span class="error-flag">&#9873;&nbsp;</span>
+      {/if}
       {labelText}
-    </p>
-  </div>
+    </span>
+  </span>
   <span class="right form-element-holder">
     <FormUnit
       className={setInputOptions(type).className}

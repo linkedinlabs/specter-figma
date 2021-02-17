@@ -22,7 +22,7 @@ import {
   positionLegend,
   drawContainerGroup,
 } from './nodeCreators';
-import { findLegendFrame } from '../appHelpers/nodeGetters';
+import { getLegendFrame } from '../appHelpers/nodeGetters';
 
 const uuid = require('uuid-random');
 
@@ -1215,7 +1215,7 @@ export default class Painter {
    * @returns {undefined}
    */
   addEntryToLegend(legendNode) {
-    let legend = findLegendFrame(this.frame.id, this.page);
+    let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
       legend = buildLegend();
       legend.name = `+++ Specter +++ ${this.frame.name} Legend`;
