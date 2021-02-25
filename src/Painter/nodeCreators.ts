@@ -1256,13 +1256,9 @@ const positionAnnotation = (
       placementY = nodeY - rectangle.height - offsetY;
   }
 
-  if (annotationType === 'keystop') {
+  if (['keystop', 'label'].includes(annotationType)) {
     if ((nodeWidth - 100) > rectangle.width) {
       placementX = nodeX + 10;
-    }
-  } else if (annotationType === 'label') {
-    if ((nodeWidth - 100) > rectangle.width) {
-      placementX = (nodeX + nodeWidth) - 50;
     }
   }
 

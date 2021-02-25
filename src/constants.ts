@@ -9,7 +9,7 @@
  * @name PLUGIN_IDENTIFIER
  * @type {string}
  */
-const PLUGIN_IDENTIFIER: string = 'com.linkedin.figma.specter-plugin';
+const PLUGIN_IDENTIFIER: string = process.env.PLUGIN_IDENTIFIER || 'com.linkedin.figma.specter-plugin';
 
 /**
  * @description The public-facing name for the plugin. This should match the
@@ -19,7 +19,7 @@ const PLUGIN_IDENTIFIER: string = 'com.linkedin.figma.specter-plugin';
  * @name PLUGIN_NAME
  * @type {string}
  */
-const PLUGIN_NAME: string = 'Specter';
+const PLUGIN_NAME: string = process.env.PLUGIN_NAME || 'Specter';
 
 /**
  * @description An object containing the current string constants used as keys in plugin data.

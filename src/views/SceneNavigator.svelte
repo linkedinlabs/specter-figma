@@ -26,6 +26,7 @@
         action: 'setViewContext',
         payload: {
           newView,
+          skipDiff: true,
         },
       },
     }, '*');

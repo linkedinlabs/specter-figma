@@ -1,5 +1,5 @@
 import { CONTAINER_NODE_TYPES, DATA_KEYS } from '../constants';
-import { existsInArray, getPeerPluginData } from './tools';
+import { existsInArray, getPeerPluginData, updateArray } from './tools';
 import Crawler from '../Crawler';
 
 /**
@@ -174,6 +174,7 @@ const getAssignedChildNodes = (
     } = getPeerPluginData(node) || {};
 
     if (!existsInArray(currentList, node.id)
+      && !existsInArray(list, node.id)
       && (
         (type === 'keystop' && hasKeystop)
         || (type === 'label' && role && role !== 'none') // 'none' ignore is a temp workaround for accidental setting in Stapler
@@ -182,10 +183,7 @@ const getAssignedChildNodes = (
       list.push(node);
       if (
         node.children
-        && (
-          (type === 'keystop' && allowKeystopPassthrough)
-          // || type === 'label'
-        )
+        && (type === 'keystop' && allowKeystopPassthrough)
       ) {
         list = [
           ...list,
@@ -226,14 +224,16 @@ const getOrderedStopNodes = (
 
   // initialize selected list based on supplied vs Figma selection
   let selectedNodes: Array<SceneNode> = suppliedNodes?.length
-    ? [...suppliedNodes] : [...selection];
+    ? suppliedNodes : [...selection];
 
   // gather annotated nodes in top Frames and add selection children if not supplied
   const nodesToAnnotate: Array<SceneNode> = selectionTopFrames.reduce((acc, frame) => {
     let list = acc;
     // add previously annotated nodes to the result list
     const annotatedFrameNodes = getFrameAnnotatedNodes(type, { frame, resetData });
-    list = [...list, ...annotatedFrameNodes];
+    annotatedFrameNodes.forEach((node) => {
+      list = updateArray(list, node);
+    });
 
     // if not annotating supplied nodes, add Figma selection children to selected list
     if (!suppliedNodes?.length && frame.children) {
@@ -243,19 +243,18 @@ const getOrderedStopNodes = (
         exclusionList,
         type,
       );
-      selectedNodes = [...selectedNodes, ...assignedChildNodes];
+      assignedChildNodes.forEach(node => selectedNodes.push(node));
     }
     return list;
   }, []);
 
   // filter selected to what isn't in the results list and sort by visual hierarchy
-  selectedNodes = selectedNodes.filter((node: SceneNode) => !existsInArray([
-    ...nodesToAnnotate,
-    ...selectionTopFrames,
-  ], node.id));
+  selectedNodes = selectedNodes.filter((node: SceneNode) => !existsInArray(nodesToAnnotate, node.id)
+    && !existsInArray(selectionTopFrames, node.id));
   const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
+  sortedSelection.forEach(node => nodesToAnnotate.push(node));
 
-  return [...nodesToAnnotate, ...sortedSelection];
+  return nodesToAnnotate;
 };
 
 export {

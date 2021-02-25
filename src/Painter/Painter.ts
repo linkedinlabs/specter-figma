@@ -1117,7 +1117,7 @@ export default class Painter {
 
     // set individual `keys` annotations for keystops
     const auxAnnotations: Array<FrameNode> = [];
-    if (keys?.length) {
+    if (type === 'keystop' && keys?.length) {
       keys.forEach((keyEntry) => {
         const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
         auxAnnotation.layoutAlign = 'INHERIT';
@@ -1218,7 +1218,7 @@ export default class Painter {
     let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
       legend = buildLegend();
-      legend.name = `+++ Specter +++ ${this.frame.name} Legend`;
+      legend.name = `+++ ${PLUGIN_NAME} +++ ${this.frame.name} Legend`;
 
       const {
         x, y, width, height,

@@ -327,7 +327,7 @@ const main = async () => {
       // if a difference is found, refresh the UI and update the last change stamp
       if (JSON.stringify(dataset1) !== JSON.stringify(dataset2)) {
         lastChangeTime = new Date().getTime();
-        App.refreshGUI();
+        App.refreshGUI(true);
       }
 
       // set current time and time since last change
@@ -360,7 +360,7 @@ const main = async () => {
   // always trigger a refresh on the page change
   figma.on('currentpagechange', () => {
     // App.refreshGUI(SESSION_KEY);
-    App.refreshGUI();
+    App.refreshGUI(true);
   });
 };
 

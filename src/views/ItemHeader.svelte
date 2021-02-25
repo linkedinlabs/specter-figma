@@ -112,23 +112,18 @@
 
 <style>
   /* components/list-headers */
-  /* .left {
-    display: flex;
-    align-items: center;
-  }
   .text {
     margin: 0;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     min-width: 0;
     max-width: 250px;
   }
-  .text.isOpen {
-    font-weight: 600;
-  } */
   .text.ariaNamed {
     font-style: italic;
+  }
+  .truncated-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
 
@@ -144,7 +139,7 @@
       {#if showErrorIcon}
         <span class="error-flag">&#9873;&nbsp;</span>
       {/if}
-      {labelText}
+      <div class="truncated-text">{labelText}</div>
     </span>
   </span>
   <span class="right form-element-holder">
