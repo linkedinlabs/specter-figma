@@ -12,7 +12,7 @@
 
   const labelsInit = {
     a11y: null,
-    visible: null,
+    visible: false,
     alt: null,
   };
 
