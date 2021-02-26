@@ -79,16 +79,16 @@
     {/if}
 
     {#if kind === 'inputSwitch'}
-    <FigmaSwitch
-      className="form-element element-type-switch"
-      disabled={isDisabled}
-      nameId={nameId}
-      options={options}
-      on:saveSignal
-      bind:value={value}
-      watchChange={selectWatchChange}
-    />
-  {/if}
+      <FigmaSwitch
+        className="form-element element-type-switch"
+        disabled={isDisabled}
+        nameId={nameId}
+        options={options}
+        on:saveSignal
+        bind:value={value}
+        watchChange={selectWatchChange}
+      />
+    {/if}
 
     {#if isDeletable}
       <ButtonRemove
