@@ -1,18 +1,20 @@
 import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
-import Painter from './Painter';
+import Painter from './Painter/Painter';
 import {
   deepCompare,
   existsInArray,
-  findTopFrame,
-  getPeerPluginData,
-  lettersToNumbers,
-  numberToLetters,
   resizeGUI,
+  sortByPosition,
+  findTopFrame,
   updateArray,
-} from './Tools';
+} from './utils/tools';
+import {
+  getOrderedStopNodes,
+} from './utils/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
+import { positionLegend } from './Painter/nodeCreators';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -36,36 +38,114 @@ const assemble = (context: any = null) => {
 };
 
 /**
- * @description Checks tracking data against an array of orphaned IDs. If the IDs match,
- * the annotation is removed.
+ * @description Checks tracking data against an array of IDs of design nodes no longer
+ * on the art board. If the IDs match, the annotation is removed.
  *
  * @kind function
- * @name cleanUpAnnotations
+ * @name removeLinkedAnnotationNodes
  *
  * @param {Array} trackingData The page-level node tracking data.
- * @param {Array} orphanedIds An array of node IDs we know are no longer on the Figma page.
+ * @param {Array} nodeIds An array of IDs of design nodes we know are no longer on the Figma page.
  *
- * @returns {null}
+ * @returns {undefined}
  */
-const cleanUpAnnotations = (
+const removeLinkedAnnotationNodes = (
   trackingData: Array<PluginNodeTrackingData>,
-  orphanedIds: Array<string>,
+  nodeIds: Array<string>,
 ): void => {
-  orphanedIds.forEach((orphanedId) => {
-    const entryIndex: 0 = 0;
-    const trackingEntry = trackingData.filter(
-      entry => entry.id === orphanedId,
-    )[entryIndex];
+  nodeIds.forEach((id) => {
+    const trackingEntry = trackingData.find(entry => entry.id === id);
+    const annotationNode = trackingEntry && figma.getNodeById(trackingEntry.annotationId);
+    const legendItemNode = trackingEntry?.legendItemId
+      && figma.getNodeById(trackingEntry.legendItemId);
 
-    // ignore nodes that are not in the current top frame
-    if (trackingEntry) {
-      const annotationNode = figma.getNodeById(trackingEntry.annotationId);
-      if (annotationNode) {
-        annotationNode.remove();
-      }
+    if (annotationNode) {
+      annotationNode.remove();
+    }
+    if (legendItemNode) {
+      legendItemNode.remove();
     }
   });
-  return null;
+};
+
+/**
+ * @description Checks the position of the frame against tracking data to detect whether
+ * it has moved, and updates the legend frame position if so.
+ *
+ * @kind function
+ * @name diffTopFramePosition
+ *
+ * @param {Object} currentPosition The current position of the frame.
+ * @param {Object} trackedPosition The frame position last saved in tracking data.
+ * @param {string} legendId The legend ID listed in the tracking data.
+ *
+ * @returns {undefined}
+ */
+const diffTopFramePosition = (
+  currentPosition: PluginFramePosition,
+  trackedPosition: PluginFramePosition,
+  legendId: string,
+): void => {
+  if (deepCompare(currentPosition, trackedPosition)) {
+    const legendFrame = figma.getNodeById(legendId) as FrameNode;
+    if (legendFrame) {
+      positionLegend(legendFrame, currentPosition);
+    }
+  }
+};
+
+/**
+ * @description Checks the tracking data for the legend and removes any legend records
+ * that are out of sync.  They will be rebuilt once the method to fix node links runs.
+ *
+ * @kind function
+ * @name checkLegendLinks
+ *
+ * @param {Object} page The type page the selections are on.
+ *
+ * @returns {undefined}
+ */
+const checkLegendLinks = (
+  page: PageNode,
+): void => {
+  const trackingData: Array<PluginFrameTrackingData> = JSON.parse(
+    page.getPluginData(DATA_KEYS.legendFrames) || '[]',
+  );
+  let updatedTrackingData = [];
+
+  page.children.forEach((child) => {
+    const linkData = child.type === 'FRAME'
+      && JSON.parse(child.getPluginData(DATA_KEYS.legendLinkId) || null);
+    const trackingEntry = linkData && trackingData.find(entry => entry.linkId === linkData.id);
+
+    if (linkData?.role === 'frame') {
+      const framePosition: PluginFramePosition = {
+        x: child.x,
+        y: child.y,
+        width: child.width,
+        height: child.height,
+      };
+
+      if (trackingEntry && trackingEntry.id !== child.id) {
+        // most likely a copy of another frame, remove duplicated tracking
+        child.setPluginData(DATA_KEYS.legendLinkId, JSON.stringify(null));
+      } else if (trackingEntry?.legendId) {
+        // retain valid tracking entry and check for position change
+        updatedTrackingData = updateArray(updatedTrackingData, trackingEntry, 'id', 'add');
+        diffTopFramePosition(framePosition, trackingEntry.framePosition, trackingEntry.legendId);
+      }
+    } else if (linkData?.role === 'legend'
+      && (
+        !trackingData.map(entry => entry.legendId).includes(child.id)
+        || !figma.getNodeById(trackingEntry?.id)
+      )
+    ) {
+      // removes any legends not listed in tracking or with a missing design frame
+      child.remove();
+    }
+  });
+
+  page.setPluginData(DATA_KEYS.legendFrames, JSON.stringify(updatedTrackingData));
 };
 
 /**
@@ -77,9 +157,9 @@ const cleanUpAnnotations = (
  * frame.
  *
  * @kind function
- * @name repairBrokenLinks
+ * @name repairBrokenAnnotationLinks
  *
- * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
+ * @param {string} type The type of annotation to repair (`keystop` or `label`).
  * @param {Object} options Includes `frameNode`: a top frame node to evaluate for context;
  * `trackingData`: the page-level node tracking data; `page`: the Figma PageNode;
  * `messenger`: an initialized instance of the Messenger class for logging; and
@@ -87,102 +167,66 @@ const cleanUpAnnotations = (
  *
  * @returns {null}
  */
-const repairBrokenLinks = (
-  nodeType: 'keystop' | 'label' = 'keystop',
+const repairBrokenAnnotationLinks = (
+  type: PluginStopType,
   options: {
     isMercadoMode: boolean,
-    frameNode: FrameNode,
     messenger: any,
     page: PageNode,
+    frame: FrameNode,
     trackingData: Array<PluginNodeTrackingData>,
   },
 ): void => {
   // ----- remove annotations with broken links
   const {
     isMercadoMode,
-    frameNode,
-    messenger,
     page,
+    messenger,
+    frame,
     trackingData,
   } = options;
-  const crawlerForTopFrame = new Crawler({ for: [frameNode] });
-  const nodesToEvaluate = crawlerForTopFrame.all();
-  const annotationNodesToRemove: Array<string> = [];
 
-  const linkIdDataType = DATA_KEYS[`${nodeType}LinkId`];
-  const listDataType = DATA_KEYS[`${nodeType}List`];
-  const list: Array<{
-    id: string,
-    position: number,
-  }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
+  const frameNodes = new Crawler({ for: [frame] }).all();
+  const list = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
 
-  if (list) {
-    const updatedList = list;
+  if (list?.length) {
     let updatesMade = false;
 
-    // find nodes that do not match the tracking data
-    nodesToEvaluate.forEach((node) => {
-      const nodeLinkData: PluginNodeLinkData = JSON.parse(
-        node.getPluginData(linkIdDataType) || null,
-      );
-      if (nodeLinkData && nodeLinkData.role === 'node') {
-        const filterIndex = 0;
-        const matchingData = trackingData.filter(
-          data => (data.linkId === nodeLinkData.id),
-        )[filterIndex];
-        if (
-          matchingData
-          && (matchingData.id !== node.id || matchingData.topFrameId !== frameNode.id)
-        ) {
-          // final check; make sure node that corresponds to the annotation does not
-          // actually exist within the current top frame.
-          const existingNode: SceneNode = frameNode.findOne(
-            frameChild => frameChild.id === matchingData.id,
-          );
-          if (!existingNode) {
-            // all checks pass; delete the annotation node
-            annotationNodesToRemove.push(matchingData.linkId);
-            // updatesMade = true;
-
-            // find the index of a pre-existing `id` match on the array
-            const itemIndex: number = updatedList.findIndex(
-              foundItem => (foundItem.id === matchingData.id),
-            );
-
-            // if a match exists, update the id
-            if (itemIndex > -1) {
-              updatedList[itemIndex].id = node.id;
-            }
-          }
-        }
+    const nodeLinks = frameNodes.reduce((acc, node) => {
+      const linkId = JSON.parse(node.getPluginData(DATA_KEYS[`${type}LinkId`]) || null);
+      if (linkId?.role) {
+        acc[`${linkId.role}Roles`].push({ id: linkId.id, node });
       }
-    });
+      return acc;
+    }, { annotationRoles: [], nodeRoles: [] });
 
-    // find annotation nodes that match the nodes to be removed and remove them
-    nodesToEvaluate.forEach((node) => {
-      // need to re-check for a node's existence since we are deleting as we go
-      const activeNode: BaseNode = figma.getNodeById(node.id);
-      if (activeNode) {
-        const nodeLinkData: PluginNodeLinkData = JSON.parse(
-          activeNode.getPluginData(linkIdDataType) || null,
-        );
-        if (nodeLinkData && nodeLinkData.role === 'annotation') {
-          if (annotationNodesToRemove.includes(nodeLinkData.id)) {
-            // remove annotation
-            activeNode.remove();
-
-            // set flag
+    nodeLinks.nodeRoles.forEach(({ id, node }) => {
+      const trackingEntry = trackingData.find(({ linkId }) => linkId === id);
+      if (
+        trackingEntry
+        && (trackingEntry.id !== node.id || trackingEntry.topFrameId !== frame.id)
+      ) {
+        // ensure node that corresponds to annotation doesn't exist in current top frame.
+        if (!frame.findOne(child => child.id === trackingEntry.id)) {
+          // all checks pass; delete the annotation node
+          const linkAnnotation = nodeLinks.annotationRoles.find(link => link.id === id);
+          if (linkAnnotation && figma.getNodeById(linkAnnotation.node.id)) {
+            linkAnnotation.node.remove();
             updatesMade = true;
           }
+
+          // find the index of a pre-existing `id` match on the array
+          const index: number = list.findIndex(match => match.id === trackingEntry.id);
+          if (index > -1) {
+            list[index].id = node.id;
+          }
         }
       }
     });
-
     // if updates were made, we need reset the stop list and re-paint annotations
     if (updatesMade) {
-      // re-assign stop with Identifier
       const nodesToReannotate: Array<string> = [];
-      updatedList.forEach((listEntry) => {
+      list.forEach((listEntry) => {
         // flag node for repainting
         if (!nodesToReannotate.includes(listEntry.id)) {
           nodesToReannotate.push(listEntry.id);
@@ -190,8 +234,8 @@ const repairBrokenLinks = (
       });
 
       // reset the list
-      frameNode.setPluginData(
-        listDataType,
+      frame.setPluginData(
+        DATA_KEYS[`${type}List`],
         JSON.stringify([]),
       );
 
@@ -209,7 +253,7 @@ const repairBrokenLinks = (
           });
 
           // get/set the stop info
-          const identifierResult = identifier.getSetStop(nodeType);
+          const identifierResult = identifier.getSetStop(type);
           messenger.handleResult(identifierResult, true);
 
           if (identifierResult.status === 'success') {
@@ -221,7 +265,7 @@ const repairBrokenLinks = (
             });
 
             // re-draw the annotation
-            const painterResult = painter.addStop(nodeType);
+            const painterResult = painter.addStop(type);
             messenger.handleResult(painterResult, true);
           }
         }
@@ -232,6 +276,98 @@ const repairBrokenLinks = (
   return null;
 };
 
+// full cleanup; removes annotation + tracking data + resets topFrame list
+const fullCleanup = (
+  trackingEntry: PluginNodeTrackingData,
+  initialTrackingData: Array<PluginNodeTrackingData>,
+  options: {
+    isMercadoMode: boolean,
+    messenger: any,
+    page: PageNode,
+  },
+  type: PluginStopType,
+): {
+  newTrackingData: Array<PluginNodeTrackingData>,
+  newNodesToRepaint: Array<string>,
+} => {
+  const newNodesToRepaint: Array<string> = [];
+
+  // remove annotation and legend nodes
+  removeLinkedAnnotationNodes(initialTrackingData, [trackingEntry.id]);
+  // --- remove from tracking data
+  let newTrackingData = initialTrackingData;
+  newTrackingData = updateArray(newTrackingData, trackingEntry, 'id', 'remove');
+
+  // --- re-order (and potentially re-paint) annotations on the original top frame
+  // remove from topFrame list + trigger re-paint
+  const topFrameNode: FrameNode = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
+  if (topFrameNode) {
+    // get top frame stop list
+    const list = JSON.parse(topFrameNode.getPluginData(DATA_KEYS[`${type}List`]) || null);
+
+    if (list) {
+      // get current position
+      let positionToRemove: number = 1;
+      const entryToRemove = list.find(
+        listEntry => listEntry.id === trackingEntry.id,
+      );
+      if (entryToRemove) {
+        positionToRemove = entryToRemove.position;
+      }
+
+      // remove item
+      let newList = list;
+      newList = updateArray(newList, trackingEntry, 'id', 'remove');
+
+      // renumber list
+      newList.forEach((listEntry) => {
+        if (listEntry.position > positionToRemove) {
+          const updatedEntry = listEntry;
+          updatedEntry.position -= 1;
+          newList = updateArray(newList, updatedEntry, 'id', 'update');
+
+          // set up Identifier instance for the node
+          const nodeToUpdate: BaseNode = figma.getNodeById(listEntry.id);
+          const { page, isMercadoMode, messenger } = options;
+          if (nodeToUpdate) {
+            const identifier = new Identifier({
+              for: nodeToUpdate,
+              data: page,
+              isMercadoMode,
+              messenger,
+            });
+
+            // get/set the stop info
+            const identifierResult = identifier.getSetStop(type, updatedEntry.position);
+            options.messenger.handleResult(identifierResult, true);
+
+            if (identifierResult.status === 'success') {
+              // flag node for repainting
+              if (!newNodesToRepaint.includes(updatedEntry.id)) {
+                newNodesToRepaint.push(updatedEntry.id);
+              }
+              removeLinkedAnnotationNodes(newTrackingData, [updatedEntry.id]);
+            }
+          }
+        }
+      });
+
+      // set new stop list
+      topFrameNode.setPluginData(
+        DATA_KEYS[`${type}List`],
+        JSON.stringify(newList),
+      );
+    }
+  }
+
+  const results = {
+    newTrackingData,
+    newNodesToRepaint,
+  };
+
+  return results;
+};
+
 /**
  * @description Checks tracking data against the provided frameNode. If any annotations
  * are missing, they are re-painted. If any links are broken/invalidated, annotations are removed.
@@ -239,7 +375,7 @@ const repairBrokenLinks = (
  * @kind function
  * @name refreshAnnotations
  *
- * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
+ * @param {string} type The type of annotation to repair (`keystop` or `label`).
  * @param {Object} options Includes `trackingData`: the page-level node tracking data;
  * `page`: the Figma PageNode; `messenger`: an initialized instance of the Messenger class for
  * logging; and `isMercadoMode`: designates whether “Mercado” rules apply.
@@ -247,7 +383,7 @@ const repairBrokenLinks = (
  * @returns {null}
  */
 const refreshAnnotations = (
-  nodeType: 'keystop' | 'label' = 'keystop',
+  type: PluginStopType,
   options: {
     isMercadoMode: boolean,
     trackingData: Array<PluginNodeTrackingData>,
@@ -262,216 +398,68 @@ const refreshAnnotations = (
     page,
   } = options;
 
-  // set data keys
-  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
-  const listDataType = DATA_KEYS[`${nodeType}List`];
-
-  // removes a node, if it exists
-  const removeNode = (nodeId: string) => {
-    const nodeToRemove: BaseNode = figma.getNodeById(nodeId);
-    if (nodeToRemove) {
-      nodeToRemove.remove();
-    }
-  };
-
-  // full cleanup; removes annotation + tracking data + resets topFrame list
-  const fullCleanup = (
-    trackingEntry: PluginNodeTrackingData,
-    initialTrackingData: Array<PluginNodeTrackingData>,
-  ): {
-    newTrackingData: Array<PluginNodeTrackingData>,
-    newNodesToRepaint: Array<string>,
-  } => {
-    const newNodesToRepaint: Array<string> = [];
-
-    // remove annotation node
-    removeNode(trackingEntry.annotationId);
-
-    // --- remove from tracking data
-    let newTrackingData = initialTrackingData;
-    newTrackingData = updateArray(newTrackingData, trackingEntry, 'id', 'remove');
-
-    // --- re-order (and potentially re-paint) annotations on the original top frame
-    // remove from topFrame list + trigger re-paint
-    const topFrameNode: FrameNode = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
-    const filterIndex: 0 = 0;
-    if (topFrameNode) {
-      // get top frame stop list
-      const list = JSON.parse(topFrameNode.getPluginData(listDataType) || null);
-      if (list) {
-        // get current position
-        let positionToRemove: number = 1;
-        const entryToRemove = list.filter(
-          listEntry => listEntry.id === trackingEntry.id,
-        )[filterIndex];
-        if (entryToRemove) {
-          positionToRemove = entryToRemove.position;
-        }
-
-        // remove item
-        let newList = list;
-        newList = updateArray(newList, trackingEntry, 'id', 'remove');
-
-        // renumber list
-        newList.forEach((listEntry) => {
-          if (listEntry.position > positionToRemove) {
-            const updatedEntry = listEntry;
-            updatedEntry.position -= 1;
-            newList = updateArray(newList, updatedEntry, 'id', 'update');
-
-            // set up Identifier instance for the node
-            const nodeToUpdate: BaseNode = figma.getNodeById(listEntry.id);
-            if (nodeToUpdate) {
-              const identifier = new Identifier({
-                for: nodeToUpdate,
-                data: page,
-                isMercadoMode,
-                messenger,
-              });
-
-              // get/set the stop info
-              const identifierResult = identifier.getSetStop(nodeType, updatedEntry.position);
-              messenger.handleResult(identifierResult, true);
-
-              if (identifierResult.status === 'success') {
-                // flag node for repainting
-                if (!newNodesToRepaint.includes(updatedEntry.id)) {
-                  newNodesToRepaint.push(updatedEntry.id);
-                }
-
-                // remove existing annotation node
-                const annotationToRemoveEntry = newTrackingData.filter(
-                  currentTrackingEntry => currentTrackingEntry.id === updatedEntry.id,
-                )[filterIndex];
-                if (annotationToRemoveEntry) {
-                  removeNode(annotationToRemoveEntry.annotationId);
-                }
-              }
-            }
-          }
-        });
-
-        // set new stop list
-        topFrameNode.setPluginData(
-          listDataType,
-          JSON.stringify(newList),
-        );
-      }
-    }
-
-    const results = {
-      newTrackingData,
-      newNodesToRepaint,
-    };
-
-    return results;
-  };
-
   let updatedTrackingData: Array<PluginNodeTrackingData> = trackingData;
-  const nodesToRepaint: Array<string> = [];
+  let nodesToRepaint: Array<string> = [];
+
   trackingData.forEach((trackingEntry) => {
     const node: BaseNode = figma.getNodeById(trackingEntry.id);
+    const topFrame: FrameNode = node && findTopFrame(node);
+    let repaintNode = false;
 
-    // ----- check if main node still exists
-    if (node) {
-      const topFrame: FrameNode = findTopFrame(node);
+    if (!node || topFrame?.id !== trackingEntry.topFrameId) {
+      // fully remove and repaint existing top frame
+      const cleanupResults = fullCleanup(
+        trackingEntry,
+        updatedTrackingData,
+        options,
+        type,
+      );
+      nodesToRepaint = cleanupResults.newNodesToRepaint;
+      updatedTrackingData = cleanupResults.newTrackingData;
 
-      // ----- check if topFrame is still the same
-      if (topFrame && topFrame.id === trackingEntry.topFrameId) {
-        // grab the position from crawler
-        const crawler = new Crawler({ for: [node] });
-        const positionResult = crawler.position();
-        const relativePosition = positionResult.payload;
-
-        // group and position the base annotation elements
-        const currentNodePosition: PluginNodePosition = {
-          frameWidth: topFrame.width,
-          frameHeight: topFrame.height,
-          width: relativePosition.width,
-          height: relativePosition.height,
-          x: relativePosition.x,
-          y: relativePosition.y,
-        };
-
-        // ----- check if position has changed
-        if (deepCompare(currentNodePosition, trackingEntry.nodePosition)) {
-          // ---- something about position is different; repaint
-          // remove annotation node
-          removeNode(trackingEntry.annotationId);
-
-          // queue for repaint
-          if (!nodesToRepaint.includes(node.id)) {
-            nodesToRepaint.push(node.id);
-          }
-        } else {
-          const annotationNode: BaseNode = figma.getNodeById(trackingEntry.annotationId);
-
-          // ----- check if annotation node is still there
-          if (!annotationNode) {
-            // ----- annotation is missing; repaint
-            if (!nodesToRepaint.includes(node.id)) {
-              nodesToRepaint.push(node.id);
-            }
-          }
-        }
-      } else {
-        // ----- top frame has changed; remove annotation + re-order and re-paint remaining nodes
-        //   --- add annotation within new top frame, if applicable
-
-        // --- clean up and re-paint existing top frame
-        const cleanupResults = fullCleanup(
-          trackingEntry,
-          updatedTrackingData,
-        );
-
-        updatedTrackingData = cleanupResults.newTrackingData;
-        cleanupResults.newNodesToRepaint.forEach((nodeId) => {
-          if (!nodesToRepaint.includes(nodeId)) {
-            nodesToRepaint.push(nodeId);
-          }
-        });
-
-        // --- add the moved annotation to the new top frame
-        const identifier = new Identifier({
+      if (node && topFrame) {
+        // adds the moved annotation to the new top frame (in last position)
+        new Identifier({
           for: node,
           data: page,
           isMercadoMode,
           messenger,
-        });
+        }).getSetStop(type);
 
-        // get/set the stop info
-        const identifierResult = identifier.getSetStop(nodeType);
-
-        if (identifierResult.status === 'success') {
-          // flag node for repainting
-          if (!nodesToRepaint.includes(node.id)) {
-            nodesToRepaint.push(node.id);
-          }
-        } else if (!nodesToRepaint.includes(node.id)) {
-          nodesToRepaint.push(node.id);
-        }
+        repaintNode = true;
       }
     } else {
-      // ----- node is missing; remove annotation + re-order and re-paint remaining nodes
+      // grab the node's related annotation nodes and position to check for differences
+      const { annotationId, legendItemId, nodePosition } = trackingEntry;
+      const annotationNode: BaseNode = figma.getNodeById(annotationId);
+      const legendItemNode: BaseNode = figma.getNodeById(legendItemId);
+      const relativePosition = new Crawler({ for: [node] }).position().payload;
+      const currentNodePosition: PluginNodePosition = {
+        frameWidth: topFrame.width,
+        frameHeight: topFrame.height,
+        width: relativePosition.width,
+        height: relativePosition.height,
+        x: relativePosition.x,
+        y: relativePosition.y,
+      };
 
-      // --- clean up and re-paint existing top frame
-      const cleanupResults = fullCleanup(
-        trackingEntry,
-        updatedTrackingData,
-      );
+      if (
+        deepCompare(currentNodePosition, nodePosition)
+        || !annotationNode
+        || (legendItemId && !legendItemNode)
+      ) {
+        removeLinkedAnnotationNodes(trackingData, [node.id]);
+        repaintNode = true;
+      }
+    }
 
-      updatedTrackingData = cleanupResults.newTrackingData;
-      cleanupResults.newNodesToRepaint.forEach((nodeId) => {
-        if (!nodesToRepaint.includes(nodeId)) {
-          nodesToRepaint.push(nodeId);
-        }
-      });
+    if (repaintNode && !nodesToRepaint.includes(node.id)) {
+      nodesToRepaint.push(node.id);
     }
   });
 
-  // update the tracking data
   page.setPluginData(
-    annotationsDataType,
+    DATA_KEYS[`${type}Annotations`],
     JSON.stringify(updatedTrackingData),
   );
 
@@ -480,7 +468,7 @@ const refreshAnnotations = (
     const nodeToRepaint: BaseNode = figma.getNodeById(nodeId);
 
     if (nodeToRepaint) {
-      // set up Painter instance for the node
+      const topFrame: FrameNode = findTopFrame(nodeToRepaint);
       const painter = new Painter({
         for: nodeToRepaint,
         in: page,
@@ -488,54 +476,46 @@ const refreshAnnotations = (
       });
 
       // re-draw the annotation
-      const painterResult = painter.addStop(nodeType);
+      const painterResult = painter.addStop(type);
       messenger.handleResult(painterResult, true);
 
-      if (painterResult.status === 'error') {
-        // we need to track nodes that previously had annotations;
-        // re-add them if they’re currently placed off-artboard on the page
-        const topFrame: FrameNode = findTopFrame(nodeToRepaint);
-        if (
-          (!topFrame && nodeToRepaint.parent.type === 'PAGE')
-          || (topFrame && topFrame.parent.type === 'PAGE')
-        ) {
-          // `findTopFrame` returns self if the parent is the page
-          // set up new tracking data node entry
-          const nodeToTrack: SceneNode = nodeToRepaint as SceneNode;
-          const currentNodePosition: PluginNodePosition = {
-            frameWidth: null,
-            frameHeight: null,
-            width: nodeToTrack.width,
-            height: nodeToTrack.height,
-            x: nodeToTrack.x,
-            y: nodeToTrack.y,
-          };
-          const freshTrackingEntry: PluginNodeTrackingData = {
-            annotationId: null,
-            id: nodeToTrack.id,
-            linkId: null,
-            topFrameId: nodeToRepaint.parent.id,
-            nodePosition: currentNodePosition,
-          };
+      // `findTopFrame` returns self if the parent is the page
+      if (painterResult.status === 'error' && (
+        (!topFrame && nodeToRepaint.parent.type === 'PAGE')
+        || topFrame?.parent.type === 'PAGE')
+      ) {
+        // set up new tracking data node entry
+        const nodeToTrack: SceneNode = nodeToRepaint as SceneNode;
+        const currentNodePosition: PluginNodePosition = {
+          frameWidth: null,
+          frameHeight: null,
+          width: nodeToTrack.width,
+          height: nodeToTrack.height,
+          x: nodeToTrack.x,
+          y: nodeToTrack.y,
+        };
+        const freshTrackingEntry: PluginNodeTrackingData = {
+          annotationId: null,
+          legendItemId: null,
+          id: nodeToTrack.id,
+          linkId: null,
+          topFrameId: nodeToRepaint.parent.id,
+          nodePosition: currentNodePosition,
+        };
 
-          // grab latest tracking data for the page; add the entry to the array
-          const freshTrackingData: Array<PluginNodeTrackingData> = JSON.parse(
-            page.getPluginData(annotationsDataType) || '[]',
-          );
-          let newFreshTrackingData: Array<PluginNodeTrackingData> = freshTrackingData;
-          newFreshTrackingData = updateArray(newFreshTrackingData, freshTrackingEntry, 'id', 'add');
+        // add the entry to the updated tracking data
+        let tracking = JSON.parse(
+          page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
+        );
+        tracking = updateArray(tracking, freshTrackingEntry, 'id', 'add');
 
-          // update the tracking data
-          page.setPluginData(
-            annotationsDataType,
-            JSON.stringify(newFreshTrackingData),
-          );
-        }
+        page.setPluginData(
+          DATA_KEYS[`${type}Annotations`],
+          JSON.stringify(tracking),
+        );
       }
     }
   });
-
-  return null;
 };
 
 /**
@@ -546,14 +526,12 @@ const refreshAnnotations = (
  * @kind function
  * @name diffChanges
  *
- * @param {string} nodeType The type of annotations to diff. Currently: `keystop` or `label`.
  * @param {Object} options An options bundle that contains the current `selection`, current `page`,
  * an initiated `messenger`, and the `isMercadoMode` boolean.
  *
  * @returns {null}
  */
 const diffChanges = (
-  nodeType: 'keystop' | 'label',
   options: {
     isMercadoMode: boolean,
     messenger: any,
@@ -568,186 +546,38 @@ const diffChanges = (
     selection,
   } = options;
 
-  // grab tracking data for the page (currently Keystops/Labels)
-  // tktk - fragile setting of `nodeType`
-  const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
-  const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-    page.getPluginData(annotationsDataType) || '[]',
-  );
+  // check the links between frames and legend frames (removes unsynced)
+  checkLegendLinks(page);
 
-  // re-draw broken/moved annotations and clean up orphaned (currently only Keystops)
+  // re-draw broken/moved annotations and clean up orphaned
+  const keystopTracking: Array<PluginNodeTrackingData> = JSON.parse(
+    page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
+  );
+  const labelTracking: Array<PluginNodeTrackingData> = JSON.parse(
+    page.getPluginData(DATA_KEYS.labelAnnotations) || '[]',
+  );
   const refreshOptions = {
-    trackingData,
     page,
     messenger,
     isMercadoMode,
   };
-  refreshAnnotations(nodeType, refreshOptions);
+  refreshAnnotations('keystop', { ...refreshOptions, trackingData: keystopTracking });
+  refreshAnnotations('label', { ...refreshOptions, trackingData: labelTracking });
 
-  // iterate through each node in a selection
-  const selectedNodes: Array<SceneNode> = selection;
-  // determine topFrames involved in the current selection
-  const crawlerForSelected = new Crawler({ for: selectedNodes });
-  const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
-
-  // look for nodes/annotations that no longer match their topFrame and repair
-  // (this happens when copying a top-frame)
+  // find nodes/annotations that no longer match their topFrame and repair
+  const topFrameNodes = new Crawler({ for: selection }).topFrames();
   topFrameNodes.forEach((topFrame: FrameNode) => {
     const repairOptions = {
-      isMercadoMode,
-      frameNode: topFrame,
       messenger,
+      isMercadoMode,
       page,
-      trackingData,
+      frame: topFrame,
     };
-    repairBrokenLinks(nodeType, repairOptions);
+    repairBrokenAnnotationLinks('keystop', { ...repairOptions, trackingData: keystopTracking });
+    repairBrokenAnnotationLinks('label', { ...repairOptions, trackingData: labelTracking });
   });
 
   return null;
-};
-
-/**
- * @description Takes a frame node and uses its list data to create an array of nodes that
- * currently have Keystop Annotations. The `trackingData` is used in case the list is stale
- * and we need to clean up annotations that no longer exist.
- *
- * @kind function
- * @name getStopNodes
- *
- * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
- * @param {Object} options Includes `frameNode`: the top-level frame node we want to locate
- * stops within; `resetData`: set to true if we know annotations are being re-painted and
- * the top-level frame node’s list data should be cleared out.
- *
- * @returns {Array} An array of nodes (SceneNode) with Keystop Annotations.
- */
-const getStopNodes = (
-  nodeType: 'keystop' | 'label' = 'keystop',
-  options: {
-    frameNode: FrameNode,
-    resetData: boolean,
-  },
-): Array<SceneNode> => {
-  const {
-    frameNode,
-    resetData,
-  } = options;
-  const nodes: Array<SceneNode> = [];
-  const listDataType = DATA_KEYS[`${nodeType}List`];
-
-  // grab (or initialize) keystop list for the top frame
-  const listData = JSON.parse(frameNode.getPluginData(listDataType) || null);
-  let list: Array<{
-    id: string,
-    position: number,
-  }> = [];
-  if (listData) {
-    list = listData;
-  }
-
-  if (list.length > 0) {
-    list.forEach((item) => {
-      const nodeToAdd: SceneNode = frameNode.findOne(node => node.id === item.id);
-
-      if (nodeToAdd) {
-        nodes.push(nodeToAdd);
-      }
-    });
-  }
-
-  // reset the top frame list – list should be reset when annotations are re-painted
-  if (resetData) {
-    frameNode.setPluginData(
-      listDataType,
-      JSON.stringify([]),
-    );
-  }
-
-  return nodes;
-};
-
-/**
- * @description Takes a node and locates its current stop data (position, keys, labels, etc.),
- * if it exists. The data is located through the node’s top-level frame. Returns an object
- * formatted to pass along to the UI.
- *
- * @kind function
- * @name getStopData
- *
- * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
- * @param {Object} node A SceneNode to check for Keystop data.
- *
- * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
- * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
- * if they exist or labels (if they exist).
- */
-const getStopData = (
-  nodeType: 'keystop' | 'label',
-  node: SceneNode,
-): {
-  hasStop: boolean,
-  keys?: Array<PluginKeystopKeys>,
-  labels?: PluginLabelsNames,
-  position: number,
-  role?: string,
-} => {
-  // set up keystop blank
-  const nodePositionData: {
-    hasStop: boolean,
-    keys?: Array<PluginKeystopKeys>,
-    labels?: PluginLabelsNames,
-    position: number,
-    role?: string,
-  } = {
-    hasStop: false,
-    keys: null,
-    labels: null,
-    position: null,
-    role: null,
-  };
-
-  // find data for selected node
-  const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
-  const nodeData = JSON.parse(node.getPluginData(nodeDataType) || null);
-  if (nodeData) {
-    // set keys
-    if (nodeData.keys) {
-      const { keys } = nodeData;
-      nodePositionData.keys = keys;
-    }
-
-    // set role
-    if (nodeData.role) {
-      const { role } = nodeData;
-      nodePositionData.role = role;
-    }
-
-    // set labels
-    if (nodeData.labels) {
-      const { labels } = nodeData;
-      nodePositionData.labels = labels;
-    }
-  }
-
-  // find top frame for selected node
-  const crawler = new Crawler({ for: [node] });
-  const topFrame = crawler.topFrame();
-  if (topFrame) {
-    // read keystop list data from top frame
-    const itemIndex = 0;
-    const listDataType = DATA_KEYS[`${nodeType}List`];
-    const stopList = JSON.parse(topFrame.getPluginData(listDataType) || null);
-
-    if (stopList) {
-      const stopItem = stopList.filter(item => item.id === node.id)[itemIndex];
-      if (stopItem) {
-        nodePositionData.hasStop = true;
-        nodePositionData.position = stopItem.position;
-      }
-    }
-  }
-
-  return nodePositionData;
 };
 
 /**
@@ -856,6 +686,73 @@ const setRelaunchCommands = (
 };
 
 /**
+ * @description Takes a node and locates its current stop data, if it exists.
+ * The data is located through the node’s top-level frame. Returns an object
+ * formatted to pass along to the UI.
+ *
+ * @kind function
+ * @name getStopData
+ *
+ * @param {string} type The type of annotation to repair (`keystop` or `label`).
+ * @param {Object} node A SceneNode to check for Keystop data.
+ *
+ * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
+ * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
+ * if they exist or labels (if they exist).
+ */
+const getStopData = (
+  type: PluginStopType,
+  node: SceneNode,
+): {
+  hasStop: boolean,
+  keys?: Array<PluginKeystopKeys>,
+  labels?: PluginAriaLabels,
+  position: number,
+  role?: PluginLabelRole,
+} => {
+  // set up keystop blank
+  const nodePositionData: {
+    hasStop: boolean,
+    keys?: Array<PluginKeystopKeys>,
+    labels?: PluginAriaLabels,
+    position: number,
+    role?: PluginLabelRole,
+  } = {
+    hasStop: false,
+    keys: null,
+    labels: null,
+    position: null,
+    role: null,
+  };
+
+  // find data for selected node
+  const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
+
+  // set data for each field (will only set what it grabs based on type)
+  ['keys', 'role', 'labels'].forEach((property) => {
+    // temporary workaround for 'none' issue
+    if (nodeData[property] && !(property === 'role' && nodeData[property] === 'none')) {
+      nodePositionData[property] = nodeData[property];
+    }
+  });
+
+  // find top frame for selected node
+  const crawler = new Crawler({ for: [node] });
+  const topFrame = crawler.topFrame();
+  if (topFrame) {
+    // read stop list data from top frame
+    const stopList = JSON.parse(topFrame.getPluginData(DATA_KEYS[`${type}List`]) || null);
+    const stopItem = stopList?.find(item => item.id === node.id);
+    if (stopItem) {
+      nodePositionData.hasStop = true;
+      nodePositionData.position = stopItem.position;
+    }
+  }
+
+  return nodePositionData;
+};
+
+/**
  * @description A class to handle core app logic and dispatch work to other classes.
  *
  * @class
@@ -897,7 +794,6 @@ export default class App {
     if (this.shouldTerminate) {
       return this.terminatePlugin();
     }
-
     return null;
   }
 
@@ -974,7 +870,7 @@ export default class App {
 
           if (getCornerTokenResult.status === 'success') {
             // add the annotation
-            const paintResult = painter.addAnnotation();
+            const paintResult = painter.addGeneralAnnotation();
             if (paintResult) {
               messenger.handleResult(paintResult);
             }
@@ -996,20 +892,22 @@ export default class App {
 
   /**
    * @description Annotates a selected node or multiple nodes in a Figma file with
-   * focus order keystop annotations or Aria label annotations.
+   * focus order keystop annotations or Aria label annotations.  Removed any existing annotations
+   * before redrawing if they're affected (e.g. relative stop order).
    *
    * @kind function
-   * @name annotateKeystopLabel
+   * @name annotateStops
    *
-   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
-   * @param {Array} suppliedSelection If present, this array of nodes will override the
-   * nodes found in current selection.
+   * @param {string} type The type of annotations we want to apply to the selection.
+   * @param {Array} suppliedNodes If present, this array of nodes will override the
+   * nodes found in current selection.  Gives us the option to use this beyond the Figma
+   * selection.
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  async annotateKeystopLabel(
-    nodeType: 'keystop' | 'label',
-    suppliedSelection?: Array<SceneNode>,
+  async annotateStops(
+    type: PluginStopType,
+    suppliedNodes?: Array<SceneNode>,
   ) {
     const {
       messenger,
@@ -1017,100 +915,29 @@ export default class App {
       selection,
     } = assemble(figma);
 
-    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
-
     // need a selected node to annotate it
-    if (
-      (selection === null || selection.length === 0)
-      && (suppliedSelection === null || suppliedSelection.length === 0)
-    ) {
-      messenger.log(`Annotate ${nodeType}: nothing selected`);
+    if (!selection?.length && !suppliedNodes?.length) {
+      messenger.log(`Annotate ${type}: nothing selected`);
       return messenger.toast('A layer must be supplied');
     }
 
-    // grab tracking data for the page
-    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(annotationsDataType) || '[]',
+    // get list of nodes in order (already annotated, has Stapler data, selected)
+    const nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
+      type,
+      selection,
+      true,
+      suppliedNodes,
     );
 
-    // determine topFrames involved in the current selection
-    const crawlerForSelected = new Crawler({ for: selection });
-    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
-    const nodes: Array<SceneNode> = [];
-
-    // iterate topFrames and select nodes that already have annotations
-    topFrameNodes.forEach((topFrame: FrameNode) => {
-      const getStopOptions = {
-        frameNode: topFrame,
-        resetData: true,
-      };
-      const stopNodes: Array<SceneNode> = getStopNodes(nodeType, getStopOptions);
-      stopNodes.forEach(stopNode => nodes.push(stopNode));
-    });
-
-    // ------- add in any directly-selected nodes that do not have annotations yet
-    // ------- or any nodes that could have stops based on assignment data
-    // set up selection based on supplied array or direct selection in the Figma UI
-    let selectedNodes: Array<SceneNode> = [];
-    if (suppliedSelection && suppliedSelection.length > 0) {
-      selectedNodes = suppliedSelection;
-    } else {
-      selection.forEach((node: SceneNode) => selectedNodes.push(node));
-    }
-
-    // iterate topFrames and select nodes that could have stops based on assignment data
-    if (!suppliedSelection) {
-      topFrameNodes.forEach((topFrame: FrameNode) => {
-        const extractAssignedKeystops = (children) => {
-          const getStopOptions = {
-            frameNode: topFrame,
-            resetData: true,
-          };
-          const stopNodes: Array<SceneNode> = getStopNodes(nodeType, getStopOptions);
-          const crawlerForChildren = new Crawler({ for: children });
-          const childNodes = crawlerForChildren.all();
-          childNodes.forEach((childNode) => {
-            const peerNodeData = getPeerPluginData(childNode);
-            if (peerNodeData && peerNodeData.hasKeystop) {
-              if (
-                !existsInArray(nodes, childNode.id)
-                && !existsInArray(stopNodes, childNode.id)
-                && !existsInArray(topFrameNodes, childNode.id)
-              ) {
-                selectedNodes.push(childNode);
-                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
-                  extractAssignedKeystops(childNode.children);
-                }
-              }
-            }
-          });
-        };
-
-        // tktk - need to adapt for Labels
-        if (topFrame.children && nodeType === 'keystop') {
-          extractAssignedKeystops(topFrame.children);
-        }
-      });
-    }
-
-    // sort nodes by visual hierarchy
-    const crawlerForSelection = new Crawler({ for: selectedNodes });
-    selectedNodes = crawlerForSelection.sorted();
-
-    // add them to the main array
-    selectedNodes.forEach((node: SceneNode) => {
-      if (
-        !existsInArray(nodes, node.id)
-        && !existsInArray(topFrameNodes, node.id)
-      ) {
-        nodes.push(node);
-      }
-    });
+    // grab tracking data for the page
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
+    );
 
     // re-paint the annotations
-    nodes.forEach((node: SceneNode) => {
+    nodesToAnnotate.forEach((node: SceneNode) => {
       // remove existing annotation
-      cleanUpAnnotations(trackingData, [node.id]);
+      removeLinkedAnnotationNodes(trackingData, [node.id]);
 
       // set up Identifier instance for the node
       const identifier = new Identifier({
@@ -1132,7 +959,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = painter.addStop(nodeType);
+          paintResult = painter.addStop(type);
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
@@ -1146,7 +973,7 @@ export default class App {
       };
 
       // get/set the stop info
-      const identifierResult = identifier.getSetStop(nodeType);
+      const identifierResult = identifier.getSetStop(type);
 
       // read the response from Identifier; if it was unsuccessful, log and display the error
       if (identifierResult) {
@@ -1157,7 +984,6 @@ export default class App {
       }
 
       drawAnnotation(true);
-
       return null;
     });
 
@@ -1171,13 +997,14 @@ export default class App {
 
   /**
    * @description Identifies and annotates a selected node or multiple nodes in a Figma file.
+   * NOTE: This is specific to the 'General' tab, not keyboard or labels.
    *
    * @kind function
-   * @name annotateNode
+   * @name annotateGeneral
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected.
    */
-  annotateNode() {
+  annotateGeneral() {
     const {
       messenger,
       page,
@@ -1217,7 +1044,7 @@ export default class App {
         // draw the annotation (if the text exists)
         let paintResult = null;
         if (hasText) {
-          paintResult = painter.addAnnotation();
+          paintResult = painter.addGeneralAnnotation();
         }
 
         // read the response from Painter; if it was unsuccessful, log and display the error
@@ -1302,12 +1129,12 @@ export default class App {
    * @description Annotates a selected node in a Figma file with user input.
    *
    * @kind function
-   * @name annotateNodeCustom
+   * @name annotateCustom
    *
    * @returns {null} Shows a Toast in the UI if nothing is selected or if multiple nodes
    * are selected.
    */
-  annotateNodeCustom() {
+  annotateCustom() {
     const {
       messenger,
       page,
@@ -1361,7 +1188,7 @@ export default class App {
       if (setTextResult.status === 'success') {
         // draw the annotation
         let paintResult = null;
-        paintResult = painter.addAnnotation();
+        paintResult = painter.addGeneralAnnotation();
 
         // read the response from Painter; if it was unsuccessful, log and display the error
         if (paintResult && (paintResult.status === 'error')) {
@@ -1651,7 +1478,7 @@ export default class App {
    * based on the supplied `key`.
    *
    * @kind function
-   * @name keystopAddRemoveKeys
+   * @name updateNodeDataKeys
    *
    * @param {Object} options Should include a Figma node `id` and the `key` to be added.
    * @param {boolean} removeKey Default is `false`. If set to `true`, the list of keystops will not
@@ -1660,7 +1487,7 @@ export default class App {
    *
    * @returns {null}
    */
-  keystopAddRemoveKeys(
+  updateNodeDataKeys(
     options: {
       id: string,
       key: PluginKeystopKeys,
@@ -1703,7 +1530,7 @@ export default class App {
       }
 
       // repaint the node
-      this.annotateKeystopLabel('keystop', [node as SceneNode]);
+      this.annotateStops('keystop', [node as SceneNode]);
     }
 
     // close or refresh UI
@@ -1718,10 +1545,9 @@ export default class App {
   /**
    * @description Retrieves a node based on the supplied `id` and updates the `role` or text
    * `labels` based on input from the UI.
-   * Note: the legend portion of Labels is currentl WIP, so repainting is disabled.
    *
    * @kind function
-   * @name labelsSetData
+   * @name updateNodeDataLabels
    *
    * @param {string} key The type of data to set (`role` or `labels`). Used as a `key` on
    * the `nodeData` object.
@@ -1730,12 +1556,12 @@ export default class App {
    *
    * @returns {null}
    */
-  labelsSetData(
+  updateNodeDataLabels(
     key: 'role' | 'labels',
     options: {
       id: string,
-      labels?: PluginLabelsNames,
-      role?: PluginLabelRoles,
+      labels?: PluginAriaLabels,
+      role?: PluginLabelRole,
     },
   ) {
     const { id } = options;
@@ -1752,10 +1578,142 @@ export default class App {
         );
       }
 
-      // repaint the node
-      // tktk: will uncomment the below when legend stuff is implemented
-      // this.annotateLabel([node as SceneNode]);
+      // repaint the node in the legend with the updated data
+      this.annotateStops('label', [node as SceneNode]);
     }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
+  }
+
+  /**
+   * @description Retrieves a node based on the supplied `id` and uses the `position` to update
+   * the node’s stop annotation. Any annotations in the top frame with new numbers are
+   * re-painted.
+   *
+   * @kind function
+   * @name updateStopAnnotation
+   *
+   * @param {string} type The type of stop data we are updating.
+   * @param {string} id The Figma ID of the node containing the stop we are updating.
+   * @param {Object} position The position of the node containing the stop we are updating.
+   *
+   * @returns {null}
+   */
+  updateStopAnnotation(
+    type: PluginStopType,
+    id: string,
+    position: string,
+  ) {
+    const { messenger } = assemble(figma);
+
+    // force the new position into a positive integer
+    let newPosition: number = parseInt(position, 10);
+
+    if (!id || !newPosition) {
+      messenger.log(`Cannot update ${type}; missing node ID or new position`, 'error');
+    }
+
+    const nodesToRepaint: Array<SceneNode> = [];
+    let nodes: Array<BaseNode> = [];
+    const node: BaseNode = figma.getNodeById(id);
+    if (node) {
+      nodes = [node];
+    }
+
+    // determine topFrames involved in the current selection
+    const crawler = new Crawler({ for: nodes });
+    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
+
+    // iterate topFrames and remove annotation(s) that match node(s)
+    topFrameNodes.forEach((frameNode: FrameNode) => {
+      // read stop list data from top frame
+      const stopList: Array<{
+        id: string,
+        position: number,
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS[`${type}List`]) || null);
+
+      // remove item(s) from the stop list
+      let newStopList = [];
+      if (stopList) {
+        // number items
+        const numberItems = stopList.length;
+
+        // validate and adjust based on actual number of items
+        if (newPosition > numberItems) {
+          newPosition = numberItems;
+        }
+
+        // find the old position
+        const selectedItem = stopList.find(stopItem => stopItem.id === id);
+        const oldPosition = selectedItem.position;
+
+        // compare new/old positions and, if applicable, set up the new list
+        if (newPosition === oldPosition) {
+          // do nothing if the positions match
+          newStopList = stopList;
+        } else {
+          const setPosition = (currentPosition: number, itemId: string): number => {
+            // the selected node always gets the new position
+            if (itemId === id) {
+              return newPosition;
+            }
+
+            // how we manipulate the new position is based on relationship to the
+            // _selected_ node’s old position:
+            //
+            // nodes higher in the list relative to the old position may need to be moved lower;
+            // nodes lower in the list relative to the old position may need to be moved higher.
+            if (currentPosition > oldPosition && currentPosition <= newPosition) {
+              // when current position is less than the _new_ position, subtract 1
+              if (currentPosition <= newPosition) {
+                return (currentPosition - 1);
+              }
+            } else if (currentPosition >= newPosition) {
+              // when current position is greater than the _new_ position, add 1
+              return (currentPosition + 1);
+            }
+            return currentPosition;
+          };
+
+          // build the new list
+          stopList.forEach((stopItem) => {
+            // stub in new entry based on old values
+            const newItemEntry = {
+              id: stopItem.id,
+              position: setPosition(stopItem.position, stopItem.id),
+            };
+
+            newStopList.push(newItemEntry);
+          });
+        }
+      }
+
+      // sort the new list by position
+      newStopList = newStopList.sort(sortByPosition);
+
+      // commit the new stop list
+      frameNode.setPluginData(
+        DATA_KEYS[`${type}List`],
+        JSON.stringify(newStopList),
+      );
+
+      // use the new, sorted list to select the original nodes in figma
+      newStopList.forEach((stopItem) => {
+        const itemNode: BaseNode = figma.getNodeById(stopItem.id);
+        if (itemNode) {
+          nodesToRepaint.push(itemNode as SceneNode);
+        }
+      });
+    });
+
+    // repaint affected nodes
+    this.annotateStops(type, nodesToRepaint);
 
     // close or refresh UI
     if (this.shouldTerminate) {
@@ -1774,9 +1732,11 @@ export default class App {
    * @kind function
    * @name refreshGUI
    *
+   * @param {boolean} runDiff An optional flag for whether to run a check for unsynced annotations.
+   *
    * @returns {null}
    */
-  static async refreshGUI() {
+  static async refreshGUI(runDiff?: boolean) {
     const {
       messenger,
       page,
@@ -1814,23 +1774,20 @@ export default class App {
 
     // ---------- track and re-draw annotations for nodes that have moved/changed/damaged
     // currently we only track/repair for Labels and Keystops
-    const diffChangesFor: Array<'keystop' | 'label'> = ['keystop', 'label'];
     const diffChangesOptions = {
       isMercadoMode,
       messenger,
       page,
       selection,
     };
-    diffChangesFor.forEach(diffType => diffChanges(diffType, diffChangesOptions));
+    if (runDiff) {
+      diffChanges(diffChangesOptions);
+    }
 
     // ---------- set up selected items bundle for view
-    const nodes: Array<SceneNode> = [];
+    let nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
     const selectedNodes: Array<SceneNode> = selection;
-
-    // determine topFrames involved in the current selection
-    const crawlerForSelected = new Crawler({ for: selectedNodes });
-    const topFrameNodes: Array<FrameNode> = crawlerForSelected.topFrames();
 
     const items: Array<{
       id: string,
@@ -1839,84 +1796,35 @@ export default class App {
       hasStop: boolean,
       isSelected: boolean,
       keys?: Array<PluginKeystopKeys>,
+      role?: PluginLabelRole,
+      labels?: PluginAriaLabels
     }> = [];
 
     // specific to `a11y-keyboard` and `a11y-labels`
     if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
-      const nodeType = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
-
-      // iterate topFrames and select nodes that already have annotations
-      topFrameNodes.forEach((topFrame: FrameNode) => {
-        const getStopOptions = {
-          frameNode: topFrame,
-          resetData: false,
-        };
-        const stopNodes: Array<SceneNode> = getStopNodes(nodeType, getStopOptions);
-        stopNodes.forEach(stopNode => nodes.push(stopNode));
-      });
-
-      // iterate topFrames and select nodes that could have stops based on assignment data
-      topFrameNodes.forEach((topFrame: FrameNode) => {
-        const extractAssignedKeystops = (children) => {
-          const crawlerForChildren = new Crawler({ for: children });
-          const childNodes = crawlerForChildren.all();
-          childNodes.forEach((childNode) => {
-            const peerNodeData = getPeerPluginData(childNode);
-            if (peerNodeData && peerNodeData.hasKeystop) {
-              if (
-                !existsInArray(nodes, childNode.id)
-                && !existsInArray(topFrameNodes, childNode.id)
-              ) {
-                nodes.push(childNode);
-                if (peerNodeData.allowKeystopPassthrough && childNode.children) {
-                  extractAssignedKeystops(childNode.children);
-                }
-              }
-            }
-          });
-        };
-
-        if (topFrame.children) {
-          extractAssignedKeystops(topFrame.children);
-        }
-      });
-
-      // add in any directly-selected nodes that do not have annotations yet
-      selectedNodes.forEach((node: SceneNode) => {
-        if (
-          !existsInArray(nodes, node.id)
-          && !existsInArray(topFrameNodes, node.id)
-          && (node.parent && node.parent.type !== 'PAGE')
-        ) {
-          nodes.push(node);
-        }
-      });
-
+      const type = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
+      nodes = getOrderedStopNodes(type, selection, false);
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const {
           hasStop,
           keys,
+          role,
           labels,
           position,
-          role,
-        } = getStopData(nodeType, node);
+        } = getStopData(type, node);
 
-        let displayPosition: string = position ? position.toString() : '';
-        if (currentView === 'a11y-labels') {
-          // convert numeric position to alpha for view
-          displayPosition = numberToLetters(position);
-        }
+        const displayPosition: string = position ? position.toString() : '';
         const viewObject: PluginViewObject = {
-          hasStop,
           id,
-          isSelected: existsInArray(selectedNodes, node.id),
-          keys,
-          labels,
           name,
-          position: displayPosition,
+          isSelected: existsInArray(selectedNodes, node.id),
+          hasStop,
+          keys,
           role,
+          labels,
+          position: displayPosition,
         };
 
         items.push(viewObject);
@@ -1948,16 +1856,16 @@ export default class App {
 
     // commit the calculated size (re-size the actual plugin frame)
     if (
-      ((currentView !== 'a11y-keyboard') && (currentView !== 'a11y-labels'))
-      || (((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) && items.length < 1)
+      !isInfo
+      && (
+        !['a11y-keyboard', 'a11y-labels'].includes(currentView)
+        || (['a11y-keyboard', 'a11y-labels'].includes(currentView) && !items.length)
+      )
     ) {
-      // no need to resize if the info panel is open
-      if (!isInfo) {
-        figma.ui.resize(
-          width,
-          height,
-        );
-      }
+      figma.ui.resize(
+        width,
+        height,
+      );
     }
 
     messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
@@ -1970,35 +1878,32 @@ export default class App {
    * (currently `keystop` or `label`).
    *
    * @kind function
-   * @name removeKeystopsLabels
+   * @name removeStopAnnotation
    *
-   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
-   * @param {string} nodeId The `id` of a Figma node with a Keystop annotation.
+   * @param {string} type The type of annotation to repair (`keystop` or `label`).
+   * @param {string} id The `id` of a Figma node with a Keystop annotation.
    *
    * @returns {null} Shows a Toast in the UI if a `nodeId` is not supplied.
    */
-  async removeKeystopsLabels(
-    nodeType: 'keystop' | 'label',
-    nodeId?: string,
+  async removeStopAnnotation(
+    type: PluginStopType,
+    id?: string,
   ) {
     const {
       messenger,
       page,
       selection,
     } = assemble(figma);
-    // set data types based on node type
-    const annotationsDataType = DATA_KEYS[`${nodeType}Annotations`];
-    const listDataType = DATA_KEYS[`${nodeType}List`];
 
     // can’t do anything without nodes to manipulate
-    if (!nodeId && selection.length < 1) {
-      messenger.log(`Cannot remove ${nodeType}; missing node ID(s)`, 'error');
+    if (!id && selection.length < 1) {
+      messenger.log(`Cannot remove ${type}; missing node ID(s)`, 'error');
     }
 
     const nodesToRepaint: Array<SceneNode> = [];
     let nodes = selection;
-    if (nodeId) {
-      const node: BaseNode = figma.getNodeById(nodeId);
+    if (id) {
+      const node: BaseNode = figma.getNodeById(id);
       if (node) {
         nodes = [node];
       }
@@ -2010,7 +1915,7 @@ export default class App {
 
     // grab tracking data for the page
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
-      page.getPluginData(annotationsDataType) || '[]',
+      page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
     );
 
     // iterate topFrames and remove annotation(s) that match node(s)
@@ -2019,10 +1924,9 @@ export default class App {
       const stopList: Array<{
         id: string,
         position: number,
-      }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
+      }> = JSON.parse(frameNode.getPluginData(DATA_KEYS[`${type}List`]) || null);
 
-      // remove item(s) from the stop list
-      // remove item(s) from the tracking data
+      // remove item(s) from the stop list and tracking data
       let newStopList = stopList;
       let newTrackingData = trackingData;
       if (stopList) {
@@ -2034,13 +1938,13 @@ export default class App {
 
       // set new stop list
       frameNode.setPluginData(
-        listDataType,
+        DATA_KEYS[`${type}List`],
         JSON.stringify(newStopList),
       );
 
       // set new tracking data
       page.setPluginData(
-        annotationsDataType,
+        DATA_KEYS[`${type}Annotations`],
         JSON.stringify(newTrackingData),
       );
 
@@ -2054,15 +1958,12 @@ export default class App {
     });
 
     // remove the corresponding annotations
-    const nodeIds: Array<string> = [];
-    nodes.forEach(node => nodeIds.push(node.id));
-
-    // remove the orphaned annotations
-    cleanUpAnnotations(trackingData, nodeIds);
+    const nodeIds: Array<string> = nodes.map(node => node.id);
+    removeLinkedAnnotationNodes(trackingData, nodeIds);
 
     // repaint affected nodes
-    if (nodesToRepaint.length > 0) {
-      this.annotateKeystopLabel(nodeType, nodesToRepaint);
+    if (nodesToRepaint.length) {
+      this.annotateStops(type, nodesToRepaint);
     }
 
     // close or refresh UI
@@ -2137,7 +2038,7 @@ export default class App {
    *
    * @returns {Promise} Returns a promise for resolution.
    */
-  static async setViewContext(payload: { newView: PluginViewTypes }) {
+  static async setViewContext(payload: { newView: PluginViewTypes, skipDiff?: boolean }) {
     const { newView }: { newView: PluginViewTypes } = payload;
 
     // retrieve existing options
@@ -2150,7 +2051,7 @@ export default class App {
     await figma.clientStorage.setAsync(DATA_KEYS.options, options);
 
     // refresh the view
-    App.refreshGUI();
+    App.refreshGUI(!payload.skipDiff);
   }
 
   /**
@@ -2237,7 +2138,7 @@ export default class App {
   static async showToolbar() {
     const { messenger } = assemble(figma);
 
-    await App.refreshGUI();
+    await App.refreshGUI(true);
     await App.showGUI(messenger);
   }
 
@@ -2269,158 +2170,5 @@ export default class App {
 
     // show the toolbar
     await this.showToolbar();
-  }
-
-  /**
-   * @description Retrieves a node based on the type (`keystop` or `label`) and supplied `id` and
-   * uses the `position` to update the node’s stop annotation. Any annotations in the top frame
-   * with new numbers are re-painted.
-   *
-   * @kind function
-   * @name updateKeystopsLabels
-   *
-   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
-   * @param {Object} options Should include a Figma node `id` and the `position` to be updated.
-   *
-   * @returns {null}
-   */
-  async updateKeystopsLabels(
-    nodeType: 'keystop' | 'label',
-    options: {
-      id: string,
-      position: string,
-    },
-  ) {
-    const { messenger } = assemble(figma);
-    const nodeId: string = options.id;
-
-    // set data type
-    const listDataType = DATA_KEYS[`${nodeType}List`];
-
-    // force the new position into a positive integer
-    let newPosition: number = parseInt(options.position, 10);
-    if (newPosition.toString() === 'NaN') {
-      newPosition = lettersToNumbers(options.position);
-    }
-
-    if (!nodeId || !newPosition) {
-      messenger.log(`Cannot update ${nodeType}; missing node ID or new position`, 'error');
-    }
-
-    const nodesToRepaint: Array<SceneNode> = [];
-    let nodes: Array<BaseNode> = [];
-    const node: BaseNode = figma.getNodeById(nodeId);
-    if (node) {
-      nodes = [node];
-    }
-
-    // determine topFrames involved in the current selection
-    const crawler = new Crawler({ for: nodes });
-    const topFrameNodes: Array<FrameNode> = crawler.topFrames();
-
-    // iterate topFrames and remove annotation(s) that match node(s)
-    topFrameNodes.forEach((frameNode: FrameNode) => {
-      // read stop list data from top frame
-      const stopList: Array<{
-        id: string,
-        position: number,
-      }> = JSON.parse(frameNode.getPluginData(listDataType) || null);
-
-      // remove item(s) from the stop list
-      let newStopList = [];
-      if (stopList) {
-        // number items
-        const numberItems = stopList.length;
-
-        // validate and adjust based on actual number of items
-        if (newPosition > numberItems) {
-          newPosition = numberItems;
-        }
-
-        // find the old position
-        const index = 0;
-        const selectedItem = stopList.filter(stopItem => stopItem.id === nodeId)[index];
-        const oldPosition = selectedItem.position;
-
-        // compare new/old positions and, if applicable, set up the new list
-        if (newPosition === oldPosition) {
-          // do nothing if the positions match
-          newStopList = stopList;
-        } else {
-          const setPosition = (currentPosition: number, itemId: string): number => {
-            // the selected node always gets the new position
-            if (itemId === nodeId) {
-              return newPosition;
-            }
-
-            // how we manipulate the new position is based on relationship to the
-            // _selected_ node’s old position:
-            //
-            // nodes higher in the list relative to the old position may need to be moved lower;
-            // nodes lower in the list relative to the old position may need to be moved higher.
-            if (currentPosition > oldPosition) {
-              // when current position is less than the _new_ position, subtract 1
-              if (currentPosition <= newPosition) {
-                return (currentPosition - 1);
-              }
-            } else if (currentPosition >= newPosition) {
-              // when current position is greater than the _new_ position, add 1
-              return (currentPosition + 1);
-            }
-            return currentPosition;
-          };
-
-          // build the new list
-          stopList.forEach((stopItem) => {
-            // stub in new entry based on old values
-            const newItemEntry = {
-              id: stopItem.id,
-              position: setPosition(stopItem.position, stopItem.id),
-            };
-
-            newStopList.push(newItemEntry);
-          });
-        }
-      }
-
-      // sort the new list by position
-      const sortByPosition = (stopItemA, stopItemB) => {
-        const aPosition = stopItemA.position;
-        const bPosition = stopItemB.position;
-        if (aPosition < bPosition) {
-          return -1;
-        }
-        if (aPosition > bPosition) {
-          return 1;
-        }
-        return 0;
-      };
-      newStopList = newStopList.sort(sortByPosition);
-
-      // commit the new stop list
-      frameNode.setPluginData(
-        listDataType,
-        JSON.stringify(newStopList),
-      );
-
-      // use the new, sorted list to select the original nodes in figma
-      newStopList.forEach((stopItem) => {
-        const itemNode: BaseNode = figma.getNodeById(stopItem.id);
-        if (itemNode) {
-          nodesToRepaint.push(itemNode as SceneNode);
-        }
-      });
-    });
-
-    // repaint affected nodes
-    this.annotateKeystopLabel(nodeType, nodesToRepaint);
-
-    // close or refresh UI
-    if (this.shouldTerminate) {
-      this.closeOrReset();
-    } else {
-      App.refreshGUI();
-    }
-    return null;
   }
 }

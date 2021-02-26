@@ -3,7 +3,7 @@ import {
   findTopFrame,
   getRelativeIndex,
   getRelativePosition,
-} from './Tools';
+} from './utils/tools';
 
 /**
  * @description A class to handle traversing an array of selected items and return useful items

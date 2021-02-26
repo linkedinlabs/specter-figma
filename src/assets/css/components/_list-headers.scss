@@ -16,6 +16,7 @@
 
     &.text {
       @include type-01;
+      text-align: left;
     }
 
     &.actions {

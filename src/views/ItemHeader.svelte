@@ -9,6 +9,7 @@
   import FormUnit from './forms-controls/FormUnit';
 
   export let isOpen = false;
+  export let ariaNamed = false;
   export let isSelected = false;
   export let itemId = null;
   export let labelText = 'Item name here';
@@ -29,7 +30,7 @@
     resetValue = true;
   };
 
-  const removeStop = () => {
+  const removeStopAnnotation = () => {
     parent.postMessage({
       pluginMessage: {
         action: `${type}-remove-stop`,
@@ -111,6 +112,19 @@
 
 <style>
   /* components/list-headers */
+  .text {
+    margin: 0;
+    white-space: nowrap;
+    min-width: 0;
+    max-width: 250px;
+  }
+  .text.ariaNamed {
+    font-style: italic;
+  }
+  .truncated-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 </style>
 
 <header class:isOpen class:isSelected class={`item-header ${type}`}>
@@ -121,17 +135,17 @@
         isOpen={isOpen}
       />
     </span>
-    <span class="text">
+    <span class="text" class:isOpen class:ariaNamed>
       {#if showErrorIcon}
         <span class="error-flag">&#9873;&nbsp;</span>
       {/if}
-      {labelText}
+      <div class="truncated-text">{labelText}</div>
     </span>
   </span>
   <span class="right form-element-holder">
     <FormUnit
       className={setInputOptions(type).className}
-      on:deleteSignal={() => removeStop()}
+      on:deleteSignal={() => removeStopAnnotation()}
       hideLabel={true}
       isDeletable={true}
       inputType={setInputOptions(type).inputType}

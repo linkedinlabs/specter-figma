@@ -1,7 +1,5 @@
 import {
   existsInArray,
-  findTopFrame,
-  findParentInstance,
   getNodeSettings,
   getPeerPluginData,
   isInternal,
@@ -9,13 +7,15 @@ import {
   resizeGUI,
   setNodeSettings,
   toSentenceCase,
+  findTopFrame,
   updateArray,
-} from './Tools';
+} from './utils/tools';
 import {
   CONTAINER_NODE_TYPES,
   DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
+import { findParentInstance } from './utils/nodeGetters';
 
 // --- private functions
 /**
@@ -759,13 +759,13 @@ export default class Identifier {
    * @kind function
    * @name getSetStop
    *
-   * @param {string} nodeType The type of annotation to repair (`keystop` or `label`).
+   * @param {string} type The type of annotation to repair (`keystop` or `label`).
    * @param {number} position An optional number to override the counter.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
   getSetStop(
-    nodeType: 'keystop' | 'label',
+    type: PluginStopType,
     position?: number,
   ) {
     const result: {
@@ -793,7 +793,7 @@ export default class Identifier {
     }
 
     // get top frame stop list
-    const listDataType = DATA_KEYS[`${nodeType}List`];
+    const listDataType = DATA_KEYS[`${type}List`];
     const frameKeystopListData = JSON.parse(topFrame.getPluginData(listDataType) || null);
     let frameKeystopList: Array<{
       id: string,
@@ -826,12 +826,12 @@ export default class Identifier {
     const textToSet = `${positionToSet}`;
 
     // retrieve the node data
-    const nodeDataType = DATA_KEYS[`${nodeType}NodeData`];
+    const nodeDataType = DATA_KEYS[`${type}NodeData`];
     let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
       keys?: Array<PluginKeystopKeys>,
-      labels?: PluginLabelsNames,
+      labels?: PluginAriaLabels,
       role?: string,
     } = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
@@ -847,11 +847,15 @@ export default class Identifier {
     // check for assigned keys, if none exist (`undefined` or `null`):
     // this check will only happen if keys have never been attached to this stop.
     // if the component is updated after this stop has been altered, the updates will be ignored.
-    if (!nodeData.keys) {
-      const peerNodeData = getPeerPluginData(this.node);
-      if (peerNodeData && peerNodeData.keys) {
-        nodeData.keys = peerNodeData.keys;
-      }
+    const peerNodeData = getPeerPluginData(this.node);
+    if (!nodeData.keys && peerNodeData?.keys) {
+      nodeData.keys = peerNodeData.keys;
+    }
+    if (!nodeData.labels && peerNodeData?.labels) {
+      nodeData.labels = peerNodeData.labels;
+    }
+    if (!nodeData.role && peerNodeData?.role) {
+      nodeData.role = peerNodeData.role;
     }
 
     // commit the updated data
@@ -861,7 +865,7 @@ export default class Identifier {
     );
 
     result.status = 'success';
-    result.messages.log = `${nodeType} stop position ${textToSet} set for “${this.node.name}”`;
+    result.messages.log = `${type} stop position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 

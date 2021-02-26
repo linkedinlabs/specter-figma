@@ -9,7 +9,7 @@
  * @name PLUGIN_IDENTIFIER
  * @type {string}
  */
-const PLUGIN_IDENTIFIER: string = 'com.linkedin.figma.specter-plugin';
+const PLUGIN_IDENTIFIER: string = process.env.PLUGIN_IDENTIFIER || 'com.linkedin.figma.specter-plugin';
 
 /**
  * @description The public-facing name for the plugin. This should match the
@@ -19,7 +19,7 @@ const PLUGIN_IDENTIFIER: string = 'com.linkedin.figma.specter-plugin';
  * @name PLUGIN_NAME
  * @type {string}
  */
-const PLUGIN_NAME: string = 'Specter';
+const PLUGIN_NAME: string = process.env.PLUGIN_NAME || 'Specter';
 
 /**
  * @description An object containing the current string constants used as keys in plugin data.
@@ -52,27 +52,34 @@ const PLUGIN_NAME: string = 'Specter';
  */
 const DATA_KEYS: {
   options: string,
+  keystopAnnotations: string,
+  labelAnnotations: string,
+  legendFrames: string,
+  keystopList: string,
+  labelList: string,
+  legendLinkId: string,
   bundle: string,
   keystopNodeData: string,
-  keystopAnnotations: string,
-  keystopLinkId: string,
-  keystopList: string,
   labelNodeData: string,
-  labelAnnotations: string,
+  keystopLinkId: string,
   labelLinkId: string,
-  labelList: string,
   relaunch: string,
 } = {
+  // page-level (e.g. in case an annotated element is moved out of a frame?)
   options: `${PLUGIN_IDENTIFIER}.options-001`,
+  keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
+  labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
+  legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
+  // top-frame level
+  keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
+  labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
+  legendLinkId: `${PLUGIN_IDENTIFIER}.legendLinkId-001`,
+  // node-level and up
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
-  keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
-  keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
-  keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
-  labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
+  keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
   labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`,
-  labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 
@@ -89,6 +96,7 @@ const COLORS: {
   dimension: string,
   keystop: string,
   label: string,
+  legendIcon: string,
   spacing: string,
   style: string,
 } = {
@@ -96,7 +104,8 @@ const COLORS: {
   custom: '#c8006a',
   dimension: '#4c7100',
   keystop: '#c8006a',
-  label: '#6699cc',
+  label: '#0066bf',
+  legendIcon: '#0066bf',
   spacing: '#007373',
   style: '#bc3600',
 };
