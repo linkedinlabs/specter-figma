@@ -1,7 +1,5 @@
 import {
   existsInArray,
-  findTopFrame,
-  findParentInstance,
   getNodeSettings,
   getPeerPluginData,
   isInternal,
@@ -9,13 +7,15 @@ import {
   resizeGUI,
   setNodeSettings,
   toSentenceCase,
+  findTopFrame,
   updateArray,
-} from './Tools';
+} from './utils/tools';
 import {
   CONTAINER_NODE_TYPES,
   DATA_KEYS,
   RADIUS_MATRIX,
 } from './constants';
+import { findParentInstance } from './utils/nodeGetters';
 
 // --- private functions
 /**
@@ -747,23 +747,27 @@ export default class Identifier {
   }
 
   /**
-   * @description Checks the node’s settings object for the existence of keystop-related data
+   * @description Checks the node’s settings object for the existence of stop-related data
    * and either updates that data with a new position, or creates the data object with the
    * initial position and saves it to the node. Position is calculated by reading the
-   * keystop list data from the nodes top-level container frame. If `position` is _not_
+   * stop list data from the nodes top-level container frame. If `position` is _not_
    * supplied, the main underlying assumption is that the node being set is going to be in the
    * next highest position in the list and needs to be added to the list. If `position` is
    * supplied, the assumption is that we are simply updating the node data, and the keystop
    * list does not need to be touched.
    *
    * @kind function
-   * @name getSetKeystop
+   * @name getSetStop
    *
+   * @param {string} type The type of annotation to repair (`keystop` or `label`).
    * @param {number} position An optional number to override the counter.
    *
    * @returns {Object} A result object containing success/error status and log/toast messages.
    */
-  getSetKeystop(position?: number) {
+  getSetStop(
+    type: PluginStopType,
+    position?: number,
+  ) {
     const result: {
       status: 'error' | 'success',
       messages: {
@@ -788,8 +792,9 @@ export default class Identifier {
       return result;
     }
 
-    // get top frame keystop list
-    const frameKeystopListData = JSON.parse(topFrame.getPluginData(DATA_KEYS.keystopList) || null);
+    // get top frame stop list
+    const listDataType = DATA_KEYS[`${type}List`];
+    const frameKeystopListData = JSON.parse(topFrame.getPluginData(listDataType) || null);
     let frameKeystopList: Array<{
       id: string,
       position: number,
@@ -810,9 +815,9 @@ export default class Identifier {
         position: positionToSet,
       });
 
-      // set/update top frame keystop list
+      // set/update top frame stop list
       topFrame.setPluginData(
-        DATA_KEYS.keystopList,
+        listDataType,
         JSON.stringify(frameKeystopList),
       );
     }
@@ -821,11 +826,14 @@ export default class Identifier {
     const textToSet = `${positionToSet}`;
 
     // retrieve the node data
+    const nodeDataType = DATA_KEYS[`${type}NodeData`];
     let nodeData: {
       annotationText: string,
       annotationSecondaryText?: string,
       keys?: Array<PluginKeystopKeys>,
-    } = JSON.parse(this.node.getPluginData(DATA_KEYS.keystopNodeData) || null);
+      labels?: PluginAriaLabels,
+      role?: string,
+    } = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
     // set `annotationText` data on the node
     if (!nodeData) {
@@ -839,21 +847,25 @@ export default class Identifier {
     // check for assigned keys, if none exist (`undefined` or `null`):
     // this check will only happen if keys have never been attached to this stop.
     // if the component is updated after this stop has been altered, the updates will be ignored.
-    if (!nodeData.keys) {
-      const peerNodeData = getPeerPluginData(this.node);
-      if (peerNodeData && peerNodeData.keys) {
-        nodeData.keys = peerNodeData.keys;
-      }
+    const peerNodeData = getPeerPluginData(this.node);
+    if (!nodeData.keys && peerNodeData?.keys) {
+      nodeData.keys = peerNodeData.keys;
+    }
+    if (!nodeData.labels && peerNodeData?.labels) {
+      nodeData.labels = peerNodeData.labels;
+    }
+    if (!nodeData.role && peerNodeData?.role) {
+      nodeData.role = peerNodeData.role;
     }
 
     // commit the updated data
     this.node.setPluginData(
-      DATA_KEYS.keystopNodeData,
+      nodeDataType,
       JSON.stringify(nodeData),
     );
 
     result.status = 'success';
-    result.messages.log = `Keystop position ${textToSet} set for “${this.node.name}”`;
+    result.messages.log = `${type} stop position ${textToSet} set for “${this.node.name}”`;
     return result;
   }
 

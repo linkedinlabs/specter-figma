@@ -9,11 +9,13 @@
   import FormUnit from './forms-controls/FormUnit';
 
   export let isOpen = false;
+  export let ariaNamed = false;
   export let isSelected = false;
   export let itemId = null;
   export let labelText = 'Item name here';
   export let position = null;
   export let type = null;
+  export let showErrorIcon = false;
 
   let dirtyPosition = position;
   let originalPosition = position;
@@ -28,7 +30,7 @@
     resetValue = true;
   };
 
-  const removeStop = () => {
+  const removeStopAnnotation = () => {
     parent.postMessage({
       pluginMessage: {
         action: `${type}-remove-stop`,
@@ -39,8 +41,34 @@
     }, '*');
   };
 
+  const setInputOptions = (currentItemType) => {
+    const options = {
+      className: 'form-row',
+      inputType: 'number',
+      placeholder: '0',
+    };
+
+    if (currentItemType === 'a11y-labels') {
+      options.className = 'form-row alpha-position';
+      options.inputType = 'text';
+      options.placeholder = 'a';
+    }
+
+    return options;
+  };
+
   const updatePosition = (newPosition) => {
-    if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
+    // only update if the positions are different
+    let sendPositionUpdate = false;
+    if (type === 'keystop') {
+      if (parseInt(originalPosition, 10) !== parseInt(newPosition, 10)) {
+        sendPositionUpdate = true;
+      }
+    } else if (originalPosition !== newPosition) {
+      sendPositionUpdate = true;
+    }
+
+    if (sendPositionUpdate) {
       parent.postMessage({
         pluginMessage: {
           action: `${type}-update-stop`,
@@ -58,7 +86,11 @@
 
   beforeUpdate(() => {
     // check `position` against original to see if it was updated on the Figma side
-    if (parseInt(originalPosition, 10) !== parseInt(position, 10)) {
+    if (type === 'keystop') {
+      if (parseInt(originalPosition, 10) !== parseInt(position, 10)) {
+        resetValue = true;
+      }
+    } else if (originalPosition !== position) {
       resetValue = true;
     }
 
@@ -80,6 +112,19 @@
 
 <style>
   /* components/list-headers */
+  .text {
+    margin: 0;
+    white-space: nowrap;
+    min-width: 0;
+    max-width: 250px;
+  }
+  .text.ariaNamed {
+    font-style: italic;
+  }
+  .truncated-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 </style>
 
 <header class:isOpen class:isSelected class={`item-header ${type}`}>
@@ -90,22 +135,25 @@
         isOpen={isOpen}
       />
     </span>
-    <span class="text">
-      {labelText}
+    <span class="text" class:isOpen class:ariaNamed>
+      {#if showErrorIcon}
+        <span class="error-flag">&#9873;&nbsp;</span>
+      {/if}
+      <div class="truncated-text">{labelText}</div>
     </span>
   </span>
   <span class="right form-element-holder">
     <FormUnit
-      className="form-row"
-      on:deleteSignal={() => removeStop()}
+      className={setInputOptions(type).className}
+      on:deleteSignal={() => removeStopAnnotation()}
       hideLabel={true}
       isDeletable={true}
-      inputType="number"
+      inputType={setInputOptions(type).inputType}
       inputWatchBlur={true}
       kind="inputText"
       labelText="Position"
       nameId={`item-position-${itemId}`}
-      placeholder="0"
+      placeholder={setInputOptions(type).placeholder}
       resetValue={resetValue}
       on:saveSignal={() => updatePosition(dirtyPosition)}
       bind:value={dirtyPosition}

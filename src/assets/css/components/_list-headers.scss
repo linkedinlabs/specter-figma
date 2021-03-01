@@ -16,6 +16,7 @@
 
     &.text {
       @include type-01;
+      text-align: left;
     }
 
     &.actions {
@@ -128,6 +129,12 @@
           padding-left: em(4);
         }
       }
+
+      .error-flag,
+      em .error-flag {
+        color: $wl-type-03;
+        font-size: 110%;
+      }
     }
   }
 }
@@ -147,7 +154,8 @@
 
 // apply the styles
 .item-header {
-  &.a11y-keyboard {
+  &.a11y-keyboard,
+  &.a11y-labels {
     @include list-header-single;
 
     &.isOpen {
@@ -159,6 +167,14 @@
 
       input {
         text-align: center;
+      }
+    }
+
+    .form-row {
+      &.alpha-position {
+        input {
+          text-transform: uppercase;
+        }
       }
     }
   }

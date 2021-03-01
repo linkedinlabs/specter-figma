@@ -1,5 +1,5 @@
 {
-  "name": "Specter",
+  "name": "PLUGIN_NAME",
   "id": "PLUGIN_ID",
   "api": "1.0.0",
   "main": "dist/main.js",

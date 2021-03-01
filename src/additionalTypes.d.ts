@@ -4,6 +4,16 @@ declare global {
 
   type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'enter' | 'escape' | 'space';
 
+  type PluginLabelRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
+
+  type PluginStopType = 'keystop' | 'label';
+
+  type PluginAriaLabels = {
+    a11y: null,
+    visible: false,
+    alt: null,
+  }
+
   type PluginNodePosition = {
     frameWidth: number,
     frameHeight: number,
@@ -13,24 +23,55 @@ declare global {
     y: number,
   };
 
+  type PluginFramePosition = {
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+  };
+
   type PluginNodeTrackingData = {
-    annotationId: string,
-    id: string,
-    linkId: string,
+    id: string, // ID of node containing the design element
+    annotationId: string, // ID of node containing the annotation itself
+    legendItemId?: string, // ID of node containing the legend entry
+    linkId: string,  // shared link between the above 2 (cus those may change via Figma)
     topFrameId: string,
     nodePosition: PluginNodePosition,
   };
 
+  type PluginFrameTrackingData = {
+    id: string,
+    legendId: string,
+    linkId: string,
+    framePosition: PluginFramePosition,
+  };
+  
   type PluginNodeLinkData = {
     id: string,
-    role: 'annotation' | 'node',
+    role: 'annotation' | 'node' | 'legendItem',
   }
+  
+    type PluginFrameLinkData = {
+      id: string,
+      role: 'frame' | 'legend',
+    }
 
   type PluginOptions = {
     currentView: PluginViewTypes,
     isInfo: boolean,
     isMercadoMode: boolean,
   };
+
+  type PluginViewObject = {
+    hasStop: boolean,
+    id: string,
+    isSelected: boolean,
+    keys?: Array<PluginKeystopKeys>,
+    labels?: PluginAriaLabels,
+    name: string,
+    position: number | string,
+    role?: PluginLabelRole,
+  }
 
   // Vendor Declarations
 

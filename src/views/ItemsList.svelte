@@ -3,7 +3,8 @@
   import { openItems } from './stores';
 
   import ButtonAddStop from './forms-controls/ButtonAddStop';
-  import ItemExpandedContent from './ItemExpandedContent';
+  import ItemExpandedContentKeystops from './ItemExpandedContentKeystops';
+  import ItemExpandedContentLabels from './ItemExpandedContentLabels';
   import ItemHeader from './ItemHeader';
 
   // props
@@ -13,6 +14,138 @@
   // locals
   let itemsDirty = items;
   let addNumber = 0;
+  const roleOptions = [
+    {
+      value: 'no-role',
+      text: 'None',
+      disabled: false,
+    },
+    {
+      value: 'divider--01',
+      text: null,
+      disabled: true,
+    },
+    {
+      value: 'image',
+      text: 'Image',
+      disabled: false,
+    },
+    {
+      value: 'image-decorative',
+      text: 'Image (decorative)',
+      disabled: false,
+    },
+    {
+      value: 'divider--02',
+      text: null,
+      disabled: true,
+    },
+    {
+      value: 'button',
+      text: 'Button',
+      disabled: false,
+    },
+    {
+      value: 'checkbox',
+      text: 'Checkbox',
+      disabled: false,
+    },
+    {
+      value: 'link',
+      text: 'Link',
+      disabled: false,
+    },
+    {
+      value: 'menuitem',
+      text: 'Menu item',
+      disabled: false,
+    },
+    {
+      value: 'menuitemcheckbox',
+      text: 'Menu item (checkbox)',
+      disabled: false,
+    },
+    {
+      value: 'menuitemradio',
+      text: 'Menu item (radio)',
+      disabled: false,
+    },
+    {
+      value: 'option',
+      text: 'Option',
+      disabled: false,
+    },
+    {
+      value: 'progressbar',
+      text: 'Progress bar',
+      disabled: false,
+    },
+    {
+      value: 'radio',
+      text: 'Radio',
+      disabled: false,
+    },
+    {
+      value: 'searchbox',
+      text: 'Search box',
+      disabled: false,
+    },
+    {
+      value: 'slider',
+      text: 'Slider',
+      disabled: false,
+    },
+    {
+      value: 'switch',
+      text: 'Switch',
+      disabled: false,
+    },
+    {
+      value: 'tab',
+      text: 'Tab',
+      disabled: false,
+    },
+    {
+      value: 'tabpanel',
+      text: 'Tab panel',
+      disabled: false,
+    },
+    {
+      value: 'textbox',
+      text: 'Textbox',
+      disabled: false,
+    },
+    {
+      value: 'divider--03',
+      text: null,
+      disabled: true,
+    },
+    {
+      value: 'combobox',
+      text: 'Combobox',
+      disabled: false,
+    },
+    {
+      value: 'listbox',
+      text: 'Listbox',
+      disabled: false,
+    },
+    {
+      value: 'menu',
+      text: 'Menu',
+      disabled: false,
+    },
+    {
+      value: 'radiogroup',
+      text: 'Radio group',
+      disabled: false,
+    },
+    {
+      value: 'tablist',
+      text: 'Tab list',
+      disabled: false,
+    },
+  ];
 
   const checkIsOpen = (itemId, typeScope) => {
     let itemIsOpen = false;
@@ -27,6 +160,18 @@
     }
 
     return itemIsOpen;
+  };
+
+  const isMissingData = (item) => {
+    if (type.includes('labels') && item.role !== 'image-decorative') {
+      const { labels, role } = item;
+      return (
+        !labels
+        || (role === 'image' && !labels.alt)
+        || (role !== 'image' && !(labels.a11y || labels.visible))
+      );
+    }
+    return false;
   };
 
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
@@ -102,12 +247,30 @@
 
   const setAddStopButton = (currentItems) => {
     addNumber = 0;
-
     currentItems.forEach((item) => {
       if (!item.hasStop) {
         addNumber += 1;
       }
     });
+  };
+
+  const getHeaderName = (item) => {
+    const { name, role } = item;
+    const { a11y, visible, alt } = item.labels || {};
+    const mainText = role && role !== 'no-role' ? roleOptions.find(i => i.value === role).text : '';
+    let headerName = name;
+
+    if (role === 'image-decorative') {
+      headerName = name;
+    } else if (role === 'image') {
+      const secondaryText = alt ? `"${alt}"` : '(missing alt text)';
+      headerName = `${mainText}${secondaryText}`;
+    } else if (a11y) {
+      headerName = `${mainText}"${a11y}"`;
+    } else if (!visible) {
+      headerName = `${name} (missing label)`;
+    }
+    return headerName;
   };
 
   beforeUpdate(() => {
@@ -123,19 +286,33 @@
         <ItemHeader
           on:handleUpdate={customEvent => updateItemState(item.id, customEvent.detail, type)}
           isOpen={checkIsOpen(item.id, type)}
+          ariaNamed={type.includes('labels') && !getHeaderName(item).includes(item.name)}
           isSelected={item.isSelected}
           itemId={item.id}
-          labelText={item.name}
+          labelText={type.includes('labels') ? getHeaderName(item) : item.name}
           position={item.position}
           type={type}
+          showErrorIcon={isMissingData(item)}
         />
         {#if checkIsOpen(item.id, type)}
-          <ItemExpandedContent
-            itemId={item.id}
-            isSelected={item.isSelected}
-            keys={item.keys}
-            type={type}
-          />
+          {#if (type === 'a11y-keyboard')}
+            <ItemExpandedContentKeystops
+              itemId={item.id}
+              isSelected={item.isSelected}
+              keys={item.keys}
+              type={type}
+            />
+          {:else if (type === 'a11y-labels')}
+            <ItemExpandedContentLabels
+              itemId={item.id}
+              isSelected={item.isSelected}
+              labels={item.labels}
+              role={item.role}
+              roleOptions={roleOptions}
+              type={type}
+              on:handleUpdate={() => {}}
+            />
+          {/if}
         {/if}
       </li>
     {/each}

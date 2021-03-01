@@ -1,7 +1,7 @@
 /**
  * @description A set of functions to operate the plugin GUI.
  */
-import { isInternal } from './Tools';
+import { isInternal } from './utils/tools';
 import './assets/css/main.scss';
 import App from './views/App.svelte'; // eslint-disable-line import/extensions
 
@@ -10,13 +10,7 @@ const appProps: {
   isInternal: boolean,
   isMercadoMode: boolean,
   isUserInput: boolean,
-  items: Array<{
-    id: string,
-    name: string,
-    position?: number,
-    hasStop: boolean,
-    isSelected: boolean,
-  }>,
+  items: Array<PluginViewObject>,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -136,6 +130,7 @@ const watchIncomingMessages = (): void => {
             items,
             sessionKey,
           } = payload;
+
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
           app.items = items;

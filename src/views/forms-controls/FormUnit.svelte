@@ -5,6 +5,7 @@
   import FigmaInput from './FigmaInput';
   import FigmaSelectMenu from './FigmaSelectMenu';
   import FormLabel from './FormLabel';
+  import FigmaSwitch from './FigmaSwitch';
 
   export let className = null;
   export let hideLabel = false;
@@ -74,6 +75,18 @@
         on:saveSignal
         bind:value={value}
         watchBlur={inputWatchBlur}
+      />
+    {/if}
+
+    {#if kind === 'inputSwitch'}
+      <FigmaSwitch
+        className="form-element element-type-switch"
+        disabled={isDisabled}
+        nameId={nameId}
+        options={options}
+        on:saveSignal
+        bind:value={value}
+        watchChange={selectWatchChange}
       />
     {/if}
 

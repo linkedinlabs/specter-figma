@@ -1,7 +1,7 @@
 // ++++++++++++++++++++++++++ Specter for Figma +++++++++++++++++++++++++++
 import App from './App';
 import Messenger from './Messenger';
-import { awaitUIReadiness, loadFirstAvailableFontAsync } from './Tools';
+import { awaitUIReadiness, loadFirstAvailableFontAsync } from './utils/tools';
 import { DATA_KEYS, TYPEFACES } from './constants';
 
 // GUI management -------------------------------------------------
@@ -68,34 +68,48 @@ const dispatcher = async (action: {
   // run the action in the App class based on type
   const runAction = async (actionType: string) => {
     switch (actionType) {
-      case 'a11y-keyboard-add-stop':
-        await app.annotateKeystop();
+      case 'a11y-labels-add-stop':
+      case 'a11y-keyboard-add-stop': {
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-add-stop' ? 'keystop' : 'label';
+        await app.annotateStops(nodeType);
         break;
+      }
+      case 'a11y-labels-remove-stop':
       case 'a11y-keyboard-remove-stop': {
         const { id } = payload;
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-remove-stop' ? 'keystop' : 'label';
+
         if (id) {
-          await app.removeKeystops(id);
+          await app.removeStopAnnotation(nodeType, id);
         }
         break;
       }
-      case 'a11y-keyboard-update-stop': {
-        const { id } = payload;
+      case 'a11y-keyboard-update-stop':
+      case 'a11y-labels-update-stop': {
+        const { id, position } = payload;
+        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-update-stop' ? 'keystop' : 'label';
         if (id) {
-          await app.updateKeystops(payload);
+          await app.updateStopAnnotation(nodeType, id, position);
         }
         break;
       }
       case 'a11y-keyboard-set-key':
-        await app.keystopAddRemoveKeys(payload);
+        await app.updateNodeDataKeys(payload);
         break;
       case 'a11y-keyboard-remove-key':
-        await app.keystopAddRemoveKeys(payload, true);
+        await app.updateNodeDataKeys(payload, true);
+        break;
+      case 'a11y-labels-set-text':
+        await app.updateNodeDataLabels('labels', payload);
+        break;
+      case 'a11y-labels-set-role':
+        await app.updateNodeDataLabels('role', payload);
         break;
       case 'annotate':
-        app.annotateNode();
+        app.annotateGeneral();
         break;
       case 'annotate-custom':
-        app.annotateNodeCustom();
+        app.annotateCustom();
         break;
       case 'annotate-spacing-left':
         app.annotateSpacingOnly('left');
@@ -220,7 +234,7 @@ const main = async () => {
    * of data to track (id, x/y, width/height, parent).
    *
    * @kind function
-   * @name compareTrackingData
+   * @name setTrackingData
    *
    * @param {Array} selectedNodes An array of Figma nodes.
    *
@@ -271,6 +285,7 @@ const main = async () => {
     return tempTrackingData;
   };
 
+
   // set the initial timestamp; this is used as a global to update over time and prevent race cases
   let initialStamp = new Date().getTime();
 
@@ -282,7 +297,7 @@ const main = async () => {
    * the Figma level, or if there has not been a change in several minutes.
    *
    * @kind function
-   * @name compareTrackingData
+   * @name watchSelection
    */
   const watchSelection = (): void => {
     // update immediately on a selection change
@@ -312,7 +327,7 @@ const main = async () => {
       // if a difference is found, refresh the UI and update the last change stamp
       if (JSON.stringify(dataset1) !== JSON.stringify(dataset2)) {
         lastChangeTime = new Date().getTime();
-        App.refreshGUI();
+        App.refreshGUI(true);
       }
 
       // set current time and time since last change
@@ -345,7 +360,7 @@ const main = async () => {
   // always trigger a refresh on the page change
   figma.on('currentpagechange', () => {
     // App.refreshGUI(SESSION_KEY);
-    App.refreshGUI();
+    App.refreshGUI(true);
   });
 };
 

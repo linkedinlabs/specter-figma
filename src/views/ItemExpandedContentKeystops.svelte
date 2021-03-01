@@ -1,7 +1,6 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
-  import { updateArray } from '../Tools';
-
+  import { updateArray } from '../utils/tools';
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;
@@ -287,7 +286,7 @@
   /* components/list-item-content */
 </style>
 
-<article class:isSelected class="item-content">
+<article class:isSelected class={`item-content ${type}`}>
   <ul class="keys-list">
     {#each dirtyKeys as dirtyKey, i (dirtyKey)}
       <li class="keys-item">

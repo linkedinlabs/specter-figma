@@ -9,4 +9,5 @@ npm-debug.log
 # config
 .env
 .plugin-id
+.plugin-id-beta
 manifest.json

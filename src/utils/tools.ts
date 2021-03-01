@@ -3,7 +3,7 @@ import {
   DATA_KEYS,
   GUI_SETTINGS,
   PLUGIN_IDENTIFIER,
-} from './constants';
+} from '../constants';
 
 const hexRgb = require('hex-rgb');
 
@@ -308,163 +308,6 @@ const deepCompare = (unmodifiedObject: Object, modifiedObject: Object) => {
 };
 
 /**
- * @description Reverse iterates the node tree to determine the immediate parent component instance
- * (if one exists) for the node.
- *
- * @kind function
- * @name findParentInstance
- *
- * @param {Object} node A Figma node object (`SceneNode`).
- *
- * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
- */
-const findParentInstance = (node: any) => {
-  let { parent } = node;
-  let currentNode = node;
-  let currentTopInstance: InstanceNode = null;
-
-  // return self if already typed as instance
-  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
-    currentTopInstance = currentNode;
-    return currentTopInstance;
-  }
-
-  if (parent) {
-    // return immediate parent if already typed as instance
-    if (parent.type === CONTAINER_NODE_TYPES.instance) {
-      currentTopInstance = parent;
-      return currentTopInstance;
-    }
-
-    // iterate until the parent is an instance
-    while (parent && parent.type !== CONTAINER_NODE_TYPES.instance) {
-      currentNode = parent;
-      if (currentNode.parent.type === CONTAINER_NODE_TYPES.instance) {
-        // update the top-most instance component with the current one
-        currentTopInstance = currentNode.parent;
-      }
-      parent = currentNode.parent;
-    }
-  }
-
-  return currentTopInstance;
-};
-
-/**
- * @description Takes a node object and traverses parent relationships until the top-level
- * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
- *
- * @kind function
- * @name findTopFrame
- * @param {Object} node A Figma node object.
- *
- * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
- */
-//
-const findTopFrame = (node: any) => {
-  let { parent } = node;
-
-  // if the parent is a page, we're done
-  if (parent && parent.type === 'PAGE') {
-    if (
-      (node.type === CONTAINER_NODE_TYPES.frame)
-      || (node.type === CONTAINER_NODE_TYPES.component)
-    ) {
-      return node;
-    }
-    return null;
-  }
-
-  // loop through each parent until we find the outermost FRAME
-  if (parent) {
-    while (parent && parent.parent.type !== 'PAGE') {
-      parent = parent.parent;
-    }
-  }
-  return parent;
-};
-
-/**
- * @description Reverse iterates the node tree to determine the top-level component instance
- * (if one exists) for the node. This allows you to easily find a Master Component when dealing
- * with an instance that may be nested within several component instances.
- *
- * @kind function
- * @name findTopInstance
- *
- * @param {Object} node A Figma node object (`SceneNode`).
- *
- * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
- */
-const findTopInstance = (node: any): InstanceNode => {
-  let { parent } = node;
-  let currentNode = node;
-  let currentTopInstance: InstanceNode = null;
-
-  // set first; top instance may be self
-  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
-    currentTopInstance = currentNode;
-  }
-
-  if (parent) {
-    // iterate until the parent is a page
-    while (parent && parent.type !== 'PAGE') {
-      currentNode = parent;
-      if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
-        // update the top-most main component with the current one
-        currentTopInstance = currentNode;
-      }
-      parent = parent.parent;
-    }
-  }
-
-  if (currentTopInstance) {
-    return currentTopInstance;
-  }
-  return null;
-};
-
-/**
- * @description Reverse iterates the node tree to determine the top-level component
- * (if one exists) for the node. This allows you to check if a node is part of a component.
- *
- * @kind function
- * @name findTopComponent
- *
- * @param {Object} node A Figma node object (`SceneNode`).
- *
- * @returns {Object} Returns the component (`ComponentNode`) or `null`.
- */
-const findTopComponent = (node: any) => {
-  // return self if component
-  if (node.type === CONTAINER_NODE_TYPES.component) {
-    return node;
-  }
-
-  let { parent } = node;
-  let currentNode = node;
-  let componentNode: ComponentNode = null;
-  if (parent) {
-    // iterate until the parent is a page or component is found;
-    // components cannot nest inside other components, so we can stop at the first
-    // found component
-    while (parent && parent.type !== 'PAGE' && componentNode === null) {
-      currentNode = parent;
-      if (currentNode.type === CONTAINER_NODE_TYPES.component) {
-        // update the top-most main component with the current one
-        componentNode = currentNode;
-      }
-      parent = parent.parent;
-    }
-  }
-
-  if (componentNode) {
-    return componentNode;
-  }
-  return null;
-};
-
-/**
  * @description Maps the nesting order of a node within the tree and then uses that “map”
  * as a guide to find the peer node within the an instance’s Master Component.
  *
@@ -553,6 +396,82 @@ const getNodeSettings = (page: any, nodeId: string) => {
 
   return nodeSettings;
 };
+
+/**
+ * @description Takes a node object and traverses parent relationships until the top-level
+ * `CONTAINER_NODE_TYPES.frame` node is found. Returns the frame node.
+ *
+ * @kind function
+ * @name findTopFrame
+ * @param {Object} node A Figma node object.
+ *
+ * @returns {Object} The top-level `CONTAINER_NODE_TYPES.frame` node.
+ */
+//
+const findTopFrame = (node: any) => {
+  let { parent } = node;
+
+  // if the parent is a page, we're done
+  if (parent && parent.type === 'PAGE') {
+    if (
+      (node?.type === CONTAINER_NODE_TYPES.frame)
+      || (node?.type === CONTAINER_NODE_TYPES.component)
+    ) {
+      return node;
+    }
+    return null;
+  }
+
+  // loop through each parent until we find the outermost FRAME
+  if (parent) {
+    while (parent && parent.parent.type !== 'PAGE') {
+      parent = parent.parent;
+    }
+  }
+  return parent;
+};
+
+
+/**
+ * @description Reverse iterates the node tree to determine the top-level component instance
+ * (if one exists) for the node. This allows you to easily find a Master Component when dealing
+ * with an instance that may be nested within several component instances.
+ *
+ * @kind function
+ * @name findTopInstance
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {Object} Returns the top component instance (`InstanceNode`) or `null`.
+ */
+const findTopInstance = (node: any): InstanceNode => {
+  let { parent } = node;
+  let currentNode = node;
+  let currentTopInstance: InstanceNode = null;
+
+  // set first; top instance may be self
+  if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+    currentTopInstance = currentNode;
+  }
+
+  if (parent) {
+    // iterate until the parent is a page
+    while (parent && parent.type !== 'PAGE') {
+      currentNode = parent;
+      if (currentNode.type === CONTAINER_NODE_TYPES.instance) {
+        // update the top-most main component with the current one
+        currentTopInstance = currentNode;
+      }
+      parent = parent.parent;
+    }
+  }
+
+  if (currentTopInstance) {
+    return currentTopInstance;
+  }
+  return null;
+};
+
 
 /**
  * @description A shared helper function to retrieve plugin data on a node from a
@@ -808,6 +727,7 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
 
   // load the typeface
   await figma.loadFontAsync(typefaceToUse);
+  await figma.loadFontAsync({ ...typefaceToUse, style: 'Regular' });
 
   return typefaceToUse;
 };
@@ -891,16 +811,37 @@ const toSentenceCase = (anyString: string): string => {
   return titleCaseString;
 };
 
+/**
+ * @description Takes a string and converts everything except for the first alpha-letter to
+ * lowercase. It also capitalizes the first alpha-letter.
+ *
+ * @kind function
+ * @name sortByPosition
+ *
+ * @param {Object} itemA First item for comparison.
+ * @param {Object} itemB Second item for comparison.
+ *
+ * @returns {string} The title-cased string.
+ */
+const sortByPosition = (itemA, itemB) => {
+  const aPosition = itemA.position;
+  const bPosition = itemB.position;
+  if (aPosition < bPosition) {
+    return -1;
+  }
+  if (aPosition > bPosition) {
+    return 1;
+  }
+  return 0;
+};
+
 export {
   asyncForEach,
   awaitUIReadiness,
   compareArrays,
   deepCompare,
   existsInArray,
-  findParentInstance,
   findTopFrame,
-  findTopInstance,
-  findTopComponent,
   getNodeSettings,
   getPeerPluginData,
   getRelativeIndex,
@@ -915,4 +856,5 @@ export {
   toSentenceCase,
   updateArray,
   updateNestedArray,
+  sortByPosition,
 };

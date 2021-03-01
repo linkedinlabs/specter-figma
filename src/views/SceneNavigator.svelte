@@ -10,10 +10,10 @@
       text: 'Keyboard',
       id: 'a11y-keyboard',
     },
-    // {
-    //   text: 'Labels',
-    //   id: 'a11y-labels',
-    // },
+    {
+      text: 'Labels',
+      id: 'a11y-labels',
+    },
     // {
     //   text: 'Headings',
     //   id: 'a11y-headings',
@@ -26,6 +26,7 @@
         action: 'setViewContext',
         payload: {
           newView,
+          skipDiff: true,
         },
       },
     }, '*');
