@@ -812,6 +812,25 @@ const toSentenceCase = (anyString: string): string => {
 };
 
 /**
+ * @description Takes UI view name and converts it to a stop type.
+ *
+ * @kind function
+ * @name getStopTypeFromView
+ * @param {string} viewName The name of the current UI view/tab content.
+ *
+ * @returns {string} The associated stop type.
+ */
+const getStopTypeFromView = (viewName) => {
+  if (viewName.includes('keyboard')) {
+    return 'keystop';
+  } else if (viewName.includes('label')) {
+    return 'label';
+  } else if (viewName.includes('heading')) {
+    return 'heading';
+  }
+}
+
+/**
  * @description Takes a string and converts everything except for the first alpha-letter to
  * lowercase. It also capitalizes the first alpha-letter.
  *
@@ -846,6 +865,7 @@ export {
   getPeerPluginData,
   getRelativeIndex,
   getRelativePosition,
+  getStopTypeFromView,
   hexToDecimalRgb,
   isInternal,
   isVisible,
@@ -853,8 +873,8 @@ export {
   matchMasterPeerNode,
   resizeGUI,
   setNodeSettings,
+  sortByPosition,
   toSentenceCase,
   updateArray,
   updateNestedArray,
-  sortByPosition,
 };

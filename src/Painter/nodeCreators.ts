@@ -335,8 +335,8 @@ const buildText = (
     | 'dimension'
     | 'keystop'
     | 'label'
+    | 'heading'
     | 'legend'
-    | 'legendIcon'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -376,7 +376,7 @@ const buildText = (
     text.textAlignHorizontal = 'LEFT';
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
     text.layoutAlign = 'INHERIT';
-  } else if (['label', 'legendIcon'].includes(type)) {
+  } else if (['label', 'heading'].includes(type)) {
     text.fontSize = 14;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
@@ -403,14 +403,14 @@ const buildText = (
  *
  * @param {string} align Indicates whether the frame should be left or right aligned.
  * @param {Object} color An object that represents a color in RGB decimal notation.
- * @param {string} type The type of annotation we are building.
+ * @param {boolean} isLegendIcon An indicator of whether this is for a legend icon.
  *
  * @returns {Object} The inner rectangle FrameNode for the annotation.
  */
 const buildRectangleInnerHalf = (
   align: 'left' | 'right',
   color: { r: number, g: number, b: number },
-  type: string,
+  isLegendIcon?: boolean,
 ): FrameNode => {
   // set inner half frames for label annotation
   const frame: FrameNode = figma.createFrame();
@@ -437,7 +437,7 @@ const buildRectangleInnerHalf = (
     color,
   }];
 
-  if (align === 'right' && type !== 'legendIcon') {
+  if (align === 'right' && !isLegendIcon) {
     // set rounded corners of the rectangle
     frame.topRightRadius = 3;
     frame.bottomRightRadius = 3;
@@ -465,11 +465,12 @@ const buildRectangle = (
     | 'dimension'
     | 'keystop'
     | 'label'
-    | 'legendIcon'
+    | 'heading'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
   innerText?: string,
+  isLegendIcon?: boolean,
 ): FrameNode => {
   // build base rectangle (used for most annotations)
   const rectangle: FrameNode = figma.createFrame();
@@ -525,11 +526,11 @@ const buildRectangle = (
     rectangle.itemSpacing = 1;
     rectangle.cornerRadius = 4;
     // rectangle.resize(42, 35);
-  } else if (['label', 'legendIcon'].includes(type)) {
+  } else if (['label', 'heading'].includes(type)) {
     rectangle.paddingLeft = 0;
     rectangle.paddingTop = 2;
     rectangle.paddingBottom = 2;
-    if (type === 'label') {
+    if (!isLegendIcon) {
       rectangle.paddingRight = 2;
       rectangle.cornerRadius = 4;
     } else {
@@ -541,9 +542,9 @@ const buildRectangle = (
     }
 
     // ----- set up inner halves content
-    const rectLeft: FrameNode = buildRectangleInnerHalf('left', hexToDecimalRgb(COLORS.label), type);
-    const rectRight: FrameNode = buildRectangleInnerHalf('right', hexToDecimalRgb('#ffffff'), type);
-    const textLeft: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), 'L');
+    const rectLeft: FrameNode = buildRectangleInnerHalf('left', hexToDecimalRgb(COLORS[type]), isLegendIcon);
+    const rectRight: FrameNode = buildRectangleInnerHalf('right', hexToDecimalRgb('#ffffff'), isLegendIcon);
+    const textLeft: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), type.slice(0, 1).toUpperCase());
     const textRight: TextNode = buildText(type, hexToDecimalRgb('#000000'), innerText);
 
     rectLeft.appendChild(textLeft);
@@ -579,16 +580,17 @@ const buildAnnotation = (options: {
     | 'dimension'
     | 'keystop'
     | 'label'
-    | 'legendIcon'
+    | 'heading'
     | 'spacing'
     | 'style',
+  isLegendIcon?: boolean,
 }): {
   diamond: PolygonNode,
   rectangle: FrameNode,
   text: TextNode,
   icon: FrameNode,
 } => {
-  const { mainText, secondaryText, type } = options;
+  const { mainText, secondaryText, type, isLegendIcon } = options;
   const colorHex: string = COLORS[type];
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
   let icon: FrameNode = null;
@@ -596,13 +598,13 @@ const buildAnnotation = (options: {
   let text: TextNode = null;
   let innerText: string = '';
 
-  if (['label', 'legendIcon'].includes(type)) {
+  if (['label', 'heading'].includes(type)) {
     innerText = mainText;
   }
 
-  const rectangle: FrameNode = buildRectangle(type, color, innerText);
+  const rectangle: FrameNode = buildRectangle(type, color, innerText, isLegendIcon);
 
-  if (type !== 'legendIcon') {
+  if (!isLegendIcon) {
     diamond = figma.createPolygon();
     diamond.name = 'Diamond';
     diamond.resize(10, 6);
@@ -877,6 +879,24 @@ const getLegendLabelText = (labels, labelName) => {
 };
 
 /**
+ * @description Gets the text to display for legend entries.
+ *
+ * @kind function
+ * @name getLegendHeadingText
+ *
+ * @param {Object} heading The entry's heading data.
+ *
+ * @returns {Array} Returns the formatted field data to be used in the legend entry.
+ */
+const getLegendHeadingText = (heading) => {
+  const { visible, hiddenText } = heading || {};
+  if (hiddenText) {
+    return `"${hiddenText}"`;
+  }
+  return visible ? 'n/a' : 'undefined';
+};
+
+/**
  * @description Builds the initial legend frame for label annotation legend items.
  *
  * @kind function
@@ -886,53 +906,71 @@ const getLegendLabelText = (labels, labelName) => {
  *
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
-const getLegendEntryFields = (data) => {
-  const { role, labels } = data;
+const getLegendEntryFields = (type, data) => {
+  const { role, labels, heading } = data;
   let fields;
 
-  if (role === 'image-decorative') {
+  if (type === 'label') {
+    if (role === 'image-decorative') {
+      fields = [
+        {
+          name: 'Role',
+          val: 'Image (decorative)',
+        },
+      ];
+    } else if (role === 'image') {
+      fields = [
+        {
+          name: 'Role',
+          val: 'Image',
+        },
+        {
+          name: 'Alt text',
+          val: getLegendLabelText(labels, 'alt'),
+        },
+      ];
+    } else if (role && role !== 'no-role') {
+      fields = [
+        {
+          name: 'Role',
+          val: role.charAt(0).toUpperCase() + role.slice(1),
+        },
+        {
+          name: 'Visible label',
+          val: labels?.visible ? 'Yes' : 'No',
+        },
+        {
+          name: 'A11y label',
+          val: getLegendLabelText(labels, 'a11y'),
+        },
+      ];
+    } else if (!role || role === 'no-role') {
+      fields = [
+        {
+          name: 'Visible label',
+          val: labels?.visible ? 'Yes' : 'No',
+        }, {
+          name: 'A11y label',
+          val: getLegendLabelText(labels, 'a11y'),
+        },
+      ];
+    }
+  } else {
     fields = [
       {
         name: 'Role',
-        val: 'Image (decorative)',
-      },
-    ];
-  } else if (role === 'image') {
-    fields = [
-      {
-        name: 'Role',
-        val: 'Image',
-      },
-      {
-        name: 'Alt text',
-        val: getLegendLabelText(labels, 'alt'),
-      },
-    ];
-  } else if (role && role !== 'no-role') {
-    fields = [
-      {
-        name: 'Role',
-        val: role.charAt(0).toUpperCase() + role.slice(1),
-      },
-      {
-        name: 'Visible label',
-        val: labels?.visible ? 'Yes' : 'No',
-      },
-      {
-        name: 'A11y label',
-        val: getLegendLabelText(labels, 'a11y'),
-      },
-    ];
-  } else if (!role || role === 'no-role') {
-    fields = [
-      {
-        name: 'Visible label',
-        val: labels?.visible ? 'Yes' : 'No',
+        val: 'Heading',
       }, {
-        name: 'A11y label',
-        val: getLegendLabelText(labels, 'a11y'),
+        name: 'Heading level',
+        val: heading?.level || 'n/a',
+      }, {
+        name: 'Visible',
+        val: heading?.visible ? 'Yes' : 'No',
+      }, {
+        name: 'Hidden heading',
+        val: getLegendHeadingText(heading),
       },
-    ];
+    ]
   }
   return fields;
 };
@@ -948,14 +986,15 @@ const getLegendEntryFields = (data) => {
  *
  * @returns {Object} The final legend after positioning.
  */
-const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
+const buildLegendEntry = (type: PluginStopType, nodeData: any, text: string) => {
   const legendItem: FrameNode = figma.createFrame();
-  legendItem.name = `L${text} Annotation`;
+  legendItem.name = `${type.slice(0, 1).toUpperCase()}${text} Annotation`;
 
   const iconElements = buildAnnotation({
     mainText: text,
     secondaryText: null,
-    type: 'legendIcon',
+    type,
+    isLegendIcon: true
   });
   const icon: FrameNode = figma.createFrame();
 
@@ -1000,13 +1039,13 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
   legendData.resize(300, legendData.height);
   legendData.fills = [{
     type: 'SOLID',
-    color: hexToDecimalRgb(COLORS.label),
+    color: hexToDecimalRgb(COLORS[type]),
   }];
 
-  const fields = getLegendEntryFields(nodeData);
+  const fields = getLegendEntryFields(type, nodeData);
   fields.forEach(({ name, val }, index) => {
     const line: FrameNode = figma.createFrame();
-    line.name = `${name} label`;
+    line.name = `${name} field`;
     line.layoutMode = 'HORIZONTAL';
     line.primaryAxisSizingMode = 'FIXED';
     line.primaryAxisAlignItems = 'MIN';
@@ -1019,8 +1058,8 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
     line.paddingBottom = 2;
     line.itemSpacing = 5;
 
-    const labelTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
-    const labelValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
+    const fieldTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
+    const fieldValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
 
     if (index === 0) {
       line.topRightRadius = 5;
@@ -1030,8 +1069,8 @@ const buildLegendEntry = (nodeData: PluginViewObject, text: string) => {
       line.bottomRightRadius = 5;
     }
 
-    line.appendChild(labelTitle);
-    line.appendChild(labelValue);
+    line.appendChild(fieldTitle);
+    line.appendChild(fieldValue);
     legendData.appendChild(line);
   });
 
@@ -1087,6 +1126,7 @@ const positionAnnotation = (
     | 'dimension'
     | 'keystop'
     | 'label'
+    | 'heading'
     | 'spacing'
     | 'style' = 'component',
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
@@ -1256,7 +1296,7 @@ const positionAnnotation = (
       placementY = nodeY - rectangle.height - offsetY;
   }
 
-  if (['keystop', 'label'].includes(annotationType)) {
+  if (['keystop', 'label', 'heading'].includes(annotationType)) {
     if ((nodeWidth - 100) > rectangle.width) {
       placementX = nodeX + 10;
     }

@@ -1177,8 +1177,8 @@ export default class Painter {
       annotationNode.y = initialY;
     }
 
-    if (type === 'label') {
-      legendNode = buildLegendEntry(nodeData, annotationText);
+    if (['label', 'heading'].includes(type)) {
+      legendNode = buildLegendEntry(type, nodeData, annotationText);
       this.addEntryToLegend(legendNode);
     }
 

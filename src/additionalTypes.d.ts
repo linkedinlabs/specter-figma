@@ -6,12 +6,18 @@ declare global {
 
   type PluginLabelRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
-  type PluginStopType = 'keystop' | 'label';
+  type PluginStopType = 'keystop' | 'label' | 'heading';
 
   type PluginAriaLabels = {
-    a11y: null,
-    visible: false,
-    alt: null,
+    a11y: string,
+    visible: boolean,
+    alt: string,
+  }
+
+  type PluginHeading = {
+    level: string,
+    visible: boolean,
+    hiddenText: string
   }
 
   type PluginNodePosition = {
@@ -68,6 +74,7 @@ declare global {
     isSelected: boolean,
     keys?: Array<PluginKeystopKeys>,
     labels?: PluginAriaLabels,
+    heading?: PluginHeading,
     name: string,
     position: number | string,
     role?: PluginLabelRole,

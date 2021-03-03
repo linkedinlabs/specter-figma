@@ -5,6 +5,7 @@
   import ButtonAddStop from './forms-controls/ButtonAddStop';
   import ItemExpandedContentKeystops from './ItemExpandedContentKeystops';
   import ItemExpandedContentLabels from './ItemExpandedContentLabels';
+  import ItemExpandedContentHeadings from './ItemExpandedContentHeadings';
   import ItemHeader from './ItemHeader';
 
   // props
@@ -309,6 +310,15 @@
               labels={item.labels}
               role={item.role}
               roleOptions={roleOptions}
+              type={type}
+              on:handleUpdate={() => {}}
+            />
+            {:else if (type === 'a11y-headings')}
+            <ItemExpandedContentHeadings
+              itemId={item.id}
+              isSelected={item.isSelected}
+              labels={item.labels}
+              heading={item.heading}
               type={type}
               on:handleUpdate={() => {}}
             />

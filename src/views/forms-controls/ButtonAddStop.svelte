@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-
+  import { getStopTypeFromView } from '../../utils/tools';
   import ButtonAction from './ButtonAction';
 
   // props
@@ -9,6 +9,19 @@
   export let type = null;
 
   const dispatch = createEventDispatcher();
+
+  const addStopAnnotation = () => {
+    let stopType = getStopTypeFromView(type);
+
+    parent.postMessage({
+      pluginMessage: {
+        action: 'a11y-add-stop',
+        payload: {
+          type: stopType
+        },
+      },
+    }, '*');
+  };
 
   const setTextLabel = (currentType) => {
     let textLabel = '';
@@ -31,7 +44,7 @@
 </script>
 
 <ButtonAction
-  on:handleAction={() => dispatch('handleAction', `${type}-add-stop`)}
+  on:handleAction={() => addStopAnnotation()}
   action="corners"
   className={`add-stop ${type}`}
   disabled={disabled}

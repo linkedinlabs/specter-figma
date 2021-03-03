@@ -556,6 +556,9 @@ const diffChanges = (
   const labelTracking: Array<PluginNodeTrackingData> = JSON.parse(
     page.getPluginData(DATA_KEYS.labelAnnotations) || '[]',
   );
+  // const headingTracking: Array<PluginNodeTrackingData> = JSON.parse(
+  //   page.getPluginData(DATA_KEYS.headingAnnotations) || '[]',
+  // );
   const refreshOptions = {
     page,
     messenger,
@@ -563,6 +566,7 @@ const diffChanges = (
   };
   refreshAnnotations('keystop', { ...refreshOptions, trackingData: keystopTracking });
   refreshAnnotations('label', { ...refreshOptions, trackingData: labelTracking });
+  // refreshAnnotations('heading', { ...refreshOptions, trackingData: headingTracking });
 
   // find nodes/annotations that no longer match their topFrame and repair
   const topFrameNodes = new Crawler({ for: selection }).topFrames();
@@ -575,6 +579,7 @@ const diffChanges = (
     };
     repairBrokenAnnotationLinks('keystop', { ...repairOptions, trackingData: keystopTracking });
     repairBrokenAnnotationLinks('label', { ...repairOptions, trackingData: labelTracking });
+    // repairBrokenAnnotationLinks('heading', { ...repairOptions, trackingData: headingTracking });
   });
 
   return null;
@@ -709,6 +714,7 @@ const getStopData = (
   labels?: PluginAriaLabels,
   position: number,
   role?: PluginLabelRole,
+  heading?: PluginHeading,
 } => {
   // set up keystop blank
   const nodePositionData: {
@@ -717,19 +723,22 @@ const getStopData = (
     labels?: PluginAriaLabels,
     position: number,
     role?: PluginLabelRole,
+    heading?: PluginHeading,
   } = {
     hasStop: false,
     keys: null,
     labels: null,
     position: null,
     role: null,
+    heading: null,
   };
 
   // find data for selected node
   const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
+  console.log('nodeData: ', nodeData);
 
   // set data for each field (will only set what it grabs based on type)
-  ['keys', 'role', 'labels'].forEach((property) => {
+  ['keys', 'role', 'labels', 'heading'].forEach((property) => {
     // temporary workaround for 'none' issue
     if (nodeData[property] && !(property === 'role' && nodeData[property] === 'none')) {
       nodePositionData[property] = nodeData[property];
@@ -1592,6 +1601,51 @@ export default class App {
   }
 
   /**
+   * @description Retrieves a node based on the supplied `id` and updates the 'heading'
+   * based on input from the UI.
+   *
+   * @kind function
+   * @name updateNodeDataHeading
+   *
+   * @param {string} nodeId The unique ID of the node whose data we're updating.
+   * the `nodeData` object.
+   * @param {number} level The heading level we're updating to.
+   *
+   * @returns {null}
+   */
+  updateNodeDataHeading(
+    options: {
+      id: string,
+      heading?: PluginHeading
+    }
+  ) {
+    const { id, heading } = options;
+    const node: BaseNode = figma.getNodeById(id);
+
+    if (node) {
+      const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.headingNodeData) || null);
+      if (nodeData) {
+        nodeData.heading = heading;
+        node.setPluginData(
+          DATA_KEYS.headingNodeData,
+          JSON.stringify(nodeData),
+        );
+        
+        // repaint the node in the legend with the updated data
+        this.annotateStops('heading', [node as SceneNode]);
+      }
+    }
+
+    // close or refresh UI
+    if (this.shouldTerminate) {
+      this.closeOrReset();
+    } else {
+      App.refreshGUI();
+    }
+    return null;
+  }
+
+  /**
    * @description Retrieves a node based on the supplied `id` and uses the `position` to update
    * the node’s stop annotation. Any annotations in the top frame with new numbers are
    * re-painted.
@@ -1797,13 +1851,20 @@ export default class App {
       isSelected: boolean,
       keys?: Array<PluginKeystopKeys>,
       role?: PluginLabelRole,
-      labels?: PluginAriaLabels
+      labels?: PluginAriaLabels,
+      heading?: PluginHeading
     }> = [];
 
+    const isA11yTab = currentView.includes('a11y-');
+
     // specific to `a11y-keyboard` and `a11y-labels`
-    if ((currentView === 'a11y-keyboard') || (currentView === 'a11y-labels')) {
-      const type = currentView === 'a11y-keyboard' ? 'keystop' : 'label';
+    if (isA11yTab) {
+      let type: PluginStopType = 'heading';
+      if (['a11y-keyboard', 'a11y-labels'].includes(currentView)) {
+        type = currentView.includes('keyboard') ? 'keystop' : 'label';
+      }
       nodes = getOrderedStopNodes(type, selection, false);
+
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
@@ -1812,6 +1873,7 @@ export default class App {
           keys,
           role,
           labels,
+          heading,
           position,
         } = getStopData(type, node);
 
@@ -1824,10 +1886,12 @@ export default class App {
           keys,
           role,
           labels,
+          heading,
           position: displayPosition,
         };
 
         items.push(viewObject);
+        console.log('item compiling: ', items)
       });
     } else {
       nodes.forEach((node: SceneNode) => {
@@ -1855,13 +1919,7 @@ export default class App {
     });
 
     // commit the calculated size (re-size the actual plugin frame)
-    if (
-      !isInfo
-      && (
-        !['a11y-keyboard', 'a11y-labels'].includes(currentView)
-        || (['a11y-keyboard', 'a11y-labels'].includes(currentView) && !items.length)
-      )
-    ) {
+    if (!isInfo && (!isA11yTab || isA11yTab && !items.length)) {
       figma.ui.resize(
         width,
         height,

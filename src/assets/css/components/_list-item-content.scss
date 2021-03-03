@@ -74,7 +74,8 @@
       @include list-item-content-keyboard;
     }
 
-    &.a11y-labels {
+    &.a11y-labels,
+    &.a11y-headings {
       @include list-item-content-labels;
     }
   }

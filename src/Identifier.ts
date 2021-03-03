@@ -833,6 +833,7 @@ export default class Identifier {
       keys?: Array<PluginKeystopKeys>,
       labels?: PluginAriaLabels,
       role?: string,
+      heading?: PluginHeading,
     } = JSON.parse(this.node.getPluginData(nodeDataType) || null);
 
     // set `annotationText` data on the node
@@ -856,6 +857,9 @@ export default class Identifier {
     }
     if (!nodeData.role && peerNodeData?.role) {
       nodeData.role = peerNodeData.role;
+    }
+    if (!nodeData.heading && peerNodeData?.heading) {
+      nodeData.heading = peerNodeData.heading;
     }
 
     // commit the updated data
