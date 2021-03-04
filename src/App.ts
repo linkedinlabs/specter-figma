@@ -735,7 +735,6 @@ const getStopData = (
 
   // find data for selected node
   const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
-  console.log('nodeData: ', nodeData);
 
   // set data for each field (will only set what it grabs based on type)
   ['keys', 'role', 'labels', 'heading'].forEach((property) => {
@@ -1607,17 +1606,15 @@ export default class App {
    * @kind function
    * @name updateNodeDataHeading
    *
-   * @param {string} nodeId The unique ID of the node whose data we're updating.
-   * the `nodeData` object.
-   * @param {number} level The heading level we're updating to.
+   * @param {Object} options The unique ID of the node and the value for heading.
    *
    * @returns {null}
    */
   updateNodeDataHeading(
     options: {
       id: string,
-      heading?: PluginHeading
-    }
+      heading?: PluginHeading,
+    },
   ) {
     const { id, heading } = options;
     const node: BaseNode = figma.getNodeById(id);
@@ -1630,7 +1627,7 @@ export default class App {
           DATA_KEYS.headingNodeData,
           JSON.stringify(nodeData),
         );
-        
+
         // repaint the node in the legend with the updated data
         this.annotateStops('heading', [node as SceneNode]);
       }
@@ -1834,6 +1831,7 @@ export default class App {
       page,
       selection,
     };
+
     if (runDiff) {
       diffChanges(diffChangesOptions);
     }
@@ -1855,10 +1853,11 @@ export default class App {
       heading?: PluginHeading
     }> = [];
 
+    const firstTopFrame = findTopFrame(selection[0]);
+    const singleTopFrame = !selection.find(node => findTopFrame(node) !== firstTopFrame);
     const isA11yTab = currentView.includes('a11y-');
 
-    // specific to `a11y-keyboard` and `a11y-labels`
-    if (isA11yTab) {
+    if (isA11yTab && singleTopFrame) {
       let type: PluginStopType = 'heading';
       if (['a11y-keyboard', 'a11y-labels'].includes(currentView)) {
         type = currentView.includes('keyboard') ? 'keystop' : 'label';
@@ -1891,9 +1890,8 @@ export default class App {
         };
 
         items.push(viewObject);
-        console.log('item compiling: ', items)
       });
-    } else {
+    } else if (!isA11yTab) {
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const viewObject = {
@@ -1919,7 +1917,7 @@ export default class App {
     });
 
     // commit the calculated size (re-size the actual plugin frame)
-    if (!isInfo && (!isA11yTab || isA11yTab && !items.length)) {
+    if (!isInfo && (!isA11yTab || (isA11yTab && !items.length))) {
       figma.ui.resize(
         width,
         height,

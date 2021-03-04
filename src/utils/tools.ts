@@ -409,7 +409,7 @@ const getNodeSettings = (page: any, nodeId: string) => {
  */
 //
 const findTopFrame = (node: any) => {
-  let { parent } = node;
+  let { parent } = node || {};
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
@@ -821,14 +821,16 @@ const toSentenceCase = (anyString: string): string => {
  * @returns {string} The associated stop type.
  */
 const getStopTypeFromView = (viewName) => {
+  let type;
   if (viewName.includes('keyboard')) {
-    return 'keystop';
+    type = 'keystop';
   } else if (viewName.includes('label')) {
-    return 'label';
+    type = 'label';
   } else if (viewName.includes('heading')) {
-    return 'heading';
+    type = 'heading';
   }
-}
+  return type;
+};
 
 /**
  * @description Takes a string and converts everything except for the first alpha-letter to

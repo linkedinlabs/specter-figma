@@ -455,6 +455,7 @@ const buildRectangleInnerHalf = (
  * @param {string} type The type of annotation the rectange will be used in.
  * @param {Object} color An object representing a color in RGB decimal notation.
  * @param {string} innerText An optional string to accept inner rectangle text for labels.
+ * @param {boolean} isLegendIcon A flag indicating whether the rectangle is for a legend icon.
  *
  * @returns {Object} The rectangle FrameNode.
  */
@@ -590,7 +591,12 @@ const buildAnnotation = (options: {
   text: TextNode,
   icon: FrameNode,
 } => {
-  const { mainText, secondaryText, type, isLegendIcon } = options;
+  const {
+    mainText,
+    secondaryText,
+    type,
+    isLegendIcon,
+  } = options;
   const colorHex: string = COLORS[type];
   const color: { r: number, g: number, b: number } = hexToDecimalRgb(colorHex);
   let icon: FrameNode = null;
@@ -902,7 +908,8 @@ const getLegendHeadingText = (heading) => {
  * @kind function
  * @name getLegendEntryFields
  *
- * @param {Array} data The node's role and label data to format and include in the legend entry.
+ * @param {string} type The type of the legend entry we're building.
+ * @param {Object} data The node's data to format and include in the legend entry.
  *
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
@@ -958,9 +965,6 @@ const getLegendEntryFields = (type, data) => {
   } else {
     fields = [
       {
-        name: 'Role',
-        val: 'Heading',
-      }, {
         name: 'Heading level',
         val: heading?.level || 'n/a',
       }, {
@@ -970,7 +974,7 @@ const getLegendEntryFields = (type, data) => {
         name: 'Hidden heading',
         val: getLegendHeadingText(heading),
       },
-    ]
+    ];
   }
   return fields;
 };
@@ -981,6 +985,7 @@ const getLegendEntryFields = (type, data) => {
  * @kind function
  * @name buildLegendEntry
  *
+ * @param {string} type The type of annotation the legend entry represents.
  * @param {Object} nodeData The note data to be rendered in the legend.
  * @param {string} text The name/main text of the annotation.
  *
@@ -994,7 +999,7 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any, text: string) => 
     mainText: text,
     secondaryText: null,
     type,
-    isLegendIcon: true
+    isLegendIcon: true,
   });
   const icon: FrameNode = figma.createFrame();
 

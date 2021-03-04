@@ -73,16 +73,16 @@ const dispatcher = async (action: {
         break;
       }
       case 'a11y-remove-stop': {
-        const { id, type } = payload;
+        const { id } = payload;
         if (id) {
-          await app.removeStopAnnotation(type, id);
+          await app.removeStopAnnotation(payload.type, id);
         }
         break;
       }
       case 'a11y-update-stop': {
-        const { id, position, type } = payload;
+        const { id, position } = payload;
         if (id) {
-          await app.updateStopAnnotation(type, id, position);
+          await app.updateStopAnnotation(payload.type, id, position);
         }
         break;
       }
@@ -99,7 +99,6 @@ const dispatcher = async (action: {
         await app.updateNodeDataLabels('role', payload);
         break;
       case 'a11y-headings-set-heading':
-        console.log(payload)
         await app.updateNodeDataHeading(payload);
         break;
       case 'annotate':
