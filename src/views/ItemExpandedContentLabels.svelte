@@ -39,7 +39,7 @@
     if (originalLabels[key] !== newLabels[key]) {
       parent.postMessage({
         pluginMessage: {
-          action: `${type}-set-text`,
+          action: `${type}-set-labels`,
           payload: {
             id: itemId,
             labels: newLabels,

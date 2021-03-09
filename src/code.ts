@@ -92,7 +92,7 @@ const dispatcher = async (action: {
       case 'a11y-keyboard-remove-key':
         await app.updateNodeDataKeys(payload, true);
         break;
-      case 'a11y-labels-set-text':
+      case 'a11y-labels-set-labels':
         await app.updateNodeDataLabels('labels', payload);
         break;
       case 'a11y-labels-set-role':

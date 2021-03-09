@@ -17,7 +17,7 @@ declare global {
   type PluginHeading = {
     level: string,
     visible: boolean,
-    hiddenText: string
+    invisible: string
   }
 
   type PluginNodePosition = {

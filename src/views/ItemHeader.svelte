@@ -4,7 +4,7 @@
     beforeUpdate,
     createEventDispatcher,
   } from 'svelte';
-  import { getStopTypeFromView } from '../utils/tools.ts';
+  import { getStopTypeFromView } from '../utils/tools';
   import ButtonOpenClose from './forms-controls/ButtonOpenClose';
   import FormUnit from './forms-controls/FormUnit';
 
@@ -49,7 +49,7 @@
       placeholder: '0',
     };
 
-    if (currentItemType === 'a11y-labels') {
+    if (['a11y-labels', 'a11y-headings'].includes(currentItemType)) {
       options.className = 'form-row alpha-position';
       options.inputType = 'text';
       options.placeholder = 'a';
@@ -72,7 +72,7 @@
     if (sendPositionUpdate) {
       parent.postMessage({
         pluginMessage: {
-          action: `a11y-update-stop`,
+          action: 'a11y-update-stop',
           payload: {
             id: itemId,
             position: newPosition,

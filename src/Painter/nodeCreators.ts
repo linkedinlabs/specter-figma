@@ -885,24 +885,6 @@ const getLegendLabelText = (labels, labelName) => {
 };
 
 /**
- * @description Gets the text to display for legend entries.
- *
- * @kind function
- * @name getLegendHeadingText
- *
- * @param {Object} heading The entry's heading data.
- *
- * @returns {Array} Returns the formatted field data to be used in the legend entry.
- */
-const getLegendHeadingText = (heading) => {
-  const { visible, hiddenText } = heading || {};
-  if (hiddenText) {
-    return `"${hiddenText}"`;
-  }
-  return visible ? 'n/a' : 'undefined';
-};
-
-/**
  * @description Builds the initial legend frame for label annotation legend items.
  *
  * @kind function
@@ -966,15 +948,18 @@ const getLegendEntryFields = (type, data) => {
     fields = [
       {
         name: 'Heading level',
-        val: heading?.level || 'n/a',
+        val: (heading?.level !== 'no-level' && heading?.level) || 'n/a',
       }, {
         name: 'Visible',
         val: heading?.visible ? 'Yes' : 'No',
-      }, {
-        name: 'Hidden heading',
-        val: getLegendHeadingText(heading),
       },
     ];
+    if (!heading?.visible) {
+      fields.push({
+        name: 'Heading',
+        val: heading?.invisible ? `"${heading.invisible}"` : 'undefined',
+      });
+    }
   }
   return fields;
 };

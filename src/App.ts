@@ -1627,10 +1627,10 @@ export default class App {
           DATA_KEYS.headingNodeData,
           JSON.stringify(nodeData),
         );
-
-        // repaint the node in the legend with the updated data
-        this.annotateStops('heading', [node as SceneNode]);
       }
+
+      // repaint the node in the legend with the updated data
+      this.annotateStops('heading', [node as SceneNode]);
     }
 
     // close or refresh UI

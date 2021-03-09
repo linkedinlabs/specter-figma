@@ -164,15 +164,18 @@
   };
 
   const isMissingData = (item) => {
+    const { labels, role, heading } = item;
+    let result = false;
     if (type.includes('labels') && item.role !== 'image-decorative') {
-      const { labels, role } = item;
-      return (
+      result = (
         !labels
         || (role === 'image' && !labels.alt)
         || (role !== 'image' && !(labels.a11y || labels.visible))
       );
+    } else if (type.includes('heading')) {
+      result = !heading || (!heading.visible && !heading.invisible);
     }
-    return false;
+    return result;
   };
 
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
@@ -317,7 +320,6 @@
             <ItemExpandedContentHeadings
               itemId={item.id}
               isSelected={item.isSelected}
-              labels={item.labels}
               heading={item.heading}
               type={type}
               on:handleUpdate={() => {}}
