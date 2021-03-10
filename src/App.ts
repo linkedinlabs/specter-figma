@@ -9,12 +9,14 @@ import {
   sortByPosition,
   findTopFrame,
   updateArray,
+  getStopTypeFromView,
 } from './utils/tools';
 import {
   getOrderedStopNodes,
 } from './utils/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 import { positionLegend } from './Painter/nodeCreators';
+import { types } from 'util';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -168,38 +170,41 @@ const checkLegendLinks = (
  * @returns {null}
  */
 const repairBrokenAnnotationLinks = (
-  type: PluginStopType,
   options: {
+    type: PluginStopType,
     isMercadoMode: boolean,
     messenger: any,
     page: PageNode,
     frame: FrameNode,
+    nodes: Array<SceneNode>,
     trackingData: Array<PluginNodeTrackingData>,
   },
 ): void => {
   // ----- remove annotations with broken links
   const {
+    type,
     isMercadoMode,
     page,
-    messenger,
     frame,
+    nodes,
+    messenger,
     trackingData,
   } = options;
 
-  const frameNodes = new Crawler({ for: [frame] }).all();
   const list = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
-
+  
   if (list?.length) {
+    
     let updatesMade = false;
-
-    const nodeLinks = frameNodes.reduce((acc, node) => {
+    
+    const nodeLinks = nodes.reduce((acc, node) => {
       const linkId = JSON.parse(node.getPluginData(DATA_KEYS[`${type}LinkId`]) || null);
       if (linkId?.role) {
         acc[`${linkId.role}Roles`].push({ id: linkId.id, node });
       }
       return acc;
     }, { annotationRoles: [], nodeRoles: [] });
-
+    
     nodeLinks.nodeRoles.forEach(({ id, node }) => {
       const trackingEntry = trackingData.find(({ linkId }) => linkId === id);
       if (
@@ -214,7 +219,7 @@ const repairBrokenAnnotationLinks = (
             linkAnnotation.node.remove();
             updatesMade = true;
           }
-
+          
           // find the index of a pre-existing `id` match on the array
           const index: number = list.findIndex(match => match.id === trackingEntry.id);
           if (index > -1) {
@@ -232,13 +237,13 @@ const repairBrokenAnnotationLinks = (
           nodesToReannotate.push(listEntry.id);
         }
       });
-
+      
       // reset the list
       frame.setPluginData(
         DATA_KEYS[`${type}List`],
         JSON.stringify([]),
       );
-
+      
       // iterate nodes to re-assign and re-paint
       nodesToReannotate.forEach((nodeId: string) => {
         // need to re-check for a node's existence since we are deleting as we go
@@ -251,11 +256,11 @@ const repairBrokenAnnotationLinks = (
             isMercadoMode,
             messenger,
           });
-
+          
           // get/set the stop info
           const identifierResult = identifier.getSetStop(type);
           messenger.handleResult(identifierResult, true);
-
+          
           if (identifierResult.status === 'success') {
             // set up Painter instance for the node
             const painter = new Painter({
@@ -263,7 +268,7 @@ const repairBrokenAnnotationLinks = (
               in: page,
               isMercadoMode,
             });
-
+            
             // re-draw the annotation
             const painterResult = painter.addStop(type);
             messenger.handleResult(painterResult, true);
@@ -272,7 +277,6 @@ const repairBrokenAnnotationLinks = (
       });
     }
   }
-
   return null;
 };
 
@@ -383,19 +387,20 @@ const fullCleanup = (
  * @returns {null}
  */
 const refreshAnnotations = (
-  type: PluginStopType,
   options: {
+    type: PluginStopType,
     isMercadoMode: boolean,
-    trackingData: Array<PluginNodeTrackingData>,
     messenger: any,
     page: PageNode,
+    trackingData: Array<PluginNodeTrackingData>,
   },
 ): void => {
   const {
+    type,
     isMercadoMode,
-    trackingData,
     messenger,
     page,
+    trackingData,
   } = options;
 
   let updatedTrackingData: Array<PluginNodeTrackingData> = trackingData;
@@ -524,14 +529,14 @@ const refreshAnnotations = (
  * annotation. If the node has not changed, but its annotation is missing, we re-paint it.
  *
  * @kind function
- * @name diffChanges
+ * @name diffAnnotationPositions
  *
  * @param {Object} options An options bundle that contains the current `selection`, current `page`,
  * an initiated `messenger`, and the `isMercadoMode` boolean.
  *
  * @returns {null}
  */
-const diffChanges = (
+const diffAnnotationPositions = (
   options: {
     isMercadoMode: boolean,
     messenger: any,
@@ -545,41 +550,21 @@ const diffChanges = (
     page,
     selection,
   } = options;
+  
+  const types: Array<PluginStopType> = ['keystop', 'label', 'heading'];
+  const frame = findTopFrame(selection[0]);
+  const nodes = new Crawler({ for: [frame] }).all();
 
-  // check the links between frames and legend frames (removes unsynced)
   checkLegendLinks(page);
 
   // re-draw broken/moved annotations and clean up orphaned
-  const keystopTracking: Array<PluginNodeTrackingData> = JSON.parse(
-    page.getPluginData(DATA_KEYS.keystopAnnotations) || '[]',
-  );
-  const labelTracking: Array<PluginNodeTrackingData> = JSON.parse(
-    page.getPluginData(DATA_KEYS.labelAnnotations) || '[]',
-  );
-  // const headingTracking: Array<PluginNodeTrackingData> = JSON.parse(
-  //   page.getPluginData(DATA_KEYS.headingAnnotations) || '[]',
-  // );
-  const refreshOptions = {
-    page,
-    messenger,
-    isMercadoMode,
-  };
-  refreshAnnotations('keystop', { ...refreshOptions, trackingData: keystopTracking });
-  refreshAnnotations('label', { ...refreshOptions, trackingData: labelTracking });
-  // refreshAnnotations('heading', { ...refreshOptions, trackingData: headingTracking });
+  types.forEach((type) => {
+    const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
+      page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
+    );
 
-  // find nodes/annotations that no longer match their topFrame and repair
-  const topFrameNodes = new Crawler({ for: selection }).topFrames();
-  topFrameNodes.forEach((topFrame: FrameNode) => {
-    const repairOptions = {
-      messenger,
-      isMercadoMode,
-      page,
-      frame: topFrame,
-    };
-    repairBrokenAnnotationLinks('keystop', { ...repairOptions, trackingData: keystopTracking });
-    repairBrokenAnnotationLinks('label', { ...repairOptions, trackingData: labelTracking });
-    // repairBrokenAnnotationLinks('heading', { ...repairOptions, trackingData: headingTracking });
+    refreshAnnotations({type, trackingData, page, messenger, isMercadoMode});
+    repairBrokenAnnotationLinks({type, trackingData, page, frame, nodes, messenger, isMercadoMode});
   });
 
   return null;
@@ -1509,12 +1494,9 @@ export default class App {
       // retrieve the node data
       const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
       if (nodeData) {
-        let keys: Array<PluginKeystopKeys> = [];
-        if (nodeData.keys) {
-          keys = nodeData.keys;
-        }
-
+        let keys: Array<PluginKeystopKeys> = nodeData?.keys || [];
         let newKeys: Array<PluginKeystopKeys> = keys;
+
         keys.forEach((keyEntry, index) => {
           if (keyEntry === key) {
             if (index > -1) {
@@ -1536,18 +1518,8 @@ export default class App {
           JSON.stringify(nodeData),
         );
       }
-
-      // repaint the node
       this.annotateStops('keystop', [node as SceneNode]);
     }
-
-    // close or refresh UI
-    if (this.shouldTerminate) {
-      this.closeOrReset();
-    } else {
-      App.refreshGUI();
-    }
-    return null;
   }
 
   /**
@@ -1585,18 +1557,9 @@ export default class App {
           JSON.stringify(nodeData),
         );
       }
-
       // repaint the node in the legend with the updated data
       this.annotateStops('label', [node as SceneNode]);
     }
-
-    // close or refresh UI
-    if (this.shouldTerminate) {
-      this.closeOrReset();
-    } else {
-      App.refreshGUI();
-    }
-    return null;
   }
 
   /**
@@ -1628,18 +1591,8 @@ export default class App {
           JSON.stringify(nodeData),
         );
       }
-
-      // repaint the node in the legend with the updated data
       this.annotateStops('heading', [node as SceneNode]);
     }
-
-    // close or refresh UI
-    if (this.shouldTerminate) {
-      this.closeOrReset();
-    } else {
-      App.refreshGUI();
-    }
-    return null;
   }
 
   /**
@@ -1803,28 +1756,19 @@ export default class App {
     } = options;
 
     // calculate UI size, based on view type and selection
-    let { width } = GUI_SETTINGS.default;
-    let { height } = GUI_SETTINGS.default;
-    switch (currentView) {
-      case 'general': {
-        if (isMercadoMode) {
-          width = GUI_SETTINGS.mercadoDefault.width;
-          height = GUI_SETTINGS.mercadoDefault.height;
-        }
-        break;
-      }
-      case 'a11y-headings':
-      case 'a11y-keyboard':
-      case 'a11y-labels':
-        width = GUI_SETTINGS.accessibilityDefault.width;
-        height = GUI_SETTINGS.accessibilityDefault.height;
-        break;
-      default:
-        return null;
+    let { width, height } = GUI_SETTINGS.default;
+    if (currentView === 'general' && isMercadoMode) {
+      width = GUI_SETTINGS.mercadoDefault.width;
+      height = GUI_SETTINGS.mercadoDefault.height;
+    } else if (currentView.includes('a11y')) {
+      width = GUI_SETTINGS.accessibilityDefault.width;
+      height = GUI_SETTINGS.accessibilityDefault.height;
+    } else {
+      return null;
     }
 
     // ---------- track and re-draw annotations for nodes that have moved/changed/damaged
-    // currently we only track/repair for Labels and Keystops
+    // currently we only track/repair for Labels, Keystops, and Headings
     const diffChangesOptions = {
       isMercadoMode,
       messenger,
@@ -1832,8 +1776,8 @@ export default class App {
       selection,
     };
 
-    if (runDiff) {
-      diffChanges(diffChangesOptions);
+    if (selection?.length && runDiff) {
+      diffAnnotationPositions(diffChangesOptions);
     }
 
     // ---------- set up selected items bundle for view
@@ -1858,10 +1802,7 @@ export default class App {
     const isA11yTab = currentView.includes('a11y-');
 
     if (isA11yTab && singleTopFrame) {
-      let type: PluginStopType = 'heading';
-      if (['a11y-keyboard', 'a11y-labels'].includes(currentView)) {
-        type = currentView.includes('keyboard') ? 'keystop' : 'label';
-      }
+      let type: PluginStopType = getStopTypeFromView(currentView);
       nodes = getOrderedStopNodes(type, selection, false);
 
       // this creates the view object of items that is passed over to GUI and used in the views
@@ -1952,7 +1893,7 @@ export default class App {
     } = assemble(figma);
 
     // can’t do anything without nodes to manipulate
-    if (!id && selection.length < 1) {
+    if (!id && !selection.length) {
       messenger.log(`Cannot remove ${type}; missing node ID(s)`, 'error');
     }
 
