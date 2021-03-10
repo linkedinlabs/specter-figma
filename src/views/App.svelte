@@ -55,7 +55,7 @@
       && !isUserInput
       && !isInfoPanel
       && (wasBodyHeight !== bodyHeight)
-      && (items.length > 0)
+      && (items.length)
     ) {
       parent.postMessage({
         pluginMessage: {

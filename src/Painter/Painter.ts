@@ -376,7 +376,8 @@ const setNodeInContainers = (nodeToContain: {
     page,
     type,
   } = nodeToContain;
-  const groupKey = setGroupKey(type);
+  const groupType = ['label', 'heading'].includes(type) ? 'keystop' : type;
+  const groupKey = setGroupKey(groupType);
   const frameId: string = frame.id;
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
@@ -430,7 +431,7 @@ const setNodeInContainers = (nodeToContain: {
 
     // create the `innerGroup`, if it does not exist
     if (!innerGroup) {
-      const ccgResult = createContainerGroup(updatedContainerSet, type, frame, node);
+      const ccgResult = createContainerGroup(updatedContainerSet, groupType, frame, node);
       innerGroup = ccgResult.newInnerGroup;
       updatedContainerSet = ccgResult.updatedContainerSet;
     }
@@ -1177,8 +1178,8 @@ export default class Painter {
       annotationNode.y = initialY;
     }
 
-    if (type === 'label') {
-      legendNode = buildLegendEntry(nodeData, annotationText);
+    if (['label', 'heading'].includes(type)) {
+      legendNode = buildLegendEntry(type, nodeData, annotationText);
       this.addEntryToLegend(legendNode);
     }
 
@@ -1191,7 +1192,7 @@ export default class Painter {
     | 'component'
     | 'custom'
     | 'dimension'
-    | 'keystop' // TKTK: potentially break labels out into own group
+    | 'keystop'
     | 'spacing'
     | 'style',
     });

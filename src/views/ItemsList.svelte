@@ -5,6 +5,7 @@
   import ButtonAddStop from './forms-controls/ButtonAddStop';
   import ItemExpandedContentKeystops from './ItemExpandedContentKeystops';
   import ItemExpandedContentLabels from './ItemExpandedContentLabels';
+  import ItemExpandedContentHeadings from './ItemExpandedContentHeadings';
   import ItemHeader from './ItemHeader';
 
   // props
@@ -163,15 +164,18 @@
   };
 
   const isMissingData = (item) => {
+    const { labels, role, heading } = item;
+    let result = false;
     if (type.includes('labels') && item.role !== 'image-decorative') {
-      const { labels, role } = item;
-      return (
+      result = (
         !labels
         || (role === 'image' && !labels.alt)
         || (role !== 'image' && !(labels.a11y || labels.visible))
       );
+    } else if (type.includes('heading')) {
+      result = !heading || (!heading.visible && !heading.invisible);
     }
-    return false;
+    return result;
   };
 
   const updateItemState = (itemId, operationType = 'toggleOpen', typeScope) => {
@@ -264,9 +268,9 @@
       headerName = name;
     } else if (role === 'image') {
       const secondaryText = alt ? `"${alt}"` : '(missing alt text)';
-      headerName = `${mainText}${secondaryText}`;
+      headerName = `${mainText} ${secondaryText}`;
     } else if (a11y) {
-      headerName = `${mainText}"${a11y}"`;
+      headerName = `${mainText} "${a11y}"`;
     } else if (!visible) {
       headerName = `${name} (missing label)`;
     }
@@ -309,6 +313,14 @@
               labels={item.labels}
               role={item.role}
               roleOptions={roleOptions}
+              type={type}
+              on:handleUpdate={() => {}}
+            />
+            {:else if (type === 'a11y-headings')}
+            <ItemExpandedContentHeadings
+              itemId={item.id}
+              isSelected={item.isSelected}
+              heading={item.heading}
               type={type}
               on:handleUpdate={() => {}}
             />

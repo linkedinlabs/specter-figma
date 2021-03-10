@@ -409,7 +409,7 @@ const getNodeSettings = (page: any, nodeId: string) => {
  */
 //
 const findTopFrame = (node: any) => {
-  let { parent } = node;
+  let { parent } = node || {};
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
@@ -812,6 +812,27 @@ const toSentenceCase = (anyString: string): string => {
 };
 
 /**
+ * @description Takes UI view name and converts it to a stop type.
+ *
+ * @kind function
+ * @name getStopTypeFromView
+ * @param {string} viewName The name of the current UI view/tab content.
+ *
+ * @returns {string} The associated stop type.
+ */
+const getStopTypeFromView = (viewName) => {
+  let type;
+  if (viewName.includes('keyboard')) {
+    type = 'keystop';
+  } else if (viewName.includes('label')) {
+    type = 'label';
+  } else if (viewName.includes('heading')) {
+    type = 'heading';
+  }
+  return type;
+};
+
+/**
  * @description Takes a string and converts everything except for the first alpha-letter to
  * lowercase. It also capitalizes the first alpha-letter.
  *
@@ -846,6 +867,7 @@ export {
   getPeerPluginData,
   getRelativeIndex,
   getRelativePosition,
+  getStopTypeFromView,
   hexToDecimalRgb,
   isInternal,
   isVisible,
@@ -853,8 +875,8 @@ export {
   matchMasterPeerNode,
   resizeGUI,
   setNodeSettings,
+  sortByPosition,
   toSentenceCase,
   updateArray,
   updateNestedArray,
-  sortByPosition,
 };

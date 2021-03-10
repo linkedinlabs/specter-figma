@@ -7,6 +7,6 @@
     <SpecterLogo/>
   </span>
   <span class="text">
-    To get started, select one or more layers…
+    Select one or more layers within the same frame
   </span>
 </aside>

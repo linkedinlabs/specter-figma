@@ -68,28 +68,21 @@ const dispatcher = async (action: {
   // run the action in the App class based on type
   const runAction = async (actionType: string) => {
     switch (actionType) {
-      case 'a11y-labels-add-stop':
-      case 'a11y-keyboard-add-stop': {
-        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-add-stop' ? 'keystop' : 'label';
-        await app.annotateStops(nodeType);
+      case 'a11y-add-stop': {
+        await app.annotateStops(payload.type);
         break;
       }
-      case 'a11y-labels-remove-stop':
-      case 'a11y-keyboard-remove-stop': {
+      case 'a11y-remove-stop': {
         const { id } = payload;
-        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-remove-stop' ? 'keystop' : 'label';
-
         if (id) {
-          await app.removeStopAnnotation(nodeType, id);
+          await app.removeStopAnnotation(payload.type, id);
         }
         break;
       }
-      case 'a11y-keyboard-update-stop':
-      case 'a11y-labels-update-stop': {
+      case 'a11y-update-stop': {
         const { id, position } = payload;
-        const nodeType: 'keystop' | 'label' = actionType === 'a11y-keyboard-update-stop' ? 'keystop' : 'label';
         if (id) {
-          await app.updateStopAnnotation(nodeType, id, position);
+          await app.updateStopAnnotation(payload.type, id, position);
         }
         break;
       }
@@ -99,11 +92,14 @@ const dispatcher = async (action: {
       case 'a11y-keyboard-remove-key':
         await app.updateNodeDataKeys(payload, true);
         break;
-      case 'a11y-labels-set-text':
+      case 'a11y-labels-set-labels':
         await app.updateNodeDataLabels('labels', payload);
         break;
       case 'a11y-labels-set-role':
         await app.updateNodeDataLabels('role', payload);
+        break;
+      case 'a11y-headings-set-heading':
+        await app.updateNodeDataHeading(payload);
         break;
       case 'annotate':
         app.annotateGeneral();

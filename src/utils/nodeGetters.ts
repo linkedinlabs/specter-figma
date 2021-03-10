@@ -172,15 +172,19 @@ const getAssignedChildNodes = (
       allowKeystopPassthrough,
       role,
       labels,
+      heading,
     } = getPeerPluginData(node) || {};
     const hasKeystopData = type === 'keystop' && hasKeystop;
     // 'none' ignore is a temp workaround for accidental setting in Stapler
     const hasLabelData = type === 'label'
     && (!['none', 'no-role', undefined, null].includes(role) || (role === 'no-role' && (labels?.visible || labels?.a11y)));
+    const hasHeadingData = type === 'heading'
+    && ((heading?.level && heading.level !== 'no-level') || heading?.visible || heading?.invisible);
+
 
     if (!existsInArray(currentList, node.id)
       && !existsInArray(list, node.id)
-      && (hasKeystopData || hasLabelData)
+      && (hasKeystopData || hasLabelData || hasHeadingData)
     ) {
       list.push(node);
       if (node.children && (type === 'keystop' && allowKeystopPassthrough)) {
