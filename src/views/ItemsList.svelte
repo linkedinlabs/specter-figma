@@ -268,9 +268,9 @@
       headerName = name;
     } else if (role === 'image') {
       const secondaryText = alt ? `"${alt}"` : '(missing alt text)';
-      headerName = `${mainText}${secondaryText}`;
+      headerName = `${mainText} ${secondaryText}`;
     } else if (a11y) {
-      headerName = `${mainText}"${a11y}"`;
+      headerName = `${mainText} "${a11y}"`;
     } else if (!visible) {
       headerName = `${name} (missing label)`;
     }
