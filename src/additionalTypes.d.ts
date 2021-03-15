@@ -14,7 +14,7 @@ declare global {
     alt: string,
   }
 
-  type PluginHeading = {
+  type PluginAriaHeading = {
     level: string,
     visible: boolean,
     invisible: string
@@ -47,20 +47,25 @@ declare global {
 
   type PluginFrameTrackingData = {
     id: string,
-    legendId: string,
+    legendId?: string,
     linkId: string,
     framePosition: PluginFramePosition,
   };
+
+  type PluginStopListData = {
+    id: string,
+    position: number,
+  }
   
   type PluginNodeLinkData = {
     id: string,
     role: 'annotation' | 'node' | 'legendItem',
   }
   
-    type PluginFrameLinkData = {
-      id: string,
-      role: 'frame' | 'legend',
-    }
+  type PluginFrameLinkData = {
+    id: string,
+    role: 'frame' | 'legend',
+  }
 
   type PluginOptions = {
     currentView: PluginViewTypes,
@@ -74,7 +79,7 @@ declare global {
     isSelected: boolean,
     keys?: Array<PluginKeystopKeys>,
     labels?: PluginAriaLabels,
-    heading?: PluginHeading,
+    heading?: PluginAriaHeading,
     name: string,
     position: number | string,
     role?: PluginLabelRole,

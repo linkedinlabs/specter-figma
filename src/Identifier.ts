@@ -793,15 +793,7 @@ export default class Identifier {
     }
 
     // get top frame stop list
-    const listDataType = DATA_KEYS[`${type}List`];
-    const frameKeystopListData = JSON.parse(topFrame.getPluginData(listDataType) || null);
-    let frameKeystopList: Array<{
-      id: string,
-      position: number,
-    }> = [];
-    if (frameKeystopListData) {
-      frameKeystopList = frameKeystopListData;
-    }
+    let frameKeystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
 
     // set new position based on list length
     // (we always assume `getSetKeystop` has been fed the node in order)
@@ -817,7 +809,7 @@ export default class Identifier {
 
       // set/update top frame stop list
       topFrame.setPluginData(
-        listDataType,
+        DATA_KEYS[`${type}List`],
         JSON.stringify(frameKeystopList),
       );
     }
@@ -825,28 +817,10 @@ export default class Identifier {
     // convert position to string
     const textToSet = `${positionToSet}`;
 
-    // retrieve the node data
-    const nodeDataType = DATA_KEYS[`${type}NodeData`];
-    let nodeData: {
-      annotationText: string,
-      annotationSecondaryText?: string,
-      keys?: Array<PluginKeystopKeys>,
-      labels?: PluginAriaLabels,
-      role?: string,
-      heading?: PluginHeading,
-    } = JSON.parse(this.node.getPluginData(nodeDataType) || null);
+    let nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
+    nodeData.annotationText = textToSet;
 
-    // set `annotationText` data on the node
-    if (!nodeData) {
-      nodeData = {
-        annotationText: textToSet,
-      };
-    } else {
-      nodeData.annotationText = textToSet;
-    }
-
-    // check for assigned keys, if none exist (`undefined` or `null`):
-    // this check will only happen if keys have never been attached to this stop.
+    // check for assigned data, if none exist (`undefined` or `null`):
     // if the component is updated after this stop has been altered, the updates will be ignored.
     const peerNodeData = getPeerPluginData(this.node);
     if (!nodeData.keys && peerNodeData?.keys) {
@@ -864,7 +838,7 @@ export default class Identifier {
 
     // commit the updated data
     this.node.setPluginData(
-      nodeDataType,
+      DATA_KEYS[`${type}NodeData`],
       JSON.stringify(nodeData),
     );
 

@@ -35,34 +35,23 @@
     resetValue = true;
   };
 
-  const updateLabel = (newLabels, key) => {
-    if (originalLabels[key] !== newLabels[key]) {
-      parent.postMessage({
-        pluginMessage: {
-          action: `${type}-set-labels`,
-          payload: {
-            id: itemId,
-            labels: newLabels,
+  const updateField = (key, value) => {
+    const diffValues = key === 'role' ? value !== originalRole
+      : Object.keys(value).find(prop => value[prop] !== originalLabels[prop]);
+    
+      if (diffValues) {
+        parent.postMessage({
+          pluginMessage: {
+            action: 'a11y-set-aria-data',
+            payload: {
+              id: itemId,
+              key,
+              value,
+            },
           },
-        },
-      }, '*');
-      handleReset();
-    }
-  };
-
-  const updateRole = (newRole) => {
-    if (originalRole !== newRole) {
-      parent.postMessage({
-        pluginMessage: {
-          action: `${type}-set-role`,
-          payload: {
-            id: itemId,
-            role: newRole,
-          },
-        },
-      }, '*');
-      handleReset();
-    }
+        }, '*');
+        handleReset();
+      }
   };
 
   beforeUpdate(() => {
@@ -103,7 +92,7 @@
         options={roleOptions}
         resetValue={resetValue}
         selectWatchChange={true}
-        on:saveSignal={() => updateRole(dirtyRole)}
+        on:saveSignal={() => updateField('role', dirtyRole)}
         bind:value={dirtyRole}
       />
     </span>
@@ -117,7 +106,7 @@
           placeholder="Short description of the scene"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel(dirtyLabels, 'alt')}
+          on:saveSignal={() => updateField('labels', dirtyLabels)}
           bind:value={dirtyLabels.alt}
         />
       {:else}
@@ -129,7 +118,7 @@
           placeholder="Leave empty to use a11y label"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
+          on:saveSignal={() => updateField('labels', dirtyLabels)}
           bind:value={dirtyLabels.visible}
         />
         <FormUnit
@@ -140,7 +129,7 @@
           placeholder="Leave empty to use visible label"
           resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel(dirtyLabels, 'a11y')}
+          on:saveSignal={() => updateField('labels', dirtyLabels)}
           bind:value={dirtyLabels.a11y}
         />
       {/if}

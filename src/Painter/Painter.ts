@@ -21,7 +21,7 @@ import {
   buildLegend,
   positionLegend,
   drawContainerGroup,
-} from './nodeCreators';
+} from './annotationBuilders';
 import { getLegendFrame } from '../utils/nodeGetters';
 
 const uuid = require('uuid-random');
@@ -312,7 +312,8 @@ export const createContainerGroup = (
 } => {
   const groupName: string = setGroupName(groupType);
   const groupKey: string = setGroupKey(groupType);
-  const locked: boolean = groupType === 'topLevel';
+  // const locked: boolean = groupType === 'topLevel';
+  const locked: boolean = false;
 
   // set up new container group node on the frame
   const newInnerGroup: GroupNode = drawContainerGroup({
@@ -1179,7 +1180,7 @@ export default class Painter {
     }
 
     if (['label', 'heading'].includes(type)) {
-      legendNode = buildLegendEntry(type, nodeData, annotationText);
+      legendNode = buildLegendEntry(type, nodeData);
       this.addEntryToLegend(legendNode);
     }
 

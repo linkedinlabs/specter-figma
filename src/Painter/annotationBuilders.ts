@@ -1,4 +1,5 @@
-import { COLORS } from '../constants';
+import { COLORS, DATA_KEYS } from '../constants';
+import { getLegendFrame } from '../utils/nodeGetters';
 import { hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -376,16 +377,19 @@ const buildText = (
     text.textAlignHorizontal = 'LEFT';
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
     text.layoutAlign = 'INHERIT';
+    text.locked = true;
   } else if (['label', 'heading'].includes(type)) {
     text.fontSize = 14;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
+    text.locked = true;
   } else if (type === 'legend') {
     text.fontSize = 12;
     text.lineHeight = { value: 135, unit: 'PERCENT' };
     text.textAlignVertical = 'TOP';
     text.textAlignHorizontal = 'LEFT';
     text.textCase = 'ORIGINAL';
+    text.locked = true;
     text.fontName = !characters.includes(':')
       ? { family: typefaceToUse.family, style: 'Regular' } : typefaceToUse;
     if (!characters.includes(':')) {
@@ -526,7 +530,6 @@ const buildRectangle = (
     rectangle.paddingBottom = 4;
     rectangle.itemSpacing = 1;
     rectangle.cornerRadius = 4;
-    // rectangle.resize(42, 35);
   } else if (['label', 'heading'].includes(type)) {
     rectangle.paddingLeft = 0;
     rectangle.paddingTop = 2;
@@ -951,13 +954,13 @@ const getLegendEntryFields = (type, data) => {
         val: (heading?.level !== 'no-level' && heading?.level) || 'n/a',
       }, {
         name: 'Visible',
-        val: heading?.visible ? 'Yes' : 'No',
+        val: !heading || heading?.visible ? 'Yes' : 'No',
       },
     ];
-    if (!heading?.visible) {
+    if (heading && !heading.visible) {
       fields.push({
         name: 'Heading',
-        val: heading?.invisible ? `"${heading.invisible}"` : 'undefined',
+        val: heading.invisible ? `"${heading.invisible}"` : 'undefined',
       });
     }
   }
@@ -976,12 +979,13 @@ const getLegendEntryFields = (type, data) => {
  *
  * @returns {Object} The final legend after positioning.
  */
-const buildLegendEntry = (type: PluginStopType, nodeData: any, text: string) => {
+const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
   const legendItem: FrameNode = figma.createFrame();
-  legendItem.name = `${type.slice(0, 1).toUpperCase()}${text} Annotation`;
+  const { annotationText } = nodeData;
+  legendItem.name = `${type.slice(0, 1).toUpperCase()}${annotationText} Annotation`;
 
   const iconElements = buildAnnotation({
-    mainText: text,
+    mainText: annotationText,
     secondaryText: null,
     type,
     isLegendIcon: true,
@@ -995,6 +999,7 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any, text: string) => 
   icon.counterAxisAlignItems = 'CENTER';
   icon.layoutAlign = 'INHERIT';
 
+  icon.name = 'Tag';
   icon.appendChild(iconElements.rectangle);
 
   legendItem.layoutMode = 'HORIZONTAL';
@@ -1032,7 +1037,20 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any, text: string) => 
     color: hexToDecimalRgb(COLORS[type]),
   }];
 
+  const fieldNodes = buildLegendFieldNodes(type, nodeData);
+  fieldNodes.forEach(field => legendData.appendChild(field));
+
+  legendItem.appendChild(icon);
+  legendItem.appendChild(legendData);
+  legendItem.locked = true;
+
+  return legendItem;
+};
+
+const buildLegendFieldNodes = (type, nodeData) => {
+  const nodes = [];
   const fields = getLegendEntryFields(type, nodeData);
+
   fields.forEach(({ name, val }, index) => {
     const line: FrameNode = figma.createFrame();
     line.name = `${name} field`;
@@ -1061,14 +1079,53 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any, text: string) => 
 
     line.appendChild(fieldTitle);
     line.appendChild(fieldValue);
-    legendData.appendChild(line);
+    nodes.push(line);
   });
 
-  legendItem.appendChild(icon);
-  legendItem.appendChild(legendData);
-  legendItem.locked = true;
+  return nodes;
+}
 
-  return legendItem;
+/**
+ * @description Sets up the individual elements for a container group (inner or outer) and
+ * adds the child node to the group.
+ *
+ * @kind function
+ * @name drawContainerGroup
+ *
+ * @param {Object} groupSettings Object containing the `name`, `position`,
+ * `child` and `parent` nodes, and `locked` status.
+ *
+ * @returns {Object} The container group node object.
+ * @private
+ */
+ const drawContainerGroup = (groupSettings: {
+  name: string,
+  position: {
+    x: number,
+    y: number,
+  },
+  parent: any,
+  child: any,
+  locked: boolean,
+}): GroupNode => {
+  const {
+    name,
+    position,
+    parent,
+    child,
+    locked,
+  } = groupSettings;
+
+  // set new group
+  const containerGroup: GroupNode = figma.group([child], parent);
+
+  // position, name, and lock new group
+  containerGroup.x = position.x;
+  containerGroup.y = position.y;
+  containerGroup.name = name;
+  containerGroup.locked = locked;
+
+  return containerGroup;
 };
 
 /**
@@ -1528,47 +1585,111 @@ const positionAnnotation = (
 };
 
 /**
- * @description Sets up the individual elements for a container group (inner or outer) and
- * adds the child node to the group.
+ * @description Redraws the legend when the annotation order has been rearranged.
  *
  * @kind function
- * @name drawContainerGroup
+ * @name refreshLegend
  *
- * @param {Object} groupSettings Object containing the `name`, `position`,
- * `child` and `parent` nodes, and `locked` status.
+ * @param {string} type The type of stops the legend is for.
+ * @param {string} frameId The id of the design frame the legend corresponds to.
+ * @param {Array} trackingData The up-to-date annotation tracking data.
+ * @param {Array} stopList The up-to-date reordered list of stops.
  *
- * @returns {Object} The container group node object.
- * @private
+ * @returns {undefined} 
+ * 
  */
-const drawContainerGroup = (groupSettings: {
-  name: string,
-  position: {
-    x: number,
-    y: number,
-  },
-  parent: any,
-  child: any,
-  locked: boolean,
-}): GroupNode => {
-  const {
-    name,
-    position,
-    parent,
-    child,
-    locked,
-  } = groupSettings;
+const refreshLegend = (
+  type: PluginStopType,
+  frameId: string,
+  trackingData: Array<PluginNodeTrackingData>,
+  stopList: Array<PluginStopListData>,
+) => {
+  const legend = getLegendFrame(frameId, figma.currentPage);
+  legend.children.forEach((child) => child.remove());
+  
+  stopList.forEach((item) => {
+    const node = figma.getNodeById(item.id);
+    const trackingIndex = trackingData.findIndex(({id}) => id === item.id);
+    if (node) {
+      const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]));
+      const legendItem = buildLegendEntry(type, nodeData);
+      
+      trackingData[trackingIndex].legendItemId = legendItem.id;
+      legendItem.setPluginData(DATA_KEYS[`${type}LinkId`], JSON.stringify({
+        role: 'legendItem', 
+        id: trackingData[trackingIndex].linkId,
+      }))
+      legend.appendChild(legendItem);
+    }
+  });
+  figma.currentPage.setPluginData(DATA_KEYS[`${type}Annotations`], JSON.stringify(trackingData));
+}
 
-  // set new group
-  const containerGroup: GroupNode = figma.group([child], parent);
+/**
+ * @description Edits the number in the stop annotation when the order has changed.
+ *
+ * @kind function
+ * @name updateAnnotationNum
+ *
+ * @param {string} nodeId The id of the design node the annotation corresponds to.
+ * @param {string} number The order number to show in the annotation.
+ * @param {Array} trackingData The up-to-date annotation tracking data.
+ *
+ * @returns {undefined} 
+ * 
+ */
+const updateAnnotationNum = (
+  nodeId: string,
+  number: string,
+  trackingData: Array<PluginNodeTrackingData>,
+) => {
+  const annotationNodeId = trackingData.find(entry => entry.id === nodeId)?.annotationId;
 
-  // position, name, and lock new group
-  containerGroup.x = position.x;
-  containerGroup.y = position.y;
-  containerGroup.name = name;
-  containerGroup.locked = locked;
+  if (figma.getNodeById(nodeId) && annotationNodeId) {
+    const annotationNode = figma.getNodeById(annotationNodeId) as FrameNode;
+    
+    if (annotationNode) {
+      const textNode = annotationNode.findOne(layer => layer.type === 'TEXT' 
+      && parseInt(layer.characters, 10) > 0) as TextNode;
 
-  return containerGroup;
-};
+      textNode.characters = number;
+    }
+  }
+}
+
+/**
+ * @description Edits the values of the legend entry when updated in the UI.
+ *
+ * @kind function
+ * @name updateLegendEntry
+ *
+ * @param {string} type The stop type the annotations correspond to.
+ * @param {string} nodeId The id of the design node the annotation corresponds to.
+ * @param {Object} data The field data to display in the legend entry.
+ *
+ * @returns {undefined} 
+ * 
+ */
+ const updateLegendEntry = (
+  type: PluginStopType,
+  nodeId: string,
+  nodeData: Object,
+) => {
+  const trackingData = JSON.parse(figma.currentPage.getPluginData(DATA_KEYS[`${type}Annotations`]));
+  const legendItemId = trackingData?.find(entry => entry.id === nodeId)?.legendItemId;
+
+  if (figma.getNodeById(nodeId) && legendItemId) {
+    const legendItem = figma.getNodeById(legendItemId) as FrameNode;
+    
+    if (legendItem) {
+      const dataFrame = legendItem.findChild(child => child.name === 'Data') as FrameNode;
+      dataFrame.children.forEach(child => child.remove());
+
+      const fieldNodes = buildLegendFieldNodes(type, nodeData);
+      fieldNodes.forEach(node => dataFrame.appendChild(node));
+    }
+  }
+}
 
 export {
   buildAnnotation,
@@ -1582,7 +1703,10 @@ export {
   buildRectangle,
   buildRectangleInnerHalf,
   buildText,
+  drawContainerGroup,
   positionAnnotation,
   positionLegend,
-  drawContainerGroup,
+  refreshLegend,
+  updateAnnotationNum,
+  updateLegendEntry,
 };

@@ -69,13 +69,15 @@
   };
 
   const updateHeading = (newHeading, key) => {
+    console.log('updating heading')
     if (originalHeading[key] !== newHeading[key]) {
       parent.postMessage({
         pluginMessage: {
-          action: `${type}-set-heading`,
+          action: 'a11y-set-aria-data',
           payload: {
             id: itemId,
-            heading: newHeading,
+            key: 'heading',
+            value: newHeading,
           },
         },
       }, '*');
@@ -117,7 +119,7 @@
       nameId={`${itemId}-heading-level`}
       placeholder="Leave empty to use browser default"
       resetValue={resetValue}
-      inputWatchBlur={true}
+      selectWatchChange={true}
       on:saveSignal={() => updateHeading(dirtyHeading, 'level')}
       bind:value={dirtyHeading.level}
     />

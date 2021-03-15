@@ -173,7 +173,7 @@
         || (role !== 'image' && !(labels.a11y || labels.visible))
       );
     } else if (type.includes('heading')) {
-      result = !heading || (!heading.visible && !heading.invisible);
+      result = heading && !(heading.visible || heading.invisible);
     }
     return result;
   };

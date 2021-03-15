@@ -845,8 +845,8 @@ const getStopTypeFromView = (viewName) => {
  * @returns {string} The title-cased string.
  */
 const sortByPosition = (itemA, itemB) => {
-  const aPosition = itemA.position;
-  const bPosition = itemB.position;
+  const aPosition = parseInt(itemA.position);
+  const bPosition = parseInt(itemB.position);
   if (aPosition < bPosition) {
     return -1;
   }
