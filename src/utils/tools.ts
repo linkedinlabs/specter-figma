@@ -277,6 +277,11 @@ const compareArrays = (array1: Array<any>, array2: Array<any>) => {
  */
 const deepCompare = (unmodifiedObject: Object, modifiedObject: Object) => {
   let isDifferent: boolean = false;
+  
+  // catches type differences e.g. if either are undefined/null
+  if (unmodifiedObject !== modifiedObject) {
+    return true;
+  }
 
   if (typeof unmodifiedObject !== 'object' || unmodifiedObject === null) {
     return isDifferent;

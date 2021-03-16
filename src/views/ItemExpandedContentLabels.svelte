@@ -1,5 +1,4 @@
 <script>
-  import { afterUpdate, beforeUpdate } from 'svelte';
   import FormUnit from './forms-controls/FormUnit';
   import { deepCompare } from '../utils/tools';
 
@@ -17,64 +16,28 @@
   };
 
   let resetValue = false;
-  let wasResetValue = false;
   let dirtyRole = role || 'no-role';
   let originalRole = role || 'no-role';
   let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
   let originalLabels = labels ? { ...labels } : { ...labelsInit };
 
-  const handleReset = () => {
-    // role
-    dirtyRole = role || 'no-role';
-    originalRole = role || 'no-role';
-
-    // labels
-    dirtyLabels = labels ? { ...labels } : { ...labelsInit };
-    originalLabels = labels ? { ...labels } : { ...labelsInit };
-
-    resetValue = true;
-  };
-
   const updateField = (key, value) => {
-    const diffValues = key === 'role' ? value !== originalRole
-      : Object.keys(value).find(prop => value[prop] !== originalLabels[prop]);
+    const diff = key === 'role' ? value !== originalRole : deepCompare(value, originalLabels);
     
-      if (diffValues) {
-        parent.postMessage({
-          pluginMessage: {
-            action: 'a11y-set-aria-data',
-            payload: {
-              id: itemId,
-              key,
-              value,
-            },
+    if (diff) {
+      parent.postMessage({
+        pluginMessage: {
+          action: 'a11y-set-aria-data',
+          payload: {
+            id: itemId,
+            key,
+            value,
           },
-        }, '*');
-        handleReset();
-      }
+        },
+      }, '*');
+    }
   };
 
-  beforeUpdate(() => {
-    if (
-      (role && (originalRole !== role))
-      || (labels && deepCompare(originalLabels, labels))
-    ) {
-      resetValue = true;
-    }
-
-    if (resetValue) {
-      handleReset();
-    }
-
-    // set trackers
-    wasResetValue = resetValue;
-  });
-
-  afterUpdate(() => {
-    if (resetValue || wasResetValue) {
-      resetValue = false;
-    }
-  });
 </script>
 
 <style>
