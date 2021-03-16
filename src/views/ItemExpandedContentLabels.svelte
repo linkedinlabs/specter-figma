@@ -15,14 +15,13 @@
     alt: null,
   };
 
-  let resetValue = false;
   let dirtyRole = role || 'no-role';
-  let originalRole = role || 'no-role';
+  // let originalRole = role || 'no-role';
   let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
-  let originalLabels = labels ? { ...labels } : { ...labelsInit };
+  // let originalLabels = labels ? { ...labels } : { ...labelsInit };
 
   const updateField = (key, value) => {
-    const diff = key === 'role' ? value !== originalRole : deepCompare(value, originalLabels);
+    const diff = key === 'role' ? value !== role : deepCompare(value, labels);
     
     if (diff) {
       parent.postMessage({
@@ -53,7 +52,6 @@
         labelText="Role"
         nameId={`${itemId}-role`}
         options={roleOptions}
-        resetValue={resetValue}
         selectWatchChange={true}
         on:saveSignal={() => updateField('role', dirtyRole)}
         bind:value={dirtyRole}
@@ -67,7 +65,6 @@
           labelText="Alt text"
           nameId={`${itemId}-label-alt`}
           placeholder="Short description of the scene"
-          resetValue={resetValue}
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', dirtyLabels)}
           bind:value={dirtyLabels.alt}
@@ -79,7 +76,6 @@
           labelText="Visible label"
           nameId={`${itemId}-label-visible`}
           placeholder="Leave empty to use a11y label"
-          resetValue={resetValue}
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', dirtyLabels)}
           bind:value={dirtyLabels.visible}
@@ -90,7 +86,6 @@
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
           placeholder="Leave empty to use visible label"
-          resetValue={resetValue}
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', dirtyLabels)}
           bind:value={dirtyLabels.a11y}
