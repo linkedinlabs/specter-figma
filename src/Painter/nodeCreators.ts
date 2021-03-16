@@ -951,10 +951,10 @@ const getLegendEntryFields = (type, data) => {
         val: (heading?.level !== 'no-level' && heading?.level) || 'n/a',
       }, {
         name: 'Visible',
-        val: heading?.visible ? 'Yes' : 'No',
+        val: !heading || heading?.visible ? 'Yes' : 'No',
       },
     ];
-    if (!heading?.visible) {
+    if (!heading || (heading && !heading.visible)) {
       fields.push({
         name: 'Heading',
         val: heading?.invisible ? `"${heading.invisible}"` : 'undefined',
