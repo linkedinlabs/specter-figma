@@ -117,7 +117,7 @@
       nameId={`${itemId}-heading-level`}
       placeholder="Leave empty to use browser default"
       resetValue={resetValue}
-      inputWatchBlur={true}
+      selectWatchChange={true}
       on:saveSignal={() => updateHeading(dirtyHeading, 'level')}
       bind:value={dirtyHeading.level}
     />
@@ -131,7 +131,7 @@
       on:saveSignal={() => updateHeading(dirtyHeading, 'visible')}
       bind:value={dirtyHeading.visible}
     />
-    {#if heading && !heading.visible}
+    {#if dirtyHeading && !dirtyHeading.visible}
       <FormUnit
         className="form-row"
         kind="inputText"
