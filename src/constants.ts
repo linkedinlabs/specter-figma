@@ -73,7 +73,7 @@ const DATA_KEYS: {
   options: `${PLUGIN_IDENTIFIER}.options-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
-  headingAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
+  headingAnnotations: `${PLUGIN_IDENTIFIER}.headingAnnotations-001`,
   legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
   // top-frame level
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
