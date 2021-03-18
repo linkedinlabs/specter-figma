@@ -1179,10 +1179,10 @@ export default class Painter {
       annotationNode.y = initialY;
     }
 
-    if (['label', 'heading'].includes(type)) {
+    // if (['label', 'heading'].includes(type)) {
       legendNode = buildLegendEntry(type, nodeData);
       this.addEntryToLegend(legendNode);
-    }
+    // }
 
     // set the annotation frame(s) into the correct container group layers in Figma
     setNodeInContainers({

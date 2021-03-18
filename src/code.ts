@@ -74,16 +74,12 @@ const dispatcher = async (action: {
       }
       case 'a11y-remove-stop': {
         const { id } = payload;
-        if (id) {
-          await app.removeStopAnnotation(payload.type, id);
-        }
+        await app.removeStopAnnotation(payload.type, id);
         break;
       }
       case 'a11y-update-stop': {
         const { id, position } = payload;
-        if (id) {
-          await app.updateStopOrder(payload.type, id, position);
-        }
+        await app.updateStopOrder(payload.type, id, position);
         break;
       }
       case 'a11y-keyboard-set-key':
@@ -93,7 +89,8 @@ const dispatcher = async (action: {
         await app.updateNodeDataKeys(payload, true);
         break;
       case 'a11y-set-aria-data':
-        await app.updateNodeDataAria(payload);
+        const { id, key, value } = payload;
+        await app.updateNodeDataAria(id, key, value);
         break;
       case 'annotate':
         app.annotateGeneral();

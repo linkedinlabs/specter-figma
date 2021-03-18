@@ -517,19 +517,27 @@ const buildRectangle = (
     rectangle.paddingBottom = 2;
   } else if (type === 'keystop') {
     // ------- update rectangle for keystop annotations
-    rectangle.layoutMode = 'VERTICAL';
-    rectangle.primaryAxisSizingMode = 'AUTO';
-    rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
-    rectangle.counterAxisSizingMode = 'FIXED';
-    rectangle.counterAxisAlignItems = 'MIN';
-
-    rectangle.layoutAlign = 'INHERIT';
-    rectangle.paddingLeft = 4;
-    rectangle.paddingRight = 4;
-    rectangle.paddingTop = 4;
-    rectangle.paddingBottom = 4;
-    rectangle.itemSpacing = 1;
-    rectangle.cornerRadius = 4;
+    if (!isLegendIcon) {
+      rectangle.layoutMode = 'VERTICAL';
+      rectangle.primaryAxisSizingMode = 'AUTO';
+      rectangle.primaryAxisAlignItems = 'SPACE_BETWEEN';
+      rectangle.counterAxisSizingMode = 'FIXED';
+      rectangle.counterAxisAlignItems = 'MIN';
+  
+      rectangle.layoutAlign = 'INHERIT';
+      rectangle.paddingLeft = 4;
+      rectangle.paddingRight = 4;
+      rectangle.paddingTop = 4;
+      rectangle.paddingBottom = 4;
+      rectangle.itemSpacing = 1;
+      rectangle.cornerRadius = 4;
+    } else {
+      rectangle.paddingRight = 0;
+      rectangle.topLeftRadius = 4;
+      rectangle.bottomLeftRadius = 4;
+      rectangle.topRightRadius = 0;
+      rectangle.bottomRightRadius = 0;
+    }
   } else if (['label', 'heading'].includes(type)) {
     rectangle.paddingLeft = 0;
     rectangle.paddingTop = 2;
@@ -635,7 +643,7 @@ const buildAnnotation = (options: {
       const iconColor: { r: number, g: number, b: number } = hexToDecimalRgb('#ffffff');
       icon = buildKeystopIcon(iconColor);
     }
-  }
+  } 
 
   return {
     diamond,
@@ -899,7 +907,7 @@ const getLegendLabelText = (labels, labelName) => {
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
 const getLegendEntryFields = (type, data) => {
-  const { role, labels, heading } = data;
+  const { role, labels, heading, keys } = data;
   let fields;
 
   if (type === 'label') {
@@ -947,7 +955,7 @@ const getLegendEntryFields = (type, data) => {
         },
       ];
     }
-  } else {
+  } else if (type === 'heading') {
     fields = [
       {
         name: 'Heading level',
@@ -963,6 +971,13 @@ const getLegendEntryFields = (type, data) => {
         val: heading.invisible ? `"${heading.invisible}"` : 'undefined',
       });
     }
+  } else {
+    fields = [
+      {
+        name: 'Keys',
+        val: keys?.map((key, i) => i < keys.length-1 ? `${key}, ` : key)?.join() || 'n/a',
+      }
+    ]
   }
   return fields;
 };
@@ -975,7 +990,6 @@ const getLegendEntryFields = (type, data) => {
  *
  * @param {string} type The type of annotation the legend entry represents.
  * @param {Object} nodeData The note data to be rendered in the legend.
- * @param {string} text The name/main text of the annotation.
  *
  * @returns {Object} The final legend after positioning.
  */

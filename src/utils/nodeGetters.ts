@@ -210,7 +210,7 @@ const getAssignedChildNodes = (
  *
  * @param {string} type The type of stops we are annotating (eg: label or keystop).
  * @param {Array} selection The current Figma selection of nodes.
- * @param {boolean} resetData Indicates whether the data should be cleared in annotated nodes.
+ * @param {boolean} newOnly Indicates whether we want a list of all nodes or just new annotation nodes.
  * @param {Array} suppliedNodes A list of supplied nodes if they are passed in.
  *
  * @returns {Array}  A list of nodes to annotate in the correct order.
