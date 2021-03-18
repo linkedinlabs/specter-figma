@@ -1,5 +1,5 @@
 import { CONTAINER_NODE_TYPES, DATA_KEYS } from '../constants';
-import { existsInArray, getPeerPluginData, updateArray } from './tools';
+import { existsInArray, findTopFrame, getPeerPluginData, updateArray } from './tools';
 import Crawler from '../Crawler';
 
 /**
@@ -129,9 +129,9 @@ const getFrameAnnotatedNodes = (
   },
 ): Array<SceneNode> => {
   const { frame, resetData } = options;
-  const listItems: Array<{id: string, position: number}> = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
+  const list = frame && JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null) || [];
 
-  const nodes: Array<SceneNode> = listItems.reduce((acc, { id }) => {
+  const nodes: Array<SceneNode> = list.reduce((acc, { id }) => {
     const node: SceneNode = frame.findOne(child => child.id === id);
     return node ? [...acc, node] : acc;
   }, []);
@@ -218,46 +218,37 @@ const getAssignedChildNodes = (
 const getOrderedStopNodes = (
   type: PluginStopType,
   selection: Array<SceneNode>,
-  resetData: boolean,
+  newOnly: boolean,
   suppliedNodes?: Array<SceneNode>,
 ) => {
-  // determine top Frames involved in the current selection
-  const selectionCrawler = new Crawler({ for: selection });
-  const selectionTopFrames: Array<FrameNode> = selectionCrawler.topFrames();
+  let selectedNodes: Array<SceneNode> = suppliedNodes || [...selection];
+  const frame: FrameNode = findTopFrame(selectedNodes[0]);
+  let orderedNodes = [];
 
-  // initialize selected list based on supplied vs Figma selection
-  let selectedNodes: Array<SceneNode> = suppliedNodes?.length
-    ? suppliedNodes : [...selection];
+  // add previously annotated nodes to the result list
+  const annotatedFrameNodes = getFrameAnnotatedNodes(type, { frame, resetData: false }); //temp false
+  annotatedFrameNodes.forEach((node) => {
+    orderedNodes = updateArray(orderedNodes, node);
+  });
 
-  // gather annotated nodes in top Frames and add selection children if not supplied
-  const nodesToAnnotate: Array<SceneNode> = selectionTopFrames.reduce((acc, frame) => {
-    let list = acc;
-    // add previously annotated nodes to the result list
-    const annotatedFrameNodes = getFrameAnnotatedNodes(type, { frame, resetData });
-    annotatedFrameNodes.forEach((node) => {
-      list = updateArray(list, node);
-    });
-
-    // if not annotating supplied nodes, add Figma selection children to selected list
-    if (!suppliedNodes?.length && frame.children) {
-      const exclusionList = [...list, ...selectedNodes, ...selectionTopFrames];
-      const assignedChildNodes = getAssignedChildNodes(
-        [...frame.children],
-        exclusionList,
-        type,
-      );
-      assignedChildNodes.forEach(node => selectedNodes.push(node));
-    }
-    return list;
-  }, []);
+  // if not annotating supplied nodes, add Figma selection children to selected list
+  if (!suppliedNodes && frame.children) {
+    const exclusionList = [...orderedNodes, ...selectedNodes, frame];
+    const assignedChildNodes = getAssignedChildNodes(
+      [...frame.children],
+      exclusionList,
+      type,
+    );
+    assignedChildNodes.forEach(node => selectedNodes.push(node));
+  }
 
   // filter selected to what isn't in the results list and sort by visual hierarchy
-  selectedNodes = selectedNodes.filter((node: SceneNode) => !existsInArray(nodesToAnnotate, node.id)
-    && !existsInArray(selectionTopFrames, node.id));
+  selectedNodes = selectedNodes.filter((node: SceneNode) => !existsInArray(orderedNodes, node.id)
+    && frame.id !== node.id);
   const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
-  sortedSelection.forEach(node => nodesToAnnotate.push(node));
+  sortedSelection.forEach(node => orderedNodes.push(node));
 
-  return nodesToAnnotate;
+  return newOnly ? sortedSelection : orderedNodes;
 };
 
 export {

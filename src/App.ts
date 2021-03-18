@@ -10,6 +10,7 @@ import {
   findTopFrame,
   updateArray,
   getStopTypeFromView,
+  isAnnotationLayer,
 } from './utils/tools';
 import {
   getOrderedStopNodes,
@@ -29,7 +30,8 @@ import { refreshLegend, positionLegend, updateAnnotationNum, updateLegendEntry }
  */
 const assemble = (context: any = null) => {
   const page = context.currentPage;
-  const { selection } = context.currentPage;
+  // don't include actual annotations
+  const selection = page.selection.filter(item => !isAnnotationLayer(item));
   const messenger = new Messenger({ for: context, in: page });
 
   return {
@@ -198,7 +200,8 @@ const repairBrokenAnnotationLinks = (
     let updatesMade = false;
     
     const nodeLinks = nodes.reduce((acc, node) => {
-      const linkId = JSON.parse(node.getPluginData(DATA_KEYS[`${type}LinkId`]) || null);
+      const nodeExists = figma.getNodeById(node.id);
+      const linkId = nodeExists && JSON.parse(node.getPluginData(DATA_KEYS[`${type}LinkId`]) || null);
       if (linkId?.role) {
         acc[`${linkId.role}Roles`].push({ id: linkId.id, node });
       }
@@ -403,122 +406,22 @@ const refreshAnnotations = (
     trackingData,
   } = options;
 
-  let updatedTrackingData: Array<PluginNodeTrackingData> = trackingData;
-  let nodesToRepaint: Array<string> = [];
-
   trackingData.forEach((trackingEntry) => {
     const node: BaseNode = figma.getNodeById(trackingEntry.id);
-    const topFrame: FrameNode = node && findTopFrame(node);
-    let repaintNode = false;
+    const frame: FrameNode = node && findTopFrame(node);
+    const app = new App({isMercadoMode, shouldTerminate: false, terminatePlugin: false});
 
-    if (!node || topFrame?.id !== trackingEntry.topFrameId) {
-      // fully remove and repaint existing top frame
-      const cleanupResults = fullCleanup(
-        trackingEntry,
-        updatedTrackingData,
-        options,
-        type,
-      );
-      nodesToRepaint = cleanupResults.newNodesToRepaint;
-      updatedTrackingData = cleanupResults.newTrackingData;
+    if (!node || (frame && frame.id !== trackingEntry.topFrameId)) {
+      const oldFrame = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
 
-      if (node && topFrame) {
-        // adds the moved annotation to the new top frame (in last position)
-        new Identifier({
-          for: node,
-          data: page,
-          isMercadoMode,
-          messenger,
-        }).getSetStop(type);
-
-        repaintNode = true;
+      app.removeStopAnnotation(type, trackingEntry.id, oldFrame);
+      console.log('type: ', type)
+      if (node && frame) {
+        app.annotateStops(type, [node as SceneNode]);
       }
-    } else {
-      // grab the node's related annotation nodes and position to check for differences
-      const { annotationId, legendItemId, nodePosition } = trackingEntry;
-      const annotationNode: BaseNode = figma.getNodeById(annotationId);
-      const legendItemNode: BaseNode = figma.getNodeById(legendItemId);
-      const relativePosition = new Crawler({ for: [node] }).position().payload;
-      const currentNodePosition: PluginNodePosition = {
-        frameWidth: topFrame.width,
-        frameHeight: topFrame.height,
-        width: relativePosition.width,
-        height: relativePosition.height,
-        x: relativePosition.x,
-        y: relativePosition.y,
-      };
-
-      if (
-        deepCompare(currentNodePosition, nodePosition)
-        || !annotationNode
-        || (legendItemId && !legendItemNode)
-      ) {
-        removeLinkedAnnotationNodes(trackingData, [node.id]);
-        repaintNode = true;
-      }
-    }
-
-    if (repaintNode && !nodesToRepaint.includes(node.id)) {
-      nodesToRepaint.push(node.id);
-    }
-  });
-
-  page.setPluginData(
-    DATA_KEYS[`${type}Annotations`],
-    JSON.stringify(updatedTrackingData),
-  );
-
-  // ----- repaint queued nodes
-  nodesToRepaint.forEach((nodeId) => {
-    const nodeToRepaint: BaseNode = figma.getNodeById(nodeId);
-
-    if (nodeToRepaint) {
-      const topFrame: FrameNode = findTopFrame(nodeToRepaint);
-      const painter = new Painter({
-        for: nodeToRepaint,
-        in: page,
-        isMercadoMode,
-      });
-
-      // re-draw the annotation
-      const painterResult = painter.addStop(type);
-      messenger.handleResult(painterResult, true);
-
-      // `findTopFrame` returns self if the parent is the page
-      if (painterResult.status === 'error' && (
-        (!topFrame && nodeToRepaint.parent.type === 'PAGE')
-        || topFrame?.parent.type === 'PAGE')
-      ) {
-        // set up new tracking data node entry
-        const nodeToTrack: SceneNode = nodeToRepaint as SceneNode;
-        const currentNodePosition: PluginNodePosition = {
-          frameWidth: null,
-          frameHeight: null,
-          width: nodeToTrack.width,
-          height: nodeToTrack.height,
-          x: nodeToTrack.x,
-          y: nodeToTrack.y,
-        };
-        const freshTrackingEntry: PluginNodeTrackingData = {
-          annotationId: null,
-          legendItemId: null,
-          id: nodeToTrack.id,
-          linkId: null,
-          topFrameId: nodeToRepaint.parent.id,
-          nodePosition: currentNodePosition,
-        };
-
-        // add the entry to the updated tracking data
-        let tracking = JSON.parse(
-          page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
-        );
-        tracking = updateArray(tracking, freshTrackingEntry, 'id', 'add');
-
-        page.setPluginData(
-          DATA_KEYS[`${type}Annotations`],
-          JSON.stringify(tracking),
-        );
-      }
+    } else if (node && frame && !figma.getNodeById(trackingEntry.annotationId)) {
+      const painter = new Painter({for: node, in: page, isMercadoMode});
+      painter.addStop(type);
     }
   });
 };
@@ -552,7 +455,7 @@ const diffAnnotationPositions = (
   } = options;
   
   const types: Array<PluginStopType> = ['keystop', 'label', 'heading'];
-  const frame = findTopFrame(selection[0]);
+  const frame: FrameNode = findTopFrame(selection[0]);
   const nodes = new Crawler({ for: [frame] }).all();
 
   repairBrokenLegendLinks(page);
@@ -563,6 +466,7 @@ const diffAnnotationPositions = (
       page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
     );
 
+    console.log(type, trackingData)
     refreshAnnotations({type, trackingData, page, messenger, isMercadoMode});
     repairBrokenAnnotationLinks({type, trackingData, page, frame, nodes, messenger, isMercadoMode});
   });
@@ -731,10 +635,10 @@ const getStopData = (
 
   // find top frame for selected node
   const crawler = new Crawler({ for: [node] });
-  const topFrame = crawler.topFrame();
-  if (topFrame) {
+  const frame = crawler.topFrame();
+  if (frame) {
     // read stop list data from top frame
-    const stopList = JSON.parse(topFrame.getPluginData(DATA_KEYS[`${type}List`]) || null);
+    const stopList = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
     const stopItem = stopList?.find(item => item.id === node.id);
     if (stopItem) {
       nodePositionData.hasStop = true;
@@ -900,7 +804,7 @@ export default class App {
    */
   async annotateStops(
     type: PluginStopType,
-    suppliedNodes?: Array<SceneNode>,
+    suppliedNodes?: Array<SceneNode>, // only sent with keys updates
   ) {
     const {
       messenger,
@@ -914,8 +818,7 @@ export default class App {
       return messenger.toast('A layer must be supplied');
     }
 
-    // get list of nodes in order (already annotated, has Stapler data, selected)
-    const nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
+    let nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
       type,
       selection,
       true,
@@ -928,7 +831,7 @@ export default class App {
     );
 
     // re-paint the annotations
-    nodesToAnnotate.forEach((node: SceneNode) => {
+    nodesToAnnotate.reduce((acc, node: SceneNode) => {
       // remove existing annotation
       removeLinkedAnnotationNodes(trackingData, [node.id]);
 
@@ -977,8 +880,8 @@ export default class App {
       }
 
       drawAnnotation(true);
-      return null;
-    });
+      return acc;
+    }, 0);
 
     if (this.shouldTerminate) {
       this.closeOrReset();
@@ -1558,8 +1461,6 @@ export default class App {
         updateLegendEntry(type, id, nodeData);
       }
     }
-
-    App.refreshGUI();
   }
 
   /**
@@ -1695,13 +1596,14 @@ export default class App {
       isInfo,
       isMercadoMode,
     } = options;
+    const isA11yTab = currentView.includes('a11y-');
 
     // calculate UI size, based on view type and selection
     let { width, height } = GUI_SETTINGS.default;
     if (currentView === 'general' && isMercadoMode) {
       width = GUI_SETTINGS.mercadoDefault.width;
       height = GUI_SETTINGS.mercadoDefault.height;
-    } else if (currentView.includes('a11y')) {
+    } else if (isA11yTab) {
       width = GUI_SETTINGS.accessibilityDefault.width;
       height = GUI_SETTINGS.accessibilityDefault.height;
     } else {
@@ -1740,9 +1642,8 @@ export default class App {
 
     const firstTopFrame = findTopFrame(selection[0]);
     const singleTopFrame = !selection.find(node => findTopFrame(node) !== firstTopFrame);
-    const isA11yTab = currentView.includes('a11y-');
 
-    if (isA11yTab && singleTopFrame) {
+    if (selection?.length && isA11yTab && singleTopFrame) {
       let type: PluginStopType = getStopTypeFromView(currentView);
       nodes = getOrderedStopNodes(type, selection, false);
 
@@ -1825,37 +1726,36 @@ export default class App {
   async removeStopAnnotation(
     type: PluginStopType,
     id: string,
+    oldFrame?: FrameNode,
   ) {
     const {
       messenger,
       page,
-      selection,
     } = assemble(figma);
 
-    // can’t do anything without nodes to manipulate
-    if (!id && !selection.length) {
+    if (!id) {
       messenger.log(`Cannot remove ${type}; missing node ID(s)`, 'error');
       return;
     }
 
     const node: BaseNode = figma.getNodeById(id);
-    const frame = findTopFrame(node);
+    const frame = oldFrame || findTopFrame(node);
+    console.log(node, frame)
     let trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]');
-    let stopList = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
+    let stopList = frame && JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
 
     removeLinkedAnnotationNodes(trackingData, [id]);
+    trackingData = updateArray(trackingData, {id}, 'id', 'remove');
 
     if (stopList) {
-      stopList = updateArray(stopList, node, 'id', 'remove');
-      trackingData = updateArray(trackingData, node, 'id', 'remove');
+      stopList = updateArray(stopList, {id}, 'id', 'remove');
+      this.refreshStopListOrder(type, frame, stopList, trackingData);
     }
 
     page.setPluginData(
       DATA_KEYS[`${type}Annotations`],
       JSON.stringify(trackingData),
     );
-
-    this.refreshStopListOrder(type, frame, stopList, trackingData);
 
     App.refreshGUI();
   }

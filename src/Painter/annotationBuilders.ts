@@ -1605,7 +1605,9 @@ const refreshLegend = (
   stopList: Array<PluginStopListData>,
 ) => {
   const legend = getLegendFrame(frameId, figma.currentPage);
-  legend.children.forEach((child) => child.remove());
+  if (legend) {
+    legend.children.forEach((child) => child.remove());
+  }
   
   stopList.forEach((item) => {
     const node = figma.getNodeById(item.id);

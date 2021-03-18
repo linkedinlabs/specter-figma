@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import { getStopTypeFromView } from '../../utils/tools';
   import ButtonAction from './ButtonAction';
 
@@ -7,8 +6,6 @@
   export let disabled = true;
   export let number = null;
   export let type = null;
-
-  const dispatch = createEventDispatcher();
 
   const addStopAnnotation = () => {
     let stopType = getStopTypeFromView(type);

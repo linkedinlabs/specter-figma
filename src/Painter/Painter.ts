@@ -1060,7 +1060,7 @@ export default class Painter {
   }
 
   /**
-   * @description Builds a Keystop or Label Annotation in Figma. Expects appropriate node data to
+   * @description Builds a stop annotation in Figma. Expects appropriate node data to
    * be available (`annotationText`, `labels`, and potentially `keys` for auxilary annotations).
    *
    * @kind function

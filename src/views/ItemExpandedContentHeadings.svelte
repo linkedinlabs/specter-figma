@@ -13,9 +13,7 @@
   export let type = null;
   export let heading = { ...headingInit };
 
-
   let dirtyHeading = heading ? { ...heading } : { ...headingInit };
-  // let originalHeading = heading ? { ...heading } : { ...headingInit };
 
   const levelOptions = [
     {

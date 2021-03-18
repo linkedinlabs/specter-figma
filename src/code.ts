@@ -334,14 +334,14 @@ const main = async () => {
       }
     };
 
-    // set the initial tracking data
-    const initialTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
+    // // set the initial tracking data
+    // const initialTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
 
-    // after the check interval has passed, set new tracking data and trigger the first comparison
-    setTimeout(() => {
-      const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
-      compareTrackingData(initialTrackingData, newTrackingData);
-    }, checkInternal);
+    // // after the check interval has passed, set new tracking data and trigger the first comparison
+    // setTimeout(() => {
+    //   const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
+    //   compareTrackingData(initialTrackingData, newTrackingData);
+    // }, checkInternal);
   };
 
   // selection change watcher
