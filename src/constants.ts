@@ -275,14 +275,262 @@ const GUI_SETTINGS = {
   },
 };
 
+/**
+ * @description An array of dropdown options for keystop keys.
+ *
+ * @kind constant
+ * @name KEY_OPTS
+ * @type {Array}
+ */
+const KEY_OPTS = [
+  {
+    value: 'no-key',
+    text: 'Add key…',
+    disabled: true,
+  },
+  {
+    value: 'divider--01',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: 'arrows-left-right',
+    text: 'Arrow keys (left/right)',
+    disabled: false,
+  },
+  {
+    value: 'arrows-up-down',
+    text: 'Arrow keys (up/down)',
+    disabled: false,
+  },
+  {
+    value: 'enter',
+    text: 'Enter',
+    disabled: false,
+  },
+  {
+    value: 'divider--02',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: 'space',
+    text: 'Space',
+    disabled: false,
+  },
+  {
+    value: 'divider--03',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: 'escape',
+    text: 'Escape',
+    disabled: false,
+  },
+];
+
+/**
+ * @description An array of dropdown options for aria roles.
+ *
+ * @kind constant
+ * @name ROLE_OPTS
+ * @type {Array}
+ */
+const ROLE_OPTS = [
+  {
+    value: 'no-role',
+    text: 'None',
+    disabled: false,
+  },
+  {
+    value: 'divider--01',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: 'image',
+    text: 'Image',
+    disabled: false,
+  },
+  {
+    value: 'image-decorative',
+    text: 'Image (decorative)',
+    disabled: false,
+  },
+  {
+    value: 'divider--02',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: 'button',
+    text: 'Button',
+    disabled: false,
+  },
+  {
+    value: 'checkbox',
+    text: 'Checkbox',
+    disabled: false,
+  },
+  {
+    value: 'link',
+    text: 'Link',
+    disabled: false,
+  },
+  {
+    value: 'menuitem',
+    text: 'Menu item',
+    disabled: false,
+  },
+  {
+    value: 'menuitemcheckbox',
+    text: 'Menu item (checkbox)',
+    disabled: false,
+  },
+  {
+    value: 'menuitemradio',
+    text: 'Menu item (radio)',
+    disabled: false,
+  },
+  {
+    value: 'option',
+    text: 'Option',
+    disabled: false,
+  },
+  {
+    value: 'progressbar',
+    text: 'Progress bar',
+    disabled: false,
+  },
+  {
+    value: 'radio',
+    text: 'Radio',
+    disabled: false,
+  },
+  {
+    value: 'searchbox',
+    text: 'Search box',
+    disabled: false,
+  },
+  {
+    value: 'slider',
+    text: 'Slider',
+    disabled: false,
+  },
+  {
+    value: 'switch',
+    text: 'Switch',
+    disabled: false,
+  },
+  {
+    value: 'tab',
+    text: 'Tab',
+    disabled: false,
+  },
+  {
+    value: 'tabpanel',
+    text: 'Tab panel',
+    disabled: false,
+  },
+  {
+    value: 'textbox',
+    text: 'Textbox',
+    disabled: false,
+  },
+  {
+    value: 'divider--03',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: 'combobox',
+    text: 'Combobox',
+    disabled: false,
+  },
+  {
+    value: 'listbox',
+    text: 'Listbox',
+    disabled: false,
+  },
+  {
+    value: 'menu',
+    text: 'Menu',
+    disabled: false,
+  },
+  {
+    value: 'radiogroup',
+    text: 'Radio group',
+    disabled: false,
+  },
+  {
+    value: 'tablist',
+    text: 'Tab list',
+    disabled: false,
+  },
+];
+
+/**
+ * @description An array of dropdown options for heading levels.
+ *
+ * @kind constant
+ * @name LEVEL_OPTS
+ * @type {Array}
+ */
+const LEVEL_OPTS = [
+  {
+    value: 'no-level',
+    text: 'None  (iOS/Android)',
+    disabled: false,
+  },
+  {
+    value: 'divider--01',
+    text: null,
+    disabled: true,
+  },
+  {
+    value: '1',
+    text: '1',
+    disabled: false,
+  },
+  {
+    value: '2',
+    text: '2',
+    disabled: false,
+  },
+  {
+    value: '3',
+    text: '3',
+    disabled: false,
+  },
+  {
+    value: '4',
+    text: '4',
+    disabled: false,
+  },
+  {
+    value: '5',
+    text: '5',
+    disabled: false,
+  },
+  {
+    value: '6',
+    text: '6',
+    disabled: false,
+  },
+];
+
 export {
   COLORS,
   CONTAINER_NODE_TYPES,
   DATA_KEYS,
+  KEY_OPTS,
   GUI_SETTINGS,
+  LEVEL_OPTS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,
   RADIUS_MATRIX,
+  ROLE_OPTS,
   SPACING_MATRIX,
   TYPEFACES,
 };

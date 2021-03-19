@@ -1,5 +1,10 @@
 import { CONTAINER_NODE_TYPES, DATA_KEYS } from '../constants';
-import { existsInArray, findTopFrame, getPeerPluginData, updateArray } from './tools';
+import {
+  existsInArray,
+  findTopFrame,
+  getPeerPluginData,
+  updateArray,
+} from './tools';
 import Crawler from '../Crawler';
 
 /**
@@ -115,34 +120,23 @@ const findTopComponent = (node: any) => {
  * @name getFrameAnnotatedNodes
  *
  * @param {string} type Indicates whether the we want keystop or label annotations.
- * @param {Object} options The top-level frame node we want to locate stops within,
- * and resetData set to true if we know annotations are being re-painted and
- * the top-level frame node’s list data should be cleared out.
+ * @param {Object} frame The top-level frame node we want to locate stops within.
  *
  * @returns {Array} An array of nodes (SceneNode) of annotations of the specified type.
  */
 const getFrameAnnotatedNodes = (
   type: PluginStopType,
-  options: {
-    frame: FrameNode,
-    resetData: boolean,
-  },
+  frame: FrameNode,
 ): Array<SceneNode> => {
-  const { frame, resetData } = options;
-  const list = frame && JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null) || [];
+  const list = JSON.parse(frame?.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
 
   const nodes: Array<SceneNode> = list.reduce((acc, { id }) => {
     const node: SceneNode = frame.findOne(child => child.id === id);
-    return node ? [...acc, node] : acc;
+    if (node) {
+      acc.push(node);
+    }
+    return acc;
   }, []);
-
-  // reset the top frame list – occurs when annotations are re-painted (re-added w/ new ids)
-  if (resetData) {
-    frame.setPluginData(
-      DATA_KEYS[`${type}List`],
-      JSON.stringify([]),
-    );
-  }
 
   return nodes;
 };
@@ -210,7 +204,7 @@ const getAssignedChildNodes = (
  *
  * @param {string} type The type of stops we are annotating (eg: label or keystop).
  * @param {Array} selection The current Figma selection of nodes.
- * @param {boolean} newOnly Indicates whether we want a list of all nodes or just new annotation nodes.
+ * @param {boolean} newOnly Indicates whether we want a list of all nodes or just new annotations.
  * @param {Array} suppliedNodes A list of supplied nodes if they are passed in.
  *
  * @returns {Array}  A list of nodes to annotate in the correct order.
@@ -226,7 +220,7 @@ const getOrderedStopNodes = (
   let orderedNodes = [];
 
   // add previously annotated nodes to the result list
-  const annotatedFrameNodes = getFrameAnnotatedNodes(type, { frame, resetData: false }); //temp false
+  const annotatedFrameNodes = getFrameAnnotatedNodes(type, frame);
   annotatedFrameNodes.forEach((node) => {
     orderedNodes = updateArray(orderedNodes, node);
   });

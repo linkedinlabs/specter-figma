@@ -16,7 +16,6 @@ import {
   buildAnnotation,
   positionAnnotation,
   buildBoundingBox,
-  buildAuxAnnotation,
   buildLegendEntry,
   buildLegend,
   positionLegend,
@@ -312,8 +311,7 @@ export const createContainerGroup = (
 } => {
   const groupName: string = setGroupName(groupType);
   const groupKey: string = setGroupKey(groupType);
-  // const locked: boolean = groupType === 'topLevel';
-  const locked: boolean = false;
+  const locked: boolean = groupType === 'topLevel';
 
   // set up new container group node on the frame
   const newInnerGroup: GroupNode = drawContainerGroup({
@@ -1105,7 +1103,7 @@ export default class Painter {
     }
 
     // set up some information
-    const { keys } = nodeData;
+    // const { keys } = nodeData;
     const { annotationText } = nodeData;
     const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
@@ -1117,15 +1115,15 @@ export default class Painter {
       type,
     });
 
-    // set individual `keys` annotations for keystops
-    const auxAnnotations: Array<FrameNode> = [];
-    if (type === 'keystop' && keys?.length) {
-      keys.forEach((keyEntry) => {
-        const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-        auxAnnotation.layoutAlign = 'INHERIT';
-        auxAnnotations.push(auxAnnotation);
-      });
-    }
+    // tktk AUX KEYS
+    // const auxAnnotations: Array<FrameNode> = [];
+    // if (type === 'keystop' && keys?.length) {
+    //   keys.forEach((keyEntry) => {
+    //     const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
+    //     auxAnnotation.layoutAlign = 'INHERIT';
+    //     auxAnnotations.push(auxAnnotation);
+    //   });
+    // }
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -1151,38 +1149,37 @@ export default class Painter {
       nodePosition,
       type,
     );
-    const initialX = baseAnnotationNode.x;
-    const initialY = baseAnnotationNode.y;
+    // const initialX = baseAnnotationNode.x;
+    // const initialY = baseAnnotationNode.y;
 
     // if applicable, add auxilary annotations (currently `keys`)
-    let annotationNode: FrameNode = baseAnnotationNode;
+    const annotationNode: FrameNode = baseAnnotationNode;
     let legendNode: FrameNode = null;
-    if (auxAnnotations.length) {
-      annotationNode = figma.createFrame();
-      annotationNode.clipsContent = false;
-      annotationNode.layoutMode = 'HORIZONTAL';
-      annotationNode.counterAxisSizingMode = 'AUTO';
-      annotationNode.layoutAlign = 'INHERIT';
-      annotationNode.itemSpacing = 4;
-      annotationNode.fills = [];
-      annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
 
-      // add the base annotation
-      annotationNode.appendChild(baseAnnotationNode);
+    // tktk AUX KEYS
+    // if (auxAnnotations.length) {
+    //   annotationNode = figma.createFrame();
+    //   annotationNode.clipsContent = false;
+    //   annotationNode.layoutMode = 'HORIZONTAL';
+    //   annotationNode.counterAxisSizingMode = 'AUTO';
+    //   annotationNode.layoutAlign = 'INHERIT';
+    //   annotationNode.itemSpacing = 4;
+    //   annotationNode.fills = [];
+    //   annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
 
-      // add the key annotations
-      auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
 
-      baseAnnotationNode.layoutAlign = 'INHERIT';
-      annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
-      annotationNode.x = initialX;
-      annotationNode.y = initialY;
-    }
+    //   annotationNode.appendChild(baseAnnotationNode);
 
-    // if (['label', 'heading'].includes(type)) {
-      legendNode = buildLegendEntry(type, nodeData);
-      this.addEntryToLegend(legendNode);
+    //   // auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
+
+    //   baseAnnotationNode.layoutAlign = 'INHERIT';
+    //   annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
+    //   annotationNode.x = initialX;
+    //   annotationNode.y = initialY;
     // }
+
+    legendNode = buildLegendEntry(type, nodeData);
+    this.addEntryToLegend(legendNode);
 
     // set the annotation frame(s) into the correct container group layers in Figma
     setNodeInContainers({

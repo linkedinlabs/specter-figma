@@ -2,6 +2,8 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter/Painter';
+import { getOrderedStopNodes } from './utils/nodeGetters';
+import { DATA_KEYS, GUI_SETTINGS } from './constants';
 import {
   deepCompare,
   existsInArray,
@@ -13,11 +15,11 @@ import {
   isAnnotationLayer,
 } from './utils/tools';
 import {
-  getOrderedStopNodes,
-  getLegendFrame,
-} from './utils/nodeGetters';
-import { DATA_KEYS, GUI_SETTINGS } from './constants';
-import { refreshLegend, positionLegend, updateAnnotationNum, updateLegendEntry } from './Painter/annotationBuilders';
+  refreshLegend,
+  positionLegend,
+  updateAnnotationNum,
+  updateLegendEntry,
+} from './Painter/annotationBuilders';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -163,8 +165,8 @@ const repairBrokenLegendLinks = (
  * @kind function
  * @name handleDuplicatedNodes
  *
- * @param {string} type The type of annotation to repair (`keystop` or `label`).
- * @param {Object} options Includes `frameNode`: a top frame node to evaluate for context;
+ * @param {Object} options Includes `type`: the type of stop annotation to repair,
+ * `frameNode`: a top frame node to evaluate for context;
  * `trackingData`: the page-level node tracking data; `page`: the Figma PageNode;
  * `messenger`: an initialized instance of the Messenger class for logging; and
  * `isMercadoMode`: designates whether “Mercado” rules apply.
@@ -194,7 +196,7 @@ const handleDuplicatedNodes = (
   } = options;
 
   const list = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
-  
+
   if (list?.length) {
     let updatesMade = false;
 
@@ -206,7 +208,7 @@ const handleDuplicatedNodes = (
       }
       return acc;
     }, { annotationRoles: [], nodeRoles: [] });
-    
+
     nodeLinks.nodeRoles.forEach(({ id, node }) => {
       const trackingEntry = trackingData.find(({ linkId }) => linkId === id);
       if (
@@ -221,7 +223,7 @@ const handleDuplicatedNodes = (
             linkAnnotation.node.remove();
             updatesMade = true;
           }
-          
+
           // find the index of a pre-existing `id` match on the array
           const index: number = list.findIndex(match => match.id === trackingEntry.id);
           if (index > -1) {
@@ -238,10 +240,9 @@ const handleDuplicatedNodes = (
           nodesToReannotate.push(listEntry.id);
         }
       });
-      
-      // reset the list
+
       frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
-      
+
       // iterate nodes to re-assign and re-paint
       nodesToReannotate.forEach((nodeId: string) => {
         // need to re-check for a node's existence since we are deleting as we go
@@ -254,11 +255,11 @@ const handleDuplicatedNodes = (
             isMercadoMode,
             messenger,
           });
-          
+
           // get/set the stop info
           const identifierResult = identifier.getSetStop(type);
           messenger.handleResult(identifierResult, true);
-          
+
           if (identifierResult.status === 'success') {
             // set up Painter instance for the node
             const painter = new Painter({
@@ -266,7 +267,7 @@ const handleDuplicatedNodes = (
               in: page,
               isMercadoMode,
             });
-            
+
             // re-draw the annotation
             const painterResult = painter.addStop(type);
             messenger.handleResult(painterResult, true);
@@ -290,19 +291,20 @@ const handleDuplicatedNodes = (
  * @param {Object} page The Figma PageNode.
  * @param {Object} trackingData The page-level node tracking data.
  *
- * @returns {null}
+ * @returns {undefined}
  */
 const refreshAnnotations = (
-    type: PluginStopType,
-    isMercadoMode: boolean,
-    page: PageNode,
-    trackingData: Array<PluginNodeTrackingData>,
-): void => {
-
+  type: PluginStopType,
+  isMercadoMode: boolean,
+  page: PageNode,
+  trackingData: Array<PluginNodeTrackingData>,
+) => {
   trackingData.forEach((trackingEntry) => {
     const node: BaseNode = figma.getNodeById(trackingEntry.id);
     const frame: FrameNode = node && findTopFrame(node);
-    const app = new App({isMercadoMode, shouldTerminate: false, terminatePlugin: false});
+    // tktk: need to revisit the below, seems weird to have to instantiate App class
+    // eslint-disable-next-line no-use-before-define
+    const app = new App({ isMercadoMode, shouldTerminate: false, terminatePlugin: false });
 
     if (!node || (frame && frame.id !== trackingEntry.topFrameId)) {
       const oldFrame = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
@@ -312,7 +314,7 @@ const refreshAnnotations = (
         app.annotateStops(type, [node as SceneNode]);
       }
     } else if (node && frame && !figma.getNodeById(trackingEntry.annotationId)) {
-      const painter = new Painter({for: node, in: page, isMercadoMode});
+      const painter = new Painter({ for: node, in: page, isMercadoMode });
       painter.addStop(type);
     }
   });
@@ -329,17 +331,16 @@ const refreshAnnotations = (
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
  * @param {Object} messenger The class that handles error messaging.
  * @param {Object} page The Figma PageNode.
- * @param {Object} selection The figma selection to diff. 
+ * @param {Object} selection The figma selection to diff.
  *
- * @returns {null}
+ * @returns {undefined}
  */
 const diffAnnotationLocations = (
-    isMercadoMode: boolean,
-    messenger: any,
-    page: PageNode,
-    selection: Array<any>,
+  isMercadoMode: boolean,
+  messenger: any,
+  page: PageNode,
+  selection: Array<any>,
 ) => {
-  
   const types: Array<PluginStopType> = ['keystop', 'label', 'heading'];
   const frame: FrameNode = findTopFrame(selection[0]);
   const nodes = new Crawler({ for: [frame] }).all();
@@ -351,7 +352,15 @@ const diffAnnotationLocations = (
       page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
     );
     refreshAnnotations(type, isMercadoMode, page, trackingData);
-    handleDuplicatedNodes({type, trackingData, page, frame, nodes, messenger, isMercadoMode});
+    handleDuplicatedNodes({
+      type,
+      trackingData,
+      page,
+      frame,
+      nodes,
+      messenger,
+      isMercadoMode,
+    });
   });
 };
 
@@ -681,13 +690,12 @@ export default class App {
    * nodes found in current selection.  Gives us the option to use this beyond the Figma
    * selection.
    *
-   * @returns {undefined} Shows a Toast in the UI if nothing is selected.
+   * @returns {undefined}
    */
-  async annotateStops(
+  annotateStops(
     type: PluginStopType,
     suppliedNodes?: Array<SceneNode>, // only sent with keys updates
   ) {
-
     const { messenger, page, selection } = assemble(figma);
 
     if (!selection?.length && !suppliedNodes?.length) {
@@ -695,7 +703,7 @@ export default class App {
       return messenger.toast('A layer must be supplied');
     }
 
-    let nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
+    const nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
       type,
       selection,
       true,
@@ -706,7 +714,7 @@ export default class App {
       page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
     );
 
-    nodesToAnnotate.forEach((node: SceneNode) => {
+    nodesToAnnotate.forEach((node) => {
       removeLinkedAnnotationNodes(trackingData, [node.id]);
 
       // set up Identifier & Painter instances for the node
@@ -722,7 +730,6 @@ export default class App {
         in: page,
         isMercadoMode: this.isMercadoMode,
       });
-
 
       // get/set the stop info and paint it
       const identifierResult = identifier.getSetStop(type);
@@ -740,9 +747,11 @@ export default class App {
           return null;
         }
       }
+      return null;
     });
 
     App.refreshGUI();
+    return null;
   }
 
   /**
@@ -1224,65 +1233,11 @@ export default class App {
   }
 
   /**
-   * @description Retrieves a node based on the supplied `id` and draws an auxilarly Key Annotation
-   * based on the supplied `key`.
-   *
-   * @kind function
-   * @name updateNodeDataKeys
-   *
-   * @param {Object} options Should include a Figma node `id` and the `key` to be added.
-   * @param {boolean} removeKey Default is `false`. If set to `true`, the list of keystops will not
-   * be re-painted after an update, effectively removing the annotation that corresponds to the
-   * supplied `id` in `options`.
-   *
-   * @returns {null}
-   */
-  updateNodeDataKeys(
-    options: {
-      id: string,
-      key: PluginKeystopKeys,
-    },
-    removeKey: boolean = false,
-  ) {
-
-    const { id, key } = options;
-    const node: BaseNode = figma.getNodeById(id);
-
-    if (node) {
-      // retrieve the node data
-      const nodeData = JSON.parse(node.getPluginData(DATA_KEYS.keystopNodeData) || null);
-      if (nodeData) {
-        let keys: Array<PluginKeystopKeys> = nodeData?.keys || [];
-        let newKeys: Array<PluginKeystopKeys> = keys;
-
-        keys.forEach((keyEntry, index) => {
-          if (keyEntry === key) {
-            if (index > -1) {
-              newKeys = [
-                ...newKeys.slice(0, index),
-                ...newKeys.slice(index + 1),
-              ];
-            }
-          }
-        });
-
-        if (!removeKey) {
-          newKeys.push(key);
-        }
-
-        nodeData.keys = newKeys;
-        node.setPluginData(DATA_KEYS.keystopNodeData, JSON.stringify(nodeData));
-      }
-      this.annotateStops('keystop', [node as SceneNode]);
-    }
-  }
-
-  /**
    * @description Retrieves a node based on the supplied `id` and updates the specified nodeData
    * property based on input from the UI.
    *
    * @kind function
-   * @name updateNodeDataAria
+   * @name updateNodeData
    *
    * @param {string} id The id of the design node to update nodeData for.
    * @param {string} key The key of the nodeData property to update.
@@ -1290,14 +1245,20 @@ export default class App {
    *
    * @returns {undefined}
    */
-  updateNodeDataAria(
+  updateNodeData = (
     id: string,
-    key: 'role' | 'labels' | 'heading',
-    value: PluginLabelRole | PluginAriaLabels | PluginAriaHeading,
-  ) {
-
+    key: 'role' | 'labels' | 'heading' | 'keys',
+    value: PluginLabelRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
+  ) => {
     const node: BaseNode = figma.getNodeById(id);
-    const type = key === 'heading' ? key : 'label';
+    let type;
+    if (['role', 'labels'].includes(key)) {
+      type = 'label';
+    } else if (key === 'keys') {
+      type = 'keystop';
+    } else {
+      type = 'heading';
+    }
     const nodeData = node && JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || null);
 
     if (nodeData) {
@@ -1339,12 +1300,12 @@ export default class App {
     const frame = node && findTopFrame(node);
     const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]');
     let stopList = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
-    
+
     if (stopList) {
       if (newPosition > stopList.length) {
         newPosition = stopList.length;
       }
-      
+
       const selectedItem = stopList.find(stopItem => stopItem.id === id);
       const oldPosition = selectedItem.position;
 
@@ -1364,11 +1325,15 @@ export default class App {
           return currentPosition;
         };
 
-        stopList = stopList.map(({id, position}) => ({ id, position: setPosition(position, id) }));
+        stopList = stopList.map(item => ({
+          id: item.id,
+          position: setPosition(item.position, item.id),
+        }));
         this.refreshStopListOrder(type, frame, stopList, trackingData);
       }
     }
     App.refreshGUI();
+    return null;
   }
 
   /**
@@ -1383,31 +1348,28 @@ export default class App {
    * @param {Array} stopList The up-to-date list of stops to reorder.
    * @param {Array} trackingData The up-to-date annotation tracking data.
    *
-   * @returns {null}
+   * @returns {undefined}
    */
-  refreshStopListOrder(
+  refreshStopListOrder = (
     type: PluginStopType,
     frame: FrameNode,
     stopList: Array<PluginStopListData>,
     trackingData: Array<PluginNodeTrackingData>,
-  ) {
+  ) => {
     const reorderedList = stopList.sort(sortByPosition).map((item, i) => {
       const node = figma.getNodeById(item.id);
       const position = i + 1;
       const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]));
       node.setPluginData(
         DATA_KEYS[`${type}NodeData`],
-        JSON.stringify({ ...nodeData, annotationText: position.toString() })
+        JSON.stringify({ ...nodeData, annotationText: position.toString() }),
       );
       updateAnnotationNum(item.id, position.toString(), trackingData);
       return ({ ...item, position });
     });
-    
-    frame.setPluginData(DATA_KEYS[`${type}List`], JSON.stringify(reorderedList));
 
-    if (['label', 'heading'].includes(type)){
-      refreshLegend(type, frame.id, trackingData, reorderedList);
-    }
+    frame.setPluginData(DATA_KEYS[`${type}List`], JSON.stringify(reorderedList));
+    refreshLegend(type, frame.id, trackingData, reorderedList);
   }
 
   /**
@@ -1428,7 +1390,6 @@ export default class App {
     // retrieve existing options
     const options: PluginOptions = await getOptions();
     const { currentView, isInfo, isMercadoMode } = options;
-    console.log('1431: ', currentView)
     const isA11yTab = currentView.includes('a11y-');
 
     // calculate UI size, based on view type and selection
@@ -1439,82 +1400,41 @@ export default class App {
     } else if (isA11yTab) {
       width = GUI_SETTINGS.accessibilityDefault.width;
       height = GUI_SETTINGS.accessibilityDefault.height;
-    } else {
-      // return null;
     }
 
-    console.log('1446: ', currentView)
     if (selection?.length && runDiff) {
       diffAnnotationLocations(isMercadoMode, messenger, page, selection);
     }
 
     // ---------- set up selected items bundle for view
-    let nodes: Array<SceneNode> = [];
     const sessionKey = null; // tktk
     const selectedNodes: Array<SceneNode> = selection;
-    const items: Array<{
-      id: string,
-      name: string,
-      position?: number | string,
-      hasStop: boolean,
-      isSelected: boolean,
-      keys?: Array<PluginKeystopKeys>,
-      role?: PluginLabelRole,
-      labels?: PluginAriaLabels,
-      heading?: PluginAriaHeading
-    }> = [];
+    const items = [];
 
     const firstTopFrame = findTopFrame(selection[0]);
     const singleTopFrame = !selection.find(node => findTopFrame(node) !== firstTopFrame);
 
-    console.log('1470: ', currentView)
-    if (isA11yTab && singleTopFrame) {
-      let type: PluginStopType = getStopTypeFromView(currentView);
-      nodes = getOrderedStopNodes(type, selection, false);
+    if (isA11yTab && singleTopFrame && selection?.length) {
+      const type: PluginStopType = getStopTypeFromView(currentView);
+      const nodes = getOrderedStopNodes(type, selection, false);
 
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
-        const {
-          hasStop,
-          keys,
-          role,
-          labels,
-          heading,
-          position,
-        } = getStopData(type, node);
-
-        const displayPosition: string = position ? position.toString() : '';
+        const stopData = getStopData(type, node);
+        const displayPosition = stopData.position ? stopData.position.toString() : '';
         const viewObject: PluginViewObject = {
+          ...stopData,
           id,
           name,
           isSelected: existsInArray(selectedNodes, node.id),
-          hasStop,
-          keys,
-          role,
-          labels,
-          heading,
           position: displayPosition,
-        };
-
-        items.push(viewObject);
-      });
-    } else if (!isA11yTab) {
-      console.log(nodes)
-      nodes.forEach((node: SceneNode) => {
-        const { id, name } = node;
-        const viewObject = {
-          hasStop: false,
-          id,
-          isSelected: true,
-          name,
         };
 
         items.push(viewObject);
       });
     }
 
-    // send the updates to the UI
     figma.ui.postMessage({
       action: 'refreshState',
       payload: {
@@ -1527,13 +1447,10 @@ export default class App {
 
     // commit the calculated size (re-size the actual plugin frame)
     if (!isInfo && (!isA11yTab || (isA11yTab && !items.length))) {
-      figma.ui.resize(
-        width,
-        height,
-      );
+      figma.ui.resize(width, height);
     }
 
-    messenger.log(`Updating UI view (${currentView}) with ${nodes.length} selected ${nodes.length === 1 ? 'node' : 'nodes'}`);
+    messenger.log(`Updating UI view (${currentView}) with selected nodes'}`);
     return null;
   }
 
@@ -1550,7 +1467,7 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI if a `nodeId` is not supplied.
    */
-  async removeStopAnnotation(
+  removeStopAnnotation(
     type: PluginStopType,
     id: string,
     oldFrame?: FrameNode,
@@ -1559,24 +1476,23 @@ export default class App {
 
     if (!id) {
       messenger.log(`Cannot remove ${type}; missing node ID(s)`, 'error');
-      return;
+    } else {
+      const node: BaseNode = figma.getNodeById(id);
+      const frame = oldFrame || findTopFrame(node);
+      let trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]');
+      let stopList = frame && JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
+
+      removeLinkedAnnotationNodes(trackingData, [id]);
+      trackingData = trackingData.filter(entry => entry.id !== id);
+
+      if (stopList) {
+        stopList = stopList.filter(item => item.id !== id);
+        this.refreshStopListOrder(type, frame, stopList, trackingData);
+      }
+
+      page.setPluginData(DATA_KEYS[`${type}Annotations`], JSON.stringify(trackingData));
+      App.refreshGUI();
     }
-
-    const node: BaseNode = figma.getNodeById(id);
-    const frame = oldFrame || findTopFrame(node);
-    let trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]');
-    let stopList = frame && JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
-
-    removeLinkedAnnotationNodes(trackingData, [id]);
-    trackingData = trackingData.filter(entry => entry.id !== id);
-
-    if (stopList) {
-      stopList = stopList.filter(item => item.id !== id);
-      this.refreshStopListOrder(type, frame, stopList, trackingData);
-    }
-
-    page.setPluginData(DATA_KEYS[`${type}Annotations`], JSON.stringify(trackingData));
-    App.refreshGUI();
   }
 
   /**

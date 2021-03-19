@@ -793,7 +793,7 @@ export default class Identifier {
     }
 
     // get top frame stop list
-    let frameKeystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
+    const frameKeystopList = JSON.parse(topFrame.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
 
     // set new position based on list length
     // (we always assume `getSetKeystop` has been fed the node in order)
@@ -817,7 +817,7 @@ export default class Identifier {
     // convert position to string
     const textToSet = `${positionToSet}`;
 
-    let nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
+    const nodeData = JSON.parse(this.node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
     nodeData.annotationText = textToSet;
 
     // check for assigned data, if none exist (`undefined` or `null`):

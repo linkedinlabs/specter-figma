@@ -16,17 +16,15 @@
   };
 
   let dirtyRole = role || 'no-role';
-  // let originalRole = role || 'no-role';
-  let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
-  // let originalLabels = labels ? { ...labels } : { ...labelsInit };
+  const dirtyLabels = labels ? { ...labels } : { ...labelsInit };
 
   const updateField = (key, value) => {
     const diff = key === 'role' ? value !== role : deepCompare(value, labels);
-    
+
     if (diff) {
       parent.postMessage({
         pluginMessage: {
-          action: 'a11y-set-aria-data',
+          action: 'a11y-set-node-data',
           payload: {
             id: itemId,
             key,

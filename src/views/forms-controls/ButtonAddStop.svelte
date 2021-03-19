@@ -8,13 +8,13 @@
   export let type = null;
 
   const addStopAnnotation = () => {
-    let stopType = getStopTypeFromView(type);
+    const stopType = getStopTypeFromView(type);
 
     parent.postMessage({
       pluginMessage: {
         action: 'a11y-add-stop',
         payload: {
-          type: stopType
+          type: stopType,
         },
       },
     }, '*');

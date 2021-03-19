@@ -277,7 +277,7 @@ const compareArrays = (array1: Array<any>, array2: Array<any>) => {
  */
 const deepCompare = (unmodifiedObject: Object, modifiedObject: Object) => {
   let isDifferent: boolean = false;
-  
+
   // catches type differences e.g. if either are undefined/null
   if (unmodifiedObject !== modifiedObject) {
     return true;
@@ -414,7 +414,7 @@ const getNodeSettings = (page: any, nodeId: string) => {
  */
 //
 const findTopFrame = (node: any) => {
-  let { parent } = node && figma.getNodeById(node.id) || {};
+  let { parent } = (node && figma.getNodeById(node.id)) || {};
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
@@ -487,7 +487,7 @@ const findTopInstance = (node: any): InstanceNode => {
  *
  * @returns {boolean} Returns flag for whether the node is in Specter annotation group.
  */
- const isAnnotationLayer = (node: any): boolean => {
+const isAnnotationLayer = (node: any): boolean => {
   let { parent } = node;
   let currentNode = node;
   let currentTopGroup: GroupNode = null;
@@ -888,8 +888,8 @@ const getStopTypeFromView = (viewName) => {
  * @returns {string} The title-cased string.
  */
 const sortByPosition = (itemA, itemB) => {
-  const aPosition = parseInt(itemA.position);
-  const bPosition = parseInt(itemB.position);
+  const aPosition = parseInt(itemA.position, 10);
+  const bPosition = parseInt(itemB.position, 10);
   if (aPosition < bPosition) {
     return -1;
   }
