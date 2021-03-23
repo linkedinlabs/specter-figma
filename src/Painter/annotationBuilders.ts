@@ -1753,7 +1753,6 @@ const buildA11yChecklist = () => {
 
   const title = buildText('custom', {r: .255, g: .255, b: .255}, 'MAS for LinkedIn Designers Checklist');
   title.fontSize = 18;
-  // title.lineHeight = {value: 400, unit: 'PERCENT'};
   frame.appendChild(title);
 
   const columnWrapper = figma.createFrame();
@@ -1761,9 +1760,7 @@ const buildA11yChecklist = () => {
 
   const leftColumn = figma.createFrame();
   leftColumn.resize(660, 800);
-  leftColumn.layoutAlign = 'STRETCH';
   leftColumn.layoutMode = 'VERTICAL';
-  leftColumn.primaryAxisSizingMode = 'FIXED';
 
   CHECKLIST_SECTIONS.forEach((section) => {
     const heading = buildText('custom', {r: .255, g: .255, b: .255}, '\n'+section.heading);
@@ -1777,6 +1774,8 @@ const buildA11yChecklist = () => {
 
     leftColumn.appendChild(heading);
     leftColumn.appendChild(list);
+    leftColumn.layoutGrow = 0;
+    leftColumn.primaryAxisSizingMode = 'AUTO';
   })
 
   columnWrapper.appendChild(leftColumn);
@@ -1786,8 +1785,10 @@ const buildA11yChecklist = () => {
 
   columnWrapper.appendChild(rightColumn);
   frame.appendChild(columnWrapper);
-  // columnWrapper.resize(columnWrapper.width, leftColumn.height);
   columnWrapper.layoutMode = 'HORIZONTAL';
+  columnWrapper.layoutAlign = 'INHERIT';
+  columnWrapper.primaryAxisSizingMode = 'AUTO';
+  columnWrapper.counterAxisSizingMode = 'AUTO';
   return frame;
 }
 
