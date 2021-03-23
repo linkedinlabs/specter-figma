@@ -5,8 +5,8 @@
 
   export let isSelected = false;
   export let itemId = null;
-  export let keys = null;
   export let type = null;
+  export let keys = [];
 
   let newKeyValue = 'no-key';
   const savedKeys = keys ? [...keys] : [];
@@ -23,28 +23,28 @@
   }, []);
 
   const updateKeys = (action, value, index) => {
-    let newKeys = [...keys];
+    // let newKeys = [...keys];
 
     if (action === 'delete') {
-      newKeys = newKeys.filter(key => key !== value);
+      keys = keys.filter(key => key !== value);
     } else if (action === 'update' && value !== keys[index]) {
-      value === 'no-key' ? newKeys.splice(index, 1) : newKeys[index] = value;
-    } else if (action === 'add' && ![...newKeys, 'no-key'].includes(value)) {
-      newKeys.push(value);
+      value === 'no-key' ? keys.splice(index, 1) : keys[index] = value;
+    } else if (action === 'add' && ![...keys, 'no-key'].includes(value)) {
+      keys.push(value);
     }
 
-    if (compareArrays(newKeys, savedKeys)) {
+    if (compareArrays(keys, savedKeys)) {
       parent.postMessage({
         pluginMessage: {
           action: 'a11y-set-node-data',
           payload: {
             id: itemId,
             key: 'keys',
-            value: newKeys,
+            value: keys,
           },
         },
       }, '*');
-      keys = newKeys;
+      // keys = newKeys;
       newKeyValue = 'no-key';
     }
   };
@@ -56,6 +56,7 @@
 </style>
 
 <article class:isSelected class={`item-content ${type}`}>
+  {#if keys}
   <ul class="keys-list">
     {#each keys as key, i (key)}
       <li class="keys-item">
@@ -94,4 +95,5 @@
       </li>
     {/if}
   </ul>
+  {/if}
 </article>
