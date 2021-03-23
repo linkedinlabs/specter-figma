@@ -172,26 +172,24 @@
             <ItemExpandedContentKeystops
               itemId={item.id}
               isSelected={item.isSelected}
-              keys={item.keys}
               type={type}
+              bind:keys={item.keys}
             />
           {:else if (type === 'a11y-labels')}
             <ItemExpandedContentLabels
               itemId={item.id}
               isSelected={item.isSelected}
-              labels={item.labels}
-              role={item.role}
               roleOptions={ROLE_OPTS}
               type={type}
-              on:handleUpdate={() => {}}
+              bind:role={item.role}
+              bind:labels={item.labels}
             />
             {:else if (type === 'a11y-headings')}
             <ItemExpandedContentHeadings
               itemId={item.id}
               isSelected={item.isSelected}
-              heading={item.heading}
               type={type}
-              on:handleUpdate={() => {}}
+              bind:heading={item.heading}
             />
           {/if}
         {/if}
