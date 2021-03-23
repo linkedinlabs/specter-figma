@@ -126,7 +126,7 @@ const setGroupName = (
       groupName = 'Foundation Annotations';
       break;
     case 'topLevel':
-      groupName = `+++ ${PLUGIN_NAME} +++`;
+      groupName = `+${PLUGIN_NAME}+`;
       break;
     default:
       groupName = 'Component Annotations';
@@ -1217,7 +1217,7 @@ export default class Painter {
     let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
       legend = buildLegend();
-      legend.name = `+++ ${PLUGIN_NAME} +++ ${this.frame.name} Legend`;
+      legend.name = `+${PLUGIN_NAME}+ Legend - ${this.frame.name}`;
 
       const {
         x, y, width, height,

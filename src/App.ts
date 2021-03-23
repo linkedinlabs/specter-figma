@@ -2,7 +2,7 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter/Painter';
-import { getOrderedStopNodes } from './utils/nodeGetters';
+import { getOrderedStopNodes, getSpecPage } from './utils/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
 import {
   deepCompare,
@@ -19,6 +19,8 @@ import {
   positionLegend,
   updateAnnotationNum,
   updateLegendEntry,
+  buildText,
+  buildA11yChecklist,
 } from './Painter/annotationBuilders';
 
 /**
@@ -582,6 +584,55 @@ export default class App {
       return this.terminatePlugin();
     }
     return null;
+  }
+
+
+  generateTemplate() {
+    const { selection, page } = assemble(figma);
+
+    if (selection?.length) {
+      const specPage = getSpecPage(page);
+      const checklist = buildA11yChecklist();
+      specPage.appendChild(checklist);
+
+      // add instructions and checklist stuff to page
+      // find next open space for when stuff is added later
+      const categories = ['General', 'Keystop', 'Label', 'Heading'];
+
+      const topFrames = new Crawler({for: selection}).topFrames();
+      let yCoordinate = 20;
+      topFrames.forEach((frame) => {
+        let xCoordinate = 1320;
+        categories.forEach(category => {
+          const duplicate = frame.clone();
+          // remove all plugin data and annotaiton nodes
+          duplicate.name = `${category} Spec - ${frame.name}`;
+
+          specPage.appendChild(duplicate);
+          duplicate.x = xCoordinate;
+          duplicate.y = yCoordinate;
+
+          const painter = new Painter({for: duplicate.children[0], in: specPage, isMercadoMode: this.isMercadoMode});
+          const characters = 'Annotation data you enter will automatically appear here';
+          const legendEntry = figma.createFrame();
+          legendEntry.fills = [{
+            type: 'SOLID',
+            color: {r: 1, g: 1, b: 1},
+          }];
+          const legendInstructions = buildText('legend', {r: 0, g: 0, b: 0}, characters);
+          legendEntry.resize(364, 35);
+          legendInstructions.resize(350, 30);
+          legendEntry.appendChild(legendInstructions);
+          legendEntry.verticalPadding = 5;
+          legendEntry.horizontalPadding = 5;
+          painter.addEntryToLegend(legendEntry);
+
+          xCoordinate += (frame.width + 450);
+        })
+        yCoordinate += (frame.height + 150);
+      })
+      figma.notify(`Success! Templates added to page '${specPage.name}'`);
+    }
   }
 
   /**

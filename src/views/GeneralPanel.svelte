@@ -61,6 +61,20 @@
           </svg>
         </ButtonAction>
       </li>
+      <li>
+        <ButtonAction
+          on:handleAction
+          action="generate"
+          text="Generate Spec Template"
+        >
+          <svg viewBox="0 0 21 18" class="icons-generate">
+            <path d="M2,16H19V2H2ZM0,0H21V18H0Z"/>
+            <rect class="pink" width="8" height="18"/>
+            <rect class="blue" width="8" height="18"/>
+            <rect class="green" width="8" height="18"/>
+          </svg>
+        </ButtonAction>
+      </li>
     </ul>
   </nav>
 </section>

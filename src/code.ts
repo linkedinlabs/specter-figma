@@ -118,6 +118,10 @@ const dispatcher = async (action: {
       case 'measure':
         app.annotateMeasurement();
         break;
+      case 'generate': {
+        app.generateTemplate();
+        break;
+      }
       case 'info':
         App.showHideInfo();
         break;
@@ -282,6 +286,7 @@ const main = async () => {
   const watchSelection = (): void => {
     // update immediately on a selection change
     // App.refreshGUI(SESSION_KEY);
+    // console.log(JSON.stringify(figma.currentPage.selection[0]?.characters))
     App.refreshGUI();
 
     // // set the interval for each diff check

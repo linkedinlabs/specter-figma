@@ -59,7 +59,7 @@ const findParentInstance = (node: any) => {
  * @param {Object} frameId The design top frame we're looking for a legend for.
  * @param {Object} page The Figma page the frame belongs to.
  *
- * @returns {Object} The legend for the frame (or null, if it doesn't exist).
+ * @returns {Object} The legend for the frame (or undefined, if it doesn't exist).
  */
 const getLegendFrame = (frameId: string, page: PageNode) => {
   let legendFrame = null;
@@ -70,6 +70,26 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
     legendFrame = figma.getNodeById(trackingEntry.legendId);
   }
   return legendFrame;
+};
+
+/**
+ * @description Takes a page and finds the corresponding spec page if it exists.
+ *
+ * @kind function
+ * @name getSpecPage
+ * @param {Object} page The Figma page the frame belongs to.
+ *
+ * @returns {Object} The legend for the frame (or undefined, if it doesn't exist).
+ */
+ const getSpecPage = (page: PageNode) => {
+  const specPageId = page.getPluginData(DATA_KEYS.specPage);
+  let specPage = figma.root.children.find(child => child.id === specPageId);
+  if (!specPage) {
+    specPage = figma.createPage();
+    specPage.name = `SPEC - ${page.name}`;
+    page.setPluginData(DATA_KEYS.specPage, specPage.id);
+  }
+  return specPage;
 };
 
 /**
@@ -248,6 +268,7 @@ const getOrderedStopNodes = (
 export {
   findParentInstance,
   getLegendFrame,
+  getSpecPage,
   findTopComponent,
   getOrderedStopNodes,
 };

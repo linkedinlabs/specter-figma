@@ -1,4 +1,5 @@
 import {
+  CHECKLIST_SECTIONS,
   COLORS,
   DATA_KEYS,
   KEY_OPTS,
@@ -395,7 +396,7 @@ const buildText = (
     if (!characters.includes(':')) {
       text.resize(225, text.height);
     }
-  }
+  } 
   return text;
 };
 
@@ -650,7 +651,6 @@ const buildAnnotation = (options: {
       icon = buildKeystopIcon(iconColor);
     }
   }
-
 
   return {
     diamond,
@@ -1737,7 +1737,62 @@ const updateLegendEntry = (
   }
 };
 
+const buildA11yChecklist = () => {
+  const frame = figma.createFrame();
+  frame.name = 'Accessibility Checklist';
+  frame.resize(1000, 1500);
+  frame.fills = [{
+    type: 'SOLID',
+    color: {r: 1, g: 1, b: 1}
+  }];
+  frame.verticalPadding = 40;
+  frame.horizontalPadding = 40;
+  frame.layoutAlign = 'STRETCH';
+  frame.layoutMode = 'VERTICAL';
+  frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
+
+  const title = buildText('custom', {r: .255, g: .255, b: .255}, 'MAS for LinkedIn Designers Checklist');
+  title.fontSize = 18;
+  // title.lineHeight = {value: 400, unit: 'PERCENT'};
+  frame.appendChild(title);
+
+  const columnWrapper = figma.createFrame();
+  columnWrapper.layoutMode = 'HORIZONTAL';
+
+  const leftColumn = figma.createFrame();
+  leftColumn.resize(660, 800);
+  leftColumn.layoutAlign = 'STRETCH';
+  leftColumn.layoutMode = 'VERTICAL';
+  leftColumn.primaryAxisSizingMode = 'FIXED';
+
+  CHECKLIST_SECTIONS.forEach((section) => {
+    const heading = buildText('custom', {r: .255, g: .255, b: .255}, '\n'+section.heading);
+    heading.fontSize = 14;
+    heading.textAlignHorizontal = 'LEFT';
+    heading.lineHeight = {value: 300, unit: 'PERCENT'};
+
+    const list = buildText('custom', {r: .255, g: .255, b: .255}, section.text);
+    list.textAlignHorizontal = 'LEFT';
+    list.lineHeight = { value: 150, unit: 'PERCENT' };
+
+    leftColumn.appendChild(heading);
+    leftColumn.appendChild(list);
+  })
+
+  columnWrapper.appendChild(leftColumn);
+
+  const rightColumn = figma.createFrame();
+  rightColumn.resize(275, 800);
+
+  columnWrapper.appendChild(rightColumn);
+  frame.appendChild(columnWrapper);
+  // columnWrapper.resize(columnWrapper.width, leftColumn.height);
+  columnWrapper.layoutMode = 'HORIZONTAL';
+  return frame;
+}
+
 export {
+  buildA11yChecklist,
   buildAnnotation,
   buildAuxAnnotation,
   buildBoundingBox,

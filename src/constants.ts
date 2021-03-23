@@ -56,6 +56,7 @@ const DATA_KEYS: {
   labelAnnotations: string,
   headingAnnotations: string,
   legendFrames: string,
+  specPage: string,
   keystopList: string,
   labelList: string,
   headingList: string,
@@ -75,6 +76,7 @@ const DATA_KEYS: {
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
   headingAnnotations: `${PLUGIN_IDENTIFIER}.headingAnnotations-001`,
   legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
+  specPage: `${PLUGIN_IDENTIFIER}.specPage-001`,
   // top-frame level
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
@@ -259,7 +261,7 @@ const GUI_SETTINGS = {
   },
   default: {
     width: 360,
-    height: 171,
+    height: 210,
   },
   input: {
     width: 440,
@@ -520,7 +522,38 @@ const LEVEL_OPTS = [
   },
 ];
 
+/**
+ * @description An array of section heading and items to include in the a11y checklist.
+ *
+ * @kind constant
+ * @name CHECKLIST_SECTIONS
+ * @type {Array}
+ */
+ const CHECKLIST_SECTIONS = [
+  {
+    heading: 'Have you checked for color and contrast?',
+    text: '[ ] Hue is never used as the sole means of conveying information.\n[ ] All text has at least 4.5:1 contrast with its surrounding color. \n    [ ] Exception: Large text (over 19px) has at least 3:1 contrast.\n[ ] For all controls, there is at least 3:1 contrast between the \n    surrouding color(s) and the color of every part of the control that is \n    essential to understand:\n    (A) what type of control it is, and \n    (B) the current value of the control.\n    [ ] There is at least 3:1 contrast between each of the possible states \n        of a control, unless something other than color is used to \n        distinguish states.\n[ ] For all graphical elements (e.g. images) that convey unique \n    information on a screen, every part of the graphic has at least 3:1 \n    contrast with its surrounding color.',
+  },
+  {
+    heading: 'Is there text-equivalent for all visual information?',
+    text: '[ ] All images have alt text.\n    [ ] Alt text provides a verbal equivalent of the image.\n[ ] All controls have visible text or image as a label (name)\n    [ ] Controls that use an image for the label also have a predictable \n        a11y label defined, or the image has alt text.\n    [ ] All unique controls have unique names (visible or a11y label).\n[ ] When a user can identify the type of control (i.e. role) based on \n    visual information, the role is clearly defined in the spec as well.',
+  },
+  {
+    heading: 'Is the layout adaptable?',
+    text: '[ ] All components that contain text adapt when users change text size or \n    text spacing, without loss of information necessary to understand and \n    use the app.\n[ ] The page layout responds to increases in zoom level (equivalent to \n    reducing the viewport dimensions) so that a user never has to scroll \n    the page in two dimensions.\n    [ ] Individual components in the page never require two-dimensional     \n        scroll.\n    [ ] Exception: maps, images, data tables.\n[ ] No content or functionality is restricted to any one device \n    orientation (e.g. landscape or portrait).',
+  },
+  {
+    heading: 'Is the UI designed to be operable via any input modality?',
+    text: '[ ] For every function that can be performed using a pointer input, a user \n    can perform the function using a keyboard alone.\n    [ ] Every focusable element (esp. controls) is represented in the \n        focus order definition.\n[ ] Every pointer interaction is operable via simple single-pointer \n    interactions. Examples: single click/tap, long press.\n    [ ] Exception: Gesture interactions are used only in cases where the \n        platform provides an single-pointer alternative to the gesture \n        (e.g. Android/iOS swipe gesture).\n[ ] Headings are identified in the spec.\n    [ ] Web only: Heading level is defined for each heading.',
+  },
+  {
+    heading: 'Is the interface understandable?',
+    text: '[ ] For relationships between elements that are conveyed visually, there \n    are clear definitions of that relationship for engineers to ensure \n    that the relationship is reflected programmatically, as well.\n[ ] All error states are clearly identified for users for:\n    (a) input-level errors, and\n    (b) page-level errors.\n    [ ] Error messaging includes instructions on what the user should do \n        to address the error.\n[ ] Elements that appear on multiple screens in an app use the same name\n    and behave predictably.',
+  },
+];
+
 export {
+  CHECKLIST_SECTIONS,
   COLORS,
   CONTAINER_NODE_TYPES,
   DATA_KEYS,

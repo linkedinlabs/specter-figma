@@ -48,6 +48,19 @@
       }
     }
 
+    &.icons-generate {
+      rect.green {
+        fill: rgba($generate-green, 0.25); // custom color for bounding box icon
+      }
+      rect.blue {
+        fill: rgba($generate-blue, 0.25); // custom color for bounding box icon
+        margin-left: 8px;
+      }
+      rect.pink {
+        fill: rgba($generate-pink, 0.25); // custom color for bounding box icon
+      }
+    }
+
     &.icons-measure {
       width: 95%;
     }
