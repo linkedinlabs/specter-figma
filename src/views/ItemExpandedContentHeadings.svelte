@@ -3,18 +3,12 @@
   import { deepCompare } from '../utils/tools';
   import { LEVEL_OPTS } from '../constants';
 
-  const headingInit = {
-    level: 'no-level',
-    visible: true,
-    invisible: null,
-  };
-
   export let isSelected = false;
   export let itemId = null;
   export let type = null;
-  export let heading = { ...headingInit };
+  export let heading;
 
-  const savedHeading = heading ? { ...heading } : { ...headingInit };
+  const savedHeading = { ...heading };
 
   const updateHeading = (newHeading) => {
     if (deepCompare(savedHeading, newHeading)) {

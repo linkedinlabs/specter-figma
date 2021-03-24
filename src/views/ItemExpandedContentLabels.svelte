@@ -2,21 +2,15 @@
   import FormUnit from './forms-controls/FormUnit';
   import { deepCompare } from '../utils/tools';
 
-  const labelsInit = {
-    a11y: null,
-    visible: false,
-    alt: null,
-  };
-
   export let isSelected = false;
   export let itemId = null;
   export let type = null;
   export let roleOptions;
-  export let role = 'no-role';
-  export let labels = { ...labelsInit };
+  export let role;
+  export let labels;
 
-  const savedRole = role || 'no-role';
-  const savedLabels = labels ? { ...labels } : { ...labelsInit };
+  const savedRole = role;
+  const savedLabels = { ...labels };
 
   const updateField = (key, value) => {
     const diff = key === 'role' ? value !== savedRole : deepCompare(value, savedLabels);

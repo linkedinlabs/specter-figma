@@ -1,15 +1,15 @@
 <script>
+  import { KEY_OPTS } from '../constants';
   import { compareArrays } from '../utils/tools';
   import FormUnit from './forms-controls/FormUnit';
-  import { KEY_OPTS } from '../constants';
 
   export let isSelected = false;
   export let itemId = null;
   export let type = null;
-  export let keys = [];
+  export let keys;
 
   let newKeyValue = 'no-key';
-  const savedKeys = keys ? [...keys] : [];
+  const savedKeys = [...keys];
 
   $: currentOptions = KEY_OPTS.reduce((acc, opt, i) => {
     // checks if current item is divider preceeded by another divider or at the end
@@ -22,15 +22,11 @@
     return acc;
   }, []);
 
-  const updateKeys = (action, value, index) => {
-    // let newKeys = [...keys];
-
+  const updateKeys = (action, value) => {
     if (action === 'delete') {
       keys = keys.filter(key => key !== value);
-    } else if (action === 'update' && value !== keys[index]) {
-      value === 'no-key' ? keys.splice(index, 1) : keys[index] = value;
     } else if (action === 'add' && ![...keys, 'no-key'].includes(value)) {
-      keys.push(value);
+      keys = [...keys, value];
     }
 
     if (compareArrays(keys, savedKeys)) {
@@ -44,7 +40,6 @@
           },
         },
       }, '*');
-      // keys = newKeys;
       newKeyValue = 'no-key';
     }
   };
@@ -56,7 +51,6 @@
 </style>
 
 <article class:isSelected class={`item-content ${type}`}>
-  {#if keys}
   <ul class="keys-list">
     {#each keys as key, i (key)}
       <li class="keys-item">
@@ -71,9 +65,8 @@
             nameId={`${itemId}-key-${key}`}
             options={[KEY_OPTS.find(opt => opt.value === key), ...currentOptions.slice(1)]}
             selectWatchChange={true}
-            on:saveSignal={() => updateKeys('update', key, i)}
             bind:value={key}
-          />
+            />
         </span>
       </li>
     {/each}
@@ -95,5 +88,4 @@
       </li>
     {/if}
   </ul>
-  {/if}
 </article>

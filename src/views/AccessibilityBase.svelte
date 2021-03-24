@@ -2,7 +2,7 @@
   import BlankState from './BlankState';
   import ItemsList from './ItemsList';
 
-  export let items = null;
+  export let items;
   export let viewContext = 'a11y-keyboard';
 </script>
 

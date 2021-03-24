@@ -10,8 +10,8 @@
   import ItemHeader from './ItemHeader';
 
   // props
-  export let items = null;
-  export let type = null;
+  export let items;
+  export let type;
 
   // locals
   let itemsDirty = items;
@@ -187,6 +187,7 @@
             {:else if (type === 'a11y-headings')}
             <ItemExpandedContentHeadings
               itemId={item.id}
+              item={item}
               isSelected={item.isSelected}
               type={type}
               bind:heading={item.heading}
