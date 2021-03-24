@@ -612,22 +612,24 @@ export default class App {
           duplicate.x = xCoordinate;
           duplicate.y = yCoordinate;
 
-          const painter = new Painter({for: duplicate.children[0], in: specPage, isMercadoMode: this.isMercadoMode});
-          const characters = 'Annotation data you enter will automatically appear here';
-          const legendEntry = figma.createFrame();
-          legendEntry.fills = [{
-            type: 'SOLID',
-            color: {r: 1, g: 1, b: 1},
-          }];
-          const legendInstructions = buildText('legend', {r: 0, g: 0, b: 0}, characters);
-          legendEntry.resize(364, 35);
-          legendInstructions.resize(350, 30);
-          legendEntry.appendChild(legendInstructions);
-          legendEntry.verticalPadding = 5;
-          legendEntry.horizontalPadding = 5;
-          painter.addEntryToLegend(legendEntry);
-
-          xCoordinate += (frame.width + 450);
+          if (category !== 'General') {
+            const painter = new Painter({for: duplicate.children[0], in: specPage, isMercadoMode: this.isMercadoMode});
+            const characters = 'Annotation data you enter will automatically appear here';
+            const legendEntry = figma.createFrame();
+            legendEntry.fills = [{
+              type: 'SOLID',
+              color: {r: 1, g: 1, b: 1},
+            }];
+            const legendInstructions = buildText('legend', {r: 0, g: 0, b: 0}, characters);
+            legendEntry.resize(364, 35);
+            legendInstructions.resize(350, 30);
+            legendEntry.appendChild(legendInstructions);
+            legendEntry.verticalPadding = 5;
+            legendEntry.horizontalPadding = 5;
+            painter.addEntryToLegend(legendEntry);
+            xCoordinate += 400;
+          }
+          xCoordinate += (frame.width + 100);
         })
         yCoordinate += (frame.height + 150);
       })
