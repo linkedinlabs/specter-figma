@@ -4,22 +4,16 @@
 
   export let isSelected = false;
   export let itemId = null;
-  export let role = null;
   export let type = null;
-  export let labels = null;
   export let roleOptions;
+  export let role;
+  export let labels;
 
-  const labelsInit = {
-    a11y: null,
-    visible: false,
-    alt: null,
-  };
-
-  let dirtyRole = role || 'no-role';
-  const dirtyLabels = labels ? { ...labels } : { ...labelsInit };
+  const savedRole = role;
+  const savedLabels = { ...labels };
 
   const updateField = (key, value) => {
-    const diff = key === 'role' ? value !== role : deepCompare(value, labels);
+    const diff = key === 'role' ? value !== savedRole : deepCompare(value, savedLabels);
 
     if (diff) {
       parent.postMessage({
@@ -51,12 +45,12 @@
         nameId={`${itemId}-role`}
         options={roleOptions}
         selectWatchChange={true}
-        on:saveSignal={() => updateField('role', dirtyRole)}
-        bind:value={dirtyRole}
+        on:saveSignal={() => updateField('role', role)}
+        bind:value={role}
       />
     </span>
-    {#if (dirtyRole !== 'image-decorative')}
-      {#if (dirtyRole === 'image')}
+    {#if (role !== 'image-decorative')}
+      {#if (role === 'image')}
         <FormUnit
           className="form-row"
           kind="inputText"
@@ -64,8 +58,8 @@
           nameId={`${itemId}-label-alt`}
           placeholder="Short description of the scene"
           inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', dirtyLabels)}
-          bind:value={dirtyLabels.alt}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.alt}
         />
       {:else}
         <FormUnit
@@ -75,8 +69,8 @@
           nameId={`${itemId}-label-visible`}
           placeholder="Leave empty to use a11y label"
           inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', dirtyLabels)}
-          bind:value={dirtyLabels.visible}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.visible}
         />
         <FormUnit
           className="form-row"
@@ -85,8 +79,8 @@
           nameId={`${itemId}-label-a11y`}
           placeholder="Leave empty to use visible label"
           inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', dirtyLabels)}
-          bind:value={dirtyLabels.a11y}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.a11y}
         />
       {/if}
     {/if}

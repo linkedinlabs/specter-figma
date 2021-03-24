@@ -4,7 +4,7 @@ declare global {
 
   type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'enter' | 'escape' | 'space';
 
-  type PluginLabelRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
+  type PluginAriaRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
   type PluginStopType = 'keystop' | 'label' | 'heading';
 
@@ -78,11 +78,11 @@ declare global {
     id: string,
     isSelected: boolean,
     keys?: Array<PluginKeystopKeys>,
+    role?: PluginAriaRole,
     labels?: PluginAriaLabels,
     heading?: PluginAriaHeading,
     name: string,
     position: number | string,
-    role?: PluginLabelRole,
   }
 
   // Vendor Declarations

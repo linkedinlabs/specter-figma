@@ -479,66 +479,53 @@ const setRelaunchCommands = (
  * @kind function
  * @name getStopData
  *
- * @param {string} type The type of annotation to repair (`keystop` or `label`).
- * @param {Object} node A SceneNode to check for Keystop data.
+ * @param {string} type The type of annotation to get stop data for.
+ * @param {Object} node A SceneNode to check for attached data.
  *
  * @returns {Object} An object formatted for the UI including `hasStop`, a boolean indicating
- * the presence of a keystop, the current position if the stop exists, and any keys (as an array),
- * if they exist or labels (if they exist).
+ * the presence of a stop, the current position if the stop exists, and relevant data.
  */
 const getStopData = (
   type: PluginStopType,
   node: SceneNode,
-): {
-  hasStop: boolean,
-  keys?: Array<PluginKeystopKeys>,
-  labels?: PluginAriaLabels,
-  position: number,
-  role?: PluginLabelRole,
-  heading?: PluginAriaHeading,
-} => {
-  // set up keystop blank
-  const nodePositionData: {
-    hasStop: boolean,
-    keys?: Array<PluginKeystopKeys>,
-    labels?: PluginAriaLabels,
-    position: number,
-    role?: PluginLabelRole,
-    heading?: PluginAriaHeading,
-  } = {
+) => {
+  // takes care of all UI defaults
+  const stopData = {
     hasStop: false,
-    keys: null,
-    labels: null,
     position: null,
-    role: null,
-    heading: null,
+    keys: [],
+    role: 'no-role',
+    labels: {
+      a11y: '',
+      visible: false,
+      alt: '',
+    },
+    heading: {
+      level: 'no-level',
+      visible: true,
+      invisible: '',
+    },
   };
-
-  // find data for selected node
   const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
 
   // set data for each field (will only set what it grabs based on type)
   ['keys', 'role', 'labels', 'heading'].forEach((property) => {
     // temporary workaround for 'none' issue
     if (nodeData[property] && !(property === 'role' && nodeData[property] === 'none')) {
-      nodePositionData[property] = nodeData[property];
+      stopData[property] = nodeData[property];
     }
   });
 
-  // find top frame for selected node
-  const crawler = new Crawler({ for: [node] });
-  const frame = crawler.topFrame();
-  if (frame) {
-    // read stop list data from top frame
-    const stopList = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
-    const stopItem = stopList?.find(item => item.id === node.id);
-    if (stopItem) {
-      nodePositionData.hasStop = true;
-      nodePositionData.position = stopItem.position;
-    }
+  const frame = findTopFrame(node);
+  const stopList = JSON.parse(frame?.getPluginData(DATA_KEYS[`${type}List`]) || null);
+  const stopItem = stopList?.find(item => item.id === node.id);
+
+  if (stopItem) {
+    stopData.hasStop = true;
+    stopData.position = stopItem.position;
   }
 
-  return nodePositionData;
+  return stopData;
 };
 
 /**
@@ -1301,7 +1288,7 @@ export default class App {
   updateNodeData = (
     id: string,
     key: 'role' | 'labels' | 'heading' | 'keys',
-    value: PluginLabelRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
+    value: PluginAriaRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
   ) => {
     const node: BaseNode = figma.getNodeById(id);
     let type;
@@ -1476,13 +1463,13 @@ export default class App {
         const { id, name } = node;
         const stopData = getStopData(type, node);
         const displayPosition = stopData.position ? stopData.position.toString() : '';
-        const viewObject: PluginViewObject = {
+        const viewObject = {
           ...stopData,
           id,
           name,
           isSelected: existsInArray(selectedNodes, node.id),
           position: displayPosition,
-        };
+        } as PluginViewObject;
 
         items.push(viewObject);
       });

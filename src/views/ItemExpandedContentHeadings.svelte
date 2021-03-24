@@ -3,21 +3,15 @@
   import { deepCompare } from '../utils/tools';
   import { LEVEL_OPTS } from '../constants';
 
-  const headingInit = {
-    level: 'no-level',
-    visible: true,
-    invisible: null,
-  };
-
   export let isSelected = false;
   export let itemId = null;
   export let type = null;
-  export let heading = { ...headingInit };
+  export let heading;
 
-  const dirtyHeading = heading ? { ...heading } : { ...headingInit };
+  const savedHeading = { ...heading };
 
   const updateHeading = (newHeading) => {
-    if (deepCompare(heading, newHeading)) {
+    if (deepCompare(savedHeading, newHeading)) {
       parent.postMessage({
         pluginMessage: {
           action: 'a11y-set-node-data',
@@ -47,8 +41,8 @@
       nameId={`${itemId}-heading-level`}
       placeholder="Leave empty to use browser default"
       selectWatchChange={true}
-      on:saveSignal={() => updateHeading(dirtyHeading)}
-      bind:value={dirtyHeading.level}
+      on:saveSignal={() => updateHeading(heading)}
+      bind:value={heading.level}
     />
     <FormUnit
       className="form-row"
@@ -56,10 +50,10 @@
       labelText="Visible"
       nameId={`${itemId}-heading-visible`}
       inputWatchBlur={true}
-      on:saveSignal={() => updateHeading(dirtyHeading)}
-      bind:value={dirtyHeading.visible}
+      on:saveSignal={() => updateHeading(heading)}
+      bind:value={heading.visible}
     />
-    {#if dirtyHeading && !dirtyHeading.visible}
+    {#if heading && !heading.visible}
       <FormUnit
         className="form-row"
         kind="inputText"
@@ -67,8 +61,8 @@
         nameId={`${itemId}-heading-invisible`}
         placeholder="e.g. 'Skip for now'"
         inputWatchBlur={true}
-        on:saveSignal={() => updateHeading(dirtyHeading)}
-        bind:value={dirtyHeading.invisible}
+        on:saveSignal={() => updateHeading(heading)}
+        bind:value={heading.invisible}
       />
     {/if}
   </span>
