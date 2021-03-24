@@ -1235,7 +1235,7 @@ export default class App {
   updateNodeData = (
     id: string,
     key: 'role' | 'labels' | 'heading' | 'keys',
-    value: PluginLabelRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
+    value: PluginAriaRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
   ) => {
     const node: BaseNode = figma.getNodeById(id);
     let type;
@@ -1410,13 +1410,13 @@ export default class App {
         const { id, name } = node;
         const stopData = getStopData(type, node);
         const displayPosition = stopData.position ? stopData.position.toString() : '';
-        const viewObject: PluginViewObject = {
+        const viewObject = {
           ...stopData,
           id,
           name,
           isSelected: existsInArray(selectedNodes, node.id),
           position: displayPosition,
-        };
+        } as PluginViewObject;
 
         items.push(viewObject);
       });
