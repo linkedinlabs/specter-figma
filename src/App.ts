@@ -624,6 +624,25 @@ export default class App {
     }
   }
 
+  toggleLocked() {
+    let locked;
+    const frames = figma.currentPage.children.filter(({type}) => type === 'FRAME') as Array<FrameNode>;
+    
+    frames.forEach((el) => {
+      const specterGroup =  el.findChild(({type, name}) => type === 'GROUP' && name.includes('Specter'));
+      if (specterGroup) {
+        // sets new lock status based on current status of first found Specter group
+        if (locked === undefined) {
+          locked = !specterGroup.locked;
+        }
+        specterGroup.locked = locked;
+      }
+    });
+    if (locked !== undefined) {
+      figma.notify(`Success! Specter groups all ${locked ? 'LOCKED' : 'UNLOCKED'}`);
+    }
+  }
+
   /**
    * @description Matches corner radius of a node (or inner-child node) with a matrix
    * of tokens from Mercado that represent the corner radii. An annotation is drawn

@@ -69,10 +69,20 @@
         >
           <svg viewBox="0 0 21 18" class="icons-generate">
             <path d="M2,16H19V2H2ZM0,0H21V18H0Z"/>
-            <rect class="pink" width="8" height="18"/>
-            <rect class="blue" width="8" height="18"/>
-            <rect class="green" width="8" height="18"/>
+            <rect width="8" height="18"/>
           </svg>
+        </ButtonAction>
+      </li>
+      <li>
+        <ButtonAction
+          on:handleAction
+          action="lock"
+          text="Lock/Unlock All Annotations"
+        >
+        <svg viewBox="0 0 21 21" class="icons-lock">
+          <path class="rect" d="M2.05 6.08L6.03 6.07L16.49 6.06L19.03 6.07L19 10L19.02 20.01L2.06 20.04L2.05 6.08Z" />
+          <path class="arch" d="M5.49 6L5.49 5.01L6 3L8.03 1.3L13.1 1.31L15 3L15.58 5.05L15.55 6.01" />
+        </svg>
         </ButtonAction>
       </li>
     </ul>

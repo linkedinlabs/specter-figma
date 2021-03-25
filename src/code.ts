@@ -122,6 +122,10 @@ const dispatcher = async (action: {
         app.generateTemplate();
         break;
       }
+      case 'lock': {
+        app.toggleLocked();
+        break;
+      }
       case 'info':
         App.showHideInfo();
         break;
