@@ -1,9 +1,10 @@
 import {
-  CHECKLIST_SECTIONS,
+  A11Y_CHECKLIST_SECTIONS,
   COLORS,
   DATA_KEYS,
   KEY_OPTS,
   ROLE_OPTS,
+  SPEC_INSTRUCTION_SECTIONS,
 } from '../constants';
 import { getLegendFrame } from '../utils/nodeGetters';
 import { hexToDecimalRgb } from '../utils/tools';
@@ -345,7 +346,9 @@ const buildText = (
     | 'heading'
     | 'legend'
     | 'spacing'
-    | 'style',
+    | 'style'
+    | 'title'
+    | 'instruction',
   color: { r: number, g: number, b: number },
   characters: string,
   isError?: boolean,
@@ -396,7 +399,19 @@ const buildText = (
     if (!characters.includes(':')) {
       text.resize(225, text.height);
     }
-  } 
+  } else if (type === 'title') {
+    text.textAlignHorizontal = 'LEFT';
+    text.fontSize = 22;
+    text.fontName = { family: typefaceToUse.family, style: 'Black' };
+  } else if (type === 'instruction') {
+    figma.loadFontAsync({ family: "Roboto", style: "Regular" }).then((font) => {
+      text.textAlignHorizontal = 'LEFT';
+      text.fontSize = 24;
+      text.fontName = { family: 'Roboto', style: 'Regular' };
+      text.lineHeight = {value: 150, unit: 'PERCENT'};
+      text.paragraphSpacing = 20;
+    })
+  }
   return text;
 };
 
@@ -1762,7 +1777,7 @@ const buildA11yChecklist = () => {
   leftColumn.resize(660, 800);
   leftColumn.layoutMode = 'VERTICAL';
 
-  CHECKLIST_SECTIONS.forEach((section) => {
+  A11Y_CHECKLIST_SECTIONS.forEach((section) => {
     const heading = buildText('custom', {r: .255, g: .255, b: .255}, '\n'+section.heading);
     heading.fontSize = 14;
     heading.textAlignHorizontal = 'LEFT';
@@ -1792,11 +1807,78 @@ const buildA11yChecklist = () => {
   return frame;
 }
 
+
+const buildInstructionPanel = (specPage) => {
+  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+  const panel = figma.createFrame();
+  specPage.appendChild(panel);
+  panel.resize(1500, 3000);
+  panel.layoutMode = 'VERTICAL';
+  panel.verticalPadding = 50;
+  panel.horizontalPadding = 50;
+  panel.itemSpacing = 30;
+  panel.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
+  panel.strokes = [{ type: 'SOLID', color: hexToDecimalRgb('#A5A5A5') }]
+
+  const title = buildText('title', hexToDecimalRgb('#517EC2'), 'Spec Instructions');
+  title.fontSize = 46;
+  title.fontName = {...typefaceToUse, style: 'Black'};
+  panel.appendChild(title);
+
+  SPEC_INSTRUCTION_SECTIONS.forEach(section => {
+    const sectionFrame = figma.createFrame();
+    sectionFrame.layoutMode = 'VERTICAL';
+    sectionFrame.verticalPadding = 30;
+    sectionFrame.horizontalPadding = 30;
+    sectionFrame.cornerRadius = 10;
+    sectionFrame.itemSpacing = 25;
+    sectionFrame.resize(1400, sectionFrame.height);
+    sectionFrame.fills = [{
+      type: 'SOLID',
+      color: hexToDecimalRgb('#FDFDFD'),
+    }];
+
+    const heading = buildText('title', hexToDecimalRgb('#4586E8'), section.heading);
+    heading.fontSize = 32;
+    heading.lineHeight = {value: 150, unit: 'PERCENT'};
+    sectionFrame.appendChild(heading);
+
+    const bodyWrapper = figma.createFrame();
+    bodyWrapper.layoutMode = 'HORIZONTAL';
+
+    const text = buildText('instruction', {r: .255, g: .255, b: .255}, section.text);
+    text.resize(1100, text.height);
+
+    const image = buildAnnotation({mainText: '1', type: 'keystop'});
+    const positionedImage = positionAnnotation(bodyWrapper, 'test', image, {
+      frameWidth: 200,
+      frameHeight: 200,
+      width: 50,
+      height: 50,
+      x: 200,
+      y: 200,
+  }, 'keystop')
+    
+    bodyWrapper.appendChild(text);
+    bodyWrapper.appendChild(positionedImage);
+    sectionFrame.appendChild(bodyWrapper);
+
+    panel.appendChild(sectionFrame);
+  })
+
+  const checklist = buildA11yChecklist();
+  panel.appendChild(checklist);
+  panel.locked = true;
+
+  return panel;
+}
+
 export {
   buildA11yChecklist,
   buildAnnotation,
   buildAuxAnnotation,
   buildBoundingBox,
+  buildInstructionPanel,
   buildKeystopArrowIcon,
   buildKeystopIcon,
   buildLegend,

@@ -771,6 +771,8 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
   // load the typeface
   await figma.loadFontAsync(typefaceToUse);
   await figma.loadFontAsync({ ...typefaceToUse, style: 'Regular' });
+  await figma.loadFontAsync({ ...typefaceToUse, style: 'ExtraBold' });
+  await figma.loadFontAsync({ ...typefaceToUse, style: 'Black' });
 
   return typefaceToUse;
 };

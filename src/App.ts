@@ -21,6 +21,7 @@ import {
   updateLegendEntry,
   buildText,
   buildA11yChecklist,
+  buildInstructionPanel,
 } from './Painter/annotationBuilders';
 
 /**
@@ -573,33 +574,43 @@ export default class App {
     return null;
   }
 
-
+  /**
+   * @description Generates a spec template for top frames with selections to a spec-specific
+   * page.  Will create the spec page if it doesn't exist, or add to it if it does.
+   *
+   * @kind function
+   * @name generateTemplate
+   *
+   * @returns {null} Shows a Toast in the UI indicating whether the option has succeeded.
+   */
   generateTemplate() {
     const { selection, page } = assemble(figma);
 
-    if (selection?.length) {
+    if (!selection?.length) {
+      figma.notify('Please select at least one top frame, or layer within a top frame.');
+    } else {
       const specPage = getSpecPage(page);
-      const checklist = buildA11yChecklist();
-      specPage.appendChild(checklist);
+      const instructionPanel = buildInstructionPanel(specPage);
+      specPage.appendChild(instructionPanel);
 
       // add instructions and checklist stuff to page
       // find next open space for when stuff is added later
-      const categories = ['General', 'Keystop', 'Label', 'Heading'];
+      const categories = ['DS Components', 'DS Size/Spacing', 'Keystop', 'Label', 'Heading'];
 
       const topFrames = new Crawler({for: selection}).topFrames();
       let yCoordinate = 20;
       topFrames.forEach((frame) => {
-        let xCoordinate = 1320;
+        let xCoordinate = 1820;
         categories.forEach(category => {
           const duplicate = frame.clone();
           // remove all plugin data and annotaiton nodes
-          duplicate.name = `${category} Spec - ${frame.name}`;
+          duplicate.name = `${category.toUpperCase()} Spec - ${frame.name}`;
 
           specPage.appendChild(duplicate);
           duplicate.x = xCoordinate;
           duplicate.y = yCoordinate;
 
-          if (category !== 'General') {
+          if (!category.includes('DS')) {
             const painter = new Painter({for: duplicate.children[0], in: specPage, isMercadoMode: this.isMercadoMode});
             const characters = 'Annotation data you enter will automatically appear here';
             const legendEntry = figma.createFrame();
@@ -624,6 +635,15 @@ export default class App {
     }
   }
 
+  /**
+   * @description Goes through all top-level frames and unlocks any Specter annotation groups.
+   * Note: does not include legend or annotation numbers to discourage editing there.
+   *
+   * @kind function
+   * @name toggleLocked
+   *
+   * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
+   */
   toggleLocked() {
     let locked;
     const frames = figma.currentPage.children.filter(({type}) => type === 'FRAME') as Array<FrameNode>;
@@ -1063,13 +1083,16 @@ export default class App {
     // draw the spacing annotation
     // (if gap position exists or nodes are overlapped)
     let paintResult = null;
+    console.log(selection)
     if (selection.length === 2) {
+      console.log(selection, ' - legnth is 2')
       const gapPositionResult = crawler.gapPosition();
 
       // read the response from Crawler; log and display message(s)
       messenger.handleResult(gapPositionResult);
       if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
         const gapPosition = gapPositionResult.payload;
+        console.log('adding gap measurement: ', gapPositionResult)
         paintResult = painter.addGapMeasurement(gapPosition);
       } else {
         const overlapPositionsResult = crawler.overlapPositions();
