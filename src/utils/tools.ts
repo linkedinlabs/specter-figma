@@ -509,7 +509,7 @@ const isAnnotationLayer = (node: any): boolean => {
     }
   }
 
-  if (currentTopGroup?.name.includes('Specter')) {
+  if (currentTopGroup?.name.includes('Specter') && node.name !== 'Bounding Box') {
     return true;
   }
   return null;
