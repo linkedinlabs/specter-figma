@@ -1,122 +1,42 @@
 <script>
-  import { afterUpdate, beforeUpdate } from 'svelte';
-  import { updateArray } from '../utils/tools';
+  import { KEY_OPTS } from '../constants';
+  import { compareArrays } from '../utils/tools';
   import FormUnit from './forms-controls/FormUnit';
 
   export let isSelected = false;
   export let itemId = null;
-  export let keys = null;
   export let type = null;
+  export let keys;
 
   let newKeyValue = 'no-key';
-  let dirtyKeys = keys ? [...keys] : [];
-  let originalKeys = keys ? [...keys] : [];
-  let resetValue = false;
+  const savedKeys = [...keys];
 
-  const keyboardOptionsInit = [
-    {
-      value: 'no-key',
-      text: 'Add key…',
-      disabled: true,
-    },
-    {
-      value: 'divider--01',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'arrows-left-right',
-      text: 'Arrow keys (left/right)',
-      disabled: false,
-    },
-    {
-      value: 'arrows-up-down',
-      text: 'Arrow keys (up/down)',
-      disabled: false,
-    },
-    {
-      value: 'enter',
-      text: 'Enter',
-      disabled: false,
-    },
-    {
-      value: 'divider--02',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'space',
-      text: 'Space',
-      disabled: false,
-    },
-    {
-      value: 'divider--03',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'escape',
-      text: 'Escape',
-      disabled: false,
-    },
-  ];
+  $: currentOptions = KEY_OPTS.reduce((acc, opt, i) => {
+    // checks if current item is divider preceeded by another divider or at the end
+    const isRedundantDivider = !opt.text && (!acc[acc.length - 1].text
+      || !KEY_OPTS.slice(i).find(({ text, value }) => text && !keys.includes(value))
+    );
+    if (!keys.includes(opt.value) && !isRedundantDivider) {
+      acc.push(opt);
+    }
+    return acc;
+  }, []);
 
-  const keyboardOptions = [
-    {
-      value: 'no-key',
-      text: 'No key (remove)',
-      disabled: false,
-    },
-    {
-      value: 'divider--01',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'arrows-left-right',
-      text: 'Arrow keys (left/right)',
-      disabled: false,
-    },
-    {
-      value: 'arrows-up-down',
-      text: 'Arrow keys (up/down)',
-      disabled: false,
-    },
-    {
-      value: 'enter',
-      text: 'Enter',
-      disabled: false,
-    },
-    {
-      value: 'divider--02',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'space',
-      text: 'Space',
-      disabled: false,
-    },
-    {
-      value: 'divider--03',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'escape',
-      text: 'Escape',
-      disabled: false,
-    },
-  ];
+  const updateKeys = (action, value) => {
+    if (action === 'delete') {
+      keys = keys.filter(key => key !== value);
+    } else if (action === 'add' && ![...keys, 'no-key'].includes(value)) {
+      keys = [...keys, value];
+    }
 
-  const addKey = (keyToAdd) => {
-    if (keyToAdd !== 'no-key') {
+    if (compareArrays(keys, savedKeys)) {
       parent.postMessage({
         pluginMessage: {
-          action: `${type}-set-key`,
+          action: 'a11y-set-node-data',
           payload: {
             id: itemId,
-            key: keyToAdd,
+            key: 'keys',
+            value: keys,
           },
         },
       }, '*');
@@ -124,162 +44,6 @@
     }
   };
 
-  const removeKey = (keyToRemove) => {
-    parent.postMessage({
-      pluginMessage: {
-        action: `${type}-remove-key`,
-        payload: {
-          id: itemId,
-          key: keyToRemove,
-        },
-      },
-    }, '*');
-  };
-
-  const updateKey = (currentKeys, keyToUpdate, oldKeyIndex) => {
-    const oldKey = currentKeys[oldKeyIndex];
-    if (oldKey !== keyToUpdate) {
-      removeKey(oldKey);
-
-      if (keyToUpdate !== 'no-key') {
-        addKey(keyToUpdate);
-      }
-    }
-  };
-
-  /**
-   * @description Takes two one-dimensional arrays and compare them. Returns `true` if they
-   * are different. Order of the array does not matter.
-   *
-   * @kind function
-   * @name compareArrays
-   *
-   * @param {Array} array1 A single-dimension array.
-   * @param {Array} array2 A single-dimension array to compare against.
-   *
-   * @returns {boolean} Returns `true` if the arrays are different, `false` if they have identical
-   * values.
-   */
-  const compareArrays = (array1, array2) => {
-    let isDifferent = false;
-
-    if (!array1 && !array2) {
-      return isDifferent;
-    }
-
-    if (
-      (!array1 && array2)
-      || (!array2 && array1)
-    ) {
-      isDifferent = true;
-      return isDifferent;
-    }
-
-    if (array1.length !== array2.length) {
-      isDifferent = true;
-      return isDifferent;
-    }
-
-    array1.forEach((value) => {
-      const itemIndex = array2.findIndex(
-        foundValue => (foundValue === value),
-      );
-
-      if (itemIndex < 0) {
-        isDifferent = true;
-      }
-    });
-
-    if (isDifferent) {
-      return isDifferent;
-    }
-
-    array2.forEach((value) => {
-      const itemIndex = array1.findIndex(
-        foundValue => (foundValue === value),
-      );
-
-      if (itemIndex < 0) {
-        isDifferent = true;
-      }
-    });
-
-    return isDifferent;
-  };
-
-  const updateSelect = (options) => {
-    const currentKeys = options.keys;
-    const selectType = options.type;
-    let selectedValue = null;
-
-    let modifiedSelectOptions = [...keyboardOptionsInit];
-    if (selectType !== 'init') {
-      modifiedSelectOptions = [...keyboardOptions];
-      selectedValue = options.value;
-    }
-
-    if (currentKeys) {
-      // remove existing key entries
-      currentKeys.forEach((keyEntry) => {
-        const compareValue = { value: keyEntry };
-        if ((selectType === 'init') || (keyEntry !== selectedValue)) {
-          modifiedSelectOptions = updateArray(
-            modifiedSelectOptions,
-            compareValue,
-            'value',
-            'remove',
-          );
-        }
-      });
-
-      // remove double dividers
-      let lastIsDivider = false;
-      modifiedSelectOptions.forEach((optionsEntry) => {
-        const isDivider = optionsEntry.value.includes('divider--');
-
-        if (isDivider && !lastIsDivider) {
-          lastIsDivider = true;
-        } else if (isDivider && lastIsDivider) {
-          modifiedSelectOptions = updateArray(
-            modifiedSelectOptions,
-            optionsEntry,
-            'value',
-            'remove',
-          );
-        } else {
-          lastIsDivider = false;
-        }
-      });
-
-      // remove divider if it is last
-      const lastOptionIndex = modifiedSelectOptions.length - 1;
-      const lastOption = modifiedSelectOptions[lastOptionIndex];
-      if (lastOption.value.includes('divider--')) {
-        modifiedSelectOptions = updateArray(
-          modifiedSelectOptions,
-          lastOption,
-          'value',
-          'remove',
-        );
-      }
-    }
-    return modifiedSelectOptions;
-  };
-
-  beforeUpdate(() => {
-    // check `keys` against original to see if it was updated on the Figma side
-    if (compareArrays(keys, originalKeys)) {
-      dirtyKeys = keys ? [...keys] : [];
-      originalKeys = keys ? [...keys] : [];
-      resetValue = true;
-    }
-  });
-
-  afterUpdate(() => {
-    if (resetValue) {
-      resetValue = false;
-    }
-  });
 </script>
 
 <style>
@@ -288,27 +52,25 @@
 
 <article class:isSelected class={`item-content ${type}`}>
   <ul class="keys-list">
-    {#each dirtyKeys as dirtyKey, i (dirtyKey)}
+    {#each keys as key, i (key)}
       <li class="keys-item">
         <span class="form-element-holder">
           <FormUnit
             className="form-row"
-            on:deleteSignal={() => removeKey(dirtyKey)}
+            on:deleteSignal={() => updateKeys('delete', key)}
             hideLabel={true}
             isDeletable={true}
             kind="inputSelect"
             labelText="Key"
-            nameId={`${itemId}-key-${dirtyKey}`}
-            options={updateSelect({ keys, type: 'selected', value: dirtyKey })}
-            resetValue={resetValue}
+            nameId={`${itemId}-key-${key}`}
+            options={[KEY_OPTS.find(opt => opt.value === key), ...currentOptions.slice(1)]}
             selectWatchChange={true}
-            on:saveSignal={() => updateKey(originalKeys, dirtyKey, i)}
-            bind:value={dirtyKey}
-          />
+            bind:value={key}
+            />
         </span>
       </li>
     {/each}
-    {#if updateSelect({ keys, type: 'init' }).length > 1}
+    {#if currentOptions.length > 1}
       <li class="keys-item init">
         <span class="form-element-holder">
           <FormUnit
@@ -317,10 +79,9 @@
             kind="inputSelect"
             labelText="Key"
             nameId={`${itemId}-key-no-key`}
-            options={updateSelect({ keys, type: 'init' })}
-            resetValue={resetValue}
+            options={currentOptions}
             selectWatchChange={true}
-            on:saveSignal={() => addKey(newKeyValue)}
+            on:saveSignal={() => updateKeys('add', newKeyValue)}
             bind:value={newKeyValue}
           />
         </span>

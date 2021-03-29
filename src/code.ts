@@ -69,37 +69,21 @@ const dispatcher = async (action: {
   const runAction = async (actionType: string) => {
     switch (actionType) {
       case 'a11y-add-stop': {
-        await app.annotateStops(payload.type);
+        app.annotateStops(payload.type);
         break;
       }
       case 'a11y-remove-stop': {
         const { id } = payload;
-        if (id) {
-          await app.removeStopAnnotation(payload.type, id);
-        }
+        app.removeStopAnnotation(payload.type, id);
         break;
       }
       case 'a11y-update-stop': {
         const { id, position } = payload;
-        if (id) {
-          await app.updateStopAnnotation(payload.type, id, position);
-        }
+        app.updateStopOrder(payload.type, id, position);
         break;
       }
-      case 'a11y-keyboard-set-key':
-        await app.updateNodeDataKeys(payload);
-        break;
-      case 'a11y-keyboard-remove-key':
-        await app.updateNodeDataKeys(payload, true);
-        break;
-      case 'a11y-labels-set-labels':
-        await app.updateNodeDataLabels('labels', payload);
-        break;
-      case 'a11y-labels-set-role':
-        await app.updateNodeDataLabels('role', payload);
-        break;
-      case 'a11y-headings-set-heading':
-        await app.updateNodeDataHeading(payload);
+      case 'a11y-set-node-data':
+        await app.updateNodeData(payload.id, payload.key, payload.value);
         break;
       case 'annotate':
         app.annotateGeneral();
@@ -236,54 +220,54 @@ const main = async () => {
    *
    * @returns {Array} An array of tracking data.
    */
-  const setTrackingData = (selectedNodes: Array<SceneNode>): Array<{
-    id: string,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    parent: {
-      id: string,
-    }
-  }> => {
-    const tempTrackingData = [];
-    selectedNodes.forEach((selectedNode) => {
-      const {
-        height,
-        id,
-        parent,
-        width,
-        x,
-        y,
-      } = selectedNode;
+  // const setTrackingData = (selectedNodes: Array<SceneNode>): Array<{
+  //   id: string,
+  //   x: number,
+  //   y: number,
+  //   width: number,
+  //   height: number,
+  //   parent: {
+  //     id: string,
+  //   }
+  // }> => {
+  //   const tempTrackingData = [];
+  //   selectedNodes.forEach((selectedNode) => {
+  //     const {
+  //       height,
+  //       id,
+  //       parent,
+  //       width,
+  //       x,
+  //       y,
+  //     } = selectedNode;
 
-      const data: {
-        id: string,
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        parent: {
-          id: string,
-        }
-      } = {
-        id,
-        x,
-        y,
-        width,
-        height,
-        parent,
-      };
+  //     const data: {
+  //       id: string,
+  //       x: number,
+  //       y: number,
+  //       width: number,
+  //       height: number,
+  //       parent: {
+  //         id: string,
+  //       }
+  //     } = {
+  //       id,
+  //       x,
+  //       y,
+  //       width,
+  //       height,
+  //       parent,
+  //     };
 
-      tempTrackingData.push(data);
-    });
+  //     tempTrackingData.push(data);
+  //   });
 
-    return tempTrackingData;
-  };
+  //   return tempTrackingData;
+  // };
 
 
   // set the initial timestamp; this is used as a global to update over time and prevent race cases
-  let initialStamp = new Date().getTime();
+  // let initialStamp = new Date().getTime();
 
   /**
    * @description Top-level selection-watching logic. This watcher periodically compares the
@@ -300,13 +284,13 @@ const main = async () => {
     // App.refreshGUI(SESSION_KEY);
     App.refreshGUI();
 
-    // set the interval for each diff check
-    const checkInternal = 50;
+    // // set the interval for each diff check
+    // const checkInternal = 50;
 
-    // update/set the comparison timestamps
-    initialStamp = new Date().getTime();
-    const currentStamp = initialStamp;
-    let lastChangeTime = initialStamp;
+    // // update/set the comparison timestamps
+    // initialStamp = new Date().getTime();
+    // const currentStamp = initialStamp;
+    // let lastChangeTime = initialStamp;
 
     /**
      * @description Compares two sets of tracking data and also evaluates the current comparison
@@ -319,35 +303,34 @@ const main = async () => {
      * @param {Array} dataset1 A set of tracking data to compare (array of nodes).
      * @param {Array} dataset2 A set of tracking data to compare (array of nodes).
      */
-    const compareTrackingData = (dataset1, dataset2): void => {
-      // if a difference is found, refresh the UI and update the last change stamp
-      if (JSON.stringify(dataset1) !== JSON.stringify(dataset2)) {
-        lastChangeTime = new Date().getTime();
-        App.refreshGUI(true);
-      }
+    // const compareTrackingData = (dataset1, dataset2): void => {
+    //   // if a difference is found, refresh the UI and update the last change stamp
+    //   if (JSON.stringify(dataset1) !== JSON.stringify(dataset2)) {
+    //     lastChangeTime = new Date().getTime();
+    //     App.refreshGUI(true);
+    //   }
 
-      // set current time and time since last change
-      const currentTime = new Date().getTime();
-      const timeDifference = (currentTime - lastChangeTime);
+    //   // set current time and time since last change
+    //   const currentTime = new Date().getTime();
+    //   const timeDifference = (currentTime - lastChangeTime);
 
-      // if the stamps match (i.e. they're from the latest selection watcher event) and
-      // the last change timeout has not been reached, trigger a new, future comparison event
-      if ((currentStamp === initialStamp) && (timeDifference < 120000)) {
-        setTimeout(() => {
-          const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
-          compareTrackingData(dataset2, newTrackingData);
-        }, checkInternal);
-      }
-    };
+    //   // if the stamps match (i.e. they're from the latest selection watcher event) and
+    //   // the last change timeout has not been reached, trigger a new, future comparison event
+    //   if ((currentStamp === initialStamp) && (timeDifference < 120000)) {
+    //     setTimeout(() => {
+    //    const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
+    //       compareTrackingData(dataset2, newTrackingData);
+    //     }, checkInternal);
+    //   }
+    // };
 
-    // set the initial tracking data
-    const initialTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
+    // // set the initial tracking data
+    // const initialTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
 
-    // after the check interval has passed, set new tracking data and trigger the first comparison
-    setTimeout(() => {
-      const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
-      compareTrackingData(initialTrackingData, newTrackingData);
-    }, checkInternal);
+    // setTimeout(() => {
+    //   const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
+    //   compareTrackingData(initialTrackingData, newTrackingData);
+    // }, checkInternal);
   };
 
   // selection change watcher

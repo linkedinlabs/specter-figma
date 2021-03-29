@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import { getStopTypeFromView } from '../../utils/tools';
   import ButtonAction from './ButtonAction';
 
@@ -8,16 +7,14 @@
   export let number = null;
   export let type = null;
 
-  const dispatch = createEventDispatcher();
-
   const addStopAnnotation = () => {
-    let stopType = getStopTypeFromView(type);
+    const stopType = getStopTypeFromView(type);
 
     parent.postMessage({
       pluginMessage: {
         action: 'a11y-add-stop',
         payload: {
-          type: stopType
+          type: stopType,
         },
       },
     }, '*');

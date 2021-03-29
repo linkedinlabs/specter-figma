@@ -65,8 +65,8 @@ export default class Crawler {
     // iterate through initial selection
     initialSelection.forEach((node: any) => {
       if (
-        excludedTypes.filter(type => type === node.type).length < 1
-        && node.visible
+        excludedTypes.filter(type => type === node?.type).length < 1
+        && node?.visible
       ) {
         // non-frame or -group nodes get added to the final selection
         flatSelection.push(node);
@@ -78,7 +78,7 @@ export default class Crawler {
 
         // set initial holding array and add first level of children
         let innerLayers = [];
-        if (node.visible) {
+        if (node?.visible) {
           node.children.forEach((child) => {
             if (child.visible) {
               innerLayers.push(child);

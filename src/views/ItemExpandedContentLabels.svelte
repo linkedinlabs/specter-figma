@@ -1,91 +1,34 @@
 <script>
-  import { afterUpdate, beforeUpdate } from 'svelte';
   import FormUnit from './forms-controls/FormUnit';
   import { deepCompare } from '../utils/tools';
 
   export let isSelected = false;
   export let itemId = null;
-  export let role = null;
   export let type = null;
-  export let labels = null;
   export let roleOptions;
+  export let role;
+  export let labels;
 
-  const labelsInit = {
-    a11y: null,
-    visible: false,
-    alt: null,
-  };
+  const savedRole = role;
+  const savedLabels = { ...labels };
 
-  let resetValue = false;
-  let wasResetValue = false;
-  let dirtyRole = role || 'no-role';
-  let originalRole = role || 'no-role';
-  let dirtyLabels = labels ? { ...labels } : { ...labelsInit };
-  let originalLabels = labels ? { ...labels } : { ...labelsInit };
+  const updateField = (key, value) => {
+    const diff = key === 'role' ? value !== savedRole : deepCompare(value, savedLabels);
 
-  const handleReset = () => {
-    // role
-    dirtyRole = role || 'no-role';
-    originalRole = role || 'no-role';
-
-    // labels
-    dirtyLabels = labels ? { ...labels } : { ...labelsInit };
-    originalLabels = labels ? { ...labels } : { ...labelsInit };
-
-    resetValue = true;
-  };
-
-  const updateLabel = (newLabels, key) => {
-    if (originalLabels[key] !== newLabels[key]) {
+    if (diff) {
       parent.postMessage({
         pluginMessage: {
-          action: `${type}-set-labels`,
+          action: 'a11y-set-node-data',
           payload: {
             id: itemId,
-            labels: newLabels,
+            key,
+            value,
           },
         },
       }, '*');
-      handleReset();
     }
   };
 
-  const updateRole = (newRole) => {
-    if (originalRole !== newRole) {
-      parent.postMessage({
-        pluginMessage: {
-          action: `${type}-set-role`,
-          payload: {
-            id: itemId,
-            role: newRole,
-          },
-        },
-      }, '*');
-      handleReset();
-    }
-  };
-
-  beforeUpdate(() => {
-    if (
-      (role && (originalRole !== role))
-      || (labels && deepCompare(originalLabels, labels))
-    ) {
-      resetValue = true;
-    }
-
-    if (resetValue) {
-      handleReset();
-    }
-
-    // set trackers
-    wasResetValue = resetValue;
-  });
-
-  afterUpdate(() => {
-    if (resetValue || wasResetValue) {
-      resetValue = false;
-    }
-  });
 </script>
 
 <style>
@@ -101,24 +44,22 @@
         labelText="Role"
         nameId={`${itemId}-role`}
         options={roleOptions}
-        resetValue={resetValue}
         selectWatchChange={true}
-        on:saveSignal={() => updateRole(dirtyRole)}
-        bind:value={dirtyRole}
+        on:saveSignal={() => updateField('role', role)}
+        bind:value={role}
       />
     </span>
-    {#if (dirtyRole !== 'image-decorative')}
-      {#if (dirtyRole === 'image')}
+    {#if (role !== 'image-decorative')}
+      {#if (role === 'image')}
         <FormUnit
           className="form-row"
           kind="inputText"
           labelText="Alt text"
           nameId={`${itemId}-label-alt`}
           placeholder="Short description of the scene"
-          resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel(dirtyLabels, 'alt')}
-          bind:value={dirtyLabels.alt}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.alt}
         />
       {:else}
         <FormUnit
@@ -127,10 +68,9 @@
           labelText="Visible label"
           nameId={`${itemId}-label-visible`}
           placeholder="Leave empty to use a11y label"
-          resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel(dirtyLabels, 'visible')}
-          bind:value={dirtyLabels.visible}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.visible}
         />
         <FormUnit
           className="form-row"
@@ -138,10 +78,9 @@
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
           placeholder="Leave empty to use visible label"
-          resetValue={resetValue}
           inputWatchBlur={true}
-          on:saveSignal={() => updateLabel(dirtyLabels, 'a11y')}
-          bind:value={dirtyLabels.a11y}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.a11y}
         />
       {/if}
     {/if}

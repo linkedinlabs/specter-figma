@@ -4,7 +4,7 @@ declare global {
 
   type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'enter' | 'escape' | 'space';
 
-  type PluginLabelRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
+  type PluginAriaRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
 
   type PluginStopType = 'keystop' | 'label' | 'heading';
 
@@ -14,7 +14,7 @@ declare global {
     alt: string,
   }
 
-  type PluginHeading = {
+  type PluginAriaHeading = {
     level: string,
     visible: boolean,
     invisible: string
@@ -47,20 +47,25 @@ declare global {
 
   type PluginFrameTrackingData = {
     id: string,
-    legendId: string,
+    legendId?: string,
     linkId: string,
     framePosition: PluginFramePosition,
   };
+
+  type PluginStopListData = {
+    id: string,
+    position: number,
+  }
   
   type PluginNodeLinkData = {
     id: string,
     role: 'annotation' | 'node' | 'legendItem',
   }
   
-    type PluginFrameLinkData = {
-      id: string,
-      role: 'frame' | 'legend',
-    }
+  type PluginFrameLinkData = {
+    id: string,
+    role: 'frame' | 'legend',
+  }
 
   type PluginOptions = {
     currentView: PluginViewTypes,
@@ -73,11 +78,11 @@ declare global {
     id: string,
     isSelected: boolean,
     keys?: Array<PluginKeystopKeys>,
+    role?: PluginAriaRole,
     labels?: PluginAriaLabels,
-    heading?: PluginHeading,
+    heading?: PluginAriaHeading,
     name: string,
     position: number | string,
-    role?: PluginLabelRole,
   }
 
   // Vendor Declarations

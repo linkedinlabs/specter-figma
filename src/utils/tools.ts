@@ -278,6 +278,11 @@ const compareArrays = (array1: Array<any>, array2: Array<any>) => {
 const deepCompare = (unmodifiedObject: Object, modifiedObject: Object) => {
   let isDifferent: boolean = false;
 
+  // catches type differences e.g. if either are undefined/null
+  if (unmodifiedObject !== modifiedObject) {
+    return true;
+  }
+
   if (typeof unmodifiedObject !== 'object' || unmodifiedObject === null) {
     return isDifferent;
   }
@@ -409,7 +414,7 @@ const getNodeSettings = (page: any, nodeId: string) => {
  */
 //
 const findTopFrame = (node: any) => {
-  let { parent } = node || {};
+  let { parent } = (node && figma.getNodeById(node.id)) || {};
 
   // if the parent is a page, we're done
   if (parent && parent.type === 'PAGE') {
@@ -468,6 +473,44 @@ const findTopInstance = (node: any): InstanceNode => {
 
   if (currentTopInstance) {
     return currentTopInstance;
+  }
+  return null;
+};
+
+/**
+ * @description Checks if a selected node is part of Specter-generatec annotations.
+ *
+ * @kind function
+ * @name isAnnotationLayer
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {boolean} Returns flag for whether the node is in Specter annotation group.
+ */
+const isAnnotationLayer = (node: any): boolean => {
+  let { parent } = node;
+  let currentNode = node;
+  let currentTopGroup: GroupNode = null;
+
+  // set first; top group may be self
+  if (currentNode.type === CONTAINER_NODE_TYPES.group) {
+    currentTopGroup = currentNode;
+  }
+
+  if (parent) {
+    // iterate until the parent is a page
+    while (parent && parent.type !== 'PAGE') {
+      currentNode = parent;
+      if (currentNode.type === CONTAINER_NODE_TYPES.group) {
+        // update the top-most main component with the current one
+        currentTopGroup = currentNode;
+      }
+      parent = parent.parent;
+    }
+  }
+
+  if (currentTopGroup?.name.includes('Specter') && node.name !== 'Bounding Box') {
+    return true;
   }
   return null;
 };
@@ -845,8 +888,8 @@ const getStopTypeFromView = (viewName) => {
  * @returns {string} The title-cased string.
  */
 const sortByPosition = (itemA, itemB) => {
-  const aPosition = itemA.position;
-  const bPosition = itemB.position;
+  const aPosition = parseInt(itemA.position, 10);
+  const bPosition = parseInt(itemB.position, 10);
   if (aPosition < bPosition) {
     return -1;
   }
@@ -869,6 +912,7 @@ export {
   getRelativePosition,
   getStopTypeFromView,
   hexToDecimalRgb,
+  isAnnotationLayer,
   isInternal,
   isVisible,
   loadFirstAvailableFontAsync,

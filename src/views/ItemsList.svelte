@@ -1,6 +1,7 @@
 <script>
   import { beforeUpdate } from 'svelte';
   import { openItems } from './stores';
+  import { ROLE_OPTS } from '../constants';
 
   import ButtonAddStop from './forms-controls/ButtonAddStop';
   import ItemExpandedContentKeystops from './ItemExpandedContentKeystops';
@@ -9,144 +10,12 @@
   import ItemHeader from './ItemHeader';
 
   // props
-  export let items = null;
-  export let type = null;
+  export let items;
+  export let type;
 
   // locals
   let itemsDirty = items;
   let addNumber = 0;
-  const roleOptions = [
-    {
-      value: 'no-role',
-      text: 'None',
-      disabled: false,
-    },
-    {
-      value: 'divider--01',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'image',
-      text: 'Image',
-      disabled: false,
-    },
-    {
-      value: 'image-decorative',
-      text: 'Image (decorative)',
-      disabled: false,
-    },
-    {
-      value: 'divider--02',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'button',
-      text: 'Button',
-      disabled: false,
-    },
-    {
-      value: 'checkbox',
-      text: 'Checkbox',
-      disabled: false,
-    },
-    {
-      value: 'link',
-      text: 'Link',
-      disabled: false,
-    },
-    {
-      value: 'menuitem',
-      text: 'Menu item',
-      disabled: false,
-    },
-    {
-      value: 'menuitemcheckbox',
-      text: 'Menu item (checkbox)',
-      disabled: false,
-    },
-    {
-      value: 'menuitemradio',
-      text: 'Menu item (radio)',
-      disabled: false,
-    },
-    {
-      value: 'option',
-      text: 'Option',
-      disabled: false,
-    },
-    {
-      value: 'progressbar',
-      text: 'Progress bar',
-      disabled: false,
-    },
-    {
-      value: 'radio',
-      text: 'Radio',
-      disabled: false,
-    },
-    {
-      value: 'searchbox',
-      text: 'Search box',
-      disabled: false,
-    },
-    {
-      value: 'slider',
-      text: 'Slider',
-      disabled: false,
-    },
-    {
-      value: 'switch',
-      text: 'Switch',
-      disabled: false,
-    },
-    {
-      value: 'tab',
-      text: 'Tab',
-      disabled: false,
-    },
-    {
-      value: 'tabpanel',
-      text: 'Tab panel',
-      disabled: false,
-    },
-    {
-      value: 'textbox',
-      text: 'Textbox',
-      disabled: false,
-    },
-    {
-      value: 'divider--03',
-      text: null,
-      disabled: true,
-    },
-    {
-      value: 'combobox',
-      text: 'Combobox',
-      disabled: false,
-    },
-    {
-      value: 'listbox',
-      text: 'Listbox',
-      disabled: false,
-    },
-    {
-      value: 'menu',
-      text: 'Menu',
-      disabled: false,
-    },
-    {
-      value: 'radiogroup',
-      text: 'Radio group',
-      disabled: false,
-    },
-    {
-      value: 'tablist',
-      text: 'Tab list',
-      disabled: false,
-    },
-  ];
 
   const checkIsOpen = (itemId, typeScope) => {
     let itemIsOpen = false;
@@ -261,7 +130,7 @@
   const getHeaderName = (item) => {
     const { name, role } = item;
     const { a11y, visible, alt } = item.labels || {};
-    const mainText = role && role !== 'no-role' ? roleOptions.find(i => i.value === role).text : '';
+    const mainText = role && role !== 'no-role' ? ROLE_OPTS.find(i => i.value === role).text : '';
     let headerName = name;
 
     if (role === 'image-decorative') {
@@ -303,26 +172,25 @@
             <ItemExpandedContentKeystops
               itemId={item.id}
               isSelected={item.isSelected}
-              keys={item.keys}
               type={type}
+              bind:keys={item.keys}
             />
           {:else if (type === 'a11y-labels')}
             <ItemExpandedContentLabels
               itemId={item.id}
               isSelected={item.isSelected}
-              labels={item.labels}
-              role={item.role}
-              roleOptions={roleOptions}
+              roleOptions={ROLE_OPTS}
               type={type}
-              on:handleUpdate={() => {}}
+              bind:role={item.role}
+              bind:labels={item.labels}
             />
             {:else if (type === 'a11y-headings')}
             <ItemExpandedContentHeadings
               itemId={item.id}
+              item={item}
               isSelected={item.isSelected}
-              heading={item.heading}
               type={type}
-              on:handleUpdate={() => {}}
+              bind:heading={item.heading}
             />
           {/if}
         {/if}

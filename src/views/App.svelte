@@ -17,7 +17,7 @@
   export let isMercadoMode = false;
   export let isUserInput = false;
   export let isInfoPanel = false;
-  export let items = null;
+  export let items;
   export let newSessionKey = null;
   export let userInputValue = null;
   export let viewContext = null;
