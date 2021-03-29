@@ -573,23 +573,23 @@ const LEVEL_OPTS = [
  */
  const SPEC_INSTRUCTION_SECTIONS = [
   {
-    heading: 'Design System - Component Spec',
+    heading: 'DS Components',
     text: 'Use each frame\'s first duplicate named \'DS COMPONENT Spec\' for annotating with the \'Annotate\' option in the \'General\' tab of Specter.\nThis should include design system component information that may be helpful to engineers implementing the design.\nIf data has been attached by an admin to any components that have come from the LinkedIn Design System, you will automatically be provided that value in a purple annotation.  Otherwise, you will be prompted to enter your own custom value and that will be reflected as a pink annotation.',
   },
   {
-    heading: 'Design System - Spacing Spec',
+    heading: 'DS Size/Spacing',
     text: 'Use each frame\'s first duplicate named \'DS SPACING Spec\' for annotating with the \'Measure\' option in the \'General\' tab of Specter.\nThis should include design system measurement/spacing information that may be helpful to engineers implementing the design.\nIf data has been attached by an admin to any components that have come from the LinkedIn Design System or if Specter finds a token that represents the spacing detected, you will automatically be provided that value.  Otherwise, it will calculate a value.  Size annotations are in green annotations, and spacing in teal annotations.',
   },
   {
-    heading: 'Keyboard/Focus Spec',
+    heading: 'Keyboard/Focus',
     text: 'Use each frame\'s second duplicate named \'KEYSTOP Spec\' for annotating with the \'Keyboard\' tab of Specter.\nThis will provide you with an automated system for ordered number annotations that point to the keys associated with each keystop in a legend to the right of the duplicated frame.  Those keys indicate how the user can interact with the element using their keyboard, and can either come automatically from data attached by an admin or by entering them yourself in the UI.  You can continue to add, delete, or reorder any keystops in the list within the UI, and the system will automatically update the list order.\nTip: The automatic ordering system goes from top-left to bottom-right, so if you want certain sections of the frame to be ordered before moving further to the bottom-right, select everything you want to add a keystop to in that section and apply annotations section-by-section.',
   },
   {
-    heading: 'Label Spec',
+    heading: 'Labels',
     text: 'Use each frame\'s third duplicate named \'LABEL Spec\' for annotating with the \'Labels\' tab of Specter.\nThis uses the same numbered pointer system as keystops (see above), and also may provide data that was attached by an admin.  Labels data includes:\n- ROLE: This is the purpose of the element (and for engineers, the semantic tag that should be used).\n- VISIBLE: This indicates whether the visible element text and/or role is a thorough description of what the element is/does for screen reader users.  If it isn\'t, think about whether the text should be modified, or turn \'Visible\' off and add a thorough description to the \'A11y\' field instead for screen readers to use.\n- A11Y: This is an alternate/additional value the screen reader will play when the element is focused (and for engineering, should be used as aria-label).  This should be used if the visible element text and/or role is not an explanatory description of what the element is/does (e.g. if a \'Next\' button only contains an arrow icon, and non-sighted need the screen reader to tell them it is a \'Next\' button.\n- ALT: This is alternative text that describes what an image depicts and should always be included with images that aren\'t purely decorative.  This field will only show when the selected Role is \'image\'.',
   },
   {
-    heading: 'Heading Spec',
+    heading: 'Headings',
     text: 'Use each frame\'s last duplicate named \'HEADING Spec\' for annotating with the \'Heading\' tab of Specter.\nThis also uses the same numbered pointer system as keystops and labels (see above), and also may provide data that was attached by an admin.  Heading data includes:\n- LEVEL: This is for organizing the nested structure of headings, e.g. each web page should only have one level 1 heading that names the page, the next level should start at 2 for page sections, any headings nested inside a section with a level 2 heading should then be 3, and so on (and for engineering, the semantic tag that should be used e.g. \'h1\').\n- VISIBLE: This indicates whether the visible heading text is a thorough description of the content the heading describes.  If it isn\'t, think about whether the text should be modified, or turn \'Visible\' off and add a thorough description to the \'Heading\' field instead for screen readers to use.\n- HEADING: This is an alternate/additional value the screen reader will play when the heading is announced (and for engineering, should be used as aria-label).  This should be used if the visible heading text is not an explanatory description of the content the heading refers to.',
   },
 ];

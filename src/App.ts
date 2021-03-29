@@ -20,7 +20,6 @@ import {
   updateAnnotationNum,
   updateLegendEntry,
   buildText,
-  buildA11yChecklist,
   buildInstructionPanel,
 } from './Painter/annotationBuilders';
 

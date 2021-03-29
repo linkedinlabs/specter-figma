@@ -1845,6 +1845,10 @@ const buildInstructionPanel = (specPage) => {
 
     const bodyWrapper = figma.createFrame();
     bodyWrapper.layoutMode = 'HORIZONTAL';
+    bodyWrapper.layoutGrow = 0;
+    bodyWrapper.primaryAxisSizingMode = 'AUTO';
+    bodyWrapper.counterAxisSizingMode = 'AUTO';
+    bodyWrapper.itemSpacing = 150;
 
     const text = buildText('instruction', {r: .255, g: .255, b: .255}, section.text);
     text.resize(1100, text.height);

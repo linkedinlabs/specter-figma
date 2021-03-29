@@ -492,6 +492,10 @@ const isAnnotationLayer = (node: any): boolean => {
   let currentNode = node;
   let currentTopGroup: GroupNode = null;
 
+  if (node.name === 'Bounding Box') {
+    return true;
+  }
+
   // set first; top group may be self
   if (currentNode.type === CONTAINER_NODE_TYPES.group) {
     currentTopGroup = currentNode;
@@ -509,10 +513,10 @@ const isAnnotationLayer = (node: any): boolean => {
     }
   }
 
-  if (currentTopGroup?.name.includes('Specter') && node.name !== 'Bounding Box') {
+  if (currentTopGroup?.name.includes('Specter')) {
     return true;
   }
-  return null;
+  return false;
 };
 
 
