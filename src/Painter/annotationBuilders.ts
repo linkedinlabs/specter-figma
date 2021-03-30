@@ -1,10 +1,10 @@
 import {
-  A11Y_CHECKLIST_SECTIONS,
+  A11Y_CHECKLIST_TEXT,
   COLORS,
   DATA_KEYS,
   KEY_OPTS,
   ROLE_OPTS,
-  SPEC_INSTRUCTION_SECTIONS,
+  SPEC_INSTRUCTION_TEXT,
 } from '../constants';
 import { getLegendFrame } from '../utils/nodeGetters';
 import { hexToDecimalRgb } from '../utils/tools';
@@ -608,15 +608,7 @@ const buildRectangle = (
 const buildAnnotation = (options: {
   mainText: string,
   secondaryText?: string,
-  type:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'spacing'
-    | 'style',
+  type: PluginAnnotationType,
   isLegendIcon?: boolean,
 }): {
   diamond: PolygonNode,
@@ -1225,15 +1217,7 @@ const positionAnnotation = (
     x: number,
     y: number,
   },
-  annotationType:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'spacing'
-    | 'style' = 'component',
+  annotationType: PluginAnnotationType,
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
 ) => {
   const {
@@ -1766,10 +1750,6 @@ const buildA11yChecklist = () => {
   frame.layoutMode = 'VERTICAL';
   frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
 
-  const title = buildText('custom', {r: .255, g: .255, b: .255}, 'MAS for LinkedIn Designers Checklist');
-  title.fontSize = 18;
-  frame.appendChild(title);
-
   const columnWrapper = figma.createFrame();
   columnWrapper.layoutMode = 'HORIZONTAL';
 
@@ -1777,13 +1757,13 @@ const buildA11yChecklist = () => {
   leftColumn.resize(660, 800);
   leftColumn.layoutMode = 'VERTICAL';
 
-  A11Y_CHECKLIST_SECTIONS.forEach((section) => {
-    const heading = buildText('custom', {r: .255, g: .255, b: .255}, '\n'+section.heading);
+  A11Y_CHECKLIST_TEXT.sections.forEach((section) => {
+    const heading = buildText('custom', hexToDecimalRgb('#000000'), '\n'+section.heading);
     heading.fontSize = 14;
     heading.textAlignHorizontal = 'LEFT';
     heading.lineHeight = {value: 300, unit: 'PERCENT'};
 
-    const list = buildText('custom', {r: .255, g: .255, b: .255}, section.text);
+    const list = buildText('custom', hexToDecimalRgb('#000000'), section.text);
     list.textAlignHorizontal = 'LEFT';
     list.lineHeight = { value: 150, unit: 'PERCENT' };
 
@@ -1809,6 +1789,7 @@ const buildA11yChecklist = () => {
 
 
 const buildInstructionPanel = (specPage) => {
+  const black = hexToDecimalRgb('#000000');
   const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
   const panel = figma.createFrame();
   specPage.appendChild(panel);
@@ -1825,7 +1806,11 @@ const buildInstructionPanel = (specPage) => {
   title.fontName = {...typefaceToUse, style: 'Black'};
   panel.appendChild(title);
 
-  SPEC_INSTRUCTION_SECTIONS.forEach(section => {
+  const intro = buildText('instruction', hexToDecimalRgb('#656565'), SPEC_INSTRUCTION_TEXT.intro)
+  intro.resize(1330, 230);
+  panel.appendChild(intro);
+
+  SPEC_INSTRUCTION_TEXT.sections.forEach(section => {
     const sectionFrame = figma.createFrame();
     sectionFrame.layoutMode = 'VERTICAL';
     sectionFrame.verticalPadding = 30;
@@ -1844,35 +1829,57 @@ const buildInstructionPanel = (specPage) => {
     sectionFrame.appendChild(heading);
 
     const bodyWrapper = figma.createFrame();
+    bodyWrapper.name = 'Body Wrapper';
     bodyWrapper.layoutMode = 'HORIZONTAL';
     bodyWrapper.layoutGrow = 0;
-    bodyWrapper.primaryAxisSizingMode = 'AUTO';
+    bodyWrapper.primaryAxisSizingMode = 'FIXED';
     bodyWrapper.counterAxisSizingMode = 'AUTO';
-    bodyWrapper.itemSpacing = 150;
+    bodyWrapper.resize(1340, bodyWrapper.height);
 
-    const text = buildText('instruction', {r: .255, g: .255, b: .255}, section.text);
-    text.resize(1100, text.height);
-
-    const image = buildAnnotation({mainText: '1', type: 'keystop'});
-    const positionedImage = positionAnnotation(bodyWrapper, 'test', image, {
-      frameWidth: 200,
-      frameHeight: 200,
-      width: 50,
-      height: 50,
-      x: 200,
-      y: 200,
-  }, 'keystop')
-    
+    const text = buildText('instruction', black, section.text);
+    text.resize(1000, text.height);
     bodyWrapper.appendChild(text);
-    bodyWrapper.appendChild(positionedImage);
+
+    const imageWrapper = figma.createFrame();
+    imageWrapper.layoutAlign = 'STRETCH';
+    imageWrapper.layoutGrow = 1;
+    imageWrapper.primaryAxisSizingMode = 'FIXED';
+    imageWrapper.counterAxisSizingMode = 'FIXED';
+    imageWrapper.layoutMode = 'VERTICAL';
+    imageWrapper.primaryAxisAlignItems = 'CENTER';
+    imageWrapper.counterAxisAlignItems = 'CENTER';
+    bodyWrapper.appendChild(imageWrapper);
+
+    const mainText = section.annotationText ||  '1';
+    const image = buildAnnotation({mainText, type: section.annotationType as PluginAnnotationType});
+    const positionedImage = positionAnnotation(imageWrapper, 'test', image, {
+      frameWidth: 340,
+      frameHeight: 328,
+      width: image.rectangle.width,
+      height: 200,
+      x: 0,
+      y: 0,
+    }, 'keystop');
+    positionedImage.rescale(2.5);
+    imageWrapper.appendChild(positionedImage);
+    
     sectionFrame.appendChild(bodyWrapper);
+    sectionFrame.locked = true;
 
     panel.appendChild(sectionFrame);
   })
 
+  const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), 'MAS Design Checklist');
+  checklistTitle.fontSize = 46;
+  checklistTitle.fontName = {...typefaceToUse, style: 'Black'};
+  panel.appendChild(checklistTitle);
+
+  const checklistIntro = buildText('instruction', hexToDecimalRgb('#656565'), A11Y_CHECKLIST_TEXT.intro)
+  checklistIntro.resize(1200, checklistIntro.height);
+  panel.appendChild(checklistIntro);
+
   const checklist = buildA11yChecklist();
   panel.appendChild(checklist);
-  panel.locked = true;
 
   return panel;
 }

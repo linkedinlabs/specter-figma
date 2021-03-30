@@ -592,9 +592,8 @@ export default class App {
       const instructionPanel = buildInstructionPanel(specPage);
       specPage.appendChild(instructionPanel);
 
-      // add instructions and checklist stuff to page
       // find next open space for when stuff is added later
-      const categories = ['DS Components', 'DS Size/Spacing', 'Keystop', 'Label', 'Heading'];
+      const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
 
       const topFrames = new Crawler({for: selection}).topFrames();
       let yCoordinate = 20;

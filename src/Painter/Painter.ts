@@ -707,6 +707,7 @@ export default class Painter {
       groupName,
       annotation,
       nodePosition,
+      annotationType
     );
 
     // set it in the correct containers
