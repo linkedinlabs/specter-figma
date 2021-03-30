@@ -1784,6 +1784,8 @@ const buildA11yChecklist = () => {
   columnWrapper.layoutAlign = 'INHERIT';
   columnWrapper.primaryAxisSizingMode = 'AUTO';
   columnWrapper.counterAxisSizingMode = 'AUTO';
+  frame.locked = true;
+
   return frame;
 }
 
@@ -1869,7 +1871,7 @@ const buildInstructionPanel = (specPage) => {
     panel.appendChild(sectionFrame);
   })
 
-  const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), 'MAS Design Checklist');
+  const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), '\nMAS Design Checklist');
   checklistTitle.fontSize = 46;
   checklistTitle.fontName = {...typefaceToUse, style: 'Black'};
   panel.appendChild(checklistTitle);
@@ -1880,6 +1882,30 @@ const buildInstructionPanel = (specPage) => {
 
   const checklist = buildA11yChecklist();
   panel.appendChild(checklist);
+
+  const notesTitle = buildText('title', hexToDecimalRgb('#517EC2'), '\nDesigner Notes');
+  notesTitle.fontSize = 46;
+  notesTitle.fontName = {...typefaceToUse, style: 'Black'};
+  panel.appendChild(notesTitle);
+
+  const notesFrame = figma.createFrame();
+  notesFrame.layoutMode = 'VERTICAL';
+  notesFrame.resize(1340, 600);
+  notesFrame.cornerRadius = 5;
+  notesFrame.fills = [{
+    type: 'SOLID',
+    color: {r: 1, g: 1, b: 1}
+  }];
+  notesFrame.verticalPadding = 20;
+  notesFrame.horizontalPadding = 20;
+  
+  const notes = buildText('custom', black, 'Enter notes for engineering here...');
+  notes.textAlignHorizontal = 'LEFT';
+  notes.textAlignVertical = 'TOP';
+  notes.resize(1300, 575);
+  
+  notesFrame.appendChild(notes);
+  panel.appendChild(notesFrame);
 
   return panel;
 }
