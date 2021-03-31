@@ -1180,7 +1180,7 @@ export default class Painter {
     // }
 
     legendNode = buildLegendEntry(type, nodeData);
-    this.addEntryToLegend(legendNode);
+    this.addEntryToLegend(legendNode, type);
 
     // set the annotation frame(s) into the correct container group layers in Figma
     setNodeInContainers({
@@ -1214,10 +1214,10 @@ export default class Painter {
    *
    * @returns {undefined}
    */
-  addEntryToLegend(legendNode) {
+  addEntryToLegend(legendNode, type) {
     let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
-      legend = buildLegend();
+      legend = buildLegend(type);
       legend.name = `+${PLUGIN_NAME}+ Legend - ${this.frame.name}`;
 
       const {

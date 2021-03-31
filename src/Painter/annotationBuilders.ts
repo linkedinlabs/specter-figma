@@ -823,6 +823,80 @@ const buildBoundingBox = (position: {
   return boundingBox;
 };
 
+const getLegendDefinitions = (type) => {
+  if (type === 'keystop') {
+    return ([
+      {
+        name: 'keys',
+        val: 'The keyboard keys that can be used to interact with this element.'
+      }
+    ])
+  } else if (type === 'label') {
+    return ([
+      {
+        name: 'Role',
+        val: 'The purpose of the element (@engineers - the semantic tag to use or the aria-label as a last resort)'
+      }, {
+        name: 'Visible',
+        val: 'Indicates whether the visible text and role are a thorough audible description of what the element is/does for non-sighted users'
+      }, {
+        name: 'A11y',
+        val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
+      }, {
+        name: 'Alt',
+        val: 'Text description required for all images that aren\'t purely decorative'
+      },
+    ])
+  } 
+  return ([
+    {
+      name: 'Level',
+      val: 'Indicates the hierarchy level of the heading to organize the structure of the design'
+    }, {
+      name: 'Visible',
+      val: 'Indicates whether the visible heading text is a thorough audible description of the content the heading pertains to'
+    }, {
+      name: 'Heading',
+      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
+    },
+  ])
+}
+
+const buildLegendHeader = (type: PluginStopType) => {
+  const header = figma.createFrame();
+  header.name = 'Legend Header';
+  header.locked = true;
+
+  header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3')}]
+  header.resize(363, 100);
+  header.layoutMode = 'VERTICAL';
+  header.verticalPadding = 10;
+  header.horizontalPadding = 15;
+  const heading = type.charAt(0).toUpperCase()+type.slice(1)+'s';
+  const title = buildText('title', hexToDecimalRgb('#517EC2'), `${heading} Legend`);
+  title.fontSize = 18;
+  header.appendChild(title);
+
+  const intro = buildText('custom', hexToDecimalRgb('#333333'), `Legend entries will be automatically added and updated below as you annotate your design using the ${heading} tab.`);
+  intro.resize(350, 40);
+  intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373')}]
+  intro.textAlignHorizontal = 'LEFT';
+  header.appendChild(intro);
+
+  const fieldHeader = buildText('title', hexToDecimalRgb('#517EC2'), 'Field Definitions');
+  fieldHeader.fontSize = 14;
+  fieldHeader.lineHeight = { value: 200, unit: 'PERCENT' };
+  header.appendChild(fieldHeader);
+
+  const fields = buildLegendFieldNodes(type, {}, getLegendDefinitions(type));
+  fields.forEach(field => {
+    field.fills = [];
+    header.appendChild(field);
+  });
+
+  return header;
+}
+
 /**
  * @description Builds the initial legend frame for label annotation legend items.
  *
@@ -831,7 +905,7 @@ const buildBoundingBox = (position: {
  *
  * @returns {Object} Returns the legend frame.
  */
-const buildLegend = () => {
+const buildLegend = (type: PluginStopType) => {
   const legend: FrameNode = figma.createFrame();
   // auto-layout
   legend.layoutMode = 'VERTICAL';
@@ -843,6 +917,9 @@ const buildLegend = () => {
   legend.layoutGrow = 0;
   legend.verticalPadding = 0;
   legend.horizontalPadding = 0;
+
+  const header = buildLegendHeader(type);
+  legend.appendChild(header);
 
   return legend;
 };
@@ -1018,9 +1095,9 @@ const getLegendEntryFields = (type, data) => {
  *
  * @returns {Array} Returns the legend entry nodes to append.
  */
-const buildLegendFieldNodes = (type, nodeData) => {
+const buildLegendFieldNodes = (type, nodeData, suppliedFields?) => {
   const nodes = [];
-  const fields = getLegendEntryFields(type, nodeData);
+  const fields = suppliedFields || getLegendEntryFields(type, nodeData);
 
   fields.forEach(({ name, val }, index) => {
     const line: FrameNode = figma.createFrame();
@@ -1046,6 +1123,12 @@ const buildLegendFieldNodes = (type, nodeData) => {
     if (index === fields.length - 1) {
       line.bottomLeftRadius = 5;
       line.bottomRightRadius = 5;
+    }
+    if (suppliedFields) {
+      line.horizontalPadding = 0;
+      line.verticalPadding = 5;
+      fieldTitle.resize(48, fieldTitle.height);
+      fieldValue.resize(275, fieldValue.height);
     }
 
     line.appendChild(fieldTitle);
@@ -1652,6 +1735,9 @@ const refreshLegend = (
     legend.children.forEach(child => child.remove());
   }
 
+  const header = buildLegendHeader(type);
+  legend.appendChild(header);
+
   stopList.forEach((item) => {
     const node = figma.getNodeById(item.id);
     const trackingIndex = trackingData.findIndex(({ id }) => id === item.id);
@@ -1812,6 +1898,7 @@ const buildInstructionPanel = (specPage) => {
   intro.resize(1330, 230);
   panel.appendChild(intro);
 
+  // Instructions
   SPEC_INSTRUCTION_TEXT.sections.forEach(section => {
     const sectionFrame = figma.createFrame();
     sectionFrame.layoutMode = 'VERTICAL';
@@ -1871,6 +1958,7 @@ const buildInstructionPanel = (specPage) => {
     panel.appendChild(sectionFrame);
   })
 
+  // Checklist
   const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), '\nMAS Design Checklist');
   checklistTitle.fontSize = 46;
   checklistTitle.fontName = {...typefaceToUse, style: 'Black'};
@@ -1883,6 +1971,7 @@ const buildInstructionPanel = (specPage) => {
   const checklist = buildA11yChecklist();
   panel.appendChild(checklist);
 
+  // Notes
   const notesTitle = buildText('title', hexToDecimalRgb('#517EC2'), '\nDesigner Notes');
   notesTitle.fontSize = 46;
   notesTitle.fontName = {...typefaceToUse, style: 'Black'};
@@ -1892,18 +1981,15 @@ const buildInstructionPanel = (specPage) => {
   notesFrame.layoutMode = 'VERTICAL';
   notesFrame.resize(1340, 600);
   notesFrame.cornerRadius = 5;
-  notesFrame.fills = [{
-    type: 'SOLID',
-    color: {r: 1, g: 1, b: 1}
-  }];
+  notesFrame.fills = [{ type: 'SOLID', color: {r: 1, g: 1, b: 1} }];
   notesFrame.verticalPadding = 20;
   notesFrame.horizontalPadding = 20;
-  
+
   const notes = buildText('custom', black, 'Enter notes for engineering here...');
   notes.textAlignHorizontal = 'LEFT';
   notes.textAlignVertical = 'TOP';
+  notes.fontSize = 18;
   notes.resize(1300, 575);
-  
   notesFrame.appendChild(notes);
   panel.appendChild(notesFrame);
 

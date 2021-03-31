@@ -21,6 +21,7 @@ import {
   updateLegendEntry,
   buildText,
   buildInstructionPanel,
+  buildLegend,
 } from './Painter/annotationBuilders';
 
 /**
@@ -601,7 +602,7 @@ export default class App {
         let xCoordinate = 1820;
         categories.forEach(category => {
           const duplicate = frame.clone();
-          // remove all plugin data and annotaiton nodes
+          // remove all plugin data and annotation nodes?
           duplicate.name = `${category.toUpperCase()} Spec - ${frame.name}`;
 
           specPage.appendChild(duplicate);
@@ -610,19 +611,10 @@ export default class App {
 
           if (!category.includes('DS')) {
             const painter = new Painter({for: duplicate.children[0], in: specPage, isMercadoMode: this.isMercadoMode});
-            const characters = 'Annotation data you enter will automatically appear here';
             const legendEntry = figma.createFrame();
-            legendEntry.fills = [{
-              type: 'SOLID',
-              color: {r: 1, g: 1, b: 1},
-            }];
-            const legendInstructions = buildText('legend', {r: 0, g: 0, b: 0}, characters);
-            legendEntry.resize(364, 35);
-            legendInstructions.resize(350, 30);
-            legendEntry.appendChild(legendInstructions);
-            legendEntry.verticalPadding = 5;
-            legendEntry.horizontalPadding = 5;
-            painter.addEntryToLegend(legendEntry);
+            
+            legendEntry.resize(364, 1);
+            painter.addEntryToLegend(legendEntry, category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType);
             xCoordinate += 400;
           }
           xCoordinate += (frame.width + 100);
