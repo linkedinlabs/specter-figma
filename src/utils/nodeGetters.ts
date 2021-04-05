@@ -6,6 +6,7 @@ import {
   updateArray,
 } from './tools';
 import Crawler from '../Crawler';
+import { buildInstructionPanel } from '../Painter/nodeBuilders';
 
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
@@ -88,6 +89,9 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
     specPage = figma.createPage();
     specPage.name = `SPEC - ${page.name}`;
     page.setPluginData(DATA_KEYS.specPage, specPage.id);
+
+    const instructionPanel = buildInstructionPanel(specPage);
+    specPage.appendChild(instructionPanel);
   }
   return specPage;
 };

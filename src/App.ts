@@ -13,6 +13,7 @@ import {
   updateArray,
   getStopTypeFromView,
   isAnnotationLayer,
+  getOpenYCoordinate,
 } from './utils/tools';
 import {
   refreshLegend,
@@ -22,7 +23,7 @@ import {
   buildText,
   buildInstructionPanel,
   buildLegend,
-} from './Painter/annotationBuilders';
+} from './Painter/nodeBuilders';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -590,16 +591,14 @@ export default class App {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
       const specPage = getSpecPage(page);
-      const instructionPanel = buildInstructionPanel(specPage);
-      specPage.appendChild(instructionPanel);
 
       // find next open space for when stuff is added later
       const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
 
       const topFrames = new Crawler({for: selection}).topFrames();
-      let yCoordinate = 20;
+      let yCoordinate = getOpenYCoordinate(specPage);
       topFrames.forEach((frame) => {
-        let xCoordinate = 1820;
+        let xCoordinate = 1150;
         categories.forEach(category => {
           const duplicate = frame.clone();
           // remove all plugin data and annotation nodes?
@@ -650,6 +649,8 @@ export default class App {
     });
     if (locked !== undefined) {
       figma.notify(`Success! Specter groups all ${locked ? 'LOCKED' : 'UNLOCKED'}`);
+    } else {
+      figma.notify('Error: There are no annotations to lock/unlock.');
     }
   }
 

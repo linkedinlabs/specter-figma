@@ -542,24 +542,25 @@ const LEVEL_OPTS = [
  * @type {Array}
  */
  const A11Y_CHECKLIST_TEXT = {
+  title: 'MAS Design Checklist',
   intro: 'This checklist contains common a11y \'gotchas\' that can not be automated by the plugin.  Please use this as a reference to check your designs and make any necessary updates.',
   sections: [
     {
       heading: 'Have you checked for color and contrast?',
       text: '[ ] Hue is never used as the sole means of conveying information.\n[ ] All text has at least 4.5:1 contrast with its surrounding color. \n    [ ] Exception: Large text (over 19px) has at least 3:1 contrast.\n[ ] For all controls, there is at least 3:1 contrast between the \n    surrouding color(s) and the color of every part of the control that is \n    essential to understand:\n    (A) what type of control it is, and \n    (B) the current value of the control.\n    [ ] There is at least 3:1 contrast between each of the possible states \n        of a control, unless something other than color is used to \n        distinguish states.\n[ ] For all graphical elements (e.g. images) that convey unique \n    information on a screen, every part of the graphic has at least 3:1 \n    contrast with its surrounding color.',
     },
-    {
-      heading: 'Is there text-equivalent for all visual information?',
-      text: '[ ] All images have alt text.\n    [ ] Alt text provides a verbal equivalent of the image.\n[ ] All controls have visible text or image as a label (name)\n    [ ] Controls that use an image for the label also have a predictable \n        a11y label defined, or the image has alt text.\n    [ ] All unique controls have unique names (visible or a11y label).\n[ ] When a user can identify the type of control (i.e. role) based on \n    visual information, the role is clearly defined in the spec as well.',
-    },
+    // {
+    //   heading: 'Is there text-equivalent for all visual information?',
+    //   text: '[ ] All images have alt text.\n    [ ] Alt text provides a verbal equivalent of the image.\n[ ] All controls have visible text or image as a label (name)\n    [ ] Controls that use an image for the label also have a predictable \n        a11y label defined, or the image has alt text.\n    [ ] All unique controls have unique names (visible or a11y label).\n[ ] When a user can identify the type of control (i.e. role) based on \n    visual information, the role is clearly defined in the spec as well.',
+    // },
     {
       heading: 'Is the layout adaptable?',
       text: '[ ] All components that contain text adapt when users change text size or \n    text spacing, without loss of information necessary to understand and \n    use the app.\n[ ] The page layout responds to increases in zoom level (equivalent to \n    reducing the viewport dimensions) so that a user never has to scroll \n    the page in two dimensions.\n    [ ] Individual components in the page never require two-dimensional     \n        scroll.\n    [ ] Exception: maps, images, data tables.\n[ ] No content or functionality is restricted to any one device \n    orientation (e.g. landscape or portrait).',
     },
-    {
-      heading: 'Is the UI designed to be operable via any input modality?',
-      text: '[ ] For every function that can be performed using a pointer input, a user \n    can perform the function using a keyboard alone.\n    [ ] Every focusable element (esp. controls) is represented in the \n        focus order definition.\n[ ] Every pointer interaction is operable via simple single-pointer \n    interactions. Examples: single click/tap, long press.\n    [ ] Exception: Gesture interactions are used only in cases where the \n        platform provides an single-pointer alternative to the gesture \n        (e.g. Android/iOS swipe gesture).\n[ ] Headings are identified in the spec.\n    [ ] Web only: Heading level is defined for each heading.',
-    },
+    // {
+    //   heading: 'Is the UI designed to be operable via any input modality?',
+    //   text: '[ ] For every function that can be performed using a pointer input, a user \n    can perform the function using a keyboard alone.\n    [ ] Every focusable element (esp. controls) is represented in the \n        focus order definition.\n[ ] Every pointer interaction is operable via simple single-pointer \n    interactions. Examples: single click/tap, long press.\n    [ ] Exception: Gesture interactions are used only in cases where the \n        platform provides an single-pointer alternative to the gesture \n        (e.g. Android/iOS swipe gesture).\n[ ] Headings are identified in the spec.\n    [ ] Web only: Heading level is defined for each heading.',
+    // },
     {
       heading: 'Is the interface understandable?',
       text: '[ ] For relationships between elements that are conveyed visually, there \n    are clear definitions of that relationship for engineers to ensure \n    that the relationship is reflected programmatically, as well.\n[ ] All error states are clearly identified for users for:\n    (a) input-level errors, and\n    (b) page-level errors.\n    [ ] Error messaging includes instructions on what the user should do \n        to address the error.\n[ ] Elements that appear on multiple screens in an app use the same name\n    and behave predictably.',
@@ -575,34 +576,77 @@ const LEVEL_OPTS = [
  * @type {Object}
  */
  const SPEC_INSTRUCTION_TEXT = {
-  intro: 'This template is intended to promote spec consistency and give designers of all levels a starting point in creating thorough design specs for engineering.\nGiven that different assignments will require different specs, we ask that you fill out as much as you can that could be helpful to engineers and skip over anything that is not relevant to this assignment. If you have questions, please contact Jeff, Nate, or Lisamarie.',
+  intro: 'This template is intended to promote spec consistency and give designers of all levels a starting point in creating thorough design specs for engineering.\nWe ask that you fill out as much as you can that could be helpful to engineers for this assignment and skip over anything that is not relevant.\nNote: Most tabs in Specter provide an automated system for numbering annotations that point to details in a legend.  Those details can come from data pre-attached to components by an admin or by entering them yourself in the plugin window.  You can add/delete/reorder annotations within the plugin window, and the system will automatically re-number your annotations and legend.',
   sections: [
     {
       annotationType: 'component',
       annotationText: 'slider',
       heading: 'DS Components',
-      text: 'Use each frame\'s first duplicate named \'DS COMPONENT Spec\' for annotating with the \'Annotate\' option in the \'General\' tab of Specter.\nThis should include design system component information that may be helpful to engineers implementing the design.\nIf data has been attached by an admin to any components that have come from the LinkedIn Design System, you will automatically be provided that value in a purple annotation.  Otherwise, you will be prompted to enter your own custom value and that will be reflected as a pink annotation.',
+      text: 'Use each frame\'s first duplicate named \'DS COMPONENT Spec\' for annotating with the \'Annotate\' option in the \'General\' tab of Specter.\nThis should include design system component information that may be helpful to engineers implementing the design, e.g. component names, states, and styles.\nPurple indicates an admin-assigned DS component name, red indicates a name derived from the layer name, and pink indicates a custom value.',
     },
     {
       annotationType: 'spacing',
       annotationText: '120dp',
       heading: 'DS Size/Spacing',
-      text: 'Use each frame\'s first duplicate named \'DS SPACING Spec\' for annotating with the \'Measure\' option in the \'General\' tab of Specter.\nThis should include design system measurement/spacing information that may be helpful to engineers implementing the design.\nIf data has been attached by an admin to any components that have come from the LinkedIn Design System or if Specter finds a token that represents the spacing detected, you will automatically be provided that value.  Otherwise, it will calculate a value.  Size annotations are in green annotations, and spacing in teal annotations.',
+      text: 'Use each frame\'s first duplicate named \'DS SIZE/SPACING Spec\' for annotating with the \'Measure\' option in the \'General\' tab of Specter.\nThis should include design system measurement/spacing information that may be helpful to engineers implementing the design.\nGreen indicates size, and teal indicates spacing.',
     },
     {
       annotationType: 'keystop',
       heading: 'Keyboard/Focus',
-      text: 'Use each frame\'s second duplicate named \'KEYSTOP Spec\' for annotating with the \'Keyboard\' tab of Specter.\nThis will provide you with an automated system for ordered number annotations that point to the keys associated with each keystop in a legend to the right of the duplicated frame.  Those keys indicate how the user can interact with the element using their keyboard, and can either come automatically from data attached by an admin or by entering them yourself in the UI.  You can continue to add, delete, or reorder any keystops in the list within the UI, and the system will automatically update the list order.\nTip: The automatic ordering system goes from top-left to bottom-right, so if you want certain sections of the frame to be ordered before moving further to the bottom-right, select everything you want to add a keystop to in that section and apply annotations section-by-section.',
+      text: 'Use each frame\'s second duplicate named \'KEYBOARD Spec\' for annotating with the \'Keyboard\' tab of Specter.\nPlease annotate every element that is focusable (esp. controls) when using the \'tab\' key.  To set things up well for screen reader users especially, this means every element that can be interacted with.  The annotation number indicates what order the focus moves.\n    \u2022 For every function that can be performed using a pointer input, a user can perform it using a       keyboard alone\n    \u2022 Every pointer interaction is operable via simple single-pointer interactions (e.g. single click/tap, long press).  Exception: Gesture interactions are used only in cases where the platform provides a single-pointer alternative to the gesture (e.g. Android/iOS swipe gesture)\n\n(Tip: The automatic ordering system goes from top-left to bottom-right, so if you want certain areas of the top frame to be ordered first, select and apply annotations each section at a time)',
     },
     {
       annotationType: 'label',
       heading: 'Labels',
-      text: 'Use each frame\'s third duplicate named \'LABEL Spec\' for annotating with the \'Labels\' tab of Specter.\nThis uses the same numbered pointer system as keystops (see above), and also may provide data that was attached by an admin.  Labels data includes:\n- ROLE: This is the purpose of the element (and for engineers, the semantic tag that should be used).\n- VISIBLE: This indicates whether the visible element text and/or role is a thorough description of what the element is/does for screen reader users.  If it isn\'t, think about whether the text should be modified, or turn \'Visible\' off and add a thorough description to the \'A11y\' field instead for screen readers to use.\n- A11Y: This is an alternate/additional value the screen reader will play when the element is focused (and for engineering, should be used as aria-label).  This should be used if the visible element text and/or role is not an explanatory description of what the element is/does (e.g. if a \'Next\' button only contains an arrow icon, and non-sighted need the screen reader to tell them it is a \'Next\' button.\n- ALT: This is alternative text that describes what an image depicts and should always be included with images that aren\'t purely decorative.  This field will only show when the selected Role is \'image\'.',
+      text: 'Use each frame\'s third duplicate named \'LABEL Spec\' for annotating with the \'Labels\' tab of Specter.\nPlease annotate controls in your design (links, buttons, etc) to include information needed for screen reader users (e.g. you must provide a verbal alternative to buttons containing only icons like \'Next\' for an arrow icon).\n    \u2022 All images have alt text (a verbal equivalent of the image)\n    \u2022 All controls have visible text or image as a label (name)\n    \u2022 Controls that use an image for the label also have an a11y label defined (or image has alt text)\n    \u2022 All unique controls have unique names (visible or a11y)\n    \u2022 When a user can identify the type of control based on visual information, role is defined',
     },
     {
       annotationType: 'heading',
       heading: 'Headings',
-      text: 'Use each frame\'s last duplicate named \'HEADING Spec\' for annotating with the \'Heading\' tab of Specter.\nThis also uses the same numbered pointer system as keystops and labels (see above), and also may provide data that was attached by an admin.  Heading data includes:\n- LEVEL: This is for organizing the nested structure of headings, e.g. each web page should only have one level 1 heading that names the page, the next level should start at 2 for page sections, any headings nested inside a section with a level 2 heading should then be 3, and so on (and for engineering, the semantic tag that should be used e.g. \'h1\').\n- VISIBLE: This indicates whether the visible heading text is a thorough description of the content the heading describes.  If it isn\'t, think about whether the text should be modified, or turn \'Visible\' off and add a thorough description to the \'Heading\' field instead for screen readers to use.\n- HEADING: This is an alternate/additional value the screen reader will play when the heading is announced (and for engineering, should be used as aria-label).  This should be used if the visible heading text is not an explanatory description of the content the heading refers to.',
+      text: 'Use each frame\'s last duplicate named \'HEADING Spec\' for annotating with the \'Headings\' tab of Specter.\nPlease annotate anything you consider a heading to denote section breaks: \n    \u2022 Every heading is assigned a level (or N/A if iOS/Android)\n    \u2022 A verbal value for screen reader users is provided if the visible text is insufficient',
+    },
+  ]
+};
+
+/**
+ * @description A collection of field definitions for each type of legend to display.
+ *
+ * @kind constant
+ * @name LEGEND_DEFINITIONS
+ * @type {Object}
+ */
+const LEGEND_DEFINITIONS = {
+  keystop: [
+    {
+      name: 'keys',
+      val: 'The keyboard keys that can be used to interact with this element.'
+    }
+  ],
+  label: [
+    {
+      name: 'Role',
+      val: 'The purpose of the element (@engineers - use as HTML tag, or role as a last resort)'
+    }, {
+      name: 'Visible',
+      val: 'If the visible text & role is a sufficient description of what the element is/does for screen reader users'
+    }, {
+      name: 'A11y',
+      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
+    }, {
+      name: 'Alt',
+      val: 'Text description required for all images that aren\'t purely decorative'
+    },
+  ],
+  heading: [
+    {
+      name: 'Level',
+      val: 'Denotes the hierarchy of nested design sections (@engineers - use as HTML tag h1/h2/etc)'
+    }, {
+      name: 'Visible',
+      val: 'If the visible text is a sufficient description of the content under the heading for screen reader users'
+    }, {
+      name: 'Heading',
+      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
     },
   ]
 };
@@ -614,6 +658,7 @@ export {
   DATA_KEYS,
   KEY_OPTS,
   GUI_SETTINGS,
+  LEGEND_DEFINITIONS,
   LEVEL_OPTS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,

@@ -20,7 +20,7 @@ import {
   buildLegend,
   positionLegend,
   drawContainerGroup,
-} from './annotationBuilders';
+} from './nodeBuilders';
 import { getLegendFrame } from '../utils/nodeGetters';
 
 const uuid = require('uuid-random');

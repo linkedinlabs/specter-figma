@@ -679,6 +679,37 @@ const getRelativePosition = (
 };
 
 /**
+ * @description Finds the y coordinate beneath all existing page children.
+ *
+ * @kind function
+ * @name getOpenYCoordinate
+ * 
+ * @param {Object} page A PageNode object to find open vertical space in.
+ *
+ * @returns {Object} The y coordinate that is open for more content.
+ */
+ const getOpenYCoordinate = (
+  page: PageNode,
+) => {
+  let hasExistingFrames = false;
+  let yCoordinate = 20;
+
+  page.children.forEach(child => {
+    const bottomLeftCorner = child.y + child.height;
+    if (!child.name.includes('Instruction') && bottomLeftCorner > yCoordinate) {
+      hasExistingFrames = true;
+      yCoordinate = bottomLeftCorner;
+    }
+  })
+
+  if (hasExistingFrames) {
+    yCoordinate += 150;
+  }
+
+  return yCoordinate;
+};
+
+/**
  * @description A helper function to take a hexcolor string, conver it to an object in RGB format,
  * and further convert the `red`, `green`, and `blue` values to a decimal value.
  *
@@ -912,6 +943,7 @@ export {
   deepCompare,
   existsInArray,
   findTopFrame,
+  getOpenYCoordinate,
   getNodeSettings,
   getPeerPluginData,
   getRelativeIndex,

@@ -1,8 +1,10 @@
+import { type } from 'os';
 import {
   A11Y_CHECKLIST_TEXT,
   COLORS,
   DATA_KEYS,
   KEY_OPTS,
+  LEGEND_DEFINITIONS,
   ROLE_OPTS,
   SPEC_INSTRUCTION_TEXT,
 } from '../constants';
@@ -406,10 +408,10 @@ const buildText = (
   } else if (type === 'instruction') {
     figma.loadFontAsync({ family: "Roboto", style: "Regular" }).then((font) => {
       text.textAlignHorizontal = 'LEFT';
-      text.fontSize = 24;
+      text.fontSize = 16;
       text.fontName = { family: 'Roboto', style: 'Regular' };
       text.lineHeight = {value: 150, unit: 'PERCENT'};
-      text.paragraphSpacing = 20;
+      text.paragraphSpacing = 15;
     })
   }
   return text;
@@ -823,76 +825,51 @@ const buildBoundingBox = (position: {
   return boundingBox;
 };
 
-const getLegendDefinitions = (type) => {
-  if (type === 'keystop') {
-    return ([
-      {
-        name: 'keys',
-        val: 'The keyboard keys that can be used to interact with this element.'
-      }
-    ])
-  } else if (type === 'label') {
-    return ([
-      {
-        name: 'Role',
-        val: 'The purpose of the element (@engineers - the semantic tag to use or the aria-label as a last resort)'
-      }, {
-        name: 'Visible',
-        val: 'Indicates whether the visible text and role are a thorough audible description of what the element is/does for non-sighted users'
-      }, {
-        name: 'A11y',
-        val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
-      }, {
-        name: 'Alt',
-        val: 'Text description required for all images that aren\'t purely decorative'
-      },
-    ])
-  } 
-  return ([
-    {
-      name: 'Level',
-      val: 'Indicates the hierarchy level of the heading to organize the structure of the design'
-    }, {
-      name: 'Visible',
-      val: 'Indicates whether the visible heading text is a thorough audible description of the content the heading pertains to'
-    }, {
-      name: 'Heading',
-      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
-    },
-  ])
-}
-
+/**
+ * @description Builds the header for the legend with field definitions.
+ *
+ * @kind function
+ * @name buildLegendHeader
+ *
+ * @param {string} type The stop type the legend pertains to.
+ * 
+ * @returns {Object} Returns the legend header frame.
+ */
 const buildLegendHeader = (type: PluginStopType) => {
+  const heading = type === 'keystop' ? 'Keyboard' : type.charAt(0).toUpperCase()+type.slice(1)+'s';
   const header = figma.createFrame();
   header.name = 'Legend Header';
-  header.locked = true;
 
   header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3')}]
   header.resize(363, 100);
   header.layoutMode = 'VERTICAL';
   header.verticalPadding = 10;
-  header.horizontalPadding = 15;
-  const heading = type.charAt(0).toUpperCase()+type.slice(1)+'s';
+  header.horizontalPadding = 12;
+  
   const title = buildText('title', hexToDecimalRgb('#517EC2'), `${heading} Legend`);
-  title.fontSize = 18;
+  title.fontSize = 16;
+  title.locked = true;
   header.appendChild(title);
 
   const intro = buildText('custom', hexToDecimalRgb('#333333'), `Legend entries will be automatically added and updated below as you annotate your design using the ${heading} tab.`);
   intro.resize(350, 40);
   intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373')}]
   intro.textAlignHorizontal = 'LEFT';
+  intro.locked = true;
   header.appendChild(intro);
 
-  const fieldHeader = buildText('title', hexToDecimalRgb('#517EC2'), 'Field Definitions');
-  fieldHeader.fontSize = 14;
-  fieldHeader.lineHeight = { value: 200, unit: 'PERCENT' };
-  header.appendChild(fieldHeader);
-
-  const fields = buildLegendFieldNodes(type, {}, getLegendDefinitions(type));
+  const fields = buildLegendFieldNodes(type, {}, LEGEND_DEFINITIONS[type]);
   fields.forEach(field => {
     field.fills = [];
+    field.locked = true;
     header.appendChild(field);
   });
+
+  const warning = buildText('custom', hexToDecimalRgb('#BE4841'), 'WARNING! Do not make edits to the legend directly or you will lose them. Please update in the plugin window only.');
+  warning.textAlignHorizontal = 'LEFT';
+  warning.resize(350, 40);
+  warning.locked = true;
+  header.appendChild(warning);
 
   return header;
 }
@@ -1128,11 +1105,12 @@ const buildLegendFieldNodes = (type, nodeData, suppliedFields?) => {
       line.horizontalPadding = 0;
       line.verticalPadding = 5;
       fieldTitle.resize(48, fieldTitle.height);
-      fieldValue.resize(275, fieldValue.height);
+      fieldValue.resize(286, fieldValue.height);
     }
 
     line.appendChild(fieldTitle);
     line.appendChild(fieldValue);
+    line.locked = true;
     nodes.push(line);
   });
 
@@ -1732,11 +1710,12 @@ const refreshLegend = (
   const legend = getLegendFrame(frameId, figma.currentPage);
   const updatedTracking = [...trackingData];
   if (legend) {
-    legend.children.forEach(child => child.remove());
+    legend.children.forEach((child) => {
+      if (!child.name.includes('Header')) {
+        child.remove();
+      }
+    });
   }
-
-  const header = buildLegendHeader(type);
-  legend.appendChild(header);
 
   stopList.forEach((item) => {
     const node = figma.getNodeById(item.id);
@@ -1822,48 +1801,66 @@ const updateLegendEntry = (
   }
 };
 
-const buildA11yChecklist = () => {
+const buildA11yChecklist = (typefaceToUse) => {
+  const checklistWrapper = figma.createFrame();
+  checklistWrapper.name = 'Accessibility Checklist';
+  checklistWrapper.layoutMode = 'VERTICAL';
+  checklistWrapper.fills = [];
+  checklistWrapper.resize(920, 1200);
+
+  const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), A11Y_CHECKLIST_TEXT.title);
+  checklistTitle.fontSize = 26;
+  checklistTitle.fontName = {...typefaceToUse, style: 'Black'};
+  checklistWrapper.appendChild(checklistTitle);
+
+  const checklistIntro = buildText('instruction', hexToDecimalRgb('#656565'), A11Y_CHECKLIST_TEXT.intro)
+  checklistIntro.resize(750, 100);
+  checklistIntro.locked = true;
+  checklistWrapper.appendChild(checklistIntro);
+
   const frame = figma.createFrame();
-  frame.name = 'Accessibility Checklist';
-  frame.resize(1000, 1500);
+  frame.resize(800, 1500);
   frame.fills = [{
     type: 'SOLID',
     color: {r: 1, g: 1, b: 1}
   }];
-  frame.verticalPadding = 40;
-  frame.horizontalPadding = 40;
+  frame.verticalPadding = 20;
+  frame.horizontalPadding = 30;
   frame.layoutAlign = 'STRETCH';
   frame.layoutMode = 'VERTICAL';
   frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
-
+  
   const columnWrapper = figma.createFrame();
   columnWrapper.layoutMode = 'HORIZONTAL';
-
+  
   const leftColumn = figma.createFrame();
-  leftColumn.resize(660, 800);
+  leftColumn.name = 'Bullets';
+  leftColumn.resize(580, 800);
   leftColumn.layoutMode = 'VERTICAL';
-
+  
   A11Y_CHECKLIST_TEXT.sections.forEach((section) => {
-    const heading = buildText('custom', hexToDecimalRgb('#000000'), '\n'+section.heading);
-    heading.fontSize = 14;
+    const heading = buildText('custom', hexToDecimalRgb('#000000'), section.heading);
+    heading.fontSize = 16;
     heading.textAlignHorizontal = 'LEFT';
     heading.lineHeight = {value: 300, unit: 'PERCENT'};
-
-    const list = buildText('custom', hexToDecimalRgb('#000000'), section.text);
+    
+    const list = buildText('custom', hexToDecimalRgb('#000000'), section.text+'\n');
+    list.fontSize = 15;
+    list.fontName = {...typefaceToUse, style: 'Regular'};
     list.textAlignHorizontal = 'LEFT';
     list.lineHeight = { value: 150, unit: 'PERCENT' };
-
+    
     leftColumn.appendChild(heading);
     leftColumn.appendChild(list);
     leftColumn.layoutGrow = 0;
     leftColumn.primaryAxisSizingMode = 'AUTO';
   })
-
+  
   columnWrapper.appendChild(leftColumn);
-
+  
   const rightColumn = figma.createFrame();
-  rightColumn.resize(275, 800);
-
+  rightColumn.resize(75, 800);
+  
   columnWrapper.appendChild(rightColumn);
   frame.appendChild(columnWrapper);
   columnWrapper.layoutMode = 'HORIZONTAL';
@@ -1871,8 +1868,10 @@ const buildA11yChecklist = () => {
   columnWrapper.primaryAxisSizingMode = 'AUTO';
   columnWrapper.counterAxisSizingMode = 'AUTO';
   frame.locked = true;
+  
+  checklistWrapper.appendChild(frame);
 
-  return frame;
+  return checklistWrapper;
 }
 
 
@@ -1880,23 +1879,33 @@ const buildInstructionPanel = (specPage) => {
   const black = hexToDecimalRgb('#000000');
   const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
   const panel = figma.createFrame();
-  specPage.appendChild(panel);
-  panel.resize(1500, 3000);
-  panel.layoutMode = 'VERTICAL';
-  panel.verticalPadding = 50;
-  panel.horizontalPadding = 50;
-  panel.itemSpacing = 30;
+  panel.name = 'Spec Instruction Panel';
+  panel.resize(1000, 3000);
   panel.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
   panel.strokes = [{ type: 'SOLID', color: hexToDecimalRgb('#A5A5A5') }]
+  panel.layoutMode = 'VERTICAL';
+  panel.verticalPadding = 40;
+  panel.horizontalPadding = 40;
+  panel.itemSpacing = 60;
+  specPage.appendChild(panel);
+
+  const instructionsWrapper = figma.createFrame();
+  instructionsWrapper.name = 'Instructions';
+  instructionsWrapper.resize(920, 2000);
+  instructionsWrapper.layoutMode = 'VERTICAL';
+  instructionsWrapper.itemSpacing = 30;
+  instructionsWrapper.fills = [];
 
   const title = buildText('title', hexToDecimalRgb('#517EC2'), 'Spec Instructions');
-  title.fontSize = 46;
+  title.fontSize = 38;
   title.fontName = {...typefaceToUse, style: 'Black'};
-  panel.appendChild(title);
+  title.locked = true;
+  instructionsWrapper.appendChild(title);
 
   const intro = buildText('instruction', hexToDecimalRgb('#656565'), SPEC_INSTRUCTION_TEXT.intro)
-  intro.resize(1330, 230);
-  panel.appendChild(intro);
+  intro.resize(850, 220);
+  intro.locked = true;
+  instructionsWrapper.appendChild(intro);
 
   // Instructions
   SPEC_INSTRUCTION_TEXT.sections.forEach(section => {
@@ -1905,28 +1914,28 @@ const buildInstructionPanel = (specPage) => {
     sectionFrame.verticalPadding = 30;
     sectionFrame.horizontalPadding = 30;
     sectionFrame.cornerRadius = 10;
-    sectionFrame.itemSpacing = 25;
-    sectionFrame.resize(1400, sectionFrame.height);
+    sectionFrame.itemSpacing = 20;
+    sectionFrame.resize(920, sectionFrame.height);
     sectionFrame.fills = [{
       type: 'SOLID',
       color: hexToDecimalRgb('#FDFDFD'),
     }];
 
     const heading = buildText('title', hexToDecimalRgb('#4586E8'), section.heading);
-    heading.fontSize = 32;
-    heading.lineHeight = {value: 150, unit: 'PERCENT'};
+    heading.fontSize = 24;
     sectionFrame.appendChild(heading);
 
     const bodyWrapper = figma.createFrame();
     bodyWrapper.name = 'Body Wrapper';
     bodyWrapper.layoutMode = 'HORIZONTAL';
     bodyWrapper.layoutGrow = 0;
+    bodyWrapper.fills = [];
     bodyWrapper.primaryAxisSizingMode = 'FIXED';
     bodyWrapper.counterAxisSizingMode = 'AUTO';
-    bodyWrapper.resize(1340, bodyWrapper.height);
+    bodyWrapper.resize(860, bodyWrapper.height);
 
     const text = buildText('instruction', black, section.text);
-    text.resize(1000, text.height);
+    text.resize(710, text.height);
     bodyWrapper.appendChild(text);
 
     const imageWrapper = figma.createFrame();
@@ -1937,61 +1946,64 @@ const buildInstructionPanel = (specPage) => {
     imageWrapper.layoutMode = 'VERTICAL';
     imageWrapper.primaryAxisAlignItems = 'CENTER';
     imageWrapper.counterAxisAlignItems = 'CENTER';
+    imageWrapper.fills = [];
     bodyWrapper.appendChild(imageWrapper);
 
     const mainText = section.annotationText ||  '1';
     const image = buildAnnotation({mainText, type: section.annotationType as PluginAnnotationType});
+    image.text?.resize(image.text.width+5, image.text.height);
     const positionedImage = positionAnnotation(imageWrapper, 'test', image, {
-      frameWidth: 340,
-      frameHeight: 328,
+      frameWidth: 120,
+      frameHeight: 50,
       width: image.rectangle.width,
-      height: 200,
+      height: 100,
       x: 0,
       y: 0,
     }, 'keystop');
-    positionedImage.rescale(2.5);
+    if (['labels', 'headings'].includes(section.heading.toLowerCase())) {
+      positionedImage.rescale(1.25);
+    }
     imageWrapper.appendChild(positionedImage);
     
     sectionFrame.appendChild(bodyWrapper);
     sectionFrame.locked = true;
 
-    panel.appendChild(sectionFrame);
+    instructionsWrapper.appendChild(sectionFrame);
   })
+  panel.appendChild(instructionsWrapper);
 
   // Checklist
-  const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), '\nMAS Design Checklist');
-  checklistTitle.fontSize = 46;
-  checklistTitle.fontName = {...typefaceToUse, style: 'Black'};
-  panel.appendChild(checklistTitle);
-
-  const checklistIntro = buildText('instruction', hexToDecimalRgb('#656565'), A11Y_CHECKLIST_TEXT.intro)
-  checklistIntro.resize(1200, checklistIntro.height);
-  panel.appendChild(checklistIntro);
-
-  const checklist = buildA11yChecklist();
-  panel.appendChild(checklist);
+  panel.appendChild(buildA11yChecklist(typefaceToUse));
 
   // Notes
-  const notesTitle = buildText('title', hexToDecimalRgb('#517EC2'), '\nDesigner Notes');
-  notesTitle.fontSize = 46;
+  const notesWrapper = figma.createFrame();
+  notesWrapper.name = 'Design Notes';
+  notesWrapper.fills = [];
+  notesWrapper.layoutMode = 'VERTICAL';
+  notesWrapper.resize(920, 570);
+
+  const notesTitle = buildText('title', hexToDecimalRgb('#517EC2'), 'Designer Notes\n');
+  notesTitle.fontSize = 26;
   notesTitle.fontName = {...typefaceToUse, style: 'Black'};
-  panel.appendChild(notesTitle);
+  notesWrapper.appendChild(notesTitle);
 
   const notesFrame = figma.createFrame();
   notesFrame.layoutMode = 'VERTICAL';
-  notesFrame.resize(1340, 600);
+  notesFrame.resize(920, 500);
   notesFrame.cornerRadius = 5;
   notesFrame.fills = [{ type: 'SOLID', color: {r: 1, g: 1, b: 1} }];
   notesFrame.verticalPadding = 20;
   notesFrame.horizontalPadding = 20;
 
-  const notes = buildText('custom', black, 'Enter notes for engineering here...');
+  const notes = buildText('custom', black, 'Enter miscellaneous notes here...');
   notes.textAlignHorizontal = 'LEFT';
   notes.textAlignVertical = 'TOP';
   notes.fontSize = 18;
-  notes.resize(1300, 575);
+  notes.resize(900, 500);
   notesFrame.appendChild(notes);
-  panel.appendChild(notesFrame);
+  notesWrapper.appendChild(notesFrame);
+
+  panel.appendChild(notesWrapper);
 
   return panel;
 }

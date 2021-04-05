@@ -1,5 +1,5 @@
 <script>
-  import SpecterLogo from './SpecterLogo';
+  import SpecterLogo from '../assets/images/SpecterLogo';
 </script>
 
 <aside class="blank-state" id="blank">
