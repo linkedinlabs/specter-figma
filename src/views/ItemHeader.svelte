@@ -49,7 +49,7 @@
       placeholder: '0',
     };
 
-    if (['a11y-labels', 'a11y-headings'].includes(currentItemType)) {
+    if (['a11y-labels', 'a11y-headings', 'a11y-misc'].includes(currentItemType)) {
       options.className = 'form-row alpha-position';
       options.inputType = 'text';
       options.placeholder = 'a';

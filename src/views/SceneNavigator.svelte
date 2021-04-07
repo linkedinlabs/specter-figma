@@ -18,6 +18,10 @@
       text: 'Headings',
       id: 'a11y-headings',
     },
+    {
+      text: 'Misc',
+      id: 'a11y-misc',
+    },
   ];
 
   const setCurrentViewContext = (newView) => {

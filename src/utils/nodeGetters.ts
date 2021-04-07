@@ -153,7 +153,6 @@ const getFrameAnnotatedNodes = (
   frame: FrameNode,
 ): Array<SceneNode> => {
   const list = JSON.parse(frame?.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
-
   const nodes: Array<SceneNode> = list.reduce((acc, { id }) => {
     const node: SceneNode = frame.findOne(child => child.id === id);
     if (node) {

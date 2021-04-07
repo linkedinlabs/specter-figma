@@ -908,6 +908,8 @@ const getStopTypeFromView = (viewName) => {
     type = 'label';
   } else if (viewName.includes('heading')) {
     type = 'heading';
+  } else {
+    type = 'misc';
   }
   return type;
 };

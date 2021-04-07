@@ -4,7 +4,8 @@ declare global {
     'general'
     | 'a11y-keyboard'
     | 'a11y-labels'
-    | 'a11y-headings';
+    | 'a11y-headings'
+    | 'a11y-misc';
 
   type PluginKeystopKeys = 
     'arrows-left-right'
@@ -38,7 +39,7 @@ declare global {
     | 'radiogroup'
     | 'tablist';
 
-  type PluginStopType = 'keystop' | 'label' | 'heading';
+  type PluginStopType = 'keystop' | 'label' | 'heading' | 'misc';
 
   type PluginAnnotationType = 
     'component'
@@ -48,7 +49,8 @@ declare global {
     | 'label'
     | 'heading'
     | 'spacing'
-    | 'style';
+    | 'style'
+    | 'misc';
 
   type PluginAriaLabels = {
     a11y: string,
@@ -123,6 +125,7 @@ declare global {
     role?: PluginAriaRole,
     labels?: PluginAriaLabels,
     heading?: PluginAriaHeading,
+    misc?: Array<{name: string, val: string}>,
     name: string,
     position: number | string,
   }

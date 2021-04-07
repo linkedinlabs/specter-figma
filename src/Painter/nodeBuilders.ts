@@ -346,6 +346,7 @@ const buildText = (
     | 'keystop'
     | 'label'
     | 'heading'
+    | 'misc'
     | 'legend'
     | 'spacing'
     | 'style'
@@ -384,7 +385,7 @@ const buildText = (
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
     text.layoutAlign = 'INHERIT';
     text.locked = true;
-  } else if (['label', 'heading'].includes(type)) {
+  } else if (['label', 'heading', 'misc'].includes(type)) {
     text.fontSize = 14;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
@@ -418,7 +419,7 @@ const buildText = (
 };
 
 /**
- * @description Builds an inner rectangle element in Figma for label annotations.
+ * @description Builds an inner rectangle element in Figma for legend annotations.
  *
  * @kind function
  * @name buildRectangleInnerHalf
@@ -434,7 +435,7 @@ const buildRectangleInnerHalf = (
   color: { r: number, g: number, b: number },
   isLegendIcon?: boolean,
 ): FrameNode => {
-  // set inner half frames for label annotation
+  // set inner half frames for legend annotation
   const frame: FrameNode = figma.createFrame();
   frame.name = `${align.charAt(0).toUpperCase()}${align.slice(1)} Half`;
 
@@ -489,6 +490,7 @@ const buildRectangle = (
     | 'keystop'
     | 'label'
     | 'heading'
+    | 'misc'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -562,7 +564,7 @@ const buildRectangle = (
       const keyText: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), innerText);
       rectangle.appendChild(keyText);
     }
-  } else if (['label', 'heading'].includes(type)) {
+  } else if (['label', 'heading', 'misc'].includes(type)) {
     rectangle.paddingLeft = 0;
     rectangle.paddingTop = 2;
     rectangle.paddingBottom = 2;
@@ -631,7 +633,7 @@ const buildAnnotation = (options: {
   let text: TextNode = null;
   let innerText: string = '';
 
-  if (['label', 'heading'].includes(type) || (type === 'keystop' && isLegendIcon)) {
+  if (['label', 'heading', 'misc'].includes(type) || (type === 'keystop' && isLegendIcon)) {
     innerText = mainText;
   }
 
@@ -836,10 +838,17 @@ const buildBoundingBox = (position: {
  * @returns {Object} Returns the legend header frame.
  */
 const buildLegendHeader = (type: PluginStopType) => {
-  const heading = type === 'keystop' ? 'Keyboard' : type.charAt(0).toUpperCase()+type.slice(1)+'s';
+  let heading = 'Keyboard';
+  if (type === 'keystop') {
+    heading = 'Keyboard'
+  } else if (type === 'misc') {
+    heading = 'Misc';
+  } else {
+    heading = type.charAt(0).toUpperCase()+type.slice(1)+'s';
+  }
+
   const header = figma.createFrame();
   header.name = 'Legend Header';
-
   header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3')}]
   header.resize(363, 100);
   header.layoutMode = 'VERTICAL';
@@ -875,7 +884,7 @@ const buildLegendHeader = (type: PluginStopType) => {
 }
 
 /**
- * @description Builds the initial legend frame for label annotation legend items.
+ * @description Builds the initial legend frame for annotation legend items.
  *
  * @kind function
  * @name buildLabelLegend
@@ -923,7 +932,6 @@ const positionLegend = (
   },
 ) => {
   const legendFrame = legend;
-
   legendFrame.layoutMode = 'VERTICAL';
   legendFrame.primaryAxisSizingMode = 'AUTO';
   legendFrame.primaryAxisAlignItems = 'MIN';
@@ -964,7 +972,7 @@ const getLegendLabelText = (labels, labelName) => {
 };
 
 /**
- * @description Builds the initial legend frame for label annotation legend items.
+ * @description Builds the initial legend frame for annotation legend items.
  *
  * @kind function
  * @name getLegendEntryFields
@@ -979,6 +987,7 @@ const getLegendEntryFields = (type, data) => {
     role,
     labels,
     heading,
+    misc,
     keys,
   } = data;
   let fields;
@@ -1044,7 +1053,7 @@ const getLegendEntryFields = (type, data) => {
         val: heading.invisible ? `"${heading.invisible}"` : 'undefined',
       });
     }
-  } else {
+  } else if (type === 'keystop') {
     let keyList = '';
     keys?.forEach((key, i) => {
       const keyText = KEY_OPTS.find(opt => opt.value === key).text;
@@ -1057,6 +1066,8 @@ const getLegendEntryFields = (type, data) => {
         val: keyList || 'n/a',
       },
     ];
+  } else {
+    return misc?.length ? misc : [{name: '? ', val: 'undefined'}];
   }
   return fields;
 };
@@ -1446,7 +1457,7 @@ const positionAnnotation = (
       placementY = nodeY - rectangle.height - offsetY;
   }
 
-  if (['keystop', 'label', 'heading'].includes(annotationType)) {
+  if (['keystop', 'label', 'heading', 'misc'].includes(annotationType)) {
     if ((nodeWidth - 100) > rectangle.width) {
       placementX = nodeX + 10;
     }
@@ -1786,7 +1797,7 @@ const updateLegendEntry = (
   nodeData: Object,
 ) => {
   const trackingData = JSON.parse(figma.currentPage.getPluginData(DATA_KEYS[`${type}Annotations`]));
-  const { legendItemId } = trackingData?.find(entry => entry.id === nodeId);
+  const { legendItemId } = trackingData?.find(entry => entry.id === nodeId) || {};
 
   if (figma.getNodeById(nodeId) && legendItemId) {
     const legendItem = figma.getNodeById(legendItemId) as FrameNode;
@@ -1960,7 +1971,7 @@ const buildInstructionPanel = (specPage) => {
       x: 0,
       y: 0,
     }, 'keystop');
-    if (['labels', 'headings'].includes(section.heading.toLowerCase())) {
+    if (['labels', 'headings', 'misc'].includes(section.heading.toLowerCase())) {
       positionedImage.rescale(1.25);
     }
     imageWrapper.appendChild(positionedImage);

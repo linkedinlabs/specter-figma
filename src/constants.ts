@@ -55,19 +55,23 @@ const DATA_KEYS: {
   keystopAnnotations: string,
   labelAnnotations: string,
   headingAnnotations: string,
+  miscAnnotations: string,
   legendFrames: string,
   specPage: string,
   keystopList: string,
   labelList: string,
   headingList: string,
+  miscList: string,
   legendLinkId: string,
   bundle: string,
   keystopNodeData: string,
   labelNodeData: string,
   headingNodeData: string,
+  miscNodeData: string,
   keystopLinkId: string,
   labelLinkId: string,
   headingLinkId: string,
+  miscLinkId: string,
   relaunch: string,
 } = {
   // page-level (e.g. in case an annotated element is moved out of a frame?)
@@ -75,21 +79,25 @@ const DATA_KEYS: {
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
   headingAnnotations: `${PLUGIN_IDENTIFIER}.headingAnnotations-001`,
+  miscAnnotations: `${PLUGIN_IDENTIFIER}.miscAnnotations-001`,
   legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
   specPage: `${PLUGIN_IDENTIFIER}.specPage-001`,
   // top-frame level
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
   headingList: `${PLUGIN_IDENTIFIER}.headingList-001`,
+  miscList: `${PLUGIN_IDENTIFIER}.miscList-001`,
   legendLinkId: `${PLUGIN_IDENTIFIER}.legendLinkId-001`,
   // node-level and up
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
   labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
   headingNodeData: `${PLUGIN_IDENTIFIER}.headingNodeData-001`,
+  miscNodeData: `${PLUGIN_IDENTIFIER}.miscNodeData-001`,
   keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
   labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`,
   headingLinkId: `${PLUGIN_IDENTIFIER}.headingLinkId-001`,
+  miscLinkId: `${PLUGIN_IDENTIFIER}.miscLinkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 
@@ -109,6 +117,7 @@ const COLORS: {
   heading: string,
   spacing: string,
   style: string,
+  misc: string
 } = {
   component: '#6255ca',
   custom: '#c8006a',
@@ -118,6 +127,7 @@ const COLORS: {
   heading: '#bc3600',
   spacing: '#007373',
   style: '#bc3600',
+  misc: '#4c934f',
 };
 
 /**
@@ -648,7 +658,13 @@ const LEGEND_DEFINITIONS = {
       name: 'Heading',
       val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
     },
-  ]
+  ],
+  misc: [
+    {
+      name: '(any)',
+      val: 'You can add any field names and values you like to each annotation when using the Misc tab'
+    },
+  ],
 };
 
 export {

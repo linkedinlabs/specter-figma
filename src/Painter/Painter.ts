@@ -117,7 +117,7 @@ const setGroupName = (
       groupName = 'Dimension Annotations';
       break;
     case 'keystop':
-      groupName = 'Keyboard Annotations';
+      groupName = 'A11y Annotations';
       break;
     case 'spacing':
       groupName = 'Spacing Annotations';

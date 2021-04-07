@@ -20,9 +20,6 @@ import {
   positionLegend,
   updateAnnotationNum,
   updateLegendEntry,
-  buildText,
-  buildInstructionPanel,
-  buildLegend,
 } from './Painter/nodeBuilders';
 
 /**
@@ -507,11 +504,12 @@ const getStopData = (
       visible: true,
       invisible: '',
     },
+    misc: [],
   };
   const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
 
   // set data for each field (will only set what it grabs based on type)
-  ['keys', 'role', 'labels', 'heading'].forEach((property) => {
+  ['keys', 'role', 'labels', 'heading', 'misc'].forEach((property) => {
     // temporary workaround for 'none' issue
     if (nodeData[property] && !(property === 'role' && nodeData[property] === 'none')) {
       stopData[property] = nodeData[property];
@@ -1074,16 +1072,13 @@ export default class App {
     // draw the spacing annotation
     // (if gap position exists or nodes are overlapped)
     let paintResult = null;
-    console.log(selection)
     if (selection.length === 2) {
-      console.log(selection, ' - legnth is 2')
       const gapPositionResult = crawler.gapPosition();
 
       // read the response from Crawler; log and display message(s)
       messenger.handleResult(gapPositionResult);
       if (gapPositionResult.status === 'success' && gapPositionResult.payload) {
         const gapPosition = gapPositionResult.payload;
-        console.log('adding gap measurement: ', gapPositionResult)
         paintResult = painter.addGapMeasurement(gapPosition);
       } else {
         const overlapPositionsResult = crawler.overlapPositions();
@@ -1320,7 +1315,7 @@ export default class App {
    */
   updateNodeData = (
     id: string,
-    key: 'role' | 'labels' | 'heading' | 'keys',
+    key: 'role' | 'labels' | 'heading' | 'keys' | 'misc',
     value: PluginAriaRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
   ) => {
     const node: BaseNode = figma.getNodeById(id);
@@ -1330,7 +1325,7 @@ export default class App {
     } else if (key === 'keys') {
       type = 'keystop';
     } else {
-      type = 'heading';
+      type = key;
     }
     const nodeData = node && JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || null);
 

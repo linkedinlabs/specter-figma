@@ -1,4 +1,6 @@
 <script>
+import { text } from 'svelte/internal';
+
   import { getStopTypeFromView } from '../../utils/tools';
   import ButtonAction from './ButtonAction';
 
@@ -27,10 +29,13 @@
         textLabel = 'heading';
         break;
       case 'a11y-keyboard':
-        textLabel = 'focus stop';
+        textLabel = 'keystop';
         break;
       case 'a11y-labels':
         textLabel = 'label';
+        break;
+      case 'a11y-misc':
+        textLabel = 'misc';
         break;
       default:
         textLabel = '';
@@ -46,7 +51,7 @@
   className={`add-stop ${type}`}
   disabled={disabled}
   isReversed={true}
-  text={`Add${number > 1 ? ` ${number}` : ''} ${setTextLabel(type)}${number > 1 ? 's' : ''}…`}
+  text={`Add${number > 1 ? ` ${number}` : ''} ${setTextLabel(type)} annotation${number > 1 ? 's' : ''}…`}
 >
   <svg viewBox="0 0 32 32">
     <path fill-rule="evenodd" clip-rule="evenodd" d="M15.5 15.5V10.5H16.5V15.5H21.5V16.5H16.5V21.5H15.5V16.5H10.5V15.5H15.5Z"/>

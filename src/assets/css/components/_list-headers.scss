@@ -156,7 +156,8 @@
 .item-header {
   &.a11y-keyboard,
   &.a11y-labels,
-  &.a11y-headings {
+  &.a11y-headings,
+  &.a11y-misc {
     @include list-header-single;
 
     &.isOpen {
