@@ -12,11 +12,13 @@
   import GeneralPanel from './GeneralPanel';
   import SceneNavigator from './SceneNavigator';
   import UserInput from './UserInput';
+  import SpecSelector from './SpecSelector';
 
   export let isInternal = false;
   export let isMercadoMode = false;
   export let isUserInput = false;
   export let isInfoPanel = false;
+  export let specPages = [];
   export let items;
   export let newSessionKey = null;
   export let userInputValue = null;
@@ -24,14 +26,28 @@
 
   let bodyHeight = 0;
   let wasBodyHeight = 0;
+  let showSelector = false;
+
+  const handleSelectorAction = (action) => {
+    if (action === 'show-selector') {
+      showSelector = true;
+    } else if (action === 'close') {
+      showSelector = false;
+    }
+  };
 
   const handleAction = (action) => {
-    parent.postMessage({
-      pluginMessage: {
-        action,
-      },
-    }, '*');
+    if (action === 'show-selector' || showSelector) {
+      handleSelectorAction(action);
+    } else {
+      parent.postMessage({
+        pluginMessage: {
+          action,
+        },
+      }, '*');
+    }
   };
+
 
   const setIsMercadoMode = (currentIsMercadoMode) => {
     const newIsMercadoMode = currentIsMercadoMode;
@@ -77,21 +93,21 @@
 <!-- core layout -->
 <div bind:offsetHeight={bodyHeight}>
   <FontPreload/>
-  {#if $viewContextStored && !isInfoPanel && !isUserInput}
+  {#if $viewContextStored && !isInfoPanel && !isUserInput && !showSelector}
   <SceneNavigator currentView={$viewContextStored}/>
   {/if}
 
   <div class={`container${isUserInput ? ' wide' : ''}`}>
     <div class="transition-mask"></div>
 
-    {#if !isUserInput}
+    {#if !isUserInput && !showSelector}
       <ButtonInfoTrigger
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         isInfoPanel={isInfoPanel}
       />
     {/if}
 
-    {#if !isUserInput && !isInfoPanel}
+    {#if !isUserInput && !isInfoPanel && !showSelector}
       {#if $viewContextStored === 'general'}
         <GeneralPanel
           on:handleAction={customEvent => handleAction(customEvent.detail)}
@@ -110,6 +126,13 @@
       <UserInput
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         userInputValue={userInputValue}
+      />
+    {/if}
+
+    {#if showSelector}
+      <SpecSelector
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+        specPages={specPages}
       />
     {/if}
 

@@ -2,8 +2,13 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter/Painter';
-import { getOrderedStopNodes, getSpecPage } from './utils/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
+import {
+  getLegendFrame,
+  getOrderedStopNodes,
+  getSpecPage,
+  getSpecPageList,
+} from './utils/nodeGetters';
 import {
   deepCompare,
   existsInArray,
@@ -305,7 +310,12 @@ const refreshAnnotations = (
     const frame: FrameNode = node && findTopFrame(node);
     // tktk: need to revisit the below, seems weird to have to instantiate App class
     // eslint-disable-next-line no-use-before-define
-    const app = new App({ isMercadoMode, shouldTerminate: false, terminatePlugin: false });
+    const app = new App({
+      isMercadoMode,
+      shouldTerminate: false,
+      terminatePlugin: false,
+      specPages: [],
+    });
 
     if (!node || (frame && frame.id !== trackingEntry.topFrameId)) {
       const oldFrame = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
@@ -546,15 +556,18 @@ export default class App {
   isMercadoMode: boolean;
   shouldTerminate: boolean;
   terminatePlugin: Function;
+  specPages: Array<{name: string, id: string}>;
 
   constructor({
     isMercadoMode,
     shouldTerminate,
     terminatePlugin,
+    specPages,
   }) {
     this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
     this.terminatePlugin = terminatePlugin;
+    this.specPages = specPages;
   }
 
   /**
@@ -580,26 +593,27 @@ export default class App {
    * @kind function
    * @name generateTemplate
    *
-   * @returns {null} Shows a Toast in the UI indicating whether the option has succeeded.
+   * @param {string} pageId The Figma ID of the page to generate to.
+   * @param {string} newPageName Optional argument for naming a new spec page.
+   *
+   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  generateTemplate() {
-    const { selection, page } = assemble(figma);
+  generateTemplate(pageId?: string, newPageName?: string) {
+    const { selection } = assemble(figma);
 
     if (!selection?.length) {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
-      const specPage = getSpecPage(page);
-
-      // find next open space for when stuff is added later
+      const specPage = getSpecPage(pageId, newPageName);
       const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
-
-      const topFrames = new Crawler({for: selection}).topFrames();
+      const topFrames = new Crawler({ for: selection }).topFrames();
       let yCoordinate = getOpenYCoordinate(specPage);
+
       topFrames.forEach((frame) => {
         let xCoordinate = 1150;
-        categories.forEach(category => {
+        categories.forEach((category) => {
           const duplicate = frame.clone();
-          // remove all plugin data and annotation nodes?
+          // tktk: remove all plugin data and annotation nodes?
           duplicate.name = `${category.toUpperCase()} Spec - ${frame.name}`;
 
           specPage.appendChild(duplicate);
@@ -607,17 +621,21 @@ export default class App {
           duplicate.y = yCoordinate;
 
           if (!category.includes('DS')) {
-            const painter = new Painter({for: duplicate.children[0], in: specPage, isMercadoMode: this.isMercadoMode});
+            const painter = new Painter({
+              for: duplicate.children[0],
+              in: specPage,
+              isMercadoMode: this.isMercadoMode,
+            });
             const legendEntry = figma.createFrame();
-            
+
             legendEntry.resize(364, 1);
             painter.addEntryToLegend(legendEntry, category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType);
             xCoordinate += 400;
           }
           xCoordinate += (frame.width + 100);
-        })
+        });
         yCoordinate += (frame.height + 150);
-      })
+      });
       figma.notify(`Success! Templates added to page '${specPage.name}'`);
     }
   }
@@ -631,12 +649,12 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
    */
-  toggleLocked() {
+  toggleLocked() { // eslint-disable-line class-methods-use-this
     let locked;
-    const frames = figma.currentPage.children.filter(({type}) => type === 'FRAME') as Array<FrameNode>;
-    
+    const frames = figma.currentPage.children.filter(({ type }) => type === 'FRAME') as Array<FrameNode>;
+
     frames.forEach((el) => {
-      const specterGroup =  el.findChild(({type, name}) => type === 'GROUP' && name.includes('Specter'));
+      const specterGroup = el.findChild(({ type, name }) => type === 'GROUP' && name.includes('Specter'));
       if (specterGroup) {
         // sets new lock status based on current status of first found Specter group
         if (locked === undefined) {
@@ -1437,7 +1455,7 @@ export default class App {
     });
 
     frame.setPluginData(DATA_KEYS[`${type}List`], JSON.stringify(reorderedList));
-    refreshLegend(type, frame.id, trackingData, reorderedList);
+    refreshLegend(getLegendFrame(frame.id, figma.currentPage), type, trackingData, reorderedList);
   }
 
   /**
@@ -1454,6 +1472,7 @@ export default class App {
    */
   static async refreshGUI(runDiff?: boolean) {
     const { messenger, page, selection } = assemble(figma);
+    const specPages = getSpecPageList(figma.root.children);
 
     // retrieve existing options
     const options: PluginOptions = await getOptions();
@@ -1509,6 +1528,7 @@ export default class App {
         currentView,
         isMercadoMode,
         items,
+        specPages,
         sessionKey,
       },
     });

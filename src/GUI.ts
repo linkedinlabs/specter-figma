@@ -1,8 +1,8 @@
 /**
  * @description A set of functions to operate the plugin GUI.
  */
-import { isInternal } from './utils/tools';
 import './assets/css/main.scss';
+import { isInternal } from './utils/tools';
 import App from './views/App.svelte'; // eslint-disable-line import/extensions
 
 const appProps: {
@@ -11,6 +11,7 @@ const appProps: {
   isMercadoMode: boolean,
   isUserInput: boolean,
   items: Array<PluginViewObject>,
+  specPages: Array<{name: string, id: string}>,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -19,6 +20,7 @@ const appProps: {
   isMercadoMode: false,
   isUserInput: false,
   items: null,
+  specPages: [],
   userInputValue: null,
   viewContext: null,
 };
@@ -128,12 +130,14 @@ const watchIncomingMessages = (): void => {
             currentView,
             isMercadoMode,
             items,
+            specPages,
             sessionKey,
           } = payload;
 
           app.viewContext = currentView;
           app.isMercadoMode = isMercadoMode;
           app.items = items;
+          app.specPages = specPages;
           app.newSessionKey = sessionKey;
           break;
         }

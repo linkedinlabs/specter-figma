@@ -707,7 +707,7 @@ export default class Painter {
       groupName,
       annotation,
       nodePosition,
-      annotationType
+      annotationType,
     );
 
     // set it in the correct containers
@@ -1104,7 +1104,6 @@ export default class Painter {
     }
 
     // set up some information
-    // const { keys } = nodeData;
     const { annotationText } = nodeData;
     const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
@@ -1115,16 +1114,6 @@ export default class Painter {
       secondaryText: null,
       type,
     });
-
-    // tktk AUX KEYS
-    // const auxAnnotations: Array<FrameNode> = [];
-    // if (type === 'keystop' && keys?.length) {
-    //   keys.forEach((keyEntry) => {
-    //     const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-    //     auxAnnotation.layoutAlign = 'INHERIT';
-    //     auxAnnotations.push(auxAnnotation);
-    //   });
-    // }
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -1150,35 +1139,10 @@ export default class Painter {
       nodePosition,
       type,
     );
-    // const initialX = baseAnnotationNode.x;
-    // const initialY = baseAnnotationNode.y;
 
     // if applicable, add auxilary annotations (currently `keys`)
     const annotationNode: FrameNode = baseAnnotationNode;
     let legendNode: FrameNode = null;
-
-    // tktk AUX KEYS
-    // if (auxAnnotations.length) {
-    //   annotationNode = figma.createFrame();
-    //   annotationNode.clipsContent = false;
-    //   annotationNode.layoutMode = 'HORIZONTAL';
-    //   annotationNode.counterAxisSizingMode = 'AUTO';
-    //   annotationNode.layoutAlign = 'INHERIT';
-    //   annotationNode.itemSpacing = 4;
-    //   annotationNode.fills = [];
-    //   annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
-
-
-    //   annotationNode.appendChild(baseAnnotationNode);
-
-    //   // auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
-
-    //   baseAnnotationNode.layoutAlign = 'INHERIT';
-    //   annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
-    //   annotationNode.x = initialX;
-    //   annotationNode.y = initialY;
-    // }
-
     legendNode = buildLegendEntry(type, nodeData);
     this.addEntryToLegend(legendNode, type);
 
@@ -1211,10 +1175,11 @@ export default class Painter {
    * @name addEntryToLegend
    *
    * @param {Object} legendNode The newly created legend entry for the annotation.
+   * @param {string} type The type of legend to create based on stop type.
    *
    * @returns {undefined}
    */
-  addEntryToLegend(legendNode, type) {
+  addEntryToLegend(legendNode: FrameNode, type: PluginStopType) {
     let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
       legend = buildLegend(type);

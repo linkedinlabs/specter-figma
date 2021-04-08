@@ -551,7 +551,7 @@ const LEVEL_OPTS = [
  * @name A11Y_CHECKLIST_TEXT
  * @type {Array}
  */
- const A11Y_CHECKLIST_TEXT = {
+const A11Y_CHECKLIST_TEXT = {
   title: 'MAS Design Checklist',
   intro: 'This checklist contains common a11y \'gotchas\' that can not be automated by the plugin.  Please use this as a reference to check your designs and make any necessary updates.',
   sections: [
@@ -561,6 +561,7 @@ const LEVEL_OPTS = [
     },
     // {
     //   heading: 'Is there text-equivalent for all visual information?',
+    // eslint-disable-next-line max-len
     //   text: '[ ] All images have alt text.\n    [ ] Alt text provides a verbal equivalent of the image.\n[ ] All controls have visible text or image as a label (name)\n    [ ] Controls that use an image for the label also have a predictable \n        a11y label defined, or the image has alt text.\n    [ ] All unique controls have unique names (visible or a11y label).\n[ ] When a user can identify the type of control (i.e. role) based on \n    visual information, the role is clearly defined in the spec as well.',
     // },
     {
@@ -569,13 +570,14 @@ const LEVEL_OPTS = [
     },
     // {
     //   heading: 'Is the UI designed to be operable via any input modality?',
+    // eslint-disable-next-line max-len
     //   text: '[ ] For every function that can be performed using a pointer input, a user \n    can perform the function using a keyboard alone.\n    [ ] Every focusable element (esp. controls) is represented in the \n        focus order definition.\n[ ] Every pointer interaction is operable via simple single-pointer \n    interactions. Examples: single click/tap, long press.\n    [ ] Exception: Gesture interactions are used only in cases where the \n        platform provides an single-pointer alternative to the gesture \n        (e.g. Android/iOS swipe gesture).\n[ ] Headings are identified in the spec.\n    [ ] Web only: Heading level is defined for each heading.',
     // },
     {
       heading: 'Is the interface understandable?',
       text: '[ ] For relationships between elements that are conveyed visually, there \n    are clear definitions of that relationship for engineers to ensure \n    that the relationship is reflected programmatically, as well.\n[ ] All error states are clearly identified for users for:\n    (a) input-level errors, and\n    (b) page-level errors.\n    [ ] Error messaging includes instructions on what the user should do \n        to address the error.\n[ ] Elements that appear on multiple screens in an app use the same name\n    and behave predictably.',
     },
-  ]
+  ],
 };
 
 /**
@@ -585,7 +587,7 @@ const LEVEL_OPTS = [
  * @name SPEC_INSTRUCTION_TEXT
  * @type {Object}
  */
- const SPEC_INSTRUCTION_TEXT = {
+const SPEC_INSTRUCTION_TEXT = {
   intro: 'This template is intended to promote spec consistency and give designers of all levels a starting point in creating thorough design specs for engineering.\nWe ask that you fill out as much as you can that could be helpful to engineers for this assignment and skip over anything that is not relevant.\nNote: Most tabs in Specter provide an automated system for numbering annotations that point to details in a legend.  Those details can come from data pre-attached to components by an admin or by entering them yourself in the plugin window.  You can add/delete/reorder annotations within the plugin window, and the system will automatically re-number your annotations and legend.',
   sections: [
     {
@@ -615,7 +617,7 @@ const LEVEL_OPTS = [
       heading: 'Headings',
       text: 'Use each frame\'s last duplicate named \'HEADING Spec\' for annotating with the \'Headings\' tab of Specter.\nPlease annotate anything you consider a heading to denote section breaks: \n    \u2022 Every heading is assigned a level (or N/A if iOS/Android)\n    \u2022 A verbal value for screen reader users is provided if the visible text is insufficient',
     },
-  ]
+  ],
 };
 
 /**
@@ -629,40 +631,40 @@ const LEGEND_DEFINITIONS = {
   keystop: [
     {
       name: 'keys',
-      val: 'The keyboard keys that can be used to interact with this element.'
-    }
+      val: 'The keyboard keys that can be used to interact with this element',
+    },
   ],
   label: [
     {
       name: 'Role',
-      val: 'The purpose of the element (@engineers - use as HTML tag, or role as a last resort)'
+      val: 'The purpose of the element (@engineers - use as HTML tag, or role as a last resort)',
     }, {
       name: 'Visible',
-      val: 'If the visible text & role is a sufficient description of what the element is/does for screen reader users'
+      val: 'If the visible text & role is a sufficient description of what the element is/does for screen reader users',
     }, {
       name: 'A11y',
-      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
+      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)',
     }, {
       name: 'Alt',
-      val: 'Text description required for all images that aren\'t purely decorative'
+      val: 'Text description required for all images that aren\'t purely decorative',
     },
   ],
   heading: [
     {
       name: 'Level',
-      val: 'Denotes the hierarchy of nested design sections (@engineers - use as HTML tag h1/h2/etc)'
+      val: 'Denotes the hierarchy of nested design sections (@engineers - use as HTML tag h1/h2/etc)',
     }, {
       name: 'Visible',
-      val: 'If the visible text is a sufficient description of the content under the heading for screen reader users'
+      val: 'If the visible text is a sufficient description of the content under the heading for screen reader users',
     }, {
       name: 'Heading',
-      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)'
+      val: 'Alternate audible value when the above is false (@engineers - use as aria-label)',
     },
   ],
   misc: [
     {
       name: '(any)',
-      val: 'You can add any field names and values you like to each annotation when using the Misc tab'
+      val: 'You can add any field names and values you like to each annotation when using the Misc tab',
     },
   ],
 };

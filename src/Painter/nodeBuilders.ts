@@ -1,4 +1,3 @@
-import { type } from 'os';
 import {
   A11Y_CHECKLIST_TEXT,
   COLORS,
@@ -8,7 +7,6 @@ import {
   ROLE_OPTS,
   SPEC_INSTRUCTION_TEXT,
 } from '../constants';
-import { getLegendFrame } from '../utils/nodeGetters';
 import { hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -407,13 +405,13 @@ const buildText = (
     text.fontSize = 22;
     text.fontName = { family: typefaceToUse.family, style: 'Black' };
   } else if (type === 'instruction') {
-    figma.loadFontAsync({ family: "Roboto", style: "Regular" }).then((font) => {
+    figma.loadFontAsync({ family: 'Roboto', style: 'Regular' }).then(() => {
       text.textAlignHorizontal = 'LEFT';
       text.fontSize = 16;
       text.fontName = { family: 'Roboto', style: 'Regular' };
-      text.lineHeight = {value: 150, unit: 'PERCENT'};
+      text.lineHeight = { value: 150, unit: 'PERCENT' };
       text.paragraphSpacing = 15;
-    })
+    });
   }
   return text;
 };
@@ -828,33 +826,97 @@ const buildBoundingBox = (position: {
 };
 
 /**
+ * @description Builds the nodes that will be appended to a legend entry.
+ *
+ * @kind function
+ * @name buildLegendFieldNodes
+ *
+ * @param {string} type The type of the legend entry we're building.
+ * @param {Object} nodeData The node's data to format and include in the legend entry.
+ * @param {Array} suppliedFields Optional argument of specific fields to provide, used for
+ * legend definitions.
+ *
+ * @returns {Array} Returns the legend entry nodes to append.
+ */
+const buildLegendFieldNodes = (
+  type: PluginStopType,
+  nodeData: any,
+  suppliedFields?: any,
+) => {
+  const nodes = [];
+  // eslint-disable-next-line no-use-before-define
+  const fields = suppliedFields || getLegendEntryFields(type, nodeData);
+
+  fields.forEach(({ name, val }, index) => {
+    const line: FrameNode = figma.createFrame();
+    line.name = `${name} field`;
+    line.layoutMode = 'HORIZONTAL';
+    line.primaryAxisSizingMode = 'FIXED';
+    line.primaryAxisAlignItems = 'MIN';
+    line.counterAxisSizingMode = 'AUTO';
+    line.counterAxisAlignItems = 'MIN';
+    line.layoutAlign = 'STRETCH';
+    line.paddingLeft = 10;
+    line.paddingRight = 10;
+    line.paddingTop = 2;
+    line.paddingBottom = 2;
+    line.itemSpacing = 5;
+
+    const fieldTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
+    const fieldValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
+
+    if (index === 0) {
+      line.topRightRadius = 5;
+    }
+    if (index === fields.length - 1) {
+      line.bottomLeftRadius = 5;
+      line.bottomRightRadius = 5;
+    }
+    if (suppliedFields) {
+      line.horizontalPadding = 0;
+      line.verticalPadding = 5;
+      fieldTitle.resize(48, fieldTitle.height);
+      fieldValue.resize(286, fieldValue.height);
+    }
+
+    line.appendChild(fieldTitle);
+    line.appendChild(fieldValue);
+    line.locked = true;
+    line.fills = [];
+    nodes.push(line);
+  });
+
+  return nodes;
+};
+
+/**
  * @description Builds the header for the legend with field definitions.
  *
  * @kind function
  * @name buildLegendHeader
  *
  * @param {string} type The stop type the legend pertains to.
- * 
+ *
  * @returns {Object} Returns the legend header frame.
  */
 const buildLegendHeader = (type: PluginStopType) => {
   let heading = 'Keyboard';
   if (type === 'keystop') {
-    heading = 'Keyboard'
+    heading = 'Keyboard';
   } else if (type === 'misc') {
     heading = 'Misc';
   } else {
-    heading = type.charAt(0).toUpperCase()+type.slice(1)+'s';
+    heading = `${type.charAt(0).toUpperCase() + type.slice(1)}s`;
   }
 
   const header = figma.createFrame();
   header.name = 'Legend Header';
-  header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3')}]
+  header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
   header.resize(363, 100);
   header.layoutMode = 'VERTICAL';
   header.verticalPadding = 10;
   header.horizontalPadding = 12;
-  
+
   const title = buildText('title', hexToDecimalRgb('#517EC2'), `${heading} Legend`);
   title.fontSize = 16;
   title.locked = true;
@@ -862,17 +924,13 @@ const buildLegendHeader = (type: PluginStopType) => {
 
   const intro = buildText('custom', hexToDecimalRgb('#333333'), `Legend entries will be automatically added and updated below as you annotate your design using the ${heading} tab.`);
   intro.resize(350, 40);
-  intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373')}]
+  intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373') }];
   intro.textAlignHorizontal = 'LEFT';
   intro.locked = true;
   header.appendChild(intro);
 
   const fields = buildLegendFieldNodes(type, {}, LEGEND_DEFINITIONS[type]);
-  fields.forEach(field => {
-    field.fills = [];
-    field.locked = true;
-    header.appendChild(field);
-  });
+  fields.forEach(field => header.appendChild(field));
 
   const warning = buildText('custom', hexToDecimalRgb('#BE4841'), 'WARNING! Do not make edits to the legend directly or you will lose them. Please update in the plugin window only.');
   warning.textAlignHorizontal = 'LEFT';
@@ -881,13 +939,15 @@ const buildLegendHeader = (type: PluginStopType) => {
   header.appendChild(warning);
 
   return header;
-}
+};
 
 /**
  * @description Builds the initial legend frame for annotation legend items.
  *
  * @kind function
  * @name buildLabelLegend
+ *
+ * @param {string} type The type of the legend we're building.
  *
  * @returns {Object} Returns the legend frame.
  */
@@ -982,7 +1042,7 @@ const getLegendLabelText = (labels, labelName) => {
  *
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
-const getLegendEntryFields = (type, data) => {
+const getLegendEntryFields = (type: PluginStopType, data: any) => {
   const {
     role,
     labels,
@@ -1067,65 +1127,9 @@ const getLegendEntryFields = (type, data) => {
       },
     ];
   } else {
-    return misc?.length ? misc : [{name: '? ', val: 'undefined'}];
+    return misc?.length ? misc : [{ name: '? ', val: 'undefined' }];
   }
   return fields;
-};
-
-/**
- * @description Builds the nodes that will be appended to a legend entry.
- *
- * @kind function
- * @name buildLegendFieldNodes
- *
- * @param {string} type The type of the legend entry we're building.
- * @param {Object} nodeData The node's data to format and include in the legend entry.
- *
- * @returns {Array} Returns the legend entry nodes to append.
- */
-const buildLegendFieldNodes = (type, nodeData, suppliedFields?) => {
-  const nodes = [];
-  const fields = suppliedFields || getLegendEntryFields(type, nodeData);
-
-  fields.forEach(({ name, val }, index) => {
-    const line: FrameNode = figma.createFrame();
-    line.name = `${name} field`;
-    line.layoutMode = 'HORIZONTAL';
-    line.primaryAxisSizingMode = 'FIXED';
-    line.primaryAxisAlignItems = 'MIN';
-    line.counterAxisSizingMode = 'AUTO';
-    line.counterAxisAlignItems = 'MIN';
-    line.layoutAlign = 'STRETCH';
-    line.paddingLeft = 10;
-    line.paddingRight = 10;
-    line.paddingTop = 2;
-    line.paddingBottom = 2;
-    line.itemSpacing = 5;
-
-    const fieldTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
-    const fieldValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
-
-    if (index === 0) {
-      line.topRightRadius = 5;
-    }
-    if (index === fields.length - 1) {
-      line.bottomLeftRadius = 5;
-      line.bottomRightRadius = 5;
-    }
-    if (suppliedFields) {
-      line.horizontalPadding = 0;
-      line.verticalPadding = 5;
-      fieldTitle.resize(48, fieldTitle.height);
-      fieldValue.resize(286, fieldValue.height);
-    }
-
-    line.appendChild(fieldTitle);
-    line.appendChild(fieldValue);
-    line.locked = true;
-    nodes.push(line);
-  });
-
-  return nodes;
 };
 
 /**
@@ -1704,8 +1708,8 @@ const positionAnnotation = (
  * @kind function
  * @name refreshLegend
  *
+ * @param {Object} legend The legend frame to refresh.
  * @param {string} type The type of stops the legend is for.
- * @param {string} frameId The id of the design frame the legend corresponds to.
  * @param {Array} trackingData The up-to-date annotation tracking data.
  * @param {Array} stopList The up-to-date reordered list of stops.
  *
@@ -1713,12 +1717,11 @@ const positionAnnotation = (
  *
  */
 const refreshLegend = (
+  legend: FrameNode,
   type: PluginStopType,
-  frameId: string,
   trackingData: Array<PluginNodeTrackingData>,
   stopList: Array<PluginStopListData>,
 ) => {
-  const legend = getLegendFrame(frameId, figma.currentPage);
   const updatedTracking = [...trackingData];
   if (legend) {
     legend.children.forEach((child) => {
@@ -1812,6 +1815,17 @@ const updateLegendEntry = (
   }
 };
 
+/**
+ * @description Edits the values of the legend entry when updated in the UI.
+ *
+ * @kind function
+ * @name buildA11yChecklist
+ *
+ * @param {Object} typefaceToUse The preloaded font face to use.
+ *
+ * @returns {Object} The entire checklist frame to append to the instruction panel.
+ *
+ */
 const buildA11yChecklist = (typefaceToUse) => {
   const checklistWrapper = figma.createFrame();
   checklistWrapper.name = 'Accessibility Checklist';
@@ -1821,10 +1835,10 @@ const buildA11yChecklist = (typefaceToUse) => {
 
   const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), A11Y_CHECKLIST_TEXT.title);
   checklistTitle.fontSize = 26;
-  checklistTitle.fontName = {...typefaceToUse, style: 'Black'};
+  checklistTitle.fontName = { ...typefaceToUse, style: 'Black' };
   checklistWrapper.appendChild(checklistTitle);
 
-  const checklistIntro = buildText('instruction', hexToDecimalRgb('#656565'), A11Y_CHECKLIST_TEXT.intro)
+  const checklistIntro = buildText('instruction', hexToDecimalRgb('#656565'), A11Y_CHECKLIST_TEXT.intro);
   checklistIntro.resize(750, 100);
   checklistIntro.locked = true;
   checklistWrapper.appendChild(checklistIntro);
@@ -1833,45 +1847,45 @@ const buildA11yChecklist = (typefaceToUse) => {
   frame.resize(800, 1500);
   frame.fills = [{
     type: 'SOLID',
-    color: {r: 1, g: 1, b: 1}
+    color: { r: 1, g: 1, b: 1 },
   }];
   frame.verticalPadding = 20;
   frame.horizontalPadding = 30;
   frame.layoutAlign = 'STRETCH';
   frame.layoutMode = 'VERTICAL';
   frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
-  
+
   const columnWrapper = figma.createFrame();
   columnWrapper.layoutMode = 'HORIZONTAL';
-  
+
   const leftColumn = figma.createFrame();
   leftColumn.name = 'Bullets';
   leftColumn.resize(580, 800);
   leftColumn.layoutMode = 'VERTICAL';
-  
+
   A11Y_CHECKLIST_TEXT.sections.forEach((section) => {
     const heading = buildText('custom', hexToDecimalRgb('#000000'), section.heading);
     heading.fontSize = 16;
     heading.textAlignHorizontal = 'LEFT';
-    heading.lineHeight = {value: 300, unit: 'PERCENT'};
-    
-    const list = buildText('custom', hexToDecimalRgb('#000000'), section.text+'\n');
+    heading.lineHeight = { value: 300, unit: 'PERCENT' };
+
+    const list = buildText('custom', hexToDecimalRgb('#000000'), `${section.text}\n`);
     list.fontSize = 15;
-    list.fontName = {...typefaceToUse, style: 'Regular'};
+    list.fontName = { ...typefaceToUse, style: 'Regular' };
     list.textAlignHorizontal = 'LEFT';
     list.lineHeight = { value: 150, unit: 'PERCENT' };
-    
+
     leftColumn.appendChild(heading);
     leftColumn.appendChild(list);
     leftColumn.layoutGrow = 0;
     leftColumn.primaryAxisSizingMode = 'AUTO';
-  })
-  
+  });
+
   columnWrapper.appendChild(leftColumn);
-  
+
   const rightColumn = figma.createFrame();
   rightColumn.resize(75, 800);
-  
+
   columnWrapper.appendChild(rightColumn);
   frame.appendChild(columnWrapper);
   columnWrapper.layoutMode = 'HORIZONTAL';
@@ -1879,26 +1893,33 @@ const buildA11yChecklist = (typefaceToUse) => {
   columnWrapper.primaryAxisSizingMode = 'AUTO';
   columnWrapper.counterAxisSizingMode = 'AUTO';
   frame.locked = true;
-  
+
   checklistWrapper.appendChild(frame);
 
   return checklistWrapper;
-}
+};
 
-
-const buildInstructionPanel = (specPage) => {
+/**
+ * @description Builds the panel to the left side of new spec pages and appends it to the page.
+ *
+ * @kind function
+ * @name buildInstructionPanel
+ *
+ * @returns {Object} The entire instructions panel frame to append to the new spec page.
+ *
+ */
+const buildInstructionPanel = () => {
   const black = hexToDecimalRgb('#000000');
   const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
   const panel = figma.createFrame();
   panel.name = 'Spec Instruction Panel';
   panel.resize(1000, 3000);
   panel.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
-  panel.strokes = [{ type: 'SOLID', color: hexToDecimalRgb('#A5A5A5') }]
+  panel.strokes = [{ type: 'SOLID', color: hexToDecimalRgb('#A5A5A5') }];
   panel.layoutMode = 'VERTICAL';
   panel.verticalPadding = 40;
   panel.horizontalPadding = 40;
   panel.itemSpacing = 60;
-  specPage.appendChild(panel);
 
   const instructionsWrapper = figma.createFrame();
   instructionsWrapper.name = 'Instructions';
@@ -1909,17 +1930,23 @@ const buildInstructionPanel = (specPage) => {
 
   const title = buildText('title', hexToDecimalRgb('#517EC2'), 'Spec Instructions');
   title.fontSize = 38;
-  title.fontName = {...typefaceToUse, style: 'Black'};
+  title.fontName = { ...typefaceToUse, style: 'Black' };
   title.locked = true;
   instructionsWrapper.appendChild(title);
 
-  const intro = buildText('instruction', hexToDecimalRgb('#656565'), SPEC_INSTRUCTION_TEXT.intro)
+  const intro = buildText('instruction', hexToDecimalRgb('#656565'), SPEC_INSTRUCTION_TEXT.intro);
   intro.resize(850, 220);
   intro.locked = true;
   instructionsWrapper.appendChild(intro);
 
-  // Instructions
-  SPEC_INSTRUCTION_TEXT.sections.forEach(section => {
+  // Speccing instructions
+  SPEC_INSTRUCTION_TEXT.sections.forEach((section) => {
+    const {
+      heading,
+      text,
+      annotationText,
+      annotationType,
+    } = section;
     const sectionFrame = figma.createFrame();
     sectionFrame.layoutMode = 'VERTICAL';
     sectionFrame.verticalPadding = 30;
@@ -1932,9 +1959,9 @@ const buildInstructionPanel = (specPage) => {
       color: hexToDecimalRgb('#FDFDFD'),
     }];
 
-    const heading = buildText('title', hexToDecimalRgb('#4586E8'), section.heading);
-    heading.fontSize = 24;
-    sectionFrame.appendChild(heading);
+    const sectionTitle = buildText('title', hexToDecimalRgb('#4586E8'), heading);
+    sectionTitle.fontSize = 24;
+    sectionFrame.appendChild(sectionTitle);
 
     const bodyWrapper = figma.createFrame();
     bodyWrapper.name = 'Body Wrapper';
@@ -1945,9 +1972,9 @@ const buildInstructionPanel = (specPage) => {
     bodyWrapper.counterAxisSizingMode = 'AUTO';
     bodyWrapper.resize(860, bodyWrapper.height);
 
-    const text = buildText('instruction', black, section.text);
-    text.resize(710, text.height);
-    bodyWrapper.appendChild(text);
+    const body = buildText('instruction', black, text);
+    body.resize(710, body.height);
+    bodyWrapper.appendChild(body);
 
     const imageWrapper = figma.createFrame();
     imageWrapper.layoutAlign = 'STRETCH';
@@ -1960,9 +1987,9 @@ const buildInstructionPanel = (specPage) => {
     imageWrapper.fills = [];
     bodyWrapper.appendChild(imageWrapper);
 
-    const mainText = section.annotationText ||  '1';
-    const image = buildAnnotation({mainText, type: section.annotationType as PluginAnnotationType});
-    image.text?.resize(image.text.width+5, image.text.height);
+    const mainText = annotationText || '1';
+    const image = buildAnnotation({ mainText, type: annotationType as PluginAnnotationType });
+    image.text?.resize(image.text.width + 5, image.text.height);
     const positionedImage = positionAnnotation(imageWrapper, 'test', image, {
       frameWidth: 120,
       frameHeight: 50,
@@ -1971,16 +1998,16 @@ const buildInstructionPanel = (specPage) => {
       x: 0,
       y: 0,
     }, 'keystop');
-    if (['labels', 'headings', 'misc'].includes(section.heading.toLowerCase())) {
+    if (['labels', 'headings', 'misc'].includes(heading.toLowerCase())) {
       positionedImage.rescale(1.25);
     }
     imageWrapper.appendChild(positionedImage);
-    
+
     sectionFrame.appendChild(bodyWrapper);
     sectionFrame.locked = true;
 
     instructionsWrapper.appendChild(sectionFrame);
-  })
+  });
   panel.appendChild(instructionsWrapper);
 
   // Checklist
@@ -1995,14 +2022,14 @@ const buildInstructionPanel = (specPage) => {
 
   const notesTitle = buildText('title', hexToDecimalRgb('#517EC2'), 'Designer Notes\n');
   notesTitle.fontSize = 26;
-  notesTitle.fontName = {...typefaceToUse, style: 'Black'};
+  notesTitle.fontName = { ...typefaceToUse, style: 'Black' };
   notesWrapper.appendChild(notesTitle);
 
   const notesFrame = figma.createFrame();
   notesFrame.layoutMode = 'VERTICAL';
   notesFrame.resize(920, 500);
   notesFrame.cornerRadius = 5;
-  notesFrame.fills = [{ type: 'SOLID', color: {r: 1, g: 1, b: 1} }];
+  notesFrame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
   notesFrame.verticalPadding = 20;
   notesFrame.horizontalPadding = 20;
 
@@ -2017,7 +2044,7 @@ const buildInstructionPanel = (specPage) => {
   panel.appendChild(notesWrapper);
 
   return panel;
-}
+};
 
 export {
   buildA11yChecklist,

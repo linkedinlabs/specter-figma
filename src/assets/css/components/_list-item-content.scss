@@ -49,7 +49,7 @@
     display: block;
     padding: 0 0 0 em(44);
     width: calc(100% - #{em(35)});
-    
+
     .form-row {
       display: flex;
       flex-wrap: nowrap;
@@ -57,11 +57,12 @@
 
       &.slim {
         width: 115px;
+
         &.light {
-          opacity: .5;
+          opacity: 0.5;
         }
       }
-      
+
       .form-label {
         width: em(104);
       }
@@ -92,8 +93,7 @@
 
     &.a11y-labels,
     &.a11y-headings,
-    &.a11y-misc
-     {
+    &.a11y-misc {
       @include list-item-content-labels;
     }
   }

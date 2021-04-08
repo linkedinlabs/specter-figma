@@ -683,24 +683,24 @@ const getRelativePosition = (
  *
  * @kind function
  * @name getOpenYCoordinate
- * 
+ *
  * @param {Object} page A PageNode object to find open vertical space in.
  *
  * @returns {Object} The y coordinate that is open for more content.
  */
- const getOpenYCoordinate = (
+const getOpenYCoordinate = (
   page: PageNode,
 ) => {
   let hasExistingFrames = false;
   let yCoordinate = 20;
 
-  page.children.forEach(child => {
+  page.children.forEach((child) => {
     const bottomLeftCorner = child.y + child.height;
     if (!child.name.includes('Instruction') && bottomLeftCorner > yCoordinate) {
       hasExistingFrames = true;
       yCoordinate = bottomLeftCorner;
     }
-  })
+  });
 
   if (hasExistingFrames) {
     yCoordinate += 150;

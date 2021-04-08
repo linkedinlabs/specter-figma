@@ -3,6 +3,7 @@ import App from './App';
 import Messenger from './Messenger';
 import { awaitUIReadiness, loadFirstAvailableFontAsync } from './utils/tools';
 import { DATA_KEYS, TYPEFACES } from './constants';
+import { getSpecPageList } from './utils/nodeGetters';
 
 // GUI management -------------------------------------------------
 
@@ -48,6 +49,7 @@ const dispatcher = async (action: {
 
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
+  const specPages = getSpecPageList(figma.root.children);
 
   // retrieve existing options
   const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);
@@ -63,6 +65,7 @@ const dispatcher = async (action: {
     isMercadoMode,
     shouldTerminate,
     terminatePlugin,
+    specPages,
   });
 
   // run the action in the App class based on type
@@ -119,7 +122,8 @@ const dispatcher = async (action: {
         app.annotateMeasurement();
         break;
       case 'generate': {
-        app.generateTemplate();
+        const { pageId, newSpecName } = payload;
+        app.generateTemplate(pageId, newSpecName);
         break;
       }
       case 'lock': {

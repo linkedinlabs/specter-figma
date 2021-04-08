@@ -78,21 +78,24 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
  *
  * @kind function
  * @name getSpecPage
- * @param {Object} page The Figma page the frame belongs to.
  *
- * @returns {Object} The legend for the frame (or undefined, if it doesn't exist).
+ * @param {Object} specPageId The id of the Figma page to append to.
+ * @param {Object} newPageName Optional argument used to name a newly created page to append to.
+ *
+ * @returns {Object} The spec page that will be used for new template additions.
  */
- const getSpecPage = (page: PageNode) => {
-  const specPageId = page.getPluginData(DATA_KEYS.specPage);
-  let specPage = figma.root.children.find(child => child.id === specPageId);
-  if (!specPage) {
-    specPage = figma.createPage();
-    specPage.name = `SPEC - ${page.name}`;
-    page.setPluginData(DATA_KEYS.specPage, specPage.id);
+const getSpecPage = (specPageId?: string, newPageName?: string) => {
+  let specPage;
 
-    const instructionPanel = buildInstructionPanel(specPage);
+  if (specPageId) {
+    specPage = figma.root.children.find(child => child.id === specPageId);
+  } else {
+    specPage = figma.createPage();
+    specPage.name = newPageName;
+    const instructionPanel = buildInstructionPanel();
     specPage.appendChild(instructionPanel);
   }
+
   return specPage;
 };
 
@@ -268,10 +271,26 @@ const getOrderedStopNodes = (
   return newOnly ? sortedSelection : orderedNodes;
 };
 
+/**
+ * @description A function that gets a list of all spec pages based on SPEC inclusion in the name.
+ *
+ * @kind function
+ * @name getSpecPageList
+ *
+ * @param {Array} pages All pages in the figma file.
+ *
+ * @returns {Array}  A list of pages that are auto-generated SPEC pages.
+ */
+const getSpecPageList = (pages) => {
+  const specPages = pages.filter(page => page.name.includes('SPEC ')).map(({ name, id }) => ({ name, id }));
+  return specPages;
+};
+
 export {
   findParentInstance,
   getLegendFrame,
   getSpecPage,
+  getSpecPageList,
   findTopComponent,
   getOrderedStopNodes,
 };

@@ -53,18 +53,20 @@
         fill: rgba($blue01, 0.25);
       }
     }
+
     &.icons-lock {
-      .rect { 
+      .rect {
         fill: rgba($grey04, 0.25);
-        stroke: #000000;
+        stroke: #000;
         stroke-width: 2;
-      } 
-      .arch { 
+      }
+
+      .arch {
         fill: none;
-        stroke: #000000;
+        stroke: #000;
         stroke-linejoin: round;
         stroke-width: 2.5;
-      } 
+      }
     }
 
     &.icons-measure {

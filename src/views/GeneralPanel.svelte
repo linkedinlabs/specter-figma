@@ -64,7 +64,7 @@
       <li>
         <ButtonAction
           on:handleAction
-          action="generate"
+          action="show-selector"
           text="Generate Spec Template"
         >
           <svg viewBox="0 0 21 18" class="icons-generate">

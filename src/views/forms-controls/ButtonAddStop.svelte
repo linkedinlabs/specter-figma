@@ -1,6 +1,4 @@
 <script>
-import { text } from 'svelte/internal';
-
   import { getStopTypeFromView } from '../../utils/tools';
   import ButtonAction from './ButtonAction';
 

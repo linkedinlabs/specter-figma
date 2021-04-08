@@ -67,6 +67,7 @@
     "webpack-cli": "^3.3.10"
   },
   "dependencies": {
+    "caniuse-lite": "^1.0.30001208",
     "hex-rgb": "^4.1.0",
     "svelte": "^3.24.1",
     "uuid-random": "^1.3.2"
