@@ -825,189 +825,6 @@ const buildBoundingBox = (position: {
   return boundingBox;
 };
 
-/**
- * @description Builds the nodes that will be appended to a legend entry.
- *
- * @kind function
- * @name buildLegendFieldNodes
- *
- * @param {string} type The type of the legend entry we're building.
- * @param {Object} nodeData The node's data to format and include in the legend entry.
- * @param {Array} suppliedFields Optional argument of specific fields to provide, used for
- * legend definitions.
- *
- * @returns {Array} Returns the legend entry nodes to append.
- */
-const buildLegendFieldNodes = (
-  type: PluginStopType,
-  nodeData: any,
-  suppliedFields?: any,
-) => {
-  const nodes = [];
-  // eslint-disable-next-line no-use-before-define
-  const fields = suppliedFields || getLegendEntryFields(type, nodeData);
-
-  fields.forEach(({ name, val }, index) => {
-    const line: FrameNode = figma.createFrame();
-    line.name = `${name} field`;
-    line.layoutMode = 'HORIZONTAL';
-    line.primaryAxisSizingMode = 'FIXED';
-    line.primaryAxisAlignItems = 'MIN';
-    line.counterAxisSizingMode = 'AUTO';
-    line.counterAxisAlignItems = 'MIN';
-    line.layoutAlign = 'STRETCH';
-    line.paddingLeft = 10;
-    line.paddingRight = 10;
-    line.paddingTop = 2;
-    line.paddingBottom = 2;
-    line.itemSpacing = 5;
-
-    const fieldTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
-    const fieldValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
-
-    if (index === 0) {
-      line.topRightRadius = 5;
-    }
-    if (index === fields.length - 1) {
-      line.bottomLeftRadius = 5;
-      line.bottomRightRadius = 5;
-    }
-    if (suppliedFields) {
-      line.horizontalPadding = 0;
-      line.verticalPadding = 5;
-      fieldTitle.resize(48, fieldTitle.height);
-      fieldValue.resize(286, fieldValue.height);
-    }
-
-    line.appendChild(fieldTitle);
-    line.appendChild(fieldValue);
-    line.locked = true;
-    line.fills = [];
-    nodes.push(line);
-  });
-
-  return nodes;
-};
-
-/**
- * @description Builds the header for the legend with field definitions.
- *
- * @kind function
- * @name buildLegendHeader
- *
- * @param {string} type The stop type the legend pertains to.
- *
- * @returns {Object} Returns the legend header frame.
- */
-const buildLegendHeader = (type: PluginStopType) => {
-  let heading = 'Keyboard';
-  if (type === 'keystop') {
-    heading = 'Keyboard';
-  } else if (type === 'misc') {
-    heading = 'Misc';
-  } else {
-    heading = `${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-  }
-
-  const header = figma.createFrame();
-  header.name = 'Legend Header';
-  header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
-  header.resize(363, 100);
-  header.layoutMode = 'VERTICAL';
-  header.verticalPadding = 10;
-  header.horizontalPadding = 12;
-
-  const title = buildText('title', hexToDecimalRgb('#517EC2'), `${heading} Legend`);
-  title.fontSize = 16;
-  title.locked = true;
-  header.appendChild(title);
-
-  const intro = buildText('custom', hexToDecimalRgb('#333333'), `Legend entries will be automatically added and updated below as you annotate your design using the ${heading} tab.`);
-  intro.resize(350, 40);
-  intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373') }];
-  intro.textAlignHorizontal = 'LEFT';
-  intro.locked = true;
-  header.appendChild(intro);
-
-  const fields = buildLegendFieldNodes(type, {}, LEGEND_DEFINITIONS[type]);
-  fields.forEach(field => header.appendChild(field));
-
-  const warning = buildText('custom', hexToDecimalRgb('#BE4841'), 'WARNING! Do not make edits to the legend directly or you will lose them. Please update in the plugin window only.');
-  warning.textAlignHorizontal = 'LEFT';
-  warning.resize(350, 40);
-  warning.locked = true;
-  header.appendChild(warning);
-
-  return header;
-};
-
-/**
- * @description Builds the initial legend frame for annotation legend items.
- *
- * @kind function
- * @name buildLabelLegend
- *
- * @param {string} type The type of the legend we're building.
- *
- * @returns {Object} Returns the legend frame.
- */
-const buildLegend = (type: PluginStopType) => {
-  const legend: FrameNode = figma.createFrame();
-  // auto-layout
-  legend.layoutMode = 'VERTICAL';
-  legend.primaryAxisSizingMode = 'AUTO';
-  legend.primaryAxisAlignItems = 'SPACE_BETWEEN';
-  legend.counterAxisSizingMode = 'FIXED';
-  legend.counterAxisAlignItems = 'CENTER';
-  legend.layoutAlign = 'STRETCH';
-  legend.layoutGrow = 0;
-  legend.verticalPadding = 0;
-  legend.horizontalPadding = 0;
-
-  const header = buildLegendHeader(type);
-  legend.appendChild(header);
-
-  return legend;
-};
-
-/**
- * @description Positions the legend frame respective to the design frame it corresponds with.
- *
- * @kind function
- * @name positionLegend
- *
- * @param {Object} legend The Figma frame that contains the annotation legend.
- * @param {string} originFramePosition The position of the design frame the legend pertains to.
- *
- * @returns {Object} The final legend after positioning.
- * @private
- */
-const positionLegend = (
-  legend: FrameNode,
-  originFramePosition: {
-    width: number,
-    height: number,
-    x: number,
-    y: number,
-  },
-) => {
-  const legendFrame = legend;
-  legendFrame.layoutMode = 'VERTICAL';
-  legendFrame.primaryAxisSizingMode = 'AUTO';
-  legendFrame.primaryAxisAlignItems = 'MIN';
-  legendFrame.counterAxisSizingMode = 'AUTO';
-  legendFrame.counterAxisAlignItems = 'CENTER';
-  legendFrame.layoutAlign = 'INHERIT';
-  legendFrame.fills = [];
-  legendFrame.clipsContent = false;
-
-  const placementX: number = originFramePosition.x + (originFramePosition.width + 20);
-  const placementY: number = originFramePosition.y;
-  legendFrame.x = placementX;
-  legendFrame.y = placementY;
-
-  return legendFrame;
-};
 
 /**
  * @description Gets the text to display for legend entries.
@@ -1020,7 +837,7 @@ const positionLegend = (
  *
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
-const getLegendLabelText = (labels, labelName) => {
+const getLegendLabelText = (labels: PluginAriaLabels, labelName: string) => {
   const { visible, alt, a11y } = labels || {};
   if (labelName === 'alt') {
     return alt ? `"${alt}"` : 'undefined';
@@ -1133,6 +950,188 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
 };
 
 /**
+ * @description Builds the nodes that will be appended to a legend entry.
+ *
+ * @kind function
+ * @name buildLegendFieldNodes
+ *
+ * @param {string} type The type of the legend entry we're building.
+ * @param {Object} nodeData The node's data to format and include in the legend entry.
+ * @param {Array} suppliedFields Optional argument of specific fields to provide, used for
+ * legend definitions.
+ *
+ * @returns {Array} Returns the legend entry nodes to append.
+ */
+const buildLegendFieldNodes = (
+  type: PluginStopType,
+  nodeData: any,
+  suppliedFields?: any,
+) => {
+  const nodes = [];
+  const fields = suppliedFields || getLegendEntryFields(type, nodeData);
+
+  fields.forEach(({ name, val }, index) => {
+    const line: FrameNode = figma.createFrame();
+    line.name = `${name} field`;
+    line.layoutMode = 'HORIZONTAL';
+    line.primaryAxisSizingMode = 'FIXED';
+    line.primaryAxisAlignItems = 'MIN';
+    line.counterAxisSizingMode = 'AUTO';
+    line.counterAxisAlignItems = 'MIN';
+    line.layoutAlign = 'STRETCH';
+    line.paddingLeft = 10;
+    line.paddingRight = 10;
+    line.paddingTop = 2;
+    line.paddingBottom = 2;
+    line.itemSpacing = 5;
+
+    const fieldTitle: TextNode = buildText('legend', hexToDecimalRgb('#000000'), `${name}:`);
+    const fieldValue: TextNode = buildText('legend', hexToDecimalRgb('#000000'), val, val === 'undefined');
+
+    if (index === 0) {
+      line.topRightRadius = 5;
+    }
+    if (index === fields.length - 1) {
+      line.bottomLeftRadius = 5;
+      line.bottomRightRadius = 5;
+    }
+    if (suppliedFields) {
+      line.horizontalPadding = 0;
+      line.verticalPadding = 5;
+      fieldTitle.resize(48, fieldTitle.height);
+      fieldValue.resize(286, fieldValue.height);
+    }
+
+    line.appendChild(fieldTitle);
+    line.appendChild(fieldValue);
+    line.locked = true;
+    line.fills = [];
+    nodes.push(line);
+  });
+
+  return nodes;
+};
+
+/**
+ * @description Builds the header for the legend with field definitions.
+ *
+ * @kind function
+ * @name buildLegendHeader
+ *
+ * @param {string} type The stop type the legend pertains to.
+ *
+ * @returns {Object} Returns the legend header frame.
+ */
+const buildLegendHeader = (type: PluginStopType) => {
+  let heading = 'Keyboard';
+  if (type === 'keystop') {
+    heading = 'Keyboard';
+  } else if (type === 'misc') {
+    heading = 'Misc';
+  } else {
+    heading = `${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+  }
+
+  const header = figma.createFrame();
+  header.name = 'Legend Header';
+  header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
+  header.resize(363, 100);
+  header.layoutMode = 'VERTICAL';
+  header.verticalPadding = 10;
+  header.horizontalPadding = 12;
+
+  const title = buildText('title', hexToDecimalRgb('#517EC2'), `${heading} Legend`);
+  title.fontSize = 16;
+  title.locked = true;
+  header.appendChild(title);
+
+  const intro = buildText('custom', hexToDecimalRgb('#333333'), `Legend entries will be automatically added and updated below as you annotate your design using the ${heading} tab.`);
+  intro.resize(350, 40);
+  intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373') }];
+  intro.textAlignHorizontal = 'LEFT';
+  intro.locked = true;
+  header.appendChild(intro);
+
+  const fields = buildLegendFieldNodes(type, {}, LEGEND_DEFINITIONS[type]);
+  fields.forEach(field => header.appendChild(field));
+
+  const warning = buildText('custom', hexToDecimalRgb('#BE4841'), 'WARNING! Do not make edits to the legend directly or you will lose them. Please update in the plugin window only.');
+  warning.textAlignHorizontal = 'LEFT';
+  warning.resize(350, 40);
+  warning.locked = true;
+  header.appendChild(warning);
+
+  return header;
+};
+
+/**
+ * @description Builds the initial legend frame for annotation legend items.
+ *
+ * @kind function
+ * @name buildLabelLegend
+ *
+ * @param {string} type The type of the legend we're building.
+ *
+ * @returns {Object} Returns the legend frame.
+ */
+const buildLegend = (type: PluginStopType) => {
+  const legend: FrameNode = figma.createFrame();
+  legend.layoutMode = 'VERTICAL';
+  legend.primaryAxisSizingMode = 'AUTO';
+  legend.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  legend.counterAxisSizingMode = 'FIXED';
+  legend.counterAxisAlignItems = 'CENTER';
+  legend.layoutAlign = 'STRETCH';
+  legend.layoutGrow = 0;
+  legend.verticalPadding = 0;
+  legend.horizontalPadding = 0;
+
+  const header = buildLegendHeader(type);
+  legend.appendChild(header);
+
+  return legend;
+};
+
+/**
+ * @description Positions the legend frame respective to the design frame it corresponds with.
+ *
+ * @kind function
+ * @name positionLegend
+ *
+ * @param {Object} legend The Figma frame that contains the annotation legend.
+ * @param {string} originFramePosition The position of the design frame the legend pertains to.
+ *
+ * @returns {Object} The final legend after positioning.
+ * @private
+ */
+const positionLegend = (
+  legend: FrameNode,
+  originFramePosition: {
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+  },
+) => {
+  const legendFrame = legend;
+  legendFrame.layoutMode = 'VERTICAL';
+  legendFrame.primaryAxisSizingMode = 'AUTO';
+  legendFrame.primaryAxisAlignItems = 'MIN';
+  legendFrame.counterAxisSizingMode = 'AUTO';
+  legendFrame.counterAxisAlignItems = 'CENTER';
+  legendFrame.layoutAlign = 'INHERIT';
+  legendFrame.fills = [];
+  legendFrame.clipsContent = false;
+
+  const placementX: number = originFramePosition.x + (originFramePosition.width + 20);
+  const placementY: number = originFramePosition.y;
+  legendFrame.x = placementX;
+  legendFrame.y = placementY;
+
+  return legendFrame;
+};
+
+/**
  * @description Positions the legend frame respective to the design frame it corresponds with.
  *
  * @kind function
@@ -1196,10 +1195,8 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
   legendData.bottomRightRadius = 6;
   legendData.bottomLeftRadius = 6;
   legendData.resize(300, legendData.height);
-  legendData.fills = [{
-    type: 'SOLID',
-    color: hexToDecimalRgb(COLORS[type]),
-  }];
+  legendData.strokes = [{ type: 'SOLID', color: hexToDecimalRgb(COLORS[type]) }];
+  legendData.strokeWeight = 2;
 
   const fieldNodes = buildLegendFieldNodes(type, nodeData);
   fieldNodes.forEach(field => legendData.appendChild(field));
