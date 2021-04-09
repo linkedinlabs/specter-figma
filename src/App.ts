@@ -6,6 +6,7 @@ import { DATA_KEYS, GUI_SETTINGS } from './constants';
 import {
   getLegendFrame,
   getOrderedStopNodes,
+  getSelectedAnnotationItems,
   getSpecPage,
   getSpecPageList,
 } from './utils/nodeGetters';
@@ -38,9 +39,9 @@ import {
  */
 const assemble = (context: any = null) => {
   const page = context.currentPage;
-  // don't include actual annotations
-  const selection = page.selection.filter(item => !isAnnotationLayer(item));
   const messenger = new Messenger({ for: context, in: page });
+  // don't include actual annotations
+  const selection = page.selection.filter(node => !isAnnotationLayer(node));
 
   return {
     messenger,
@@ -1501,20 +1502,23 @@ export default class App {
     const firstTopFrame = findTopFrame(selection[0]);
     const singleTopFrame = !selection.find(node => findTopFrame(node) !== firstTopFrame);
 
-    if (isA11yTab && singleTopFrame && selection?.length) {
+    if (isA11yTab && singleTopFrame && page.selection.length) {
       const type: PluginStopType = getStopTypeFromView(currentView);
-      const nodes = getOrderedStopNodes(type, selection, false);
+      const selectedAnnotationItems = getSelectedAnnotationItems(page, type);
+      const nodes = getOrderedStopNodes(type, page.selection, false);
 
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const stopData = getStopData(type, node);
         const displayPosition = stopData.position ? stopData.position.toString() : '';
+        const isSelected = existsInArray(selectedNodes, id)
+          || existsInArray(selectedAnnotationItems, id);
         const viewObject = {
           ...stopData,
           id,
           name,
-          isSelected: existsInArray(selectedNodes, node.id),
+          isSelected,
           position: displayPosition,
         } as PluginViewObject;
 

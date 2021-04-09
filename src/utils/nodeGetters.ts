@@ -202,7 +202,8 @@ const getAssignedChildNodes = (
     && ((heading?.level && heading.level !== 'no-level') || heading?.visible || heading?.invisible);
 
 
-    if (!existsInArray(currentList, node.id)
+    if (
+      !existsInArray(currentList, node.id)
       && !existsInArray(list, node.id)
       && (hasKeystopData || hasLabelData || hasHeadingData)
     ) {
@@ -220,6 +221,32 @@ const getAssignedChildNodes = (
     }
     return list;
   }, []);
+};
+
+/**
+ * @description Gets a list of nodes who have a selected annotation, to be used when marking
+ * selected items in the UI item list.
+ *
+ * @kind function
+ * @name getSelectedAnnotationItems
+ *
+ * @param {Object} page The current Figma page, for getting the master annotation list.
+ * @param {string} type The type of stop/tab we are working with.
+ *
+ * @returns {Array} A flat list of nodes whose annotations are selected.
+ */
+const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
+  const { selection } = page;
+  const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null);
+  const selectedAnnotations = selection
+    .filter(node => JSON.parse(node.getPluginData(DATA_KEYS[`${type}LinkId`]) || null)?.role === 'annotation');
+
+  const nodes = selectedAnnotations.map(({ id }) => {
+    const matchId = trackingData?.find(({ annotationId }) => annotationId === id)?.id;
+    return matchId && figma.getNodeById(matchId);
+  });
+
+  return nodes;
 };
 
 /**
@@ -263,8 +290,8 @@ const getOrderedStopNodes = (
   }
 
   // filter selected to what isn't in the results list and sort by visual hierarchy
-  selectedNodes = selectedNodes.filter((node: SceneNode) => !existsInArray(orderedNodes, node.id)
-    && frame.id !== node.id);
+  selectedNodes = selectedNodes.filter(({ id }) => !existsInArray(orderedNodes, id)
+    && frame.id !== id);
   const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
   sortedSelection.forEach(node => orderedNodes.push(node));
 
@@ -289,6 +316,7 @@ const getSpecPageList = (pages) => {
 export {
   findParentInstance,
   getLegendFrame,
+  getSelectedAnnotationItems,
   getSpecPage,
   getSpecPageList,
   findTopComponent,

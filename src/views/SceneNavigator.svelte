@@ -44,6 +44,9 @@
 
 <style>
   /* components/scene-navigator */
+  button {
+    cursor: pointer;
+  }
 </style>
 
 <nav class="scene-navigator components">

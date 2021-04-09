@@ -519,7 +519,6 @@ const isAnnotationLayer = (node: any): boolean => {
   return false;
 };
 
-
 /**
  * @description A shared helper function to retrieve plugin data on a node from a
  * peer plugin (Stapler). The check is always done on a component node to get the
