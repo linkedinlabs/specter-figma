@@ -1074,7 +1074,7 @@ const buildLegendHeader = (type: PluginStopType) => {
  *
  * @returns {Object} Returns the legend frame.
  */
-const buildLegend = (type: PluginStopType) => {
+const buildLegend = (type: PluginStopType, includeInstructions?: boolean) => {
   const legend: FrameNode = figma.createFrame();
   legend.layoutMode = 'VERTICAL';
   legend.primaryAxisSizingMode = 'AUTO';
@@ -1086,8 +1086,10 @@ const buildLegend = (type: PluginStopType) => {
   legend.verticalPadding = 0;
   legend.horizontalPadding = 0;
 
-  const header = buildLegendHeader(type);
-  legend.appendChild(header);
+  if (includeInstructions) {
+    const header = buildLegendHeader(type);
+    legend.appendChild(header);
+  }
 
   return legend;
 };

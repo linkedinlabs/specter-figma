@@ -7,7 +7,9 @@
   
   let [value] = specPages;
   let newSpecName = 'SPEC - ';
+  let includeInstructions = true;
   $: warning = !newSpecName.includes('SPEC ');
+  $: console.log(includeInstructions);
 
   const submitValue = () => {
     parent.postMessage({
@@ -16,6 +18,7 @@
         payload: {
           pageId: value ? value.id : null,
           newSpecName,
+          includeInstructions: value ? false : includeInstructions,
         },
       },
     }, '*');
@@ -48,7 +51,16 @@
     width: 95.75%;
   }
   .name-label {
-    margin: 14px 0 0 8px;
+    margin: 18px 0 0 8px;
+  }
+  .checkbox-wrapper {
+    margin: 5px 0 0 5px;
+    display: flex;
+    align-items: center;
+  }
+  .checkbox-wrapper input,
+  .checkbox-wrapper label {
+    cursor: pointer;
   }
   .warning-msg {
     font-size: 10px;
@@ -79,8 +91,12 @@
     <option value={null}>Create new page...</option>
   </select>
   {#if !value}
-    <label for="new-spec-name" class="name-label">New page name: </label>
-    <input id="new-spec-name" class="user-input" bind:value={newSpecName}/>
+    <label for="newSpecName" class="name-label">New page name: </label>
+    <input id="newSpecName" class="user-input" bind:value={newSpecName}/>
+    <div class="checkbox-wrapper">
+      <input type="checkbox" id="instructionInput" bind:checked={includeInstructions}/>
+      <label for="instructionInput">Include Instructions</label>
+    </div>
     {#if warning}
       <p class="warning-msg">Warning: Page name must include 'SPEC ' to be included in the options above in future.</p>
     {/if}

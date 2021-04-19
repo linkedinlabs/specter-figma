@@ -84,7 +84,7 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
  *
  * @returns {Object} The spec page that will be used for new template additions.
  */
-const getSpecPage = (specPageId?: string, newPageName?: string) => {
+const getSpecPage = (specPageId?: string, newPageName?: string, includeInstructions?: boolean) => {
   let specPage;
 
   if (specPageId) {
@@ -92,8 +92,10 @@ const getSpecPage = (specPageId?: string, newPageName?: string) => {
   } else {
     specPage = figma.createPage();
     specPage.name = newPageName;
-    const instructionPanel = buildInstructionPanel();
-    specPage.appendChild(instructionPanel);
+    if (includeInstructions) {
+      const instructionPanel = buildInstructionPanel();
+      specPage.appendChild(instructionPanel);
+    }
   }
 
   return specPage;

@@ -122,8 +122,16 @@ const dispatcher = async (action: {
         app.annotateMeasurement();
         break;
       case 'generate': {
-        const { pageId, newSpecName } = payload;
-        app.generateTemplate(pageId, newSpecName);
+        const { pageId, newSpecName, includeInstructions } = payload;
+        app.generateTemplate(pageId, newSpecName, includeInstructions);
+        break;
+      }
+      case 'color': {
+        app.updateAnnotationColor(payload.color);
+        break;
+      }
+      case 'pointer': {
+        // app.updateAnnotationDirection(payload.direction);
         break;
       }
       case 'lock': {

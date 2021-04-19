@@ -13,6 +13,7 @@
   import SceneNavigator from './SceneNavigator';
   import UserInput from './UserInput';
   import SpecSelector from './SpecSelector';
+  import ColorSelector from './ColorSelector';
 
   export let isInternal = false;
   export let isMercadoMode = false;
@@ -26,18 +27,18 @@
 
   let bodyHeight = 0;
   let wasBodyHeight = 0;
-  let showSelector = false;
+  let inputPage = null;
 
   const handleSelectorAction = (action) => {
-    if (action === 'show-selector') {
-      showSelector = true;
+    if (action.includes('show-')) {
+      inputPage = action;
     } else if (action === 'close') {
-      showSelector = false;
+      inputPage = null;
     }
   };
 
   const handleAction = (action) => {
-    if (action === 'show-selector' || showSelector) {
+    if (action.includes('show-') || inputPage) {
       handleSelectorAction(action);
     } else {
       parent.postMessage({
@@ -93,21 +94,21 @@
 <!-- core layout -->
 <div bind:offsetHeight={bodyHeight}>
   <FontPreload/>
-  {#if $viewContextStored && !isInfoPanel && !isUserInput && !showSelector}
+  {#if $viewContextStored && !isInfoPanel && !isUserInput && !inputPage}
   <SceneNavigator currentView={$viewContextStored}/>
   {/if}
 
   <div class={`container${isUserInput ? ' wide' : ''}`}>
     <div class="transition-mask"></div>
 
-    {#if !isUserInput && !showSelector}
+    {#if !isUserInput && !inputPage}
       <ButtonInfoTrigger
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         isInfoPanel={isInfoPanel}
       />
     {/if}
 
-    {#if !isUserInput && !isInfoPanel && !showSelector}
+    {#if !isUserInput && !isInfoPanel && !inputPage}
       {#if $viewContextStored === 'general'}
         <GeneralPanel
           on:handleAction={customEvent => handleAction(customEvent.detail)}
@@ -129,12 +130,24 @@
       />
     {/if}
 
-    {#if showSelector}
+    {#if inputPage === 'show-page-input'}
       <SpecSelector
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         specPages={specPages}
       />
     {/if}
+
+    {#if inputPage === 'show-color-input'}
+      <ColorSelector
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+      />
+    {/if}
+
+    <!-- {#if inputPage === 'show-pointer-input'}
+      <PointerSelector
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+      />
+    {/if} -->
 
     {#if isInfoPanel}
       <InfoPanel

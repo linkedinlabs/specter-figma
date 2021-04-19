@@ -20,6 +20,7 @@ import {
   getStopTypeFromView,
   isAnnotationLayer,
   getOpenYCoordinate,
+  hexToDecimalRgb,
 } from './utils/tools';
 import {
   refreshLegend,
@@ -599,13 +600,13 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  generateTemplate(pageId?: string, newPageName?: string) {
+  generateTemplate(pageId?: string, newPageName?: string, includeInstructions?: boolean) {
     const { selection } = assemble(figma);
 
     if (!selection?.length) {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
-      const specPage = getSpecPage(pageId, newPageName);
+      const specPage = getSpecPage(pageId, newPageName, includeInstructions);
       const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
       const topFrames = new Crawler({ for: selection }).topFrames();
       let yCoordinate = getOpenYCoordinate(specPage);
@@ -630,7 +631,8 @@ export default class App {
             const legendEntry = figma.createFrame();
 
             legendEntry.resize(364, 1);
-            painter.addEntryToLegend(legendEntry, category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType);
+            const legendType = category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType
+            painter.addEntryToLegend(legendEntry, legendType, includeInstructions);
             xCoordinate += 400;
           }
           xCoordinate += (frame.width + 100);
@@ -638,6 +640,40 @@ export default class App {
         yCoordinate += (frame.height + 150);
       });
       figma.notify(`Success! Templates added to page '${specPage.name}'`);
+    }
+  }
+
+    /**
+   * @description Updates the color of all selected annotations created from the General tab.
+   *
+   * @kind function
+   * @name updateAnnotationColor
+   *
+   * @param {string} color The hex value of the color chosen by the user.
+   *
+   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
+   */
+    updateAnnotationColor(color: string) {
+    const annotations = figma.currentPage.selection.filter((node) => {
+      return node.type === 'FRAME' && node.name.includes('Annotation for');
+    }) as Array<FrameNode>;
+
+    if (!annotations?.length) {
+      figma.notify('Error: Please select at least one General annotation.');
+    } else {
+      annotations.forEach((node) => {
+        const layers = node.children as Array<FrameNode | PolygonNode>;
+        layers.forEach((layer) => {
+          layer.fills = [
+            {
+              type: 'SOLID',
+              color: hexToDecimalRgb(color),
+            }
+          ]
+        })
+      })
+      const { length } = annotations;
+      figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
     }
   }
 

@@ -283,7 +283,7 @@ const GUI_SETTINGS = {
   },
   default: {
     width: 360,
-    height: 250,
+    height: 318,
   },
   input: {
     width: 440,

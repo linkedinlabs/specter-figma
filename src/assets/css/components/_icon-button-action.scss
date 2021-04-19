@@ -16,8 +16,10 @@
   padding: 0 em(4) 0 em(18);
   width: 100%;
   height: auto;
+  cursor: pointer;
 
   span {
+    cursor: pointer;
     &.text {
       @include type-01(500);
       color: $iconColor;
