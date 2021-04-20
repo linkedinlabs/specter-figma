@@ -1086,7 +1086,7 @@ const buildLegend = (type: PluginStopType, includeInstructions?: boolean) => {
   legend.verticalPadding = 0;
   legend.horizontalPadding = 0;
 
-  if (includeInstructions) {
+  if (includeInstructions !== false) {
     const header = buildLegendHeader(type);
     legend.appendChild(header);
   }

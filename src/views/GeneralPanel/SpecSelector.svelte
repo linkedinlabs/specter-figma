@@ -1,15 +1,13 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-
-  const dispatch = createEventDispatcher();
   
   export let specPages = [];
   
+  const dispatch = createEventDispatcher();
   let [value] = specPages;
   let newSpecName = 'SPEC - ';
   let includeInstructions = true;
   $: warning = !newSpecName.includes('SPEC ');
-  $: console.log(includeInstructions);
 
   const submitValue = () => {
     parent.postMessage({

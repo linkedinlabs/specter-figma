@@ -1,5 +1,5 @@
 <script>
-  import ButtonAction from './forms-controls/ButtonAction';
+  import ButtonAction from '../forms-controls/ButtonAction';
 
   export let showMercadoMode = false;
 </script>

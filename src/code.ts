@@ -131,7 +131,7 @@ const dispatcher = async (action: {
         break;
       }
       case 'pointer': {
-        // app.updateAnnotationDirection(payload.direction);
+        app.updateAnnotationDirection(payload.direction);
         break;
       }
       case 'lock': {

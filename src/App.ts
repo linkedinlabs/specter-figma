@@ -28,6 +28,7 @@ import {
   updateAnnotationNum,
   updateLegendEntry,
 } from './Painter/nodeBuilders';
+import { dir } from 'console';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -643,7 +644,7 @@ export default class App {
     }
   }
 
-    /**
+  /**
    * @description Updates the color of all selected annotations created from the General tab.
    *
    * @kind function
@@ -676,6 +677,71 @@ export default class App {
       figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
     }
   }
+
+   /**
+   * @description Updates the pointer direction of all selected annotations.
+   *
+   * @kind function
+   * @name updateAnnotationDirection
+   *
+   * @param {string} direction The annotation direction chosen by the user.
+   *
+   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
+   */
+    updateAnnotationDirection(direction: string) {
+      console.log(direction);
+      const annotations = figma.currentPage.selection.filter((node) => {
+        return node.type === 'FRAME' && node.parent.type === 'GROUP' && node.parent.name.includes('Annotations');
+      }) as Array<FrameNode>;
+  
+      if (!annotations?.length) {
+        figma.notify('Error: Please select at least one annotation.');
+      } else {
+        annotations.forEach((node) => {
+          const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
+          const color = pointer.fills[0].color;
+          pointer && pointer.remove();
+          // CHANGE DIRECTION OF DIAMOND CHILD
+          const diamond = figma.createPolygon();
+          diamond.name = 'Diamond';
+          diamond.resize(10, 6);
+          diamond.rotation = 180;
+          diamond.pointCount = 3;
+          diamond.fills = [{
+            type: 'SOLID',
+            color,
+          }];
+          const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
+          const vertical = 'CENTER' as ConstraintType;
+
+          if (['left', 'right'].includes(direction)) {
+            node.layoutMode = 'HORIZONTAL';
+        
+            if (direction === 'right') {
+              diamond.rotation = 270;
+              node.appendChild(diamond);
+            } else {
+              diamond.rotation = 90;
+              node.insertChild(0, diamond);
+            }
+          } else {
+            node.layoutMode = 'VERTICAL';
+
+            if (direction === 'down') {
+              diamond.rotation = 180;
+              node.appendChild(diamond);
+            } else {
+              diamond.rotation = 0;
+              node.insertChild(0, diamond);
+            }
+          }
+          node.constraints = { horizontal, vertical };
+          figma.flatten([diamond]);
+        })
+        const { length } = annotations;
+        figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+      }
+    }
 
   /**
    * @description Goes through all top-level frames and unlocks any Specter annotation groups.

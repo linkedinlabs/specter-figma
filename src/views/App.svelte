@@ -9,11 +9,12 @@
   import InfoPanel from './InfoPanel';
   import ButtonInfoTrigger from './forms-controls/ButtonInfoTrigger';
   import FontPreload from './FontPreload';
-  import GeneralPanel from './GeneralPanel';
+  import GeneralPanel from './GeneralPanel/GeneralPanel';
   import SceneNavigator from './SceneNavigator';
-  import UserInput from './UserInput';
-  import SpecSelector from './SpecSelector';
-  import ColorSelector from './ColorSelector';
+  import UserInput from './GeneralPanel/UserInput';
+  import SpecSelector from './GeneralPanel/SpecSelector';
+  import ColorSelector from './GeneralPanel/ColorSelector';
+  import PointerSelector from './GeneralPanel/PointerSelector';
 
   export let isInternal = false;
   export let isMercadoMode = false;
@@ -143,11 +144,11 @@
       />
     {/if}
 
-    <!-- {#if inputPage === 'show-pointer-input'}
+    {#if inputPage === 'show-pointer-input'}
       <PointerSelector
         on:handleAction={customEvent => handleAction(customEvent.detail)}
       />
-    {/if} -->
+    {/if}
 
     {#if isInfoPanel}
       <InfoPanel

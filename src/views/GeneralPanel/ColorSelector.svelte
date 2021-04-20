@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { COLORS } from '../constants';
+  import { COLORS } from '../../constants';
 
   const dispatch = createEventDispatcher();
   
@@ -51,9 +51,6 @@
     align-items: flex-start;
     width: 95.75%;
   }
-  /* h3 {
-    padding: 4px 8px 8px 4px;
-  } */
   .list {
     display: flex;
     flex-direction: column;
