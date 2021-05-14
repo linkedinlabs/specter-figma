@@ -1150,16 +1150,7 @@ export default class Painter {
       node: annotationNode,
       frame: this.frame,
       page: this.page,
-      type: type as 'boundingBox'
-    | 'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'misc'
-    | 'spacing'
-    | 'style',
+      type,
     });
 
     // ---------- set node tracking data with new annotation

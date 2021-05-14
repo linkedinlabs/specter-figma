@@ -67,23 +67,25 @@
         <FormUnit
           className="form-row"
           kind="inputSwitch"
-          labelText="Visible label"
+          labelText="A11y visible"
           nameId={`${itemId}-label-visible`}
           placeholder="Leave empty to use a11y label"
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.visible}
         />
-        <FormUnit
-          className="form-row"
-          kind="inputText"
-          labelText="A11y label"
-          nameId={`${itemId}-label-a11y`}
-          placeholder="Leave empty to use visible label"
-          inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', labels)}
-          bind:value={labels.a11y}
-        />
+        {#if labels && !labels.visible}
+          <FormUnit
+            className="form-row"
+            kind="inputText"
+            labelText="A11y label"
+            nameId={`${itemId}-label-a11y`}
+            placeholder="Leave empty to use visible label"
+            inputWatchBlur={true}
+            on:saveSignal={() => updateField('labels', labels)}
+            bind:value={labels.a11y}
+          />
+        {/if}
       {/if}
     {/if}
   </span>

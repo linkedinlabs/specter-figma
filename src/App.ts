@@ -617,22 +617,27 @@ export default class App {
       let failedFrames = 0;
 
       topFrames.forEach((frame) => {
+        const currentFrame = frame  as FrameNode | ComponentNode;
         let xCoordinate = xCoordinateDefault;
         let masterFrame;
 
-        if (containsComponent(frame)) {
+        if (currentFrame.type !== 'COMPONENT' && containsComponent(frame)) { 
           figma.notify(`WARNING: Unable to create ${frame.name} master since it contains components.`);
           failedFrames++;
         } else {
-          masterFrame = figma.createComponent();
-          masterFrame.resizeWithoutConstraints(frame.width, frame.height);
-          masterFrame.x = frame.x;
-          masterFrame.y = frame.y;
-          masterFrame.layoutMode = "HORIZONTAL";
-          masterFrame.primaryAxisAlignItems = "CENTER";
-          masterFrame.counterAxisAlignItems = "CENTER";
-          masterFrame.appendChild(frame);
-          masterFrame.name = frame.name;
+          if (currentFrame.type === 'COMPONENT') {
+            masterFrame = frame;
+          } else {
+            masterFrame = figma.createComponent();
+            masterFrame.resizeWithoutConstraints(frame.width, frame.height);
+            masterFrame.x = frame.x;
+            masterFrame.y = frame.y;
+            masterFrame.layoutMode = "HORIZONTAL";
+            masterFrame.primaryAxisAlignItems = "CENTER";
+            masterFrame.counterAxisAlignItems = "CENTER";
+            masterFrame.appendChild(frame);
+            masterFrame.name = frame.name;
+          }
 
           // tktk: see if folks want any annotations cleared since they'll break
           // ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
@@ -672,7 +677,7 @@ export default class App {
         }
         yCoordinate += (frame.height + 200);
       });
-      
+
       if (failedFrames < topFrames.length) {
         figma.notify(`Success! Templates added to page '${specPage.name}'`);
       }
@@ -689,7 +694,7 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-    updateAnnotationColor(color: string) {
+  updateAnnotationColor(color: string) {
     const annotations = figma.currentPage.selection.filter((node) => {
       return node.type === 'FRAME' && node.name.includes('Annotation for');
     }) as Array<FrameNode>;
@@ -723,7 +728,7 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-    updateAnnotationDirection(direction: string) {
+  updateAnnotationDirection(direction: string) {
       const annotations = figma.currentPage.selection.filter((node) => {
         return node.type === 'FRAME' && node.parent.type === 'GROUP' && node.parent.name.includes('Annotations');
       }) as Array<FrameNode>;

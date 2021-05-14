@@ -882,18 +882,20 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
           val: ROLE_OPTS.find(opt => opt.value === role).text,
         },
         {
-          name: 'Visible label',
+          name: 'A11y visible',
           val: labels?.visible ? 'Yes' : 'No',
         },
-        {
-          name: 'A11y label',
-          val: getLegendLabelText(labels, 'a11y'),
-        },
       ];
+      if (labels && !labels.visible) {
+        fields.push({
+          name: 'A11y label',
+          val: labels.invisible ? `"${labels.invisible}"` : 'undefined',
+        });
+      }
     } else if (!role || role === 'no-role') {
       fields = [
         {
-          name: 'Visible label',
+          name: 'A11y visible',
           val: labels?.visible ? 'Yes' : 'No',
         }, {
           name: 'A11y label',
@@ -907,13 +909,13 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
         name: 'Heading level',
         val: (heading?.level !== 'no-level' && heading?.level) || 'n/a',
       }, {
-        name: 'Visible',
+        name: 'A11y visible',
         val: !heading || heading?.visible ? 'Yes' : 'No',
       },
     ];
     if (heading && !heading.visible) {
       fields.push({
-        name: 'Heading',
+        name: 'A11y label',
         val: heading.invisible ? `"${heading.invisible}"` : 'undefined',
       });
     }
