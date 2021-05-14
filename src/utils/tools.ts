@@ -744,11 +744,11 @@ const getOpenYCoordinate = (
  const getOpenXCoordinate = (
   page: PageNode,
 ) => {
-  let xCoordinate = 0;
+  let xCoordinate = 1000;
   const panels = page.children.filter((child) => child.name.includes('Panel'));
   
   if (panels.length == 2) {
-    xCoordinate = 1900;
+    xCoordinate = 2000;
   }
 
   return xCoordinate;

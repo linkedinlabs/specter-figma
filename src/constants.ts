@@ -552,6 +552,10 @@ const INSTRUCTION_COMPONENT_KEYS = {
   labelLegendHeader: '25cb65871b0a5a1723ae3f80034695b5a4dd1f2f',
   headingLegendHeader: 'a5b054fac5e4436528b7fc620e86577af07963a3',
   miscLegendHeader: 'cbd3f74d35de28312dacbe356feb04f443443a10',
+  keystopLegendTitle: 'b2e3bb01baf68cab2184cead95599bcc91b745df',
+  labelLegendTitle: 'aba413fb71dac7ee49380adea0db68163abb799a',
+  headingLegendTitle: '062b736a45c0eb5143dacb1b03050b0b44d4e842',
+  miscLegendTitle: '91868d243c678c78019191591d92b70855ac0e2d',
 };
 
 export {

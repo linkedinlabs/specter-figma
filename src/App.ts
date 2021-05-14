@@ -610,7 +610,7 @@ export default class App {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
       const specPage = getSpecPage(pageId, newPageName, includeInstructions);
-      const categories = ['MASTER', 'DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
+      const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
       const topFrames = new Crawler({ for: selection }).topFrames();
       let yCoordinate = getOpenYCoordinate(specPage);
       const xCoordinateDefault = getOpenXCoordinate(specPage);
@@ -618,64 +618,61 @@ export default class App {
 
       topFrames.forEach((frame) => {
         let xCoordinate = xCoordinateDefault;
-        categories.forEach((category) => {
-          let specFrame;
-          
-          if (category === 'MASTER') {
-            if (containsComponent(frame)) {
-              figma.notify(`WARNING: Unable to create ${frame.name} master since it contains components.`);
-              failedFrames++;
-            } else {
-              const frameClone = frame.clone();
-              specFrame = figma.createComponent();
-              specFrame.resizeWithoutConstraints(frame.width, frame.height);
-              specFrame.layoutMode = "HORIZONTAL";
-              specFrame.primaryAxisAlignItems = "CENTER";
-              specFrame.counterAxisAlignItems = "CENTER";
-              specFrame.appendChild(frameClone);
-              specFrame.name = `MASTER DESIGN - ${frame.name}`;
-              specFrame.x = xCoordinate;
-              specFrame.y = yCoordinate;
-              specPage.appendChild(specFrame);
-              xCoordinate += (frame.width + 200);
-            }
-          } else {
-            // tktk: remove all plugin data and annotation nodes?
-            const master = specPage.children.find(child => child.name === `MASTER DESIGN - ${frame.name}`);
-            if (!master) {
-              console.log('ERROR: No master found.');
-            } else {
-              specFrame = figma.createFrame();
-              specFrame.resizeWithoutConstraints(frame.width, frame.height)
-              const instance = master.createInstance();
-              specFrame.name = `${category.toUpperCase()} Spec - ${frame.name}`;
-              specFrame.x = xCoordinate;
-              specFrame.y = yCoordinate;
-              specFrame.layoutMode = 'HORIZONTAL';
-              specFrame.primaryAxisAlignItems = 'CENTER';
-              specFrame.counterAxisAlignItems = 'CENTER';
-              specFrame.appendChild(instance);
-              specFrame.layoutMode = 'NONE';
-              specPage.appendChild(specFrame);
-    
-              if (!category.includes('DS')) {
-                const painter = new Painter({
-                  for: specFrame.children[0],
-                  in: specPage,
-                  isMercadoMode: this.isMercadoMode,
-                });
-                const legendEntry = figma.createFrame();
-                legendEntry.resize(364, 1);
-                const legendType = category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType
-                painter.addEntryToLegend(legendEntry, legendType, includeInstructions);
-                xCoordinate += 400;
-              }
+        let masterFrame;
+
+        if (containsComponent(frame)) {
+          figma.notify(`WARNING: Unable to create ${frame.name} master since it contains components.`);
+          failedFrames++;
+        } else {
+          masterFrame = figma.createComponent();
+          masterFrame.resizeWithoutConstraints(frame.width, frame.height);
+          masterFrame.x = frame.x;
+          masterFrame.y = frame.y;
+          masterFrame.layoutMode = "HORIZONTAL";
+          masterFrame.primaryAxisAlignItems = "CENTER";
+          masterFrame.counterAxisAlignItems = "CENTER";
+          masterFrame.appendChild(frame);
+          masterFrame.name = frame.name;
+
+          // tktk: see if folks want any annotations cleared since they'll break
+          // ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
+          //   frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
+          // });
+          // frame.children.find(({type, name}) => type === 'GROUP' && name.includes('Specter'))?.remove();
+
+          categories.forEach((category) => {
+            let specFrame;
+            specFrame = figma.createFrame();
+            specFrame.resizeWithoutConstraints(frame.width, frame.height)
+            const instance = masterFrame.createInstance();
+            specFrame.name = `${category.toUpperCase()} Spec - ${frame.name}`;
+            specFrame.x = xCoordinate;
+            specFrame.y = yCoordinate;
+            specFrame.layoutMode = 'HORIZONTAL';
+            specFrame.primaryAxisAlignItems = 'CENTER';
+            specFrame.counterAxisAlignItems = 'CENTER';
+            specFrame.appendChild(instance);
+            specFrame.layoutMode = 'NONE';
+            specPage.appendChild(specFrame);
+  
+            if (!category.includes('DS')) {
+              const painter = new Painter({
+                for: specFrame.children[0],
+                in: specPage,
+                isMercadoMode: this.isMercadoMode,
+              });
+              const legendEntry = figma.createFrame();
+              legendEntry.resize(364, 1);
+              const legendType = category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType
+              painter.addEntryToLegend(legendEntry, legendType, includeInstructions);
+              xCoordinate += 400;
             }
             xCoordinate += (frame.width + 100);
-          }
-        });
-        yCoordinate += (frame.height + 150);
+          });
+        }
+        yCoordinate += (frame.height + 200);
       });
+      
       if (failedFrames < topFrames.length) {
         figma.notify(`Success! Templates added to page '${specPage.name}'`);
       }

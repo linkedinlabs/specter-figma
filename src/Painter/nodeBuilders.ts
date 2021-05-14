@@ -1021,8 +1021,8 @@ const buildLegend = (type: PluginStopType, includeInstructions?: boolean) => {
   legend.verticalPadding = 0;
   legend.horizontalPadding = 0;
 
-  // tktk: use includeInstructions flag for whether to include warning -- as variant?
-  const header = buildInstructionComponentInstance(`${type}LegendHeader`);
+  const headerType = !includeInstructions ? `${type}LegendTitle` : `${type}LegendHeader`;
+  const header = buildInstructionComponentInstance(headerType);
   header.name = 'Legend Header';
   legend.appendChild(header);
 
@@ -1811,10 +1811,11 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
  * @kind function
  * @name buildInstructionComponentInstance
  *
- * @returns {Object} The new instance to append to the new spec page.
+ * @returns {Object} The newinstance to append to the new spec page.
  *
  */
 const buildInstructionComponentInstance = (keyName: string) => {
+  console.log(keyName)
   const panel = figma.createFrame();
   panel.locked = true;
   figma.importComponentByKeyAsync(INSTRUCTION_COMPONENT_KEYS[keyName]).then(n => {

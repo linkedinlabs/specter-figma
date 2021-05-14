@@ -13,9 +13,11 @@
   const savedLabels = { ...labels };
 
   const updateField = (key, value) => {
-    const diff = key === 'role' ? value !== savedRole : deepCompare(value, savedLabels);
+    const changeDetected = key === 'role'
+      ? value !== savedRole
+      : deepCompare(value, savedLabels);
 
-    if (diff) {
+    if (changeDetected) {
       parent.postMessage({
         pluginMessage: {
           action: 'a11y-set-node-data',
