@@ -48,9 +48,24 @@ declare global {
     | 'keystop'
     | 'label'
     | 'heading'
+    | 'misc'
+    | 'spacing'
+    | 'style';
+
+  type PluginTextType = 
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'label'
+    | 'heading'
+    | 'misc'
     | 'spacing'
     | 'style'
-    | 'misc';
+    | 'legend'
+    | 'title'
+    | 'instruction'
+    | 'bullets';
 
   type PluginAriaLabels = {
     a11y: string,

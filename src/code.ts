@@ -42,9 +42,7 @@ const dispatcher = async (action: {
 }) => {
   const {
     payload,
-    // sessionKey,
     type,
-    // visual,
   } = action;
 
   // if the action is not visual, close the plugin after running
@@ -226,141 +224,8 @@ const main = async () => {
     return null;
   };
 
-  // ----- watch selection/page changes on the Figma level -------------------------------
-  //   --- we diff some params of the current selection to watch for object movement
-  // set up tracking data based on selection
-  /**
-   * @description A helper function. It takes an array of nodes and sets up an array
-   * of data to track (id, x/y, width/height, parent).
-   *
-   * @kind function
-   * @name setTrackingData
-   *
-   * @param {Array} selectedNodes An array of Figma nodes.
-   *
-   * @returns {Array} An array of tracking data.
-   */
-  // const setTrackingData = (selectedNodes: Array<SceneNode>): Array<{
-  //   id: string,
-  //   x: number,
-  //   y: number,
-  //   width: number,
-  //   height: number,
-  //   parent: {
-  //     id: string,
-  //   }
-  // }> => {
-  //   const tempTrackingData = [];
-  //   selectedNodes.forEach((selectedNode) => {
-  //     const {
-  //       height,
-  //       id,
-  //       parent,
-  //       width,
-  //       x,
-  //       y,
-  //     } = selectedNode;
-
-  //     const data: {
-  //       id: string,
-  //       x: number,
-  //       y: number,
-  //       width: number,
-  //       height: number,
-  //       parent: {
-  //         id: string,
-  //       }
-  //     } = {
-  //       id,
-  //       x,
-  //       y,
-  //       width,
-  //       height,
-  //       parent,
-  //     };
-
-  //     tempTrackingData.push(data);
-  //   });
-
-  //   return tempTrackingData;
-  // };
-
-
-  // set the initial timestamp; this is used as a global to update over time and prevent race cases
-  // let initialStamp = new Date().getTime();
-
-  /**
-   * @description Top-level selection-watching logic. This watcher periodically compares the
-   * position of all of the nodes in the current selection with the last measurement taken.
-   * If they are different, App.refreshGUI is called. Either way, a new, future comparison is
-   * set up. To prevent race cases, the watcher stops checking if a new selection is made at
-   * the Figma level, or if there has not been a change in several minutes.
-   *
-   * @kind function
-   * @name watchSelection
-   */
-  const watchSelection = (): void => {
-    // update immediately on a selection change
-    // App.refreshGUI(SESSION_KEY);
-    App.refreshGUI();
-
-    // // set the interval for each diff check
-    // const checkInternal = 50;
-
-    // // update/set the comparison timestamps
-    // initialStamp = new Date().getTime();
-    // const currentStamp = initialStamp;
-    // let lastChangeTime = initialStamp;
-
-    /**
-     * @description Compares two sets of tracking data and also evaluates the current comparison
-     * timestamps. If a difference is found in the tracking data, a UI refresh is called. If
-     * both conditions are met in the timestamp evaluation, a future check is set up.
-     *
-     * @kind function
-     * @name compareTrackingData
-     *
-     * @param {Array} dataset1 A set of tracking data to compare (array of nodes).
-     * @param {Array} dataset2 A set of tracking data to compare (array of nodes).
-     */
-    // const compareTrackingData = (dataset1, dataset2): void => {
-    //   // if a difference is found, refresh the UI and update the last change stamp
-    //   if (JSON.stringify(dataset1) !== JSON.stringify(dataset2)) {
-    //     lastChangeTime = new Date().getTime();
-    //     App.refreshGUI(true);
-    //   }
-
-    //   // set current time and time since last change
-    //   const currentTime = new Date().getTime();
-    //   const timeDifference = (currentTime - lastChangeTime);
-
-    //   // if the stamps match (i.e. they're from the latest selection watcher event) and
-    //   // the last change timeout has not been reached, trigger a new, future comparison event
-    //   if ((currentStamp === initialStamp) && (timeDifference < 120000)) {
-    //     setTimeout(() => {
-    //    const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
-    //       compareTrackingData(dataset2, newTrackingData);
-    //     }, checkInternal);
-    //   }
-    // };
-
-    // // set the initial tracking data
-    // const initialTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
-
-    // setTimeout(() => {
-    //   const newTrackingData = setTrackingData(figma.currentPage.selection as Array<SceneNode>);
-    //   compareTrackingData(initialTrackingData, newTrackingData);
-    // }, checkInternal);
-  };
-
-  // selection change watcher
-  figma.on('selectionchange', () => watchSelection());
-
-  // always trigger a refresh on the page change
-  figma.on('currentpagechange', () => {
-    // App.refreshGUI(SESSION_KEY);
-    App.refreshGUI(true);
-  });
+  figma.on('selectionchange', () => App.refreshGUI());
+  figma.on('currentpagechange', () => App.refreshGUI(true));
 };
 
 // run main as default

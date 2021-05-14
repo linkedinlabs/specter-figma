@@ -146,6 +146,12 @@ const cleanName = (name: string): string => {
       // take only the last segment of the name (after a “/”, if available)
       // ignore segments that begin with a “w” as-in “…Something w/ Icon”
       cleanedName = cleanedName.split(/(?:[^w|^\s])(\/)/).pop();
+      if (cleanedName.includes(' / ')) {
+        const [substring1, substring2] = cleanedName.split(' / ');
+        if (substring2?.includes(substring1)) {
+          cleanedName = substring2;
+        }
+      }
     } else {
       cleanedName = cleanedName.replace('☾ ', '');
       cleanedName = cleanedName.replace('☼ ', '');
@@ -177,7 +183,6 @@ const cleanName = (name: string): string => {
 const cleanColorName = (name: string): string => {
   let cleanedName = name;
   cleanedName = cleanedName.split(' / ').pop();
-  cleanedName = cleanedName.replace(/-/g, ' ');
   return cleanedName;
 };
 

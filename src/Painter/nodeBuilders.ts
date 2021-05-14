@@ -1,11 +1,9 @@
 import {
-  A11Y_CHECKLIST_TEXT,
   COLORS,
   DATA_KEYS,
+  INSTRUCTION_COMPONENT_KEYS,
   KEY_OPTS,
-  LEGEND_DEFINITIONS,
   ROLE_OPTS,
-  SPEC_INSTRUCTION_TEXT,
 } from '../constants';
 import { hexToDecimalRgb } from '../utils/tools';
 
@@ -337,19 +335,7 @@ const buildKeystopArrowIcon = (
  * @private
  */
 const buildText = (
-  type:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'misc'
-    | 'legend'
-    | 'spacing'
-    | 'style'
-    | 'title'
-    | 'instruction',
+  type: PluginTextType,
   color: { r: number, g: number, b: number },
   characters: string,
   isError?: boolean,
@@ -404,13 +390,14 @@ const buildText = (
     text.textAlignHorizontal = 'LEFT';
     text.fontSize = 22;
     text.fontName = { family: typefaceToUse.family, style: 'Black' };
-  } else if (type === 'instruction') {
+  } else if (['instruction', 'bullets'].includes(type)) {
     figma.loadFontAsync({ family: 'Roboto', style: 'Regular' }).then(() => {
       text.textAlignHorizontal = 'LEFT';
       text.fontSize = 16;
       text.fontName = { family: 'Roboto', style: 'Regular' };
       text.lineHeight = { value: 150, unit: 'PERCENT' };
-      text.paragraphSpacing = 15;
+      text.paragraphSpacing = type === 'bullets' ? 0 : 15;
+      text.paragraphIndent = type === 'bullets' ? 15 : 0;
     });
   }
   return text;
@@ -1013,62 +1000,10 @@ const buildLegendFieldNodes = (
 };
 
 /**
- * @description Builds the header for the legend with field definitions.
- *
- * @kind function
- * @name buildLegendHeader
- *
- * @param {string} type The stop type the legend pertains to.
- *
- * @returns {Object} Returns the legend header frame.
- */
-const buildLegendHeader = (type: PluginStopType) => {
-  let heading = 'Keyboard';
-  if (type === 'keystop') {
-    heading = 'Keyboard';
-  } else if (type === 'misc') {
-    heading = 'Misc';
-  } else {
-    heading = `${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-  }
-
-  const header = figma.createFrame();
-  header.name = 'Legend Header';
-  header.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
-  header.resize(363, 100);
-  header.layoutMode = 'VERTICAL';
-  header.verticalPadding = 10;
-  header.horizontalPadding = 12;
-
-  const title = buildText('title', hexToDecimalRgb('#517EC2'), `${heading} Legend`);
-  title.fontSize = 16;
-  title.locked = true;
-  header.appendChild(title);
-
-  const intro = buildText('custom', hexToDecimalRgb('#333333'), `Legend entries will be automatically added and updated below as you annotate your design using the ${heading} tab.`);
-  intro.resize(350, 40);
-  intro.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#737373') }];
-  intro.textAlignHorizontal = 'LEFT';
-  intro.locked = true;
-  header.appendChild(intro);
-
-  const fields = buildLegendFieldNodes(type, {}, LEGEND_DEFINITIONS[type]);
-  fields.forEach(field => header.appendChild(field));
-
-  const warning = buildText('custom', hexToDecimalRgb('#BE4841'), 'WARNING! Do not make edits to the legend directly or you will lose them. Please update in the plugin window only.');
-  warning.textAlignHorizontal = 'LEFT';
-  warning.resize(350, 40);
-  warning.locked = true;
-  header.appendChild(warning);
-
-  return header;
-};
-
-/**
  * @description Builds the initial legend frame for annotation legend items.
  *
  * @kind function
- * @name buildLabelLegend
+ * @name buildLegend
  *
  * @param {string} type The type of the legend we're building.
  *
@@ -1086,10 +1021,10 @@ const buildLegend = (type: PluginStopType, includeInstructions?: boolean) => {
   legend.verticalPadding = 0;
   legend.horizontalPadding = 0;
 
-  if (includeInstructions !== false) {
-    const header = buildLegendHeader(type);
-    legend.appendChild(header);
-  }
+  // tktk: use includeInstructions flag for whether to include warning -- as variant?
+  const header = buildInstructionComponentInstance(`${type}LegendHeader`);
+  header.name = 'Legend Header';
+  legend.appendChild(header);
 
   return legend;
 };
@@ -1815,242 +1750,86 @@ const updateLegendEntry = (
 };
 
 /**
- * @description Edits the values of the legend entry when updated in the UI.
+ * @description Updates the pointer of annotations to a specified direction.
  *
  * @kind function
- * @name buildA11yChecklist
+ * @name setPointerDirection
  *
- * @param {Object} typefaceToUse The preloaded font face to use.
+ * @param {string} direction The direction the annotation should point.
+ * @param {Object} nodes The annotation nodes to update pointers within.
  *
- * @returns {Object} The entire checklist frame to append to the instruction panel.
+ * @returns {undefined}
  *
  */
-const buildA11yChecklist = (typefaceToUse) => {
-  const checklistWrapper = figma.createFrame();
-  checklistWrapper.name = 'Accessibility Checklist';
-  checklistWrapper.layoutMode = 'VERTICAL';
-  checklistWrapper.fills = [];
-  checklistWrapper.resize(920, 1200);
+const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
+  nodes.forEach((node) => {
+    const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
+    const color = pointer.fills[0].color;
+    pointer && pointer.remove();
 
-  const checklistTitle = buildText('title', hexToDecimalRgb('#517EC2'), A11Y_CHECKLIST_TEXT.title);
-  checklistTitle.fontSize = 26;
-  checklistTitle.fontName = { ...typefaceToUse, style: 'Black' };
-  checklistWrapper.appendChild(checklistTitle);
+    const diamond = figma.createPolygon();
+    diamond.name = 'Diamond';
+    diamond.resize(10, 6);
+    diamond.rotation = 180;
+    diamond.pointCount = 3;
+    diamond.fills = [{
+      type: 'SOLID',
+      color,
+    }];
+    const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
+    const vertical = 'CENTER' as ConstraintType;
 
-  const checklistIntro = buildText('instruction', hexToDecimalRgb('#656565'), A11Y_CHECKLIST_TEXT.intro);
-  checklistIntro.resize(750, 100);
-  checklistIntro.locked = true;
-  checklistWrapper.appendChild(checklistIntro);
+    if (['left', 'right'].includes(direction)) {
+      node.layoutMode = 'HORIZONTAL';
+  
+      if (direction === 'right') {
+        diamond.rotation = 270;
+        node.appendChild(diamond);
+      } else {
+        diamond.rotation = 90;
+        node.insertChild(0, diamond);
+      }
+    } else {
+      node.layoutMode = 'VERTICAL';
 
-  const frame = figma.createFrame();
-  frame.resize(800, 1500);
-  frame.fills = [{
-    type: 'SOLID',
-    color: { r: 1, g: 1, b: 1 },
-  }];
-  frame.verticalPadding = 20;
-  frame.horizontalPadding = 30;
-  frame.layoutAlign = 'STRETCH';
-  frame.layoutMode = 'VERTICAL';
-  frame.primaryAxisAlignItems = 'SPACE_BETWEEN';
-
-  const columnWrapper = figma.createFrame();
-  columnWrapper.layoutMode = 'HORIZONTAL';
-
-  const leftColumn = figma.createFrame();
-  leftColumn.name = 'Bullets';
-  leftColumn.resize(580, 800);
-  leftColumn.layoutMode = 'VERTICAL';
-
-  A11Y_CHECKLIST_TEXT.sections.forEach((section) => {
-    const heading = buildText('custom', hexToDecimalRgb('#000000'), section.heading);
-    heading.fontSize = 16;
-    heading.textAlignHorizontal = 'LEFT';
-    heading.lineHeight = { value: 300, unit: 'PERCENT' };
-
-    const list = buildText('custom', hexToDecimalRgb('#000000'), `${section.text}\n`);
-    list.fontSize = 15;
-    list.fontName = { ...typefaceToUse, style: 'Regular' };
-    list.textAlignHorizontal = 'LEFT';
-    list.lineHeight = { value: 150, unit: 'PERCENT' };
-
-    leftColumn.appendChild(heading);
-    leftColumn.appendChild(list);
-    leftColumn.layoutGrow = 0;
-    leftColumn.primaryAxisSizingMode = 'AUTO';
+      if (direction === 'down') {
+        diamond.rotation = 180;
+        node.appendChild(diamond);
+      } else {
+        diamond.rotation = 0;
+        node.insertChild(0, diamond);
+      }
+    }
+    node.constraints = { horizontal, vertical };
+    figma.flatten([diamond]);
   });
-
-  columnWrapper.appendChild(leftColumn);
-
-  const rightColumn = figma.createFrame();
-  rightColumn.resize(75, 800);
-
-  columnWrapper.appendChild(rightColumn);
-  frame.appendChild(columnWrapper);
-  columnWrapper.layoutMode = 'HORIZONTAL';
-  columnWrapper.layoutAlign = 'INHERIT';
-  columnWrapper.primaryAxisSizingMode = 'AUTO';
-  columnWrapper.counterAxisSizingMode = 'AUTO';
-  frame.locked = true;
-
-  checklistWrapper.appendChild(frame);
-
-  return checklistWrapper;
 };
 
 /**
- * @description Builds the panel to the left side of new spec pages and appends it to the page.
+ * @description Imports a library component and builds an instance from it.
  *
  * @kind function
- * @name buildInstructionPanel
+ * @name buildInstructionComponentInstance
  *
- * @returns {Object} The entire instructions panel frame to append to the new spec page.
+ * @returns {Object} The new instance to append to the new spec page.
  *
  */
-const buildInstructionPanel = () => {
-  const black = hexToDecimalRgb('#000000');
-  const typefaceToUse: FontName = JSON.parse(figma.currentPage.getPluginData('typefaceToUse'));
+const buildInstructionComponentInstance = (keyName: string) => {
   const panel = figma.createFrame();
-  panel.name = 'Spec Instruction Panel';
-  panel.resize(1000, 3000);
-  panel.fills = [{ type: 'SOLID', color: hexToDecimalRgb('#F3F3F3') }];
-  panel.strokes = [{ type: 'SOLID', color: hexToDecimalRgb('#A5A5A5') }];
-  panel.layoutMode = 'VERTICAL';
-  panel.verticalPadding = 40;
-  panel.horizontalPadding = 40;
-  panel.itemSpacing = 60;
-
-  const instructionsWrapper = figma.createFrame();
-  instructionsWrapper.name = 'Instructions';
-  instructionsWrapper.resize(920, 2000);
-  instructionsWrapper.layoutMode = 'VERTICAL';
-  instructionsWrapper.itemSpacing = 30;
-  instructionsWrapper.fills = [];
-
-  const title = buildText('title', hexToDecimalRgb('#517EC2'), 'Spec Instructions');
-  title.fontSize = 38;
-  title.fontName = { ...typefaceToUse, style: 'Black' };
-  title.locked = true;
-  instructionsWrapper.appendChild(title);
-
-  const intro = buildText('instruction', hexToDecimalRgb('#656565'), SPEC_INSTRUCTION_TEXT.intro);
-  intro.resize(850, 220);
-  intro.locked = true;
-  instructionsWrapper.appendChild(intro);
-
-  // Speccing instructions
-  SPEC_INSTRUCTION_TEXT.sections.forEach((section) => {
-    const {
-      heading,
-      text,
-      annotationText,
-      annotationType,
-    } = section;
-    const sectionFrame = figma.createFrame();
-    sectionFrame.layoutMode = 'VERTICAL';
-    sectionFrame.verticalPadding = 30;
-    sectionFrame.horizontalPadding = 30;
-    sectionFrame.cornerRadius = 10;
-    sectionFrame.itemSpacing = 20;
-    sectionFrame.resize(920, sectionFrame.height);
-    sectionFrame.fills = [{
-      type: 'SOLID',
-      color: hexToDecimalRgb('#FDFDFD'),
-    }];
-
-    const sectionTitle = buildText('title', hexToDecimalRgb('#4586E8'), heading);
-    sectionTitle.fontSize = 24;
-    sectionFrame.appendChild(sectionTitle);
-
-    const bodyWrapper = figma.createFrame();
-    bodyWrapper.name = 'Body Wrapper';
-    bodyWrapper.layoutMode = 'HORIZONTAL';
-    bodyWrapper.layoutGrow = 0;
-    bodyWrapper.fills = [];
-    bodyWrapper.primaryAxisSizingMode = 'FIXED';
-    bodyWrapper.counterAxisSizingMode = 'AUTO';
-    bodyWrapper.resize(860, bodyWrapper.height);
-
-    const body = buildText('instruction', black, text);
-    body.resize(710, body.height);
-    bodyWrapper.appendChild(body);
-
-    const imageWrapper = figma.createFrame();
-    imageWrapper.layoutAlign = 'STRETCH';
-    imageWrapper.layoutGrow = 1;
-    imageWrapper.primaryAxisSizingMode = 'FIXED';
-    imageWrapper.counterAxisSizingMode = 'FIXED';
-    imageWrapper.layoutMode = 'VERTICAL';
-    imageWrapper.primaryAxisAlignItems = 'CENTER';
-    imageWrapper.counterAxisAlignItems = 'CENTER';
-    imageWrapper.fills = [];
-    bodyWrapper.appendChild(imageWrapper);
-
-    const mainText = annotationText || '1';
-    const image = buildAnnotation({ mainText, type: annotationType as PluginAnnotationType });
-    image.text?.resize(image.text.width + 5, image.text.height);
-    const positionedImage = positionAnnotation(imageWrapper, 'test', image, {
-      frameWidth: 120,
-      frameHeight: 50,
-      width: image.rectangle.width,
-      height: 100,
-      x: 0,
-      y: 0,
-    }, 'keystop');
-    if (['labels', 'headings', 'misc'].includes(heading.toLowerCase())) {
-      positionedImage.rescale(1.25);
-    }
-    imageWrapper.appendChild(positionedImage);
-
-    sectionFrame.appendChild(bodyWrapper);
-    sectionFrame.locked = true;
-
-    instructionsWrapper.appendChild(sectionFrame);
+  panel.locked = true;
+  figma.importComponentByKeyAsync(INSTRUCTION_COMPONENT_KEYS[keyName]).then(n => {
+    let instance = n.createInstance();
+    panel.resizeWithoutConstraints(instance.width, instance.height);
+    panel.appendChild(instance);
   });
-  panel.appendChild(instructionsWrapper);
-
-  // Checklist
-  panel.appendChild(buildA11yChecklist(typefaceToUse));
-
-  // Notes
-  const notesWrapper = figma.createFrame();
-  notesWrapper.name = 'Design Notes';
-  notesWrapper.fills = [];
-  notesWrapper.layoutMode = 'VERTICAL';
-  notesWrapper.resize(920, 570);
-
-  const notesTitle = buildText('title', hexToDecimalRgb('#517EC2'), 'Designer Notes\n');
-  notesTitle.fontSize = 26;
-  notesTitle.fontName = { ...typefaceToUse, style: 'Black' };
-  notesWrapper.appendChild(notesTitle);
-
-  const notesFrame = figma.createFrame();
-  notesFrame.layoutMode = 'VERTICAL';
-  notesFrame.resize(920, 500);
-  notesFrame.cornerRadius = 5;
-  notesFrame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-  notesFrame.verticalPadding = 20;
-  notesFrame.horizontalPadding = 20;
-
-  const notes = buildText('custom', black, 'Enter miscellaneous notes here...');
-  notes.textAlignHorizontal = 'LEFT';
-  notes.textAlignVertical = 'TOP';
-  notes.fontSize = 18;
-  notes.resize(900, 500);
-  notesFrame.appendChild(notes);
-  notesWrapper.appendChild(notesFrame);
-
-  panel.appendChild(notesWrapper);
-
   return panel;
 };
 
 export {
-  buildA11yChecklist,
   buildAnnotation,
   buildAuxAnnotation,
   buildBoundingBox,
-  buildInstructionPanel,
+  buildInstructionComponentInstance,
   buildKeystopArrowIcon,
   buildKeystopIcon,
   buildLegend,
@@ -2063,6 +1842,7 @@ export {
   positionAnnotation,
   positionLegend,
   refreshLegend,
+  setPointerDirection,
   updateAnnotationNum,
   updateLegendEntry,
 };

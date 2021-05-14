@@ -45,6 +45,29 @@ const pollWithPromise = (
 };
 
 /**
+ * @description A helper function that checks if there's a component type within a node and its descendents.
+ *
+ * @kind function
+ * @name containsComponent
+ *
+ * @param {Array} node The SceneNode to be checked for a component type.
+ *
+ * @returns {boolean}
+ */
+const containsComponent = (node) => {
+  if(['COMPONENT', 'COMPONENT_SET'].includes(node.type)){
+    return true;
+  } else if (node.children != null) {
+    var result = null;
+    for(let i = 0; result == null && i < node.children.length; i++) {
+      result = containsComponent(node.children[i]);
+    }
+    return result;
+  }
+  return null;
+}
+
+/**
  * @description A reusable helper function to take an array and check if an item exists
  * based on a `key`/`value` pair.
  *
@@ -691,11 +714,11 @@ const getOpenYCoordinate = (
   page: PageNode,
 ) => {
   let hasExistingFrames = false;
-  let yCoordinate = 20;
+  let yCoordinate = 0;
 
   page.children.forEach((child) => {
     const bottomLeftCorner = child.y + child.height;
-    if (!child.name.includes('Instruction') && bottomLeftCorner > yCoordinate) {
+    if (!child.name.includes('Panel') && bottomLeftCorner > yCoordinate) {
       hasExistingFrames = true;
       yCoordinate = bottomLeftCorner;
     }
@@ -706,6 +729,29 @@ const getOpenYCoordinate = (
   }
 
   return yCoordinate;
+};
+
+/**
+ * @description Finds the y coordinate beneath all existing page children.
+ *
+ * @kind function
+ * @name getOpenYCoordinate
+ *
+ * @param {Object} page A PageNode object to find open vertical space in.
+ *
+ * @returns {Object} The y coordinate that is open for more content.
+ */
+ const getOpenXCoordinate = (
+  page: PageNode,
+) => {
+  let xCoordinate = 0;
+  const panels = page.children.filter((child) => child.name.includes('Panel'));
+  
+  if (panels.length == 2) {
+    xCoordinate = 1900;
+  }
+
+  return xCoordinate;
 };
 
 /**
@@ -941,9 +987,11 @@ export {
   asyncForEach,
   awaitUIReadiness,
   compareArrays,
+  containsComponent,
   deepCompare,
   existsInArray,
   findTopFrame,
+  getOpenXCoordinate,
   getOpenYCoordinate,
   getNodeSettings,
   getPeerPluginData,

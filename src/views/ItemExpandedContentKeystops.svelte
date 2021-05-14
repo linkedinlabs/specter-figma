@@ -23,13 +23,15 @@
   }, []);
 
   const updateKeys = (action, value) => {
+    const changeDetected = compareArrays(keys, savedKeys);
+
     if (action === 'delete') {
       keys = keys.filter(key => key !== value);
     } else if (action === 'add' && ![...keys, 'no-key'].includes(value)) {
       keys = [...keys, value];
     }
 
-    if (compareArrays(keys, savedKeys)) {
+    if (changeDetected) {
       parent.postMessage({
         pluginMessage: {
           action: 'a11y-set-node-data',

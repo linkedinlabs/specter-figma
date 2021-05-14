@@ -6,7 +6,7 @@ import {
   updateArray,
 } from './tools';
 import Crawler from '../Crawler';
-import { buildInstructionPanel } from '../Painter/nodeBuilders';
+import { buildInstructionComponentInstance } from '../Painter/nodeBuilders';
 
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
@@ -86,6 +86,7 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
  */
 const getSpecPage = (specPageId?: string, newPageName?: string, includeInstructions?: boolean) => {
   let specPage;
+  let xCoordinate = 0;
 
   if (specPageId) {
     specPage = figma.root.children.find(child => child.id === specPageId);
@@ -93,9 +94,15 @@ const getSpecPage = (specPageId?: string, newPageName?: string, includeInstructi
     specPage = figma.createPage();
     specPage.name = newPageName;
     if (includeInstructions) {
-      const instructionPanel = buildInstructionPanel();
+      const instructionPanel = buildInstructionComponentInstance('instructionPanel');
+      instructionPanel.name = 'Spec Instruction Panel';
       specPage.appendChild(instructionPanel);
+      xCoordinate = 940;
     }
+    const notesPanel = buildInstructionComponentInstance('notesPanel');
+    notesPanel.name = 'Spec Notes Panel';
+    specPage.appendChild(notesPanel);
+    notesPanel.x = xCoordinate;
   }
 
   return specPage;
