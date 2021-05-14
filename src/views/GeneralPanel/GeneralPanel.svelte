@@ -67,12 +67,26 @@
           action="show-page-input"
           text="Generate Spec Template"
         >
-        <svg viewBox="0 0 21 21" width="21" height="21">
-          <style>
-            .icons-generate { fill: #000000; } 
-          </style>
-          <path id="Layer 7" class="icons-generate" d="M9 6L13.5 6L13.5 10.88C13.5 11.19 13.61 11.45 13.83 11.67C14.05 11.89 14.31 12 14.62 12L19.5 12L19.5 19.5L9 19.5L9 6ZM11.89 2.89C11.81 2.96 11.73 3 11.62 3L3.37 3C3.27 3 3.19 2.96 3.11 2.89C3.04 2.81 3 2.73 3 2.63L3 1.88C3 1.77 3.04 1.69 3.11 1.61C3.19 1.54 3.27 1.5 3.37 1.5L11.62 1.5C11.73 1.5 11.81 1.54 11.89 1.61C11.96 1.69 12 1.77 12 1.88L12 2.63C12 2.73 11.96 2.81 11.89 2.89ZM15 7L18.5 10.5L15 10.5L15 7ZM20.77 10.97C20.61 10.59 20.42 10.3 20.2 10.08L15.42 5.3C15.3 5.18 15.16 5.07 15 4.97L15 1.12C15 0.81 14.89 0.55 14.67 0.33C14.45 0.11 14.19 0 13.87 0L1.12 0C0.81 0 0.55 0.11 0.33 0.33C0.11 0.55 0 0.81 0 1.12L0 16.88C0 17.19 0.11 17.45 0.33 17.67C0.55 17.89 0.81 18 1.12 18L7.5 18L7.5 19.88C7.5 20.19 7.61 20.45 7.83 20.67C8.05 20.89 8.31 21 8.62 21L19.88 21C20.19 21 20.45 20.89 20.67 20.67C20.89 20.45 21 20.19 21 19.88L21 12C21 11.69 20.92 11.34 20.77 10.97Z" />
-        </svg>
+        <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="14" y="8" width="6" height="2" fill="black"/>
+          <rect x="16" y="6" width="2" height="6" fill="black"/>
+          <rect width="2" height="16" fill="black"/>
+          <rect x="2" y="2" width="10" height="14" fill="#D5ECFF"/>
+          <rect x="22" y="4" width="2" height="2" fill="black"/>
+          <rect x="22" y="8" width="2" height="2" fill="black"/>
+          <rect x="22" y="12" width="2" height="2" fill="black"/>
+          <rect y="16" width="2" height="2" fill="black"/>
+          <rect x="2" width="8" height="2" fill="black"/>
+          <rect x="2" y="16" width="8" height="2" fill="black"/>
+          <rect x="10" width="2" height="2" fill="black"/>
+          <rect x="10" y="16" width="2" height="2" fill="black"/>
+          <rect x="14" width="2" height="2" fill="black"/>
+          <rect x="14" y="16" width="2" height="2" fill="black"/>
+          <rect x="18" width="2" height="2" fill="black"/>
+          <rect x="22" width="2" height="2" fill="black"/>
+          <rect x="18" y="16" width="2" height="2" fill="black"/>
+          <rect x="22" y="16" width="2" height="2" fill="black"/>
+          </svg>
         </ButtonAction>
       </li>
       <li>
