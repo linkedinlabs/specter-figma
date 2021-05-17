@@ -511,7 +511,7 @@ const getStopData = (
     role: 'no-role',
     labels: {
       a11y: '',
-      visible: false,
+      visible: true,
       alt: '',
     },
     heading: {
@@ -1574,7 +1574,6 @@ export default class App {
    */
   static async refreshGUI(runDiff?: boolean) {
     const { messenger, page, selection } = assemble(figma);
-    console.log(selection)
     const specPages = getSpecPageList(figma.root.children);
 
     // retrieve existing options

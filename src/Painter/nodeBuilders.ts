@@ -825,7 +825,8 @@ const buildBoundingBox = (position: {
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
 const getLegendLabelText = (labels: PluginAriaLabels, labelName: string) => {
-  const { visible, alt, a11y } = labels || {};
+  console.log('legend labels: ', labels)
+  const { visible, alt, a11y } = labels || {visible: true};
   if (labelName === 'alt') {
     return alt ? `"${alt}"` : 'undefined';
   }
@@ -854,6 +855,8 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
     misc,
     keys,
   } = data;
+
+  console.log(data)
   let fields;
 
   if (type === 'label') {
@@ -882,21 +885,19 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
           val: ROLE_OPTS.find(opt => opt.value === role).text,
         },
         {
-          name: 'A11y visible',
-          val: labels?.visible ? 'Yes' : 'No',
+          name: 'Visible text',
+          val: !labels || labels?.visible ? 'Yes' : 'No',
+        },
+        {
+          name: 'A11y label',
+          val: getLegendLabelText(labels, 'a11y'),
         },
       ];
-      if (labels && !labels.visible) {
-        fields.push({
-          name: 'A11y label',
-          val: labels.invisible ? `"${labels.invisible}"` : 'undefined',
-        });
-      }
     } else if (!role || role === 'no-role') {
       fields = [
         {
-          name: 'A11y visible',
-          val: labels?.visible ? 'Yes' : 'No',
+          name: 'Visible text',
+          val: !labels || labels?.visible ? 'Yes' : 'No',
         }, {
           name: 'A11y label',
           val: getLegendLabelText(labels, 'a11y'),
@@ -909,7 +910,7 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
         name: 'Heading level',
         val: (heading?.level !== 'no-level' && heading?.level) || 'n/a',
       }, {
-        name: 'A11y visible',
+        name: 'Visible text',
         val: !heading || heading?.visible ? 'Yes' : 'No',
       },
     ];
@@ -1111,10 +1112,10 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
   legendItem.counterAxisAlignItems = 'MIN';
   legendItem.layoutAlign = 'STRETCH';
   legendItem.layoutGrow = 0;
-  legendItem.paddingLeft = 15;
-  legendItem.paddingRight = 15;
-  legendItem.paddingTop = 15;
-  legendItem.paddingBottom = 15;
+  legendItem.paddingLeft = 10;
+  legendItem.paddingRight = 10;
+  legendItem.paddingTop = 6;
+  legendItem.paddingBottom = 6;
   legendItem.itemSpacing = 0;
 
   const legendData: FrameNode = figma.createFrame();
@@ -1133,7 +1134,7 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
   legendData.topRightRadius = 6;
   legendData.bottomRightRadius = 6;
   legendData.bottomLeftRadius = 6;
-  legendData.resize(300, legendData.height);
+  legendData.resize(320, legendData.height);
   legendData.strokes = [{ type: 'SOLID', color: hexToDecimalRgb(COLORS[type]) }];
   legendData.strokeWeight = 2;
 

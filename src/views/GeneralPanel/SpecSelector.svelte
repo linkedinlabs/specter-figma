@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
+  import ExpandCollapse from '../forms-controls/ExpandCollapse';
   
   export let specPages = [];
   
@@ -99,6 +100,7 @@
       <p class="warning-msg">Warning: Page name must include 'SPEC ' to be included in the options above in future.</p>
     {/if}
   {/if}
+  <ExpandCollapse name='Advanced options'/>
   <p class="form-actions">
     <button
       on:click={() => dispatch('handleAction', 'close')}

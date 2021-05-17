@@ -60,24 +60,24 @@
   {#each fields as field}
   <span class="form-element-holder inline">
     <FormUnit
-    className="form-row slim light"
-    kind="inputText"
-    nameId={`${itemId}-misc-name-${field.name}`}
-    placeholder="Name"
-    hideLabel={true}
-    inputWatchBlur={true}
-    on:saveSignal={() => updateField(fields)}
-    bind:value={field.name}
+      className="form-row slim light"
+      kind="inputText"
+      nameId={`${itemId}-misc-name-${field.name}`}
+      placeholder="Name"
+      hideLabel={true}
+      inputWatchBlur={true}
+      on:saveSignal={() => updateField(fields)}
+      bind:value={field.name}
     />
     <FormUnit
-    className="form-row"
-    kind="inputText"
-    nameId={`${itemId}-misc-val-${field.name + field.val}`}
-    placeholder="Value"
-    hideLabel={true}
-    inputWatchBlur={true}
-    on:saveSignal={() => updateField(fields)}
-    bind:value={field.val}
+      className="form-row"
+      kind="inputText"
+      nameId={`${itemId}-misc-val-${field.name + field.val}`}
+      placeholder="Value"
+      hideLabel={true}
+      inputWatchBlur={true}
+      on:saveSignal={() => updateField(fields)}
+      bind:value={field.val}
     />
     <ButtonRemove
       on:handleUpdate={() => updateField(fields.filter(({ name }) => name !== field.name))}

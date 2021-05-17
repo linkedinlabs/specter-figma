@@ -488,6 +488,11 @@ const ROLE_OPTS = [
     disabled: false,
   },
   {
+    value: 'group',
+    text: 'Group',
+    disabled: false,
+  },
+  {
     value: 'tablist',
     text: 'Tab list',
     disabled: false,

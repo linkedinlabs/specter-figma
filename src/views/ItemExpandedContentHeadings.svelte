@@ -47,7 +47,7 @@
     <FormUnit
       className="form-row"
       kind="inputSwitch"
-      labelText="A11y visible"
+      labelText="Visible text"
       nameId={`${itemId}-heading-visible`}
       inputWatchBlur={true}
       on:saveSignal={() => updateHeading(heading)}

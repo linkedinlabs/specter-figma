@@ -15,7 +15,7 @@
   const updateField = (key, value) => {
     const changeDetected = key === 'role'
       ? value !== savedRole
-      : deepCompare(value, savedLabels);
+      : deepCompare(savedLabels, value);
 
     if (changeDetected) {
       parent.postMessage({
@@ -67,25 +67,23 @@
         <FormUnit
           className="form-row"
           kind="inputSwitch"
-          labelText="A11y visible"
+          labelText="Visible text"
           nameId={`${itemId}-label-visible`}
           placeholder="Leave empty to use a11y label"
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.visible}
         />
-        {#if labels && !labels.visible}
-          <FormUnit
-            className="form-row"
-            kind="inputText"
-            labelText="A11y label"
-            nameId={`${itemId}-label-a11y`}
-            placeholder="Leave empty to use visible label"
-            inputWatchBlur={true}
-            on:saveSignal={() => updateField('labels', labels)}
-            bind:value={labels.a11y}
-          />
-        {/if}
+        <FormUnit
+          className="form-row"
+          kind="inputText"
+          labelText="A11y label"
+          nameId={`${itemId}-label-a11y`}
+          placeholder="Leave empty to use visible text"
+          inputWatchBlur={true}
+          on:saveSignal={() => updateField('labels', labels)}
+          bind:value={labels.a11y}
+        />
       {/if}
     {/if}
   </span>
