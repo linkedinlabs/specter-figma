@@ -19,6 +19,7 @@
       disabled: false,
     },
   ];
+  console.log(value)
 
   // state
   let isMenuOpen = false;
