@@ -12,6 +12,7 @@ const appProps: {
   isUserInput: boolean,
   items: Array<PluginViewObject>,
   specPages: Array<{name: string, id: string}>,
+  lockedAnnotations: boolean,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -21,6 +22,7 @@ const appProps: {
   isUserInput: false,
   items: null,
   specPages: [],
+  lockedAnnotations: true,
   userInputValue: null,
   viewContext: null,
 };
@@ -131,6 +133,7 @@ const watchIncomingMessages = (): void => {
             isMercadoMode,
             items,
             specPages,
+            lockedAnnotations,
             sessionKey,
           } = payload;
 
@@ -138,6 +141,7 @@ const watchIncomingMessages = (): void => {
           app.isMercadoMode = isMercadoMode;
           app.items = items;
           app.specPages = specPages;
+          app.lockedAnnotations = lockedAnnotations;
           app.newSessionKey = sessionKey;
           break;
         }

@@ -7,6 +7,7 @@ import {
 } from './tools';
 import Crawler from '../Crawler';
 import { buildInstructionComponentInstance } from '../Painter/nodeBuilders';
+import { group } from 'console';
 
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
@@ -322,12 +323,27 @@ const getSpecPageList = (pages) => {
   return specPages;
 };
 
+
+const getSpecterGroups = (page) => {
+  let specterGroups = [];
+  const frames = page.children.filter(({ type }) => type === 'FRAME') as Array<FrameNode>;
+
+  frames.forEach((el) => {
+    const group = el.findChild(({ type, name }) => type === 'GROUP' && name.includes('Specter'));
+    if (group) {
+      specterGroups.push(group);
+    }
+  });
+  return specterGroups;
+}
+
 export {
   findParentInstance,
+  findTopComponent,
   getLegendFrame,
   getSelectedAnnotationItems,
   getSpecPage,
   getSpecPageList,
-  findTopComponent,
   getOrderedStopNodes,
+  getSpecterGroups,
 };

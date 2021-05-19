@@ -7,7 +7,7 @@
   } from './stores';
   import AccessibilityBase from './AccessibilityBase';
   import InfoPanel from './InfoPanel';
-  import ButtonInfoTrigger from './forms-controls/ButtonInfoTrigger';
+  import FooterBar from './forms-controls/FooterBar';
   import FontPreload from './FontPreload';
   import GeneralPanel from './GeneralPanel/GeneralPanel';
   import SceneNavigator from './SceneNavigator';
@@ -21,6 +21,7 @@
   export let isUserInput = false;
   export let isInfoPanel = false;
   export let specPages = [];
+  export let lockedAnnotations = true;
   export let items;
   export let newSessionKey = null;
   export let userInputValue = null;
@@ -103,9 +104,10 @@
     <div class="transition-mask"></div>
 
     {#if !isUserInput && !inputPage}
-      <ButtonInfoTrigger
+      <FooterBar
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         isInfoPanel={isInfoPanel}
+        lockedAnnotations={lockedAnnotations}
       />
     {/if}
 

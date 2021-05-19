@@ -1,0 +1,25 @@
+.expand-collapse-container {
+  #{$all-buttons} {
+    &.item-toggle {
+      @include button-icon(
+        $wl-action-secondary-accent,
+        16,
+        $wl-action-tertiary-accent,
+      );
+      width: em(32);
+      height: em(32);
+  
+      // keep expanded toggle visible
+      &.action-open-close {
+        transform: rotate(-90deg);
+  
+        &.open {
+          transform: rotate(0);
+        }
+      }
+      .text {
+        @include hide-visually;
+      }
+    }
+  }
+}

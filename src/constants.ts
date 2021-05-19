@@ -279,23 +279,23 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   accessibilityDefault: {
     width: 360,
-    height: 180,
+    height: 280,
   },
   default: {
     width: 360,
-    height: 318,
+    height: 300,
   },
   input: {
     width: 440,
     height: 152,
   },
   info: {
-    width: 200,
+    width: 360,
     height: 324,
   },
   mercadoDefault: {
     width: 360,
-    height: 230,
+    height: 360,
   },
 };
 

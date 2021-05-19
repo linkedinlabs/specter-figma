@@ -13,10 +13,9 @@
   /* components/figma-switch */
 </style>
 
-<span class="switch">
+<span class="switch" on:click={() => dispatch('saveSignal')}>
   <input
-    bind:checked={value}
-    on:change={() => dispatch('saveSignal')}
+    checked={value}
     class="switch__toggle"
     disabled={disabled}
     id={nameId}
@@ -28,7 +27,7 @@
     for={nameId}
   >
     {#if labelText}
-      {labelText}
+      <span class="label-text">{labelText}</span>
     {/if} 
   </label>
 </span>

@@ -9,6 +9,7 @@ import {
   getSelectedAnnotationItems,
   getSpecPage,
   getSpecPageList,
+  getSpecterGroups,
 } from './utils/nodeGetters';
 import {
   deepCompare,
@@ -31,6 +32,7 @@ import {
   updateLegendEntry,
   setPointerDirection,
 } from './Painter/nodeBuilders';
+import app from './GUI';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -320,6 +322,7 @@ const refreshAnnotations = (
       shouldTerminate: false,
       terminatePlugin: false,
       specPages: [],
+      lockedAnnotations: false,
     });
 
     if (!node || (frame && frame.id !== trackingEntry.topFrameId)) {
@@ -562,17 +565,20 @@ export default class App {
   shouldTerminate: boolean;
   terminatePlugin: Function;
   specPages: Array<{name: string, id: string}>;
+  lockedAnnotations: boolean;
 
   constructor({
     isMercadoMode,
     shouldTerminate,
     terminatePlugin,
     specPages,
+    lockedAnnotations,
   }) {
     this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
     this.terminatePlugin = terminatePlugin;
     this.specPages = specPages;
+    this.lockedAnnotations = lockedAnnotations;
   }
 
   /**
@@ -752,21 +758,14 @@ export default class App {
    * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
    */
   toggleLocked() { // eslint-disable-line class-methods-use-this
-    let locked;
-    const frames = figma.currentPage.children.filter(({ type }) => type === 'FRAME') as Array<FrameNode>;
+    const specterGroups = getSpecterGroups(figma.currentPage);
+    const locked = !specterGroups.find((group) => !group.locked);
 
-    frames.forEach((el) => {
-      const specterGroup = el.findChild(({ type, name }) => type === 'GROUP' && name.includes('Specter'));
-      if (specterGroup) {
-        // sets new lock status based on current status of first found Specter group
-        if (locked === undefined) {
-          locked = !specterGroup.locked;
-        }
-        specterGroup.locked = locked;
-      }
-    });
-    if (locked !== undefined) {
-      figma.notify(`Success! Specter groups all ${locked ? 'LOCKED' : 'UNLOCKED'}`);
+    specterGroups.forEach((group) => group.locked = !locked);
+
+    if (specterGroups.length) {
+      figma.notify(`Success! Specter groups all ${!locked ? 'LOCKED' : 'UNLOCKED'}`);
+      App.refreshGUI();
     } else {
       figma.notify('Error: There are no annotations to lock/unlock.');
     }
@@ -1575,6 +1574,7 @@ export default class App {
   static async refreshGUI(runDiff?: boolean) {
     const { messenger, page, selection } = assemble(figma);
     const specPages = getSpecPageList(figma.root.children);
+    const lockedAnnotations = !getSpecterGroups(page).find((group) => !group.locked);
 
     // retrieve existing options
     const options: PluginOptions = await getOptions();
@@ -1634,6 +1634,7 @@ export default class App {
         isMercadoMode,
         items,
         specPages,
+        lockedAnnotations,
         sessionKey,
       },
     });
