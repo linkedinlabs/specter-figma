@@ -281,11 +281,13 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   accessibilityDefault: {
     width: 360,
-    height: 306,
+    // height: 306,
+    height: 234,
   },
   default: {
     width: 360,
-    height: 306,
+    // height: 306,
+    height: 234,
   },
   input: {
     width: 440,
@@ -297,7 +299,8 @@ const GUI_SETTINGS = {
   },
   mercadoDefault: {
     width: 360,
-    height: 366,
+    // height: 366,
+    height: 264,
   },
 };
 

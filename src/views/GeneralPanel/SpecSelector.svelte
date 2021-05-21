@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import FormUnit from '../forms-controls/FormUnit';
   import FigmaSwitch from '../forms-controls/FigmaSwitch';
   import ExpandCollapse from '../forms-controls/ExpandCollapse';
@@ -52,8 +52,7 @@
     }
   };
 
-  const resizeWindow = (expanded) => {
-    const bodyHeight = expanded ? 460 : 270;
+  const resizeWindow = (bodyHeight) => {
     parent.postMessage({
       pluginMessage: {
         action: 'resize',
@@ -61,6 +60,14 @@
       },
     }, '*');
   }
+
+  onMount(() => {
+    resizeWindow(220);
+  });
+
+  onDestroy(() => {
+    resizeWindow(204);
+  });
 
 </script>
 
@@ -131,7 +138,7 @@
       {#if warning}
         <p class="warning-msg">Warning: Page name must include 'SPEC ' to be included in the options above in future.</p>
       {/if}
-      <ExpandCollapse name='Advanced options' on:handleClick={(e) => resizeWindow(e.detail)}>
+      <ExpandCollapse name='Advanced options' on:handleClick={(e) => resizeWindow(e.detail ? 450 : 220)}>
         <span class="form-row setting" class:open={settings.instructions}>
           Instructions 
           <FigmaSwitch

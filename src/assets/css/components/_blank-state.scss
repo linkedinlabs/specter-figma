@@ -6,8 +6,9 @@
   justify-content: space-between;
   align-items: center;
   margin: 0;
-  padding: em(30) 14% em(30) 14%;
-  height: 75%;
+  // padding: em(30) 14% em(30) 14%;
+  padding: 0 14%;
+  height: calc(100% - 72px);
 
   span {
     display: block;

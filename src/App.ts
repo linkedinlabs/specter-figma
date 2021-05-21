@@ -1715,7 +1715,7 @@ export default class App {
     payload: { bodyHeight: number },
   ) {
     const { bodyHeight } = payload;
-    let newGUIHeight = bodyHeight + 30; // add buffer for info trigger
+    let newGUIHeight = bodyHeight + 32; // add buffer for info trigger
     if (newGUIHeight < GUI_SETTINGS.accessibilityDefault.height) {
       newGUIHeight = GUI_SETTINGS.accessibilityDefault.height;
     }

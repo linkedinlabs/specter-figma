@@ -89,6 +89,6 @@
 .items-list-holder {
   .add-stop {
     @include icon-button-action;
-    margin-bottom: 8px;
+    padding-bottom: 8px;
   }
 }
