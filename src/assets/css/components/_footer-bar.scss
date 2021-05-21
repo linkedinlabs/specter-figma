@@ -27,6 +27,32 @@
     display: none;
   }
 
+  .switch__toggle {
+    &:checked + label {
+      &:before {
+        background-color: $wl-action-tertiary;
+        border-color: white;
+      }
+    }
+  
+    &:enabled + label {
+      &:before,
+      &:after {
+        border-color: white;
+      }
+    }
+
+    &:checked + label:before {
+      background-color: black;
+    }
+  }
+
+  .switch__label {
+    &:after {
+      background: black;
+    }
+  }
+
   @include hover {
     cursor: pointer;
 

@@ -103,7 +103,7 @@
     justify-content: space-between;
     align-items: center;
     margin: 3px 15px;
-    color: gray;
+    color: rgb(85, 85, 85);
   }
 </style>
 
