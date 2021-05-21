@@ -825,7 +825,6 @@ const buildBoundingBox = (position: {
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
 const getLegendLabelText = (labels: PluginAriaLabels, labelName: string) => {
-  console.log('legend labels: ', labels)
   const { visible, alt, a11y } = labels || {visible: true};
   if (labelName === 'alt') {
     return alt ? `"${alt}"` : 'undefined';
@@ -856,7 +855,6 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
     keys,
   } = data;
 
-  console.log(data)
   let fields;
 
   if (type === 'label') {
@@ -1012,7 +1010,7 @@ const buildLegendFieldNodes = (
  *
  * @returns {Object} Returns the legend frame.
  */
-const buildLegend = (type: PluginStopType, includeInstructions?: boolean) => {
+const buildLegend = (type: PluginStopType, includeHeader?: boolean) => {
   const legend: FrameNode = figma.createFrame();
   legend.layoutMode = 'VERTICAL';
   legend.primaryAxisSizingMode = 'AUTO';
@@ -1024,7 +1022,7 @@ const buildLegend = (type: PluginStopType, includeInstructions?: boolean) => {
   legend.verticalPadding = 0;
   legend.horizontalPadding = 0;
 
-  const headerType = !includeInstructions ? `${type}LegendTitle` : `${type}LegendHeader`;
+  const headerType = !includeHeader ? `${type}LegendTitle` : `${type}LegendHeader`;
   const header = buildInstructionComponentInstance(headerType);
   header.name = 'Legend Header';
   legend.appendChild(header);
@@ -1680,7 +1678,7 @@ const refreshLegend = (
         role: 'legendItem',
         id: trackingData[trackingIndex].linkId,
       }));
-      legend.appendChild(legendItem);
+      legend?.appendChild(legendItem);
     }
   });
   figma.currentPage.setPluginData(DATA_KEYS[`${type}Annotations`], JSON.stringify(updatedTracking));
@@ -1818,7 +1816,6 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
  *
  */
 const buildInstructionComponentInstance = (keyName: string) => {
-  console.log(keyName)
   const panel = figma.createFrame();
   panel.locked = true;
   figma.importComponentByKeyAsync(INSTRUCTION_COMPONENT_KEYS[keyName]).then(n => {

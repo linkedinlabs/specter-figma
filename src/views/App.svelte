@@ -7,7 +7,7 @@
   } from './stores';
   import AccessibilityBase from './AccessibilityBase';
   import InfoPanel from './InfoPanel';
-  import FooterBar from './forms-controls/FooterBar';
+  import FooterBar from './FooterBar';
   import FontPreload from './FontPreload';
   import GeneralPanel from './GeneralPanel/GeneralPanel';
   import SceneNavigator from './SceneNavigator';
@@ -71,7 +71,7 @@
     if (
       $viewContextStored
       && ($viewContextStored !== 'general')
-      && !isUserInput
+      // && !isUserInput
       && !isInfoPanel
       && (wasBodyHeight !== bodyHeight)
       && (items.length)
@@ -100,7 +100,7 @@
   <SceneNavigator currentView={$viewContextStored}/>
   {/if}
 
-  <div class={`container${isUserInput ? ' wide' : ''}`}>
+  <div class={`container${isUserInput ? ' wide' : ''}${inputPage ? ' no-footer' : ''}`}>
     <div class="transition-mask"></div>
 
     {#if !isUserInput && !inputPage}

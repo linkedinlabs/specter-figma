@@ -79,6 +79,15 @@ declare global {
     invisible: string
   }
 
+  type PluginSpecSettings = {
+    instructions: boolean,
+    designSystem: boolean,
+    keyboard: boolean,
+    labels: boolean,
+    headings: boolean,
+    misc: boolean,
+  }
+
   type PluginNodePosition = {
     frameWidth: number,
     frameHeight: number,

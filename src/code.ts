@@ -122,9 +122,8 @@ const dispatcher = async (action: {
         app.annotateMeasurement();
         break;
       case 'generate': {
-        const { pageId, newSpecName, includeInstructions } = payload;
-        console.log(payload)
-        app.generateTemplate(pageId, newSpecName, includeInstructions);
+        const { pageId, newSpecName, settings } = payload;
+        app.generateTemplate(pageId, newSpecName, settings);
         break;
       }
       case 'color': {

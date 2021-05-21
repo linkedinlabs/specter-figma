@@ -1,7 +1,7 @@
 <script>
-  import { KEY_OPTS } from '../constants';
-  import { compareArrays } from '../utils/tools';
-  import FormUnit from './forms-controls/FormUnit';
+  import { KEY_OPTS } from '../../constants';
+  import { compareArrays } from '../../utils/tools';
+  import FormUnit from '../forms-controls/FormUnit';
 
   export let isSelected = false;
   export let itemId = null;

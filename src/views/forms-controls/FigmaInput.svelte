@@ -1,9 +1,10 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
 
   export let autoSelect = false;
   export let className = null;
   export let disabled = null;
+  export let focused = false;
   export let nameId = null;
   export let placeholder = null;
   export let inputType = 'text';
@@ -12,6 +13,12 @@
 
   let inputElement = null;
   const dispatch = createEventDispatcher();
+
+  onMount(() => {
+    if (focused) {
+      inputElement.focus();
+    }
+  })
 
   const selectAll = () => {
     if (autoSelect) {

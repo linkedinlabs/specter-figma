@@ -1,7 +1,7 @@
 <script>
-  import FormUnit from './forms-controls/FormUnit';
-  import { deepCompare } from '../utils/tools';
-  import { LEVEL_OPTS } from '../constants';
+  import FormUnit from '../forms-controls/FormUnit';
+  import { deepCompare } from '../../utils/tools';
+  import { LEVEL_OPTS } from '../../constants';
 
   export let isSelected = false;
   export let itemId = null;

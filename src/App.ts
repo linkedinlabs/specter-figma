@@ -609,14 +609,25 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  generateTemplate(pageId?: string, newPageName?: string, includeInstructions?: boolean) {
+  generateTemplate(pageId?: string, newPageName?: string, settings?: PluginSpecSettings) {
     const { selection } = assemble(figma);
 
     if (!selection?.length) {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
-      const specPage = getSpecPage(pageId, newPageName, includeInstructions);
-      const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
+      const specPage = getSpecPage(pageId, newPageName, settings);
+      // need to get settings from plugin data in case working with existing page
+      const pageSettings = !pageId ? settings : JSON.parse(specPage.getPluginData(DATA_KEYS.specSettings));
+      const categories = Object.entries(pageSettings).reduce((acc, [key, val]) => {
+        if (val && key === 'designSystem') {
+          acc = ['DS Component', 'DS Size/Spacing', ...acc];
+        } else if (val && key !== 'instructions') {
+          acc.push(key.charAt(0).toUpperCase() + key.slice(1));
+        }
+        return acc;
+      }, []);
+
+      // const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
       const topFrames = new Crawler({ for: selection }).topFrames();
       let yCoordinate = getOpenYCoordinate(specPage);
       const xCoordinateDefault = getOpenXCoordinate(specPage);
@@ -674,8 +685,8 @@ export default class App {
               });
               const legendEntry = figma.createFrame();
               legendEntry.resize(364, 1);
-              const legendType = category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType
-              painter.addEntryToLegend(legendEntry, legendType, includeInstructions);
+              const legendType = category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType;
+              painter.addEntryToLegend(legendEntry, legendType, pageSettings.instructions);
               xCoordinate += 400;
             }
             xCoordinate += (frame.width + 100);
@@ -744,7 +755,7 @@ export default class App {
       } else {
         setPointerDirection(direction, annotations);
         const { length } = annotations;
-        figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+        figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
       }
     }
 
@@ -760,11 +771,10 @@ export default class App {
   toggleLocked() { // eslint-disable-line class-methods-use-this
     const specterGroups = getSpecterGroups(figma.currentPage);
     const locked = !specterGroups.find((group) => !group.locked);
-
-    specterGroups.forEach((group) => group.locked = !locked);
-
+    
     if (specterGroups.length) {
-      figma.notify(`Success! Specter groups all ${!locked ? 'LOCKED' : 'UNLOCKED'}`);
+      specterGroups.forEach((group) => group.locked = !locked);
+      figma.notify(`Success! Specter annotation layers ${!locked ? 'LOCKED' : 'UNLOCKED'}`);
       App.refreshGUI();
     } else {
       figma.notify('Error: There are no annotations to lock/unlock.');
@@ -1705,7 +1715,7 @@ export default class App {
     payload: { bodyHeight: number },
   ) {
     const { bodyHeight } = payload;
-    let newGUIHeight = bodyHeight + 14; // add buffer for info trigger
+    let newGUIHeight = bodyHeight + 30; // add buffer for info trigger
     if (newGUIHeight < GUI_SETTINGS.accessibilityDefault.height) {
       newGUIHeight = GUI_SETTINGS.accessibilityDefault.height;
     }

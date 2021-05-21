@@ -16,6 +16,7 @@
   outline: none;
   border: 2px solid rgba($wl-action-secondary-accent, 0);
   border-radius: 2px;
+  cursor: pointer;
 
   .label {
     @include hide-visually;

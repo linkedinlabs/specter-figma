@@ -1,8 +1,8 @@
 <script>
   import { onDestroy } from 'svelte';
-  import { compareArrays } from '../utils/tools';
-  import FormUnit from './forms-controls/FormUnit';
-  import ButtonRemove from './forms-controls/ButtonRemove';
+  import { compareArrays } from '../../utils/tools';
+  import FormUnit from '../forms-controls/FormUnit';
+  import ButtonRemove from '../forms-controls/ButtonRemove';
 
   export let isSelected = false;
   export let itemId = null;

@@ -1,6 +1,6 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++ info panel
 
-@mixin info-panel-trigger {
+@mixin footer-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -9,7 +9,7 @@
   bottom: 0;
   padding: 0 10px;
   width: 100%;
-  height: em(28);
+  height: em(32);
   background: $wl-ctrl-primary;
   color: white;
   overflow: hidden;
@@ -126,5 +126,5 @@
   }
 }
 
-.info-trigger { @include info-panel-trigger; }
+.footer-bar { @include footer-bar; }
 .info-panel { @include info-panel-content; }

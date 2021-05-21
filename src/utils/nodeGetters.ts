@@ -85,7 +85,7 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
  *
  * @returns {Object} The spec page that will be used for new template additions.
  */
-const getSpecPage = (specPageId?: string, newPageName?: string, includeInstructions?: boolean) => {
+const getSpecPage = (specPageId?: string, newPageName?: string, settings?: PluginSpecSettings) => {
   let specPage;
   let xCoordinate = 0;
 
@@ -94,7 +94,8 @@ const getSpecPage = (specPageId?: string, newPageName?: string, includeInstructi
   } else {
     specPage = figma.createPage();
     specPage.name = newPageName;
-    if (includeInstructions) {
+    specPage.setPluginData(DATA_KEYS.specSettings, JSON.stringify(settings));
+    if (settings?.instructions) {
       const instructionPanel = buildInstructionComponentInstance('instructionPanel');
       instructionPanel.name = 'Spec Instruction Panel';
       specPage.appendChild(instructionPanel);
@@ -280,32 +281,35 @@ const getOrderedStopNodes = (
 ) => {
   let selectedNodes: Array<SceneNode> = suppliedNodes || [...selection];
   const frame: FrameNode = findTopFrame(selectedNodes[0]);
-  let orderedNodes = [];
-
-  // add previously annotated nodes to the result list
-  const annotatedFrameNodes = getFrameAnnotatedNodes(type, frame);
-  annotatedFrameNodes.forEach((node) => {
-    orderedNodes = updateArray(orderedNodes, node);
-  });
-
-  // if not annotating supplied nodes, add Figma selection children to selected list
-  if (!suppliedNodes && frame.children) {
-    const exclusionList = [...orderedNodes, ...selectedNodes, frame];
-    const assignedChildNodes = getAssignedChildNodes(
-      [...frame.children],
-      exclusionList,
-      type,
-    );
-    assignedChildNodes.forEach(node => selectedNodes.push(node));
+  if (frame) {
+    let orderedNodes = [];
+  
+    // add previously annotated nodes to the result list
+    const annotatedFrameNodes = getFrameAnnotatedNodes(type, frame);
+    annotatedFrameNodes.forEach((node) => {
+      orderedNodes = updateArray(orderedNodes, node);
+    });
+  
+    // if not annotating supplied nodes, add Figma selection children to selected list
+    if (!suppliedNodes && frame.children) {
+      const exclusionList = [...orderedNodes, ...selectedNodes, frame];
+      const assignedChildNodes = getAssignedChildNodes(
+        [...frame.children],
+        exclusionList,
+        type,
+      );
+      assignedChildNodes.forEach(node => selectedNodes.push(node));
+    }
+  
+    // filter selected to what isn't in the results list and sort by visual hierarchy
+    selectedNodes = selectedNodes.filter(({ id }) => !existsInArray(orderedNodes, id)
+      && frame.id !== id);
+    const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
+    sortedSelection.forEach(node => orderedNodes.push(node));
+  
+    return newOnly ? sortedSelection : orderedNodes;
   }
-
-  // filter selected to what isn't in the results list and sort by visual hierarchy
-  selectedNodes = selectedNodes.filter(({ id }) => !existsInArray(orderedNodes, id)
-    && frame.id !== id);
-  const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
-  sortedSelection.forEach(node => orderedNodes.push(node));
-
-  return newOnly ? sortedSelection : orderedNodes;
+  return [];
 };
 
 /**

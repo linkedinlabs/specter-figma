@@ -58,6 +58,7 @@ const DATA_KEYS: {
   miscAnnotations: string,
   legendFrames: string,
   specPage: string,
+  specSettings: string,
   keystopList: string,
   labelList: string,
   headingList: string,
@@ -82,6 +83,7 @@ const DATA_KEYS: {
   miscAnnotations: `${PLUGIN_IDENTIFIER}.miscAnnotations-001`,
   legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
   specPage: `${PLUGIN_IDENTIFIER}.specPage-001`,
+  specSettings: `${PLUGIN_IDENTIFIER}.specSettings-001`,
   // top-frame level
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
@@ -279,11 +281,11 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   accessibilityDefault: {
     width: 360,
-    height: 280,
+    height: 306,
   },
   default: {
     width: 360,
-    height: 300,
+    height: 306,
   },
   input: {
     width: 440,
@@ -295,7 +297,7 @@ const GUI_SETTINGS = {
   },
   mercadoDefault: {
     width: 360,
-    height: 360,
+    height: 366,
   },
 };
 

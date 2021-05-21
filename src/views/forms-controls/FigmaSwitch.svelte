@@ -26,8 +26,8 @@
     class="switch__label"
     for={nameId}
   >
-    {#if labelText}
-      <span class="label-text">{labelText}</span>
-    {/if} 
+  {#if labelText}
+    <span class="label-text">{labelText}</span>
+  {/if} 
   </label>
 </span>

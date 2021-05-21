@@ -1172,10 +1172,10 @@ export default class Painter {
    *
    * @returns {undefined}
    */
-  addEntryToLegend(legendNode: FrameNode, type: PluginStopType, includeInstructions?: boolean) {
+  addEntryToLegend(legendNode: FrameNode, type: PluginStopType, includeHeader?: boolean) {
     let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
-      legend = buildLegend(type, includeInstructions);
+      legend = buildLegend(type, includeHeader);
       legend.name = `+${PLUGIN_NAME}+ Legend - ${this.frame.name}`;
 
       const {

@@ -1,26 +1,38 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import FormUnit from '../forms-controls/FormUnit';
+  import FigmaSwitch from '../forms-controls/FigmaSwitch';
   import ExpandCollapse from '../forms-controls/ExpandCollapse';
   
   export let specPages = [];
+
+  let settings = {
+    instructions: true,
+    designSystem: true,
+    keyboard: true,
+    label: true,
+    heading: true,
+    misc: false,
+  }
+  
+  const dispatch = createEventDispatcher();
   const specOptions = specPages.map(({id, name}) => ({ text: name, value: id}));
   specOptions.unshift({text: 'Create new page', value: 'no-page'});
   
-  const dispatch = createEventDispatcher();
   let selectedPage = specOptions[0].value;
   let newSpecName = 'SPEC - ';
-  let includeInstructions = true;
+
   $: warning = !newSpecName.includes('SPEC ');
+  $: newPage = selectedPage !== 'no-page';
   
   const submitValue = () => {
     parent.postMessage({
       pluginMessage: {
         action: 'generate',
         payload: {
-          pageId: selectedPage !== 'no-page' ? selectedPage : null,
+          pageId: newPage ? selectedPage : null,
           newSpecName,
-          includeInstructions: selectedPage !== 'no-page' ? false : includeInstructions,
+          settings,
         },
       },
     }, '*');
@@ -40,6 +52,16 @@
     }
   };
 
+  const resizeWindow = (expanded) => {
+    const bodyHeight = expanded ? 460 : 270;
+    parent.postMessage({
+      pluginMessage: {
+        action: 'resize',
+        payload: { bodyHeight },
+      },
+    }, '*');
+  }
+
 </script>
 
 <style>
@@ -57,11 +79,8 @@
     text-align: left;
     padding: 8px 6px 18px 6px;
   }
-  .checkbox-wrapper {
-    display: flex;
-    height: 32px;
-    align-items: center;
-    padding: 6px;
+  .open {
+    border-bottom: 1px solid #DFDFDF;
   }
   .warning-msg {
     font-size: 10px;
@@ -70,7 +89,14 @@
     text-align: left;
   }
   .form-actions {
-    margin-top: 14px;
+    margin-top: 8px;
+  }
+  .setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 3px 15px;
+    color: gray;
   }
 </style>
 
@@ -92,25 +118,71 @@
         bind:value={selectedPage}
       />
     </span>
-    {#if selectedPage.value !== 'no-page'}
+    {#if selectedPage === 'no-page'}
       <span class="form-row">
         <FormUnit
           className="form-inner-row"
           kind="inputText"
           labelText="Page Name"
+          focused
           bind:value={newSpecName}
         />
       </span>
       {#if warning}
         <p class="warning-msg">Warning: Page name must include 'SPEC ' to be included in the options above in future.</p>
       {/if}
-      <div class="checkbox-wrapper">
-        <input type="checkbox" id="instructionInput" bind:checked={includeInstructions}/>
-        <label for="instructionInput">Include Instructions</label>
-      </div>
+      <ExpandCollapse name='Advanced options' on:handleClick={(e) => resizeWindow(e.detail)}>
+        <span class="form-row setting" class:open={settings.instructions}>
+          Instructions 
+          <FigmaSwitch
+            className="form-element element-type-switch"
+            on:saveSignal={() => settings.instructions = !settings.instructions}
+            value={settings.instructions}
+          />
+        </span>
+          <span class="form-row setting">
+            Design system components & spacing
+            <FigmaSwitch
+              className="form-element element-type-switch"
+              on:saveSignal={() => settings.designSystem = !settings.designSystem}
+              value={settings.designSystem}
+            />
+          </span>
+          <span class="form-row setting">
+            Keyboard 
+            <FigmaSwitch
+              className="form-element element-type-switch"
+              on:saveSignal={() => settings.keyboard = !settings.keyboard}
+              value={settings.keyboard}
+            />
+          </span>
+          <span class="form-row setting">
+            Labels 
+            <FigmaSwitch
+              className="form-element element-type-switch"
+              on:saveSignal={() => settings.label = !settings.label}
+              value={settings.label}
+            />
+          </span>
+          <span class="form-row setting">
+            Headings 
+            <FigmaSwitch
+              className="form-element element-type-switch"
+              on:saveSignal={() => settings.heading = !settings.heading}
+              value={settings.heading}
+            />
+          </span>
+          <span class="form-row setting">
+            Misc (blank)
+            <FigmaSwitch
+              className="form-element element-type-switch"
+              on:saveSignal={() => settings.misc = !settings.misc}
+              value={settings.misc}
+            />
+          </span>
+      </ExpandCollapse>
     {/if}
   </span>
-  <!-- <ExpandCollapse name='Advanced options'/> -->
 </div>
   <p class="form-actions">
     <button

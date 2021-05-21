@@ -1,6 +1,6 @@
 <script>
-  import FormUnit from './forms-controls/FormUnit';
-  import { deepCompare } from '../utils/tools';
+  import FormUnit from '../forms-controls/FormUnit';
+  import { deepCompare } from '../../utils/tools';
 
   export let isSelected = false;
   export let itemId = null;
@@ -69,7 +69,6 @@
           kind="inputSwitch"
           labelText="Visible text"
           nameId={`${itemId}-label-visible`}
-          placeholder="Leave empty to use a11y label"
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.visible}

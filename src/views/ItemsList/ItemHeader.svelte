@@ -4,9 +4,9 @@
     beforeUpdate,
     createEventDispatcher,
   } from 'svelte';
-  import { getStopTypeFromView } from '../utils/tools';
-  import ButtonOpenClose from './forms-controls/ButtonOpenClose';
-  import FormUnit from './forms-controls/FormUnit';
+  import { getStopTypeFromView } from '../../utils/tools';
+  import ButtonOpenClose from '../forms-controls/ButtonOpenClose';
+  import FormUnit from '../forms-controls/FormUnit';
 
   export let isOpen = false;
   export let ariaNamed = false;
