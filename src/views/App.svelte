@@ -7,16 +7,21 @@
   } from './stores';
   import AccessibilityBase from './AccessibilityBase';
   import InfoPanel from './InfoPanel';
-  import ButtonInfoTrigger from './forms-controls/ButtonInfoTrigger';
+  import FooterBar from './FooterBar';
   import FontPreload from './FontPreload';
-  import GeneralPanel from './GeneralPanel';
+  import GeneralPanel from './GeneralPanel/GeneralPanel';
   import SceneNavigator from './SceneNavigator';
-  import UserInput from './UserInput';
+  import UserInput from './GeneralPanel/UserInput';
+  import SpecSelector from './GeneralPanel/SpecSelector';
+  import ColorSelector from './GeneralPanel/ColorSelector';
+  import PointerSelector from './GeneralPanel/PointerSelector';
 
   export let isInternal = false;
   export let isMercadoMode = false;
   export let isUserInput = false;
   export let isInfoPanel = false;
+  export let specPages = [];
+  export let lockedAnnotations = true;
   export let items;
   export let newSessionKey = null;
   export let userInputValue = null;
@@ -24,14 +29,28 @@
 
   let bodyHeight = 0;
   let wasBodyHeight = 0;
+  let inputPage = null;
+
+  const handleSelectorAction = (action) => {
+    if (action.includes('show-')) {
+      inputPage = action;
+    } else if (action === 'close') {
+      inputPage = null;
+    }
+  };
 
   const handleAction = (action) => {
-    parent.postMessage({
-      pluginMessage: {
-        action,
-      },
-    }, '*');
+    if (action.includes('show-') || inputPage) {
+      handleSelectorAction(action);
+    } else {
+      parent.postMessage({
+        pluginMessage: {
+          action,
+        },
+      }, '*');
+    }
   };
+
 
   const setIsMercadoMode = (currentIsMercadoMode) => {
     const newIsMercadoMode = currentIsMercadoMode;
@@ -52,7 +71,7 @@
     if (
       $viewContextStored
       && ($viewContextStored !== 'general')
-      && !isUserInput
+      // && !isUserInput
       && !isInfoPanel
       && (wasBodyHeight !== bodyHeight)
       && (items.length)
@@ -77,21 +96,22 @@
 <!-- core layout -->
 <div bind:offsetHeight={bodyHeight}>
   <FontPreload/>
-  {#if $viewContextStored && !isInfoPanel && !isUserInput}
+  {#if $viewContextStored && !isInfoPanel && !isUserInput && !inputPage}
   <SceneNavigator currentView={$viewContextStored}/>
   {/if}
 
-  <div class={`container${isUserInput ? ' wide' : ''}`}>
+  <div class={`container${isUserInput ? ' wide' : ''}${inputPage ? ' no-footer' : ''}`}>
     <div class="transition-mask"></div>
 
-    {#if !isUserInput}
-      <ButtonInfoTrigger
+    {#if !isUserInput && !inputPage}
+      <FooterBar
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         isInfoPanel={isInfoPanel}
+        lockedAnnotations={lockedAnnotations}
       />
     {/if}
 
-    {#if !isUserInput && !isInfoPanel}
+    {#if !isUserInput && !isInfoPanel && !inputPage}
       {#if $viewContextStored === 'general'}
         <GeneralPanel
           on:handleAction={customEvent => handleAction(customEvent.detail)}
@@ -110,6 +130,25 @@
       <UserInput
         on:handleAction={customEvent => handleAction(customEvent.detail)}
         userInputValue={userInputValue}
+      />
+    {/if}
+
+    {#if inputPage === 'show-page-input'}
+      <SpecSelector
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+        specPages={specPages}
+      />
+    {/if}
+
+    {#if inputPage === 'show-color-input'}
+      <ColorSelector
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
+      />
+    {/if}
+
+    {#if inputPage === 'show-pointer-input'}
+      <PointerSelector
+        on:handleAction={customEvent => handleAction(customEvent.detail)}
       />
     {/if}
 

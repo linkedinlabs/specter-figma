@@ -22,6 +22,7 @@
   export let selectWatchChange = false;
   export let value = null;
   export let options = [];
+  export let focused = false;
 
   const dispatch = createEventDispatcher();
   let originalValue = value;
@@ -50,7 +51,6 @@
     isDirty={isDirty}
     nameId={nameId}
   />
-
   <span class="form-inner-row">
     {#if kind === 'inputSelect'}
       <FigmaSelectMenu
@@ -69,6 +69,7 @@
         autoSelect={true}
         className="form-element element-type-text"
         disabled={isDisabled}
+        focused={focused}
         inputType={inputType}
         nameId={nameId}
         placeholder={placeholder}
@@ -83,18 +84,19 @@
         className="form-element element-type-switch"
         disabled={isDisabled}
         nameId={nameId}
+        labelText={labelText}
         options={options}
         on:saveSignal
         bind:value={value}
         watchChange={selectWatchChange}
       />
     {/if}
-
+    
     {#if isDeletable}
-      <ButtonRemove
-        disabled={isDisabled}
-        on:handleUpdate={() => handleDelete()}
-      />
+    <ButtonRemove
+      disabled={isDisabled}
+      on:handleUpdate={() => handleDelete()}
+    />
     {/if}
   </span>
 </span>

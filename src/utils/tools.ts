@@ -45,6 +45,29 @@ const pollWithPromise = (
 };
 
 /**
+ * @description A helper function that checks for a component within a node and its descendents.
+ *
+ * @kind function
+ * @name containsComponent
+ *
+ * @param {Array} node The SceneNode to be checked for a component type.
+ *
+ * @returns {boolean}
+ */
+const containsComponent = (node) => {
+  if (['COMPONENT', 'COMPONENT_SET'].includes(node.type)) {
+    return true;
+  } else if (node.children != null) { // eslint-disable-line no-else-return
+    let result = null;
+    for (let i = 0; result == null && i < node.children.length; i += 1) {
+      result = containsComponent(node.children[i]);
+    }
+    return result;
+  }
+  return null;
+};
+
+/**
  * @description A reusable helper function to take an array and check if an item exists
  * based on a `key`/`value` pair.
  *
@@ -492,6 +515,10 @@ const isAnnotationLayer = (node: any): boolean => {
   let currentNode = node;
   let currentTopGroup: GroupNode = null;
 
+  if (node.name === 'Bounding Box') {
+    return true;
+  }
+
   // set first; top group may be self
   if (currentNode.type === CONTAINER_NODE_TYPES.group) {
     currentTopGroup = currentNode;
@@ -509,12 +536,11 @@ const isAnnotationLayer = (node: any): boolean => {
     }
   }
 
-  if (currentTopGroup?.name.includes('Specter') && node.name !== 'Bounding Box') {
+  if (currentTopGroup?.name.includes('Specter')) {
     return true;
   }
-  return null;
+  return false;
 };
-
 
 /**
  * @description A shared helper function to retrieve plugin data on a node from a
@@ -675,6 +701,60 @@ const getRelativePosition = (
 };
 
 /**
+ * @description Finds the y coordinate beneath all existing page children.
+ *
+ * @kind function
+ * @name getOpenYCoordinate
+ *
+ * @param {Object} page A PageNode object to find open vertical space in.
+ *
+ * @returns {Object} The y coordinate that is open for more content.
+ */
+const getOpenYCoordinate = (
+  page: PageNode,
+) => {
+  let hasExistingFrames = false;
+  let yCoordinate = 0;
+
+  page.children.forEach((child) => {
+    const bottomLeftCorner = child.y + child.height;
+    if (!child.name.includes('Panel') && bottomLeftCorner > yCoordinate) {
+      hasExistingFrames = true;
+      yCoordinate = bottomLeftCorner;
+    }
+  });
+
+  if (hasExistingFrames) {
+    yCoordinate += 150;
+  }
+
+  return yCoordinate;
+};
+
+/**
+ * @description Finds the y coordinate beneath all existing page children.
+ *
+ * @kind function
+ * @name getOpenYCoordinate
+ *
+ * @param {Object} page A PageNode object to find open vertical space in.
+ *
+ * @returns {Object} The y coordinate that is open for more content.
+ */
+const getOpenXCoordinate = (
+  page: PageNode,
+) => {
+  let xCoordinate = 1000;
+  const panels = page.children.filter(child => child.name.includes('Panel'));
+
+  if (panels.length === 2) {
+    xCoordinate = 2000;
+  }
+
+  return xCoordinate;
+};
+
+/**
  * @description A helper function to take a hexcolor string, conver it to an object in RGB format,
  * and further convert the `red`, `green`, and `blue` values to a decimal value.
  *
@@ -771,6 +851,8 @@ const loadFirstAvailableFontAsync = async (typefaces: Array<FontName>) => {
   // load the typeface
   await figma.loadFontAsync(typefaceToUse);
   await figma.loadFontAsync({ ...typefaceToUse, style: 'Regular' });
+  await figma.loadFontAsync({ ...typefaceToUse, style: 'ExtraBold' });
+  await figma.loadFontAsync({ ...typefaceToUse, style: 'Black' });
 
   return typefaceToUse;
 };
@@ -871,6 +953,8 @@ const getStopTypeFromView = (viewName) => {
     type = 'label';
   } else if (viewName.includes('heading')) {
     type = 'heading';
+  } else {
+    type = 'misc';
   }
   return type;
 };
@@ -903,9 +987,12 @@ export {
   asyncForEach,
   awaitUIReadiness,
   compareArrays,
+  containsComponent,
   deepCompare,
   existsInArray,
   findTopFrame,
+  getOpenXCoordinate,
+  getOpenYCoordinate,
   getNodeSettings,
   getPeerPluginData,
   getRelativeIndex,

@@ -2,8 +2,15 @@ import Crawler from './Crawler';
 import Identifier from './Identifier';
 import Messenger from './Messenger';
 import Painter from './Painter/Painter';
-import { getOrderedStopNodes } from './utils/nodeGetters';
 import { DATA_KEYS, GUI_SETTINGS } from './constants';
+import {
+  getLegendFrame,
+  getOrderedStopNodes,
+  getSelectedAnnotationItems,
+  getSpecPage,
+  getSpecPageList,
+  getSpecterGroups,
+} from './utils/nodeGetters';
 import {
   deepCompare,
   existsInArray,
@@ -13,13 +20,18 @@ import {
   updateArray,
   getStopTypeFromView,
   isAnnotationLayer,
+  getOpenYCoordinate,
+  hexToDecimalRgb,
+  containsComponent,
+  getOpenXCoordinate,
 } from './utils/tools';
 import {
   refreshLegend,
   positionLegend,
   updateAnnotationNum,
   updateLegendEntry,
-} from './Painter/annotationBuilders';
+  setPointerDirection,
+} from './Painter/nodeBuilders';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -32,9 +44,9 @@ import {
  */
 const assemble = (context: any = null) => {
   const page = context.currentPage;
-  // don't include actual annotations
-  const selection = page.selection.filter(item => !isAnnotationLayer(item));
   const messenger = new Messenger({ for: context, in: page });
+  // don't include actual annotations
+  const selection = page.selection.filter(node => !isAnnotationLayer(node));
 
   return {
     messenger,
@@ -195,7 +207,7 @@ const handleDuplicatedNodes = (
     trackingData,
   } = options;
 
-  const list = JSON.parse(frame.getPluginData(DATA_KEYS[`${type}List`]) || null);
+  const list = JSON.parse(frame?.getPluginData(DATA_KEYS[`${type}List`]) || null);
 
   if (list?.length) {
     let updatesMade = false;
@@ -304,7 +316,13 @@ const refreshAnnotations = (
     const frame: FrameNode = node && findTopFrame(node);
     // tktk: need to revisit the below, seems weird to have to instantiate App class
     // eslint-disable-next-line no-use-before-define
-    const app = new App({ isMercadoMode, shouldTerminate: false, terminatePlugin: false });
+    const app = new App({
+      isMercadoMode,
+      shouldTerminate: false,
+      terminatePlugin: false,
+      specPages: [],
+      lockedAnnotations: false,
+    });
 
     if (!node || (frame && frame.id !== trackingEntry.topFrameId)) {
       const oldFrame = figma.getNodeById(trackingEntry.topFrameId) as FrameNode;
@@ -495,7 +513,7 @@ const getStopData = (
     role: 'no-role',
     labels: {
       a11y: '',
-      visible: false,
+      visible: true,
       alt: '',
     },
     heading: {
@@ -503,11 +521,12 @@ const getStopData = (
       visible: true,
       invisible: '',
     },
+    misc: [],
   };
   const nodeData = JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || '{}');
 
   // set data for each field (will only set what it grabs based on type)
-  ['keys', 'role', 'labels', 'heading'].forEach((property) => {
+  ['keys', 'role', 'labels', 'heading', 'misc'].forEach((property) => {
     // temporary workaround for 'none' issue
     if (nodeData[property] && !(property === 'role' && nodeData[property] === 'none')) {
       stopData[property] = nodeData[property];
@@ -544,15 +563,21 @@ export default class App {
   isMercadoMode: boolean;
   shouldTerminate: boolean;
   terminatePlugin: Function;
+  specPages: Array<{name: string, id: string}>;
+  lockedAnnotations: boolean;
 
   constructor({
     isMercadoMode,
     shouldTerminate,
     terminatePlugin,
+    specPages,
+    lockedAnnotations,
   }) {
     this.isMercadoMode = isMercadoMode;
     this.shouldTerminate = shouldTerminate;
     this.terminatePlugin = terminatePlugin;
+    this.specPages = specPages;
+    this.lockedAnnotations = lockedAnnotations;
   }
 
   /**
@@ -569,6 +594,197 @@ export default class App {
       return this.terminatePlugin();
     }
     return null;
+  }
+
+  /**
+   * @description Generates a spec template for top frames with selections to a spec-specific
+   * page.  Will create the spec page if it doesn't exist, or add to it if it does.
+   *
+   * @kind function
+   * @name generateTemplate
+   *
+   * @param {string} pageId The Figma ID of the page to generate to.
+   * @param {string} newPageName Optional argument for naming a new spec page.
+   * @param {Object} settings The spec template settings for generation.
+   *
+   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
+   */
+  generateTemplate(pageId?: string, newPageName?: string, settings?: PluginSpecSettings) {
+    const { selection } = assemble(figma);
+
+    if (!selection?.length) {
+      figma.notify('Please select at least one top frame, or layer within a top frame.');
+    } else {
+      const specPage = getSpecPage(pageId, newPageName, settings);
+      // need to get settings from plugin data in case working with existing page
+      const pageSettings = !pageId
+        ? settings
+        : JSON.parse(specPage.getPluginData(DATA_KEYS.specSettings));
+
+      const categories = Object.entries(pageSettings).reduce((acc, [key, val]) => {
+        let list = acc;
+        if (val && key === 'designSystem') {
+          list = ['DS Component', 'DS Size/Spacing', ...list];
+        } else if (val && key !== 'instructions') {
+          list.push(key.charAt(0).toUpperCase() + key.slice(1));
+        }
+        return list;
+      }, []);
+
+      const topFrames = new Crawler({ for: selection }).topFrames();
+      let yCoordinate = getOpenYCoordinate(specPage);
+      const xCoordinateDefault = getOpenXCoordinate(specPage);
+      let failedFrames = 0;
+
+      topFrames.forEach((frame) => {
+        const currentFrame = frame as FrameNode | ComponentNode;
+        let xCoordinate = xCoordinateDefault;
+        let masterFrame;
+
+        if (currentFrame.type !== 'COMPONENT' && containsComponent(frame)) {
+          figma.notify(`WARNING: Unable to create ${frame.name} master since it contains components.`);
+          failedFrames += 1;
+        } else {
+          if (currentFrame.type === 'COMPONENT') {
+            masterFrame = frame;
+          } else {
+            masterFrame = figma.createComponent();
+            masterFrame.resizeWithoutConstraints(frame.width, frame.height);
+            masterFrame.x = frame.x;
+            masterFrame.y = frame.y;
+            masterFrame.layoutMode = 'HORIZONTAL';
+            masterFrame.primaryAxisAlignItems = 'CENTER';
+            masterFrame.counterAxisAlignItems = 'CENTER';
+            masterFrame.appendChild(frame);
+            masterFrame.name = frame.name;
+          }
+
+          // tktk: see if folks want any annotations cleared since they'll break
+          // ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
+          //   frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
+          // });
+          // frame.children.find(({type, name}) => type === 'GROUP'
+          // && name.includes('Specter'))?.remove();
+
+          categories.forEach((category) => {
+            const specFrame = figma.createFrame();
+            specFrame.resizeWithoutConstraints(frame.width, frame.height);
+            const instance = masterFrame.createInstance();
+            specFrame.name = `${category.toUpperCase()} Spec - ${frame.name}`;
+            specFrame.x = xCoordinate;
+            specFrame.y = yCoordinate;
+            specFrame.layoutMode = 'HORIZONTAL';
+            specFrame.primaryAxisAlignItems = 'CENTER';
+            specFrame.counterAxisAlignItems = 'CENTER';
+            specFrame.appendChild(instance);
+            specFrame.layoutMode = 'NONE';
+            specPage.appendChild(specFrame);
+
+            if (!category.includes('DS')) {
+              const painter = new Painter({
+                for: specFrame.children[0],
+                in: specPage,
+                isMercadoMode: this.isMercadoMode,
+              });
+              const legendEntry = figma.createFrame();
+              legendEntry.resize(364, 1);
+              const legendType = category === 'Keyboard' ? 'keystop' : category.toLowerCase() as PluginStopType;
+              painter.addEntryToLegend(legendEntry, legendType, pageSettings.instructions);
+              xCoordinate += 400;
+            }
+            xCoordinate += (frame.width + 100);
+          });
+        }
+        yCoordinate += (frame.height + 200);
+      });
+
+      if (failedFrames < topFrames.length) {
+        figma.notify(`Success! Templates added to page '${specPage.name}'`);
+      }
+    }
+  }
+
+  /**
+   * @description Updates the color of all selected annotations created from the General tab.
+   *
+   * @kind function
+   * @name updateAnnotationColor
+   *
+   * @param {string} color The hex value of the color chosen by the user.
+   *
+   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
+   */
+  updateAnnotationColor(color: string) { // eslint-disable-line class-methods-use-this
+    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+      && node.name.includes('Annotation for')) as Array<FrameNode>;
+
+    if (!annotations?.length) {
+      figma.notify('Error: Please select at least one General annotation.');
+    } else {
+      annotations.forEach((node) => {
+        const layers = node.children as Array<FrameNode | PolygonNode>;
+        layers.forEach((layer) => {
+          const updatedLayer = layer;
+          updatedLayer.fills = [
+            {
+              type: 'SOLID',
+              color: hexToDecimalRgb(color),
+            },
+          ];
+        });
+      });
+      const { length } = annotations;
+      figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+    }
+  }
+
+  /**
+   * @description Updates the pointer direction of all selected annotations.
+   *
+   * @kind function
+   * @name updateAnnotationDirection
+   *
+   * @param {string} direction The annotation direction chosen by the user.
+   *
+   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
+   */
+  updateAnnotationDirection(direction: string) { // eslint-disable-line class-methods-use-this
+    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+      && node.parent.type === 'GROUP'
+      && node.parent.name.includes('Annotations')) as Array<FrameNode>;
+
+    if (!annotations?.length) {
+      figma.notify('Error: Please select at least one annotation.');
+    } else {
+      setPointerDirection(direction, annotations);
+      const { length } = annotations;
+      figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
+    }
+  }
+
+  /**
+   * @description Goes through all top-level frames and unlocks any Specter annotation groups.
+   * Note: does not include legend or annotation numbers to discourage editing there.
+   *
+   * @kind function
+   * @name toggleLocked
+   *
+   * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
+   */
+  toggleLocked() { // eslint-disable-line class-methods-use-this
+    const specterGroups = getSpecterGroups(figma.currentPage);
+    const locked = !specterGroups.find(group => !group.locked);
+
+    if (specterGroups.length) {
+      specterGroups.forEach((group) => {
+        const updatedGroup = group;
+        updatedGroup.locked = !locked;
+      });
+      figma.notify(`Success! Specter annotation layers ${!locked ? 'LOCKED' : 'UNLOCKED'}`);
+      App.refreshGUI();
+    } else {
+      figma.notify('Error: There are no annotations to lock/unlock.');
+    }
   }
 
   /**
@@ -1234,7 +1450,7 @@ export default class App {
    */
   updateNodeData = (
     id: string,
-    key: 'role' | 'labels' | 'heading' | 'keys',
+    key: 'role' | 'labels' | 'heading' | 'keys' | 'misc',
     value: PluginAriaRole | PluginAriaLabels | PluginAriaHeading | Array<PluginKeystopKeys>,
   ) => {
     const node: BaseNode = figma.getNodeById(id);
@@ -1244,7 +1460,7 @@ export default class App {
     } else if (key === 'keys') {
       type = 'keystop';
     } else {
-      type = 'heading';
+      type = key;
     }
     const nodeData = node && JSON.parse(node.getPluginData(DATA_KEYS[`${type}NodeData`]) || null);
 
@@ -1356,7 +1572,7 @@ export default class App {
     });
 
     frame.setPluginData(DATA_KEYS[`${type}List`], JSON.stringify(reorderedList));
-    refreshLegend(type, frame.id, trackingData, reorderedList);
+    refreshLegend(getLegendFrame(frame.id, figma.currentPage), type, trackingData, reorderedList);
   }
 
   /**
@@ -1373,6 +1589,8 @@ export default class App {
    */
   static async refreshGUI(runDiff?: boolean) {
     const { messenger, page, selection } = assemble(figma);
+    const specPages = getSpecPageList(figma.root.children);
+    const lockedAnnotations = !getSpecterGroups(page).find(group => !group.locked);
 
     // retrieve existing options
     const options: PluginOptions = await getOptions();
@@ -1401,20 +1619,23 @@ export default class App {
     const firstTopFrame = findTopFrame(selection[0]);
     const singleTopFrame = !selection.find(node => findTopFrame(node) !== firstTopFrame);
 
-    if (isA11yTab && singleTopFrame && selection?.length) {
+    if (isA11yTab && singleTopFrame && page.selection.length) {
       const type: PluginStopType = getStopTypeFromView(currentView);
-      const nodes = getOrderedStopNodes(type, selection, false);
+      const selectedAnnotationItems = getSelectedAnnotationItems(page, type);
+      const nodes = getOrderedStopNodes(type, page.selection, false);
 
       // this creates the view object of items that is passed over to GUI and used in the views
       nodes.forEach((node: SceneNode) => {
         const { id, name } = node;
         const stopData = getStopData(type, node);
         const displayPosition = stopData.position ? stopData.position.toString() : '';
+        const isSelected = existsInArray(selectedNodes, id)
+          || existsInArray(selectedAnnotationItems, id);
         const viewObject = {
           ...stopData,
           id,
           name,
-          isSelected: existsInArray(selectedNodes, node.id),
+          isSelected,
           position: displayPosition,
         } as PluginViewObject;
 
@@ -1428,6 +1649,8 @@ export default class App {
         currentView,
         isMercadoMode,
         items,
+        specPages,
+        lockedAnnotations,
         sessionKey,
       },
     });
@@ -1498,7 +1721,7 @@ export default class App {
     payload: { bodyHeight: number },
   ) {
     const { bodyHeight } = payload;
-    let newGUIHeight = bodyHeight + 14; // add buffer for info trigger
+    let newGUIHeight = bodyHeight + 32; // add buffer for info trigger
     if (newGUIHeight < GUI_SETTINGS.accessibilityDefault.height) {
       newGUIHeight = GUI_SETTINGS.accessibilityDefault.height;
     }

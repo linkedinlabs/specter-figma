@@ -55,18 +55,24 @@ const DATA_KEYS: {
   keystopAnnotations: string,
   labelAnnotations: string,
   headingAnnotations: string,
+  miscAnnotations: string,
   legendFrames: string,
+  specPage: string,
+  specSettings: string,
   keystopList: string,
   labelList: string,
   headingList: string,
+  miscList: string,
   legendLinkId: string,
   bundle: string,
   keystopNodeData: string,
   labelNodeData: string,
   headingNodeData: string,
+  miscNodeData: string,
   keystopLinkId: string,
   labelLinkId: string,
   headingLinkId: string,
+  miscLinkId: string,
   relaunch: string,
 } = {
   // page-level (e.g. in case an annotated element is moved out of a frame?)
@@ -74,20 +80,26 @@ const DATA_KEYS: {
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
   headingAnnotations: `${PLUGIN_IDENTIFIER}.headingAnnotations-001`,
+  miscAnnotations: `${PLUGIN_IDENTIFIER}.miscAnnotations-001`,
   legendFrames: `${PLUGIN_IDENTIFIER}.legendFrames-001`,
+  specPage: `${PLUGIN_IDENTIFIER}.specPage-001`,
+  specSettings: `${PLUGIN_IDENTIFIER}.specSettings-001`,
   // top-frame level
   keystopList: `${PLUGIN_IDENTIFIER}.keystopList-001`,
   labelList: `${PLUGIN_IDENTIFIER}.labelList-001`,
   headingList: `${PLUGIN_IDENTIFIER}.headingList-001`,
+  miscList: `${PLUGIN_IDENTIFIER}.miscList-001`,
   legendLinkId: `${PLUGIN_IDENTIFIER}.legendLinkId-001`,
   // node-level and up
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
   labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
   headingNodeData: `${PLUGIN_IDENTIFIER}.headingNodeData-001`,
+  miscNodeData: `${PLUGIN_IDENTIFIER}.miscNodeData-001`,
   keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
   labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`,
   headingLinkId: `${PLUGIN_IDENTIFIER}.headingLinkId-001`,
+  miscLinkId: `${PLUGIN_IDENTIFIER}.miscLinkId-001`,
   relaunch: `${PLUGIN_IDENTIFIER}.relaunch-001`,
 };
 
@@ -107,6 +119,7 @@ const COLORS: {
   heading: string,
   spacing: string,
   style: string,
+  misc: string
 } = {
   component: '#6255ca',
   custom: '#c8006a',
@@ -116,6 +129,7 @@ const COLORS: {
   heading: '#bc3600',
   spacing: '#007373',
   style: '#bc3600',
+  misc: '#4c934f',
 };
 
 /**
@@ -215,6 +229,18 @@ const TYPEFACES: Array<FontName> = [
     style: 'Regular',
   },
   {
+    family: 'Helvetica Neue',
+    style: 'Bold',
+  },
+  {
+    family: 'Helvetica Neue',
+    style: 'ExtraBold',
+  },
+  {
+    family: 'Helvetica Neue',
+    style: 'Black',
+  },
+  {
     family: 'Inter',
     style: 'Regular',
   },
@@ -255,23 +281,26 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   accessibilityDefault: {
     width: 360,
-    height: 180,
+    // height: 306,
+    height: 234,
   },
   default: {
     width: 360,
-    height: 171,
+    // height: 306,
+    height: 234,
   },
   input: {
     width: 440,
     height: 152,
   },
   info: {
-    width: 200,
+    width: 360,
     height: 324,
   },
   mercadoDefault: {
     width: 360,
-    height: 230,
+    // height: 366,
+    height: 292,
   },
 };
 
@@ -464,6 +493,11 @@ const ROLE_OPTS = [
     disabled: false,
   },
   {
+    value: 'group',
+    text: 'Group',
+    disabled: false,
+  },
+  {
     value: 'tablist',
     text: 'Tab list',
     disabled: false,
@@ -520,12 +554,27 @@ const LEVEL_OPTS = [
   },
 ];
 
+
+const INSTRUCTION_COMPONENT_KEYS = {
+  instructionPanel: '37f07e866f47fa7bb2690a49897471f66f851eab',
+  notesPanel: 'e2abd4594dd4c3bfc73887052d30d3918fcf288e',
+  keystopLegendHeader: '9fa494a21433ee4fb9ff7094e7496434bb9d250c',
+  labelLegendHeader: '25cb65871b0a5a1723ae3f80034695b5a4dd1f2f',
+  headingLegendHeader: 'a5b054fac5e4436528b7fc620e86577af07963a3',
+  miscLegendHeader: 'cbd3f74d35de28312dacbe356feb04f443443a10',
+  keystopLegendTitle: 'aba413fb71dac7ee49380adea0db68163abb799a',
+  labelLegendTitle: '3036d68a6c745100c6423ec2c34ea82632f28ad7',
+  headingLegendTitle: 'bfa7582f5c869254913fc2e521e8d50721c03bfb',
+  miscLegendTitle: 'dbd6f1e895ab49ac19666d686b29b4ef701650dd',
+};
+
 export {
   COLORS,
   CONTAINER_NODE_TYPES,
   DATA_KEYS,
   KEY_OPTS,
   GUI_SETTINGS,
+  INSTRUCTION_COMPONENT_KEYS,
   LEVEL_OPTS,
   PLUGIN_IDENTIFIER,
   PLUGIN_NAME,

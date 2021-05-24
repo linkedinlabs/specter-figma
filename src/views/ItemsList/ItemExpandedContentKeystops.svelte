@@ -1,7 +1,7 @@
 <script>
-  import { KEY_OPTS } from '../constants';
-  import { compareArrays } from '../utils/tools';
-  import FormUnit from './forms-controls/FormUnit';
+  import { KEY_OPTS } from '../../constants';
+  import { compareArrays } from '../../utils/tools';
+  import FormUnit from '../forms-controls/FormUnit';
 
   export let isSelected = false;
   export let itemId = null;
@@ -23,13 +23,15 @@
   }, []);
 
   const updateKeys = (action, value) => {
+    const changeDetected = compareArrays(keys, savedKeys);
+
     if (action === 'delete') {
       keys = keys.filter(key => key !== value);
     } else if (action === 'add' && ![...keys, 'no-key'].includes(value)) {
       keys = [...keys, value];
     }
 
-    if (compareArrays(keys, savedKeys)) {
+    if (changeDetected) {
       parent.postMessage({
         pluginMessage: {
           action: 'a11y-set-node-data',

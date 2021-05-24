@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import SpecterLogo from './SpecterLogo';
+  import SpecterLogo from '../assets/images/SpecterLogo';
 
   export let isInternal = false;
 

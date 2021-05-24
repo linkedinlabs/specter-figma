@@ -1,12 +1,13 @@
 <script>
   import { beforeUpdate } from 'svelte';
-  import { openItems } from './stores';
-  import { ROLE_OPTS } from '../constants';
+  import { openItems } from '../stores';
+  import { ROLE_OPTS } from '../../constants';
 
-  import ButtonAddStop from './forms-controls/ButtonAddStop';
+  import ButtonAddStop from '../forms-controls/ButtonAddStop';
   import ItemExpandedContentKeystops from './ItemExpandedContentKeystops';
   import ItemExpandedContentLabels from './ItemExpandedContentLabels';
   import ItemExpandedContentHeadings from './ItemExpandedContentHeadings';
+  import ItemExpandedContentMisc from './ItemExpandedContentMisc';
   import ItemHeader from './ItemHeader';
 
   // props
@@ -191,6 +192,14 @@
               isSelected={item.isSelected}
               type={type}
               bind:heading={item.heading}
+            />
+            {:else if (type === 'a11y-misc')}
+            <ItemExpandedContentMisc
+              itemId={item.id}
+              item={item}
+              isSelected={item.isSelected}
+              type={type}
+              bind:fields={item.misc}
             />
           {/if}
         {/if}

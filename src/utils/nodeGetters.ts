@@ -6,6 +6,7 @@ import {
   updateArray,
 } from './tools';
 import Crawler from '../Crawler';
+import { buildInstructionComponentInstance } from '../Painter/nodeBuilders';
 
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
@@ -59,7 +60,7 @@ const findParentInstance = (node: any) => {
  * @param {Object} frameId The design top frame we're looking for a legend for.
  * @param {Object} page The Figma page the frame belongs to.
  *
- * @returns {Object} The legend for the frame (or null, if it doesn't exist).
+ * @returns {Object} The legend for the frame (or undefined, if it doesn't exist).
  */
 const getLegendFrame = (frameId: string, page: PageNode) => {
   let legendFrame = null;
@@ -70,6 +71,43 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
     legendFrame = figma.getNodeById(trackingEntry.legendId);
   }
   return legendFrame;
+};
+
+/**
+ * @description Takes a page and finds the corresponding spec page if it exists.
+ *
+ * @kind function
+ * @name getSpecPage
+ *
+ * @param {Object} specPageId The id of the Figma page to append to.
+ * @param {Object} newPageName Optional argument used to name a newly created page to append to.
+ * @param {Object} settings The advanced spec settings for template generation.
+ *
+ * @returns {Object} The spec page that will be used for new template additions.
+ */
+const getSpecPage = (specPageId?: string, newPageName?: string, settings?: PluginSpecSettings) => {
+  let specPage;
+  let xCoordinate = 0;
+
+  if (specPageId) {
+    specPage = figma.root.children.find(child => child.id === specPageId);
+  } else {
+    specPage = figma.createPage();
+    specPage.name = newPageName;
+    specPage.setPluginData(DATA_KEYS.specSettings, JSON.stringify(settings));
+    if (settings?.instructions) {
+      const instructionPanel = buildInstructionComponentInstance('instructionPanel');
+      instructionPanel.name = 'Spec Instruction Panel';
+      specPage.appendChild(instructionPanel);
+      xCoordinate = 940;
+    }
+    const notesPanel = buildInstructionComponentInstance('notesPanel');
+    notesPanel.name = 'Spec Notes Panel';
+    specPage.appendChild(notesPanel);
+    notesPanel.x = xCoordinate;
+  }
+
+  return specPage;
 };
 
 /**
@@ -129,7 +167,6 @@ const getFrameAnnotatedNodes = (
   frame: FrameNode,
 ): Array<SceneNode> => {
   const list = JSON.parse(frame?.getPluginData(DATA_KEYS[`${type}List`]) || '[]');
-
   const nodes: Array<SceneNode> = list.reduce((acc, { id }) => {
     const node: SceneNode = frame.findOne(child => child.id === id);
     if (node) {
@@ -176,7 +213,8 @@ const getAssignedChildNodes = (
     && ((heading?.level && heading.level !== 'no-level') || heading?.visible || heading?.invisible);
 
 
-    if (!existsInArray(currentList, node.id)
+    if (
+      !existsInArray(currentList, node.id)
       && !existsInArray(list, node.id)
       && (hasKeystopData || hasLabelData || hasHeadingData)
     ) {
@@ -194,6 +232,32 @@ const getAssignedChildNodes = (
     }
     return list;
   }, []);
+};
+
+/**
+ * @description Gets a list of nodes who have a selected annotation, to be used when marking
+ * selected items in the UI item list.
+ *
+ * @kind function
+ * @name getSelectedAnnotationItems
+ *
+ * @param {Object} page The current Figma page, for getting the master annotation list.
+ * @param {string} type The type of stop/tab we are working with.
+ *
+ * @returns {Array} A flat list of nodes whose annotations are selected.
+ */
+const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
+  const { selection } = page;
+  const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null);
+  const selectedAnnotations = selection
+    .filter(node => JSON.parse(node.getPluginData(DATA_KEYS[`${type}LinkId`]) || null)?.role === 'annotation');
+
+  const nodes = selectedAnnotations.map(({ id }) => {
+    const matchId = trackingData?.find(({ annotationId }) => annotationId === id)?.id;
+    return matchId && figma.getNodeById(matchId);
+  });
+
+  return nodes;
 };
 
 /**
@@ -217,37 +281,82 @@ const getOrderedStopNodes = (
 ) => {
   let selectedNodes: Array<SceneNode> = suppliedNodes || [...selection];
   const frame: FrameNode = findTopFrame(selectedNodes[0]);
-  let orderedNodes = [];
+  if (frame) {
+    let orderedNodes = [];
 
-  // add previously annotated nodes to the result list
-  const annotatedFrameNodes = getFrameAnnotatedNodes(type, frame);
-  annotatedFrameNodes.forEach((node) => {
-    orderedNodes = updateArray(orderedNodes, node);
-  });
+    // add previously annotated nodes to the result list
+    const annotatedFrameNodes = getFrameAnnotatedNodes(type, frame);
+    annotatedFrameNodes.forEach((node) => {
+      orderedNodes = updateArray(orderedNodes, node);
+    });
 
-  // if not annotating supplied nodes, add Figma selection children to selected list
-  if (!suppliedNodes && frame.children) {
-    const exclusionList = [...orderedNodes, ...selectedNodes, frame];
-    const assignedChildNodes = getAssignedChildNodes(
-      [...frame.children],
-      exclusionList,
-      type,
-    );
-    assignedChildNodes.forEach(node => selectedNodes.push(node));
+    // if not annotating supplied nodes, add Figma selection children to selected list
+    if (!suppliedNodes && frame.children) {
+      const exclusionList = [...orderedNodes, ...selectedNodes, frame];
+      const assignedChildNodes = getAssignedChildNodes(
+        [...frame.children],
+        exclusionList,
+        type,
+      );
+      assignedChildNodes.forEach(node => selectedNodes.push(node));
+    }
+
+    // filter selected to what isn't in the results list and sort by visual hierarchy
+    selectedNodes = selectedNodes.filter(({ id }) => !existsInArray(orderedNodes, id)
+      && frame.id !== id);
+    const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
+    sortedSelection.forEach(node => orderedNodes.push(node));
+
+    return newOnly ? sortedSelection : orderedNodes;
   }
+  return [];
+};
 
-  // filter selected to what isn't in the results list and sort by visual hierarchy
-  selectedNodes = selectedNodes.filter((node: SceneNode) => !existsInArray(orderedNodes, node.id)
-    && frame.id !== node.id);
-  const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
-  sortedSelection.forEach(node => orderedNodes.push(node));
+/**
+ * @description A function that gets a list of all spec pages based on SPEC inclusion in the name.
+ *
+ * @kind function
+ * @name getSpecPageList
+ *
+ * @param {Array} pages All pages in the figma file.
+ *
+ * @returns {Array}  A list of pages that are auto-generated SPEC pages.
+ */
+const getSpecPageList = (pages) => {
+  const specPages = pages.filter(page => page.name.includes('SPEC ')).map(({ name, id }) => ({ name, id }));
+  return specPages;
+};
 
-  return newOnly ? sortedSelection : orderedNodes;
+/**
+ * @description A function that gets a list of Specter annotation groups.
+ *
+ * @kind function
+ * @name getSpecterGroups
+ *
+ * @param {Array} page The current page in Figma.
+ *
+ * @returns {Array} A list of groups containing Specter annotations.
+ */
+const getSpecterGroups = (page) => {
+  const specterGroups = [];
+  const frames = page.children.filter(({ type }) => type === 'FRAME') as Array<FrameNode>;
+
+  frames.forEach((el) => {
+    const group = el.findChild(({ type, name }) => type === 'GROUP' && name.includes('Specter'));
+    if (group) {
+      specterGroups.push(group);
+    }
+  });
+  return specterGroups;
 };
 
 export {
   findParentInstance,
-  getLegendFrame,
   findTopComponent,
+  getLegendFrame,
+  getSelectedAnnotationItems,
+  getSpecPage,
+  getSpecPageList,
   getOrderedStopNodes,
+  getSpecterGroups,
 };

@@ -10,7 +10,10 @@
   height: em(32);
   @include type-01;
   letter-spacing: 0.005em;
-  cursor: default;
+
+  input, label {
+    cursor: pointer;
+  }
 }
 
 @mixin figma-switch-toggle {

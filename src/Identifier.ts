@@ -146,6 +146,12 @@ const cleanName = (name: string): string => {
       // take only the last segment of the name (after a “/”, if available)
       // ignore segments that begin with a “w” as-in “…Something w/ Icon”
       cleanedName = cleanedName.split(/(?:[^w|^\s])(\/)/).pop();
+      if (cleanedName.includes(' / ')) {
+        const [substring1, substring2] = cleanedName.split(' / ');
+        if (substring2?.includes(substring1)) {
+          cleanedName = substring2;
+        }
+      }
     } else {
       cleanedName = cleanedName.replace('☾ ', '');
       cleanedName = cleanedName.replace('☼ ', '');
@@ -177,7 +183,6 @@ const cleanName = (name: string): string => {
 const cleanColorName = (name: string): string => {
   let cleanedName = name;
   cleanedName = cleanedName.split(' / ').pop();
-  cleanedName = cleanedName.replace(/-/g, ' ');
   return cleanedName;
 };
 
@@ -657,7 +662,7 @@ export default class Identifier {
     ) {
       result.status = 'error';
       result.messages.log = 'Node is not connected to a Main Component or library styles';
-      result.messages.toast = '🆘 This layer is not a component or styled.';
+      result.messages.toast = 'This layer is not a component or styled.';
       return result;
     }
 

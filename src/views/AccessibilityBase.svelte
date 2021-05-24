@@ -1,6 +1,6 @@
 <script>
   import BlankState from './BlankState';
-  import ItemsList from './ItemsList';
+  import ItemsList from './ItemsList/ItemsList';
 
   export let items;
   export let viewContext = 'a11y-keyboard';
