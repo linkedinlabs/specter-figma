@@ -32,7 +32,6 @@ import {
   updateLegendEntry,
   setPointerDirection,
 } from './Painter/nodeBuilders';
-import app from './GUI';
 
 /**
  * @description A shared helper function to set up in-UI messages and the logger.
@@ -606,6 +605,7 @@ export default class App {
    *
    * @param {string} pageId The Figma ID of the page to generate to.
    * @param {string} newPageName Optional argument for naming a new spec page.
+   * @param {Object} settings The spec template settings for generation.
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
@@ -617,30 +617,33 @@ export default class App {
     } else {
       const specPage = getSpecPage(pageId, newPageName, settings);
       // need to get settings from plugin data in case working with existing page
-      const pageSettings = !pageId ? settings : JSON.parse(specPage.getPluginData(DATA_KEYS.specSettings));
+      const pageSettings = !pageId
+        ? settings
+        : JSON.parse(specPage.getPluginData(DATA_KEYS.specSettings));
+
       const categories = Object.entries(pageSettings).reduce((acc, [key, val]) => {
+        let list = acc;
         if (val && key === 'designSystem') {
-          acc = ['DS Component', 'DS Size/Spacing', ...acc];
+          list = ['DS Component', 'DS Size/Spacing', ...list];
         } else if (val && key !== 'instructions') {
-          acc.push(key.charAt(0).toUpperCase() + key.slice(1));
+          list.push(key.charAt(0).toUpperCase() + key.slice(1));
         }
-        return acc;
+        return list;
       }, []);
 
-      // const categories = ['DS Components', 'DS Size/Spacing', 'Keyboard', 'Label', 'Heading'];
       const topFrames = new Crawler({ for: selection }).topFrames();
       let yCoordinate = getOpenYCoordinate(specPage);
       const xCoordinateDefault = getOpenXCoordinate(specPage);
       let failedFrames = 0;
 
       topFrames.forEach((frame) => {
-        const currentFrame = frame  as FrameNode | ComponentNode;
+        const currentFrame = frame as FrameNode | ComponentNode;
         let xCoordinate = xCoordinateDefault;
         let masterFrame;
 
-        if (currentFrame.type !== 'COMPONENT' && containsComponent(frame)) { 
+        if (currentFrame.type !== 'COMPONENT' && containsComponent(frame)) {
           figma.notify(`WARNING: Unable to create ${frame.name} master since it contains components.`);
-          failedFrames++;
+          failedFrames += 1;
         } else {
           if (currentFrame.type === 'COMPONENT') {
             masterFrame = frame;
@@ -649,9 +652,9 @@ export default class App {
             masterFrame.resizeWithoutConstraints(frame.width, frame.height);
             masterFrame.x = frame.x;
             masterFrame.y = frame.y;
-            masterFrame.layoutMode = "HORIZONTAL";
-            masterFrame.primaryAxisAlignItems = "CENTER";
-            masterFrame.counterAxisAlignItems = "CENTER";
+            masterFrame.layoutMode = 'HORIZONTAL';
+            masterFrame.primaryAxisAlignItems = 'CENTER';
+            masterFrame.counterAxisAlignItems = 'CENTER';
             masterFrame.appendChild(frame);
             masterFrame.name = frame.name;
           }
@@ -660,12 +663,12 @@ export default class App {
           // ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
           //   frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
           // });
-          // frame.children.find(({type, name}) => type === 'GROUP' && name.includes('Specter'))?.remove();
+          // frame.children.find(({type, name}) => type === 'GROUP'
+          // && name.includes('Specter'))?.remove();
 
           categories.forEach((category) => {
-            let specFrame;
-            specFrame = figma.createFrame();
-            specFrame.resizeWithoutConstraints(frame.width, frame.height)
+            const specFrame = figma.createFrame();
+            specFrame.resizeWithoutConstraints(frame.width, frame.height);
             const instance = masterFrame.createInstance();
             specFrame.name = `${category.toUpperCase()} Spec - ${frame.name}`;
             specFrame.x = xCoordinate;
@@ -676,7 +679,7 @@ export default class App {
             specFrame.appendChild(instance);
             specFrame.layoutMode = 'NONE';
             specPage.appendChild(specFrame);
-  
+
             if (!category.includes('DS')) {
               const painter = new Painter({
                 for: specFrame.children[0],
@@ -711,10 +714,9 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  updateAnnotationColor(color: string) {
-    const annotations = figma.currentPage.selection.filter((node) => {
-      return node.type === 'FRAME' && node.name.includes('Annotation for');
-    }) as Array<FrameNode>;
+  updateAnnotationColor(color: string) { // eslint-disable-line class-methods-use-this
+    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+      && node.name.includes('Annotation for')) as Array<FrameNode>;
 
     if (!annotations?.length) {
       figma.notify('Error: Please select at least one General annotation.');
@@ -722,20 +724,21 @@ export default class App {
       annotations.forEach((node) => {
         const layers = node.children as Array<FrameNode | PolygonNode>;
         layers.forEach((layer) => {
-          layer.fills = [
+          const updatedLayer = layer;
+          updatedLayer.fills = [
             {
               type: 'SOLID',
               color: hexToDecimalRgb(color),
-            }
-          ]
-        })
-      })
+            },
+          ];
+        });
+      });
       const { length } = annotations;
       figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
     }
   }
 
-   /**
+  /**
    * @description Updates the pointer direction of all selected annotations.
    *
    * @kind function
@@ -745,19 +748,19 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  updateAnnotationDirection(direction: string) {
-      const annotations = figma.currentPage.selection.filter((node) => {
-        return node.type === 'FRAME' && node.parent.type === 'GROUP' && node.parent.name.includes('Annotations');
-      }) as Array<FrameNode>;
-    
-      if (!annotations?.length) {
-        figma.notify('Error: Please select at least one annotation.');
-      } else {
-        setPointerDirection(direction, annotations);
-        const { length } = annotations;
-        figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
-      }
+  updateAnnotationDirection(direction: string) { // eslint-disable-line class-methods-use-this
+    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+      && node.parent.type === 'GROUP'
+      && node.parent.name.includes('Annotations')) as Array<FrameNode>;
+
+    if (!annotations?.length) {
+      figma.notify('Error: Please select at least one annotation.');
+    } else {
+      setPointerDirection(direction, annotations);
+      const { length } = annotations;
+      figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
     }
+  }
 
   /**
    * @description Goes through all top-level frames and unlocks any Specter annotation groups.
@@ -770,10 +773,13 @@ export default class App {
    */
   toggleLocked() { // eslint-disable-line class-methods-use-this
     const specterGroups = getSpecterGroups(figma.currentPage);
-    const locked = !specterGroups.find((group) => !group.locked);
-    
+    const locked = !specterGroups.find(group => !group.locked);
+
     if (specterGroups.length) {
-      specterGroups.forEach((group) => group.locked = !locked);
+      specterGroups.forEach((group) => {
+        const updatedGroup = group;
+        updatedGroup.locked = !locked;
+      });
       figma.notify(`Success! Specter annotation layers ${!locked ? 'LOCKED' : 'UNLOCKED'}`);
       App.refreshGUI();
     } else {
@@ -1584,7 +1590,7 @@ export default class App {
   static async refreshGUI(runDiff?: boolean) {
     const { messenger, page, selection } = assemble(figma);
     const specPages = getSpecPageList(figma.root.children);
-    const lockedAnnotations = !getSpecterGroups(page).find((group) => !group.locked);
+    const lockedAnnotations = !getSpecterGroups(page).find(group => !group.locked);
 
     // retrieve existing options
     const options: PluginOptions = await getOptions();

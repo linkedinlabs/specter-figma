@@ -7,7 +7,6 @@ import {
 } from './tools';
 import Crawler from '../Crawler';
 import { buildInstructionComponentInstance } from '../Painter/nodeBuilders';
-import { group } from 'console';
 
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
@@ -82,6 +81,7 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
  *
  * @param {Object} specPageId The id of the Figma page to append to.
  * @param {Object} newPageName Optional argument used to name a newly created page to append to.
+ * @param {Object} settings The advanced spec settings for template generation.
  *
  * @returns {Object} The spec page that will be used for new template additions.
  */
@@ -283,13 +283,13 @@ const getOrderedStopNodes = (
   const frame: FrameNode = findTopFrame(selectedNodes[0]);
   if (frame) {
     let orderedNodes = [];
-  
+
     // add previously annotated nodes to the result list
     const annotatedFrameNodes = getFrameAnnotatedNodes(type, frame);
     annotatedFrameNodes.forEach((node) => {
       orderedNodes = updateArray(orderedNodes, node);
     });
-  
+
     // if not annotating supplied nodes, add Figma selection children to selected list
     if (!suppliedNodes && frame.children) {
       const exclusionList = [...orderedNodes, ...selectedNodes, frame];
@@ -300,13 +300,13 @@ const getOrderedStopNodes = (
       );
       assignedChildNodes.forEach(node => selectedNodes.push(node));
     }
-  
+
     // filter selected to what isn't in the results list and sort by visual hierarchy
     selectedNodes = selectedNodes.filter(({ id }) => !existsInArray(orderedNodes, id)
       && frame.id !== id);
     const sortedSelection = new Crawler({ for: selectedNodes }).sorted();
     sortedSelection.forEach(node => orderedNodes.push(node));
-  
+
     return newOnly ? sortedSelection : orderedNodes;
   }
   return [];
@@ -327,9 +327,18 @@ const getSpecPageList = (pages) => {
   return specPages;
 };
 
-
+/**
+ * @description A function that gets a list of Specter annotation groups.
+ *
+ * @kind function
+ * @name getSpecterGroups
+ *
+ * @param {Array} page The current page in Figma.
+ *
+ * @returns {Array} A list of groups containing Specter annotations.
+ */
 const getSpecterGroups = (page) => {
-  let specterGroups = [];
+  const specterGroups = [];
   const frames = page.children.filter(({ type }) => type === 'FRAME') as Array<FrameNode>;
 
   frames.forEach((el) => {
@@ -339,7 +348,7 @@ const getSpecterGroups = (page) => {
     }
   });
   return specterGroups;
-}
+};
 
 export {
   findParentInstance,

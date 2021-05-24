@@ -825,7 +825,7 @@ const buildBoundingBox = (position: {
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
 const getLegendLabelText = (labels: PluginAriaLabels, labelName: string) => {
-  const { visible, alt, a11y } = labels || {visible: true};
+  const { visible, alt, a11y } = labels || { visible: true };
   if (labelName === 'alt') {
     return alt ? `"${alt}"` : 'undefined';
   }
@@ -1001,12 +1001,35 @@ const buildLegendFieldNodes = (
 };
 
 /**
+ * @description Imports a library component and builds an instance from it.
+ *
+ * @kind function
+ * @name buildInstructionComponentInstance
+ *
+ * @param {string} keyName The key for the component we are importing from constants.
+ *
+ * @returns {Object} The newinstance to append to the new spec page.
+ *
+ */
+const buildInstructionComponentInstance = (keyName: string) => {
+  const panel = figma.createFrame();
+  panel.locked = true;
+  figma.importComponentByKeyAsync(INSTRUCTION_COMPONENT_KEYS[keyName]).then((n) => {
+    const instance = n.createInstance();
+    panel.resizeWithoutConstraints(instance.width, instance.height);
+    panel.appendChild(instance);
+  });
+  return panel;
+};
+
+/**
  * @description Builds the initial legend frame for annotation legend items.
  *
  * @kind function
  * @name buildLegend
  *
  * @param {string} type The type of the legend we're building.
+ * @param {boolean} includeHeader Optional flag for whether to include a legend header.
  *
  * @returns {Object} Returns the legend frame.
  */
@@ -1764,9 +1787,10 @@ const updateLegendEntry = (
  */
 const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
   nodes.forEach((node) => {
+    const updatedNode = node;
     const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
-    const color = pointer.fills[0].color;
-    pointer && pointer.remove();
+    const pointerColor = pointer.fills[0].color;
+    if (pointer) pointer.remove();
 
     const diamond = figma.createPolygon();
     diamond.name = 'Diamond';
@@ -1775,55 +1799,35 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
     diamond.pointCount = 3;
     diamond.fills = [{
       type: 'SOLID',
-      color,
+      color: pointerColor,
     }];
     const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
     const vertical = 'CENTER' as ConstraintType;
 
     if (['left', 'right'].includes(direction)) {
-      node.layoutMode = 'HORIZONTAL';
-  
+      updatedNode.layoutMode = 'HORIZONTAL';
+
       if (direction === 'right') {
         diamond.rotation = 270;
-        node.appendChild(diamond);
+        updatedNode.appendChild(diamond);
       } else {
         diamond.rotation = 90;
-        node.insertChild(0, diamond);
+        updatedNode.insertChild(0, diamond);
       }
     } else {
-      node.layoutMode = 'VERTICAL';
+      updatedNode.layoutMode = 'VERTICAL';
 
       if (direction === 'down') {
         diamond.rotation = 180;
-        node.appendChild(diamond);
+        updatedNode.appendChild(diamond);
       } else {
         diamond.rotation = 0;
-        node.insertChild(0, diamond);
+        updatedNode.insertChild(0, diamond);
       }
     }
-    node.constraints = { horizontal, vertical };
+    updatedNode.constraints = { horizontal, vertical };
     figma.flatten([diamond]);
   });
-};
-
-/**
- * @description Imports a library component and builds an instance from it.
- *
- * @kind function
- * @name buildInstructionComponentInstance
- *
- * @returns {Object} The newinstance to append to the new spec page.
- *
- */
-const buildInstructionComponentInstance = (keyName: string) => {
-  const panel = figma.createFrame();
-  panel.locked = true;
-  figma.importComponentByKeyAsync(INSTRUCTION_COMPONENT_KEYS[keyName]).then(n => {
-    let instance = n.createInstance();
-    panel.resizeWithoutConstraints(instance.width, instance.height);
-    panel.appendChild(instance);
-  });
-  return panel;
 };
 
 export {

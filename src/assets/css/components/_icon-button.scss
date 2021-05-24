@@ -83,11 +83,11 @@
       );
       width: em(32);
       height: em(32);
-  
+
       // keep expanded toggle visible
       &.action-open-close {
         transform: rotate(-90deg);
-  
+
         &.open {
           transform: rotate(0);
         }

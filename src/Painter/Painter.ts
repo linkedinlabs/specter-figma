@@ -1169,6 +1169,7 @@ export default class Painter {
    *
    * @param {Object} legendNode The newly created legend entry for the annotation.
    * @param {string} type The type of legend to create based on stop type.
+   * @param {boolean} includeHeader A flag for whether to include a legend header.
    *
    * @returns {undefined}
    */

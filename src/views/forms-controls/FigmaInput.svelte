@@ -18,7 +18,7 @@
     if (focused) {
       inputElement.focus();
     }
-  })
+  });
 
   const selectAll = () => {
     if (autoSelect) {

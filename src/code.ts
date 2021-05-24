@@ -48,7 +48,7 @@ const dispatcher = async (action: {
   // if the action is not visual, close the plugin after running
   const shouldTerminate: boolean = !action.visual;
   const specPages = getSpecPageList(figma.root.children);
-  const lockedAnnotations = !getSpecterGroups(figma.currentPage).find((group) => !group.locked);
+  const lockedAnnotations = !getSpecterGroups(figma.currentPage).find(group => !group.locked);
 
   // retrieve existing options
   const lastUsedOptions: PluginOptions = await figma.clientStorage.getAsync(DATA_KEYS.options);

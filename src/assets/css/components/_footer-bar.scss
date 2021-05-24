@@ -20,7 +20,7 @@
   .label-text {
     color: white;
     margin-left: 14px;
-    opacity: .7;
+    opacity: 0.7;
   }
 
   .text {
@@ -30,20 +30,16 @@
   .switch__toggle {
     &:checked + label {
       &:before {
-        background-color: $wl-action-tertiary;
         border-color: white;
+        background-color: black;
       }
     }
-  
+
     &:enabled + label {
       &:before,
       &:after {
         border-color: white;
       }
-    }
-
-    &:checked + label:before {
-      background-color: black;
     }
   }
 

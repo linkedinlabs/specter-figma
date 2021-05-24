@@ -45,7 +45,7 @@ const pollWithPromise = (
 };
 
 /**
- * @description A helper function that checks if there's a component type within a node and its descendents.
+ * @description A helper function that checks for a component within a node and its descendents.
  *
  * @kind function
  * @name containsComponent
@@ -55,17 +55,17 @@ const pollWithPromise = (
  * @returns {boolean}
  */
 const containsComponent = (node) => {
-  if(['COMPONENT', 'COMPONENT_SET'].includes(node.type)){
+  if (['COMPONENT', 'COMPONENT_SET'].includes(node.type)) {
     return true;
-  } else if (node.children != null) {
-    var result = null;
-    for(let i = 0; result == null && i < node.children.length; i++) {
+  } else if (node.children != null) { // eslint-disable-line no-else-return
+    let result = null;
+    for (let i = 0; result == null && i < node.children.length; i += 1) {
       result = containsComponent(node.children[i]);
     }
     return result;
   }
   return null;
-}
+};
 
 /**
  * @description A reusable helper function to take an array and check if an item exists
@@ -741,13 +741,13 @@ const getOpenYCoordinate = (
  *
  * @returns {Object} The y coordinate that is open for more content.
  */
- const getOpenXCoordinate = (
+const getOpenXCoordinate = (
   page: PageNode,
 ) => {
   let xCoordinate = 1000;
-  const panels = page.children.filter((child) => child.name.includes('Panel'));
-  
-  if (panels.length == 2) {
+  const panels = page.children.filter(child => child.name.includes('Panel'));
+
+  if (panels.length === 2) {
     xCoordinate = 2000;
   }
 

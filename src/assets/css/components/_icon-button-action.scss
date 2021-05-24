@@ -20,6 +20,7 @@
 
   span {
     cursor: pointer;
+
     &.text {
       @include type-01(500);
       color: $iconColor;

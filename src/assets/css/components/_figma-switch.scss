@@ -10,9 +10,9 @@
   height: em(32);
   @include type-01;
   letter-spacing: 0.005em;
+
   input, label {
     cursor: pointer;
-
   }
 }
 
