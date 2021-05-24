@@ -113,7 +113,7 @@
 >
 <div class="spec-form">
   <p>
-    Generate a spec using <strong>1 selected</strong> top-level frame. Specter will create a spec template for design system components and foundations, keyboard, labels, and headings.
+    Generate a spec using <strong>selected</strong> top-level frame(s). Specter will create a spec template for design system components and foundations, keyboard, labels, and headings.
   </p>
   <span class="form-element-holder full">
     <span class="form-row">
