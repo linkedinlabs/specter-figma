@@ -27,8 +27,13 @@
     "svelte3"
   ],
   "rules": {
+    "arrow-parens": [
+      2, "as-needed", { "requireForBlockBody": true }
+    ],
     "no-console": "error",
+    "no-multiple-empty-lines": "off",
     "no-restricted-globals": "off",
+    "no-undef": "off",
     "no-unused-vars": "off",
     "no-unused-expressions": [
       "error", {
