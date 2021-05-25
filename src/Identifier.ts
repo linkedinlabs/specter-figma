@@ -662,7 +662,7 @@ export default class Identifier {
     ) {
       result.status = 'error';
       result.messages.log = 'Node is not connected to a Main Component or library styles';
-      result.messages.toast = 'This layer is not a component or styled.';
+      // result.messages.toast = 'This layer is not a component or styled.';
       return result;
     }
 

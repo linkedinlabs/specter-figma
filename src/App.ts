@@ -659,12 +659,12 @@ export default class App {
             masterFrame.name = frame.name;
           }
 
-          // tktk: see if folks want any annotations cleared since they'll break
-          // ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
-          //   frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
-          // });
-          // frame.children.find(({type, name}) => type === 'GROUP'
-          // && name.includes('Specter'))?.remove();
+          // annotations cleared since they'll break
+          ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
+            frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
+          });
+          frame.children.find(({type, name}) => type === 'GROUP'
+            && name.includes('Specter'))?.remove();
 
           categories.forEach((category) => {
             const specFrame = figma.createFrame();
@@ -984,6 +984,7 @@ export default class App {
     // iterate through each node in a selection
     const nodes = new Crawler({ for: selection }).all();
     const multipleNodes = (nodes.length > 1);
+    let libraryNameError = null;
 
     nodes.forEach((node: BaseNode) => {
       // set up Identifier instance for the node
@@ -1029,6 +1030,8 @@ export default class App {
         messenger.handleResult(getLibraryNameResult);
 
         if (getLibraryNameResult.status === 'error') {
+          libraryNameError = true;
+
           if (!multipleNodes) {
             // show the GUI if we are annotating a single custom node
             if (shouldTerminateLocal) {
@@ -1080,6 +1083,10 @@ export default class App {
 
       return null;
     });
+
+    if (libraryNameError) {
+      figma.notify('Warning: Selection contains layers that aren\'t a component or styled');
+    }
 
     if (shouldTerminateLocal) {
       this.closeOrReset();
