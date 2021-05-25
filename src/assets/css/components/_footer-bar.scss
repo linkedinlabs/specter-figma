@@ -1,48 +1,52 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++ info panel
 
-@mixin info-panel-trigger {
+@mixin footer-bar {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: space-between;
   position: fixed;
   left: 0;
   bottom: 0;
-  padding: 0;
+  padding: 0 10px;
   width: 100%;
-  height: em(14);
+  height: em(32);
+  background: $wl-ctrl-primary;
+  color: white;
   overflow: hidden;
-  background: none;
   border: 0;
   outline: none;
   z-index: 1;
 
-  .icon {
-    display: block;
-    position: absolute;
-    align-self: flex-end;
-    bottom: 0;
-    width: 100%;
-    height: em(6);
-    background: $wl-ctrl-primary;
-    transition: background 100ms cubic-bezier(0.2, 0, 0.4, 1);
-    transition-delay: 0ms;
-
-    &:before {
-      content: "";
-      position: absolute;
-      right: em(12);
-      margin-top: em(-4);
-      width: 0;
-      height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-bottom: 8px solid $wl-ctrl-primary;
-      transition: all 100ms cubic-bezier(0.2, 0, 0.4, 1);
-      transition-delay: 0ms;
-    }
+  .label-text {
+    color: white;
+    margin-left: 14px;
+    opacity: 0.7;
   }
 
   .text {
     display: none;
+  }
+
+  .switch__toggle {
+    &:checked + label {
+      &:before {
+        border-color: white;
+        background-color: black;
+      }
+    }
+
+    &:enabled + label {
+      &:before,
+      &:after {
+        border-color: white;
+      }
+    }
+  }
+
+  .switch__label {
+    &:after {
+      background: black;
+    }
   }
 
   @include hover {
@@ -67,37 +71,7 @@
   }
 
   &.info-open {
-    bottom: auto;
-    top: 0;
-
-    .icon {
-      border: auto;
-      top: 0;
-
-      &:before {
-        right: auto;
-        left: em(16);
-        margin-top: em(2);
-        border-bottom: 0;
-        border-top: 8px solid $wl-ctrl-primary;
-      }
-    }
-
-    @include hover {
-      .icon {
-        &:before {
-          transform: translateY(#{em(4)});
-        }
-      }
-    }
-
-    &:focus {
-      .icon {
-        &:before {
-          transform: translateY(#{em(4)});
-        }
-      }
-    }
+    display: none;
   }
 }
 
@@ -111,7 +85,7 @@
     justify-content: center;
     flex-direction: column;
     flex-wrap: wrap;
-    padding: em(40) em(20) em(14) em(20);
+    padding: em(30) em(20) em(14) em(20);
     width: 100%;
 
     svg {
@@ -160,9 +134,6 @@
   }
 
   footer {
-    position: absolute;
-    left: 0;
-    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -177,5 +148,5 @@
   }
 }
 
-.info-trigger { @include info-panel-trigger; }
+.footer-bar { @include footer-bar; }
 .info-panel { @include info-panel-content; }

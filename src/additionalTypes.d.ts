@@ -1,12 +1,71 @@
 declare global {
   // Internal Declarations
-  type PluginViewTypes = 'general' | 'a11y-keyboard' | 'a11y-labels' | 'a11y-headings';
+  type PluginViewTypes = 
+    'general'
+    | 'a11y-keyboard'
+    | 'a11y-labels'
+    | 'a11y-headings'
+    | 'a11y-misc';
 
-  type PluginKeystopKeys = 'arrows-left-right' | 'arrows-up-down' | 'enter' | 'escape' | 'space';
+  type PluginKeystopKeys = 
+    'arrows-left-right'
+    | 'arrows-up-down'
+    | 'enter'
+    | 'escape'
+    | 'space';
 
-  type PluginAriaRole = 'no-role' | 'image' | 'image-decorative' | 'button' | 'checkbox' | 'link' | 'menuitem' | 'menuitemcheckbox' | 'menuitemradio' | 'options' | 'progressbar' | 'searchbox' | 'radio' | 'slider' | 'switch' | 'tab' | 'tabpanel' | 'textbox' | 'combobox' | 'listbox' | 'menu' | 'radiogroup' | 'tablist';
+  type PluginAriaRole = 
+    'no-role'
+    | 'image'
+    | 'image-decorative'
+    | 'button'
+    | 'checkbox'
+    | 'link'
+    | 'menuitem'
+    | 'menuitemcheckbox'
+    | 'menuitemradio'
+    | 'options'
+    | 'progressbar'
+    | 'searchbox'
+    | 'radio'
+    | 'slider'
+    | 'switch'
+    | 'tab'
+    | 'tabpanel'
+    | 'textbox'
+    | 'combobox'
+    | 'listbox'
+    | 'menu'
+    | 'radiogroup'
+    | 'tablist';
 
-  type PluginStopType = 'keystop' | 'label' | 'heading';
+  type PluginStopType = 'keystop' | 'label' | 'heading' | 'misc';
+
+  type PluginAnnotationType = 
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'label'
+    | 'heading'
+    | 'misc'
+    | 'spacing'
+    | 'style';
+
+  type PluginTextType = 
+    'component'
+    | 'custom'
+    | 'dimension'
+    | 'keystop'
+    | 'label'
+    | 'heading'
+    | 'misc'
+    | 'spacing'
+    | 'style'
+    | 'legend'
+    | 'title'
+    | 'instruction'
+    | 'bullets';
 
   type PluginAriaLabels = {
     a11y: string,
@@ -18,6 +77,15 @@ declare global {
     level: string,
     visible: boolean,
     invisible: string
+  }
+
+  type PluginSpecSettings = {
+    instructions: boolean,
+    designSystem: boolean,
+    keyboard: boolean,
+    labels: boolean,
+    headings: boolean,
+    misc: boolean,
   }
 
   type PluginNodePosition = {
@@ -81,6 +149,7 @@ declare global {
     role?: PluginAriaRole,
     labels?: PluginAriaLabels,
     heading?: PluginAriaHeading,
+    misc?: Array<{name: string, val: string}>,
     name: string,
     position: number | string,
   }

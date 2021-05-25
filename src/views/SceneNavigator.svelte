@@ -18,6 +18,10 @@
       text: 'Headings',
       id: 'a11y-headings',
     },
+    {
+      text: 'Misc',
+      id: 'a11y-misc',
+    },
   ];
 
   const setCurrentViewContext = (newView) => {
@@ -40,6 +44,9 @@
 
 <style>
   /* components/scene-navigator */
+  button {
+    cursor: pointer;
+  }
 </style>
 
 <nav class="scene-navigator components">

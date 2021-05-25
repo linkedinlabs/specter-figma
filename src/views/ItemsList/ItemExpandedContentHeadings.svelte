@@ -1,7 +1,7 @@
 <script>
-  import FormUnit from './forms-controls/FormUnit';
-  import { deepCompare } from '../utils/tools';
-  import { LEVEL_OPTS } from '../constants';
+  import FormUnit from '../forms-controls/FormUnit';
+  import { deepCompare } from '../../utils/tools';
+  import { LEVEL_OPTS } from '../../constants';
 
   export let isSelected = false;
   export let itemId = null;
@@ -47,7 +47,7 @@
     <FormUnit
       className="form-row"
       kind="inputSwitch"
-      labelText="Visible"
+      labelText="Visible text"
       nameId={`${itemId}-heading-visible`}
       inputWatchBlur={true}
       on:saveSignal={() => updateHeading(heading)}
@@ -57,7 +57,7 @@
       <FormUnit
         className="form-row"
         kind="inputText"
-        labelText="Heading"
+        labelText="A11y label"
         nameId={`${itemId}-heading-invisible`}
         placeholder="e.g. 'Skip for now'"
         inputWatchBlur={true}

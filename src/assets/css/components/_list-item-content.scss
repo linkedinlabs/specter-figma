@@ -55,8 +55,25 @@
       flex-wrap: nowrap;
       width: 100%;
 
+      &.slim {
+        width: 115px;
+
+        &.light {
+          opacity: 0.5;
+        }
+      }
+
       .form-label {
         width: em(104);
+      }
+    }
+
+    &.inline {
+      display: flex;
+      padding-left: 15px;
+
+      .form-row {
+        margin-right: 5px;
       }
     }
   }
@@ -75,7 +92,8 @@
     }
 
     &.a11y-labels,
-    &.a11y-headings {
+    &.a11y-headings,
+    &.a11y-misc {
       @include list-item-content-labels;
     }
   }

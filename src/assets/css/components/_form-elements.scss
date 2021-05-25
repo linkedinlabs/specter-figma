@@ -115,6 +115,14 @@
     @include form-label;
   }
 
+  &.full {
+    width: 100%;
+
+    .form-label {
+      width: 32%;
+    }
+  }
+
   // style form element types
   .form-element {
     @include form-element-base;

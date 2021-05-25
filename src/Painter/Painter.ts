@@ -20,7 +20,7 @@ import {
   buildLegend,
   positionLegend,
   drawContainerGroup,
-} from './annotationBuilders';
+} from './nodeBuilders';
 import { getLegendFrame } from '../utils/nodeGetters';
 
 const uuid = require('uuid-random');
@@ -40,18 +40,14 @@ const uuid = require('uuid-random');
 const setGroupKey = (elementType: string):
   'boundingInnerGroupId'
   | 'componentInnerGroupId'
-  | 'dimensionInnerGroupId'
-  | 'keystopInnerGroupId'
-  | 'spacingInnerGroupId'
-  | 'styleInnerGroupId'
+  | 'measureInnerGroupId'
+  | 'a11yInnerGroupId'
   | 'id' => {
   let groupKey:
     'boundingInnerGroupId'
     | 'componentInnerGroupId'
-    | 'dimensionInnerGroupId'
-    | 'keystopInnerGroupId'
-    | 'spacingInnerGroupId'
-    | 'styleInnerGroupId'
+    | 'measureInnerGroupId'
+    | 'a11yInnerGroupId'
     | 'id' = null;
   switch (elementType) {
     case 'boundingBox':
@@ -59,19 +55,17 @@ const setGroupKey = (elementType: string):
       break;
     case 'component':
     case 'custom':
+    case 'style':
       groupKey = 'componentInnerGroupId';
       break;
+    case 'spacing':
     case 'dimension':
-      groupKey = 'dimensionInnerGroupId';
+      groupKey = 'measureInnerGroupId';
       break;
     case 'keystop':
-      groupKey = 'keystopInnerGroupId';
-      break;
-    case 'spacing':
-      groupKey = 'spacingInnerGroupId';
-      break;
-    case 'style':
-      groupKey = 'styleInnerGroupId';
+    case 'label':
+    case 'heading':
+      groupKey = 'a11yInnerGroupId';
       break;
     case 'topLevel':
       groupKey = 'id';
@@ -97,9 +91,14 @@ const setGroupName = (
   elementType:
     'boundingBox'
     | 'component'
+    | 'a11y'
+    | 'measure'
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
+    | 'heading'
+    | 'misc'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -111,22 +110,21 @@ const setGroupName = (
       break;
     case 'component':
     case 'custom':
+    case 'style':
       groupName = 'Component Annotations';
       break;
-    case 'dimension':
-      groupName = 'Dimension Annotations';
-      break;
     case 'keystop':
-      groupName = 'Keyboard Annotations';
+    case 'label':
+    case 'heading':
+    case 'misc':
+      groupName = 'A11y Annotations';
       break;
+    case 'dimension':
     case 'spacing':
-      groupName = 'Spacing Annotations';
-      break;
-    case 'style':
-      groupName = 'Foundation Annotations';
+      groupName = 'Size/Spacing Annotations';
       break;
     case 'topLevel':
-      groupName = `+++ ${PLUGIN_NAME} +++`;
+      groupName = `+${PLUGIN_NAME}+`;
       break;
     default:
       groupName = 'Component Annotations';
@@ -280,11 +278,9 @@ export const createContainerGroup = (
   containerSet: {
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
-    dimensionInnerGroupId?: string,
-    keystopInnerGroupId?: string,
+    measureInnerGroupId?: string,
+    a11yInnerGroupId?: string,
     frameId: string,
-    spacingInnerGroupId?: string,
-    styleInnerGroupId?: string,
   },
   groupType:
     'boundingBox'
@@ -292,6 +288,9 @@ export const createContainerGroup = (
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
+    | 'heading'
+    | 'misc'
     | 'spacing'
     | 'style'
     | 'topLevel',
@@ -302,11 +301,9 @@ export const createContainerGroup = (
   updatedContainerSet: {
     boundingInnerGroupId?: string,
     componentInnerGroupId?: string,
-    dimensionInnerGroupId?: string,
-    keystopInnerGroupId?: string,
+    measureInnerGroupId?: string,
+    a11yInnerGroupId?: string,
     frameId: string,
-    spacingInnerGroupId?: string,
-    styleInnerGroupId?: string,
   },
 } => {
   const groupName: string = setGroupName(groupType);
@@ -359,6 +356,9 @@ const setNodeInContainers = (nodeToContain: {
     | 'custom'
     | 'dimension'
     | 'keystop'
+    | 'label'
+    | 'heading'
+    | 'misc'
     | 'spacing'
     | 'style',
 }): {
@@ -375,8 +375,7 @@ const setNodeInContainers = (nodeToContain: {
     page,
     type,
   } = nodeToContain;
-  const groupType = ['label', 'heading'].includes(type) ? 'keystop' : type;
-  const groupKey = setGroupKey(groupType);
+  const groupKey = setGroupKey(type);
   const frameId: string = frame.id;
   const pageSettings = JSON.parse(page.getPluginData(PLUGIN_IDENTIFIER) || null);
 
@@ -430,7 +429,7 @@ const setNodeInContainers = (nodeToContain: {
 
     // create the `innerGroup`, if it does not exist
     if (!innerGroup) {
-      const ccgResult = createContainerGroup(updatedContainerSet, groupType, frame, node);
+      const ccgResult = createContainerGroup(updatedContainerSet, type, frame, node);
       innerGroup = ccgResult.newInnerGroup;
       updatedContainerSet = ccgResult.updatedContainerSet;
     }
@@ -707,6 +706,7 @@ export default class Painter {
       groupName,
       annotation,
       nodePosition,
+      annotationType,
     );
 
     // set it in the correct containers
@@ -1103,7 +1103,6 @@ export default class Painter {
     }
 
     // set up some information
-    // const { keys } = nodeData;
     const { annotationText } = nodeData;
     const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
     const annotationName = `${typeCapitalized} for ${this.node.name}`;
@@ -1114,16 +1113,6 @@ export default class Painter {
       secondaryText: null,
       type,
     });
-
-    // tktk AUX KEYS
-    // const auxAnnotations: Array<FrameNode> = [];
-    // if (type === 'keystop' && keys?.length) {
-    //   keys.forEach((keyEntry) => {
-    //     const auxAnnotation: FrameNode = buildAuxAnnotation(keyEntry);
-    //     auxAnnotation.layoutAlign = 'INHERIT';
-    //     auxAnnotations.push(auxAnnotation);
-    //   });
-    // }
 
     // grab the position from crawler
     const crawler = new Crawler({ for: [this.node] });
@@ -1149,50 +1138,19 @@ export default class Painter {
       nodePosition,
       type,
     );
-    // const initialX = baseAnnotationNode.x;
-    // const initialY = baseAnnotationNode.y;
 
     // if applicable, add auxilary annotations (currently `keys`)
     const annotationNode: FrameNode = baseAnnotationNode;
     let legendNode: FrameNode = null;
-
-    // tktk AUX KEYS
-    // if (auxAnnotations.length) {
-    //   annotationNode = figma.createFrame();
-    //   annotationNode.clipsContent = false;
-    //   annotationNode.layoutMode = 'HORIZONTAL';
-    //   annotationNode.counterAxisSizingMode = 'AUTO';
-    //   annotationNode.layoutAlign = 'INHERIT';
-    //   annotationNode.itemSpacing = 4;
-    //   annotationNode.fills = [];
-    //   annotationNode.name = `${baseAnnotationNode.name} (with Keys)`;
-
-
-    //   annotationNode.appendChild(baseAnnotationNode);
-
-    //   // auxAnnotations.forEach(auxAnnotation => annotationNode.appendChild(auxAnnotation));
-
-    //   baseAnnotationNode.layoutAlign = 'INHERIT';
-    //   annotationNode.resize(baseAnnotationNode.width, baseAnnotationNode.height);
-    //   annotationNode.x = initialX;
-    //   annotationNode.y = initialY;
-    // }
-
     legendNode = buildLegendEntry(type, nodeData);
-    this.addEntryToLegend(legendNode);
+    this.addEntryToLegend(legendNode, type);
 
     // set the annotation frame(s) into the correct container group layers in Figma
     setNodeInContainers({
       node: annotationNode,
       frame: this.frame,
       page: this.page,
-      type: type as 'boundingBox'
-    | 'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'spacing'
-    | 'style',
+      type,
     });
 
     // ---------- set node tracking data with new annotation
@@ -1210,14 +1168,16 @@ export default class Painter {
    * @name addEntryToLegend
    *
    * @param {Object} legendNode The newly created legend entry for the annotation.
+   * @param {string} type The type of legend to create based on stop type.
+   * @param {boolean} includeHeader A flag for whether to include a legend header.
    *
    * @returns {undefined}
    */
-  addEntryToLegend(legendNode) {
+  addEntryToLegend(legendNode: FrameNode, type: PluginStopType, includeHeader?: boolean) {
     let legend = getLegendFrame(this.frame.id, this.page);
     if (!legend) {
-      legend = buildLegend();
-      legend.name = `+++ ${PLUGIN_NAME} +++ ${this.frame.name} Legend`;
+      legend = buildLegend(type, includeHeader);
+      legend.name = `+${PLUGIN_NAME}+ Legend - ${this.frame.name}`;
 
       const {
         x, y, width, height,

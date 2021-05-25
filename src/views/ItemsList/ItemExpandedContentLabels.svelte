@@ -1,6 +1,6 @@
 <script>
-  import FormUnit from './forms-controls/FormUnit';
-  import { deepCompare } from '../utils/tools';
+  import FormUnit from '../forms-controls/FormUnit';
+  import { deepCompare } from '../../utils/tools';
 
   export let isSelected = false;
   export let itemId = null;
@@ -13,9 +13,11 @@
   const savedLabels = { ...labels };
 
   const updateField = (key, value) => {
-    const diff = key === 'role' ? value !== savedRole : deepCompare(value, savedLabels);
+    const changeDetected = key === 'role'
+      ? value !== savedRole
+      : deepCompare(savedLabels, value);
 
-    if (diff) {
+    if (changeDetected) {
       parent.postMessage({
         pluginMessage: {
           action: 'a11y-set-node-data',
@@ -65,9 +67,8 @@
         <FormUnit
           className="form-row"
           kind="inputSwitch"
-          labelText="Visible label"
+          labelText="Visible text"
           nameId={`${itemId}-label-visible`}
-          placeholder="Leave empty to use a11y label"
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.visible}
@@ -77,7 +78,7 @@
           kind="inputText"
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
-          placeholder="Leave empty to use visible label"
+          placeholder="Leave empty to use visible text"
           inputWatchBlur={true}
           on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.a11y}

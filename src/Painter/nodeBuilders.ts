@@ -1,10 +1,10 @@
 import {
   COLORS,
   DATA_KEYS,
+  INSTRUCTION_COMPONENT_KEYS,
   KEY_OPTS,
   ROLE_OPTS,
 } from '../constants';
-import { getLegendFrame } from '../utils/nodeGetters';
 import { hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -335,16 +335,7 @@ const buildKeystopArrowIcon = (
  * @private
  */
 const buildText = (
-  type:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'legend'
-    | 'spacing'
-    | 'style',
+  type: PluginTextType,
   color: { r: number, g: number, b: number },
   characters: string,
   isError?: boolean,
@@ -378,7 +369,7 @@ const buildText = (
     text.textAutoResize = 'WIDTH_AND_HEIGHT';
     text.layoutAlign = 'INHERIT';
     text.locked = true;
-  } else if (['label', 'heading'].includes(type)) {
+  } else if (['label', 'heading', 'misc'].includes(type)) {
     text.fontSize = 14;
     text.lineHeight = { value: 100, unit: 'PERCENT' };
     text.textCase = 'UPPER';
@@ -395,12 +386,25 @@ const buildText = (
     if (!characters.includes(':')) {
       text.resize(225, text.height);
     }
+  } else if (type === 'title') {
+    text.textAlignHorizontal = 'LEFT';
+    text.fontSize = 22;
+    text.fontName = { family: typefaceToUse.family, style: 'Black' };
+  } else if (['instruction', 'bullets'].includes(type)) {
+    figma.loadFontAsync({ family: 'Roboto', style: 'Regular' }).then(() => {
+      text.textAlignHorizontal = 'LEFT';
+      text.fontSize = 16;
+      text.fontName = { family: 'Roboto', style: 'Regular' };
+      text.lineHeight = { value: 150, unit: 'PERCENT' };
+      text.paragraphSpacing = type === 'bullets' ? 0 : 15;
+      text.paragraphIndent = type === 'bullets' ? 15 : 0;
+    });
   }
   return text;
 };
 
 /**
- * @description Builds an inner rectangle element in Figma for label annotations.
+ * @description Builds an inner rectangle element in Figma for legend annotations.
  *
  * @kind function
  * @name buildRectangleInnerHalf
@@ -416,7 +420,7 @@ const buildRectangleInnerHalf = (
   color: { r: number, g: number, b: number },
   isLegendIcon?: boolean,
 ): FrameNode => {
-  // set inner half frames for label annotation
+  // set inner half frames for legend annotation
   const frame: FrameNode = figma.createFrame();
   frame.name = `${align.charAt(0).toUpperCase()}${align.slice(1)} Half`;
 
@@ -471,6 +475,7 @@ const buildRectangle = (
     | 'keystop'
     | 'label'
     | 'heading'
+    | 'misc'
     | 'spacing'
     | 'style',
   color: { r: number, g: number, b: number },
@@ -544,7 +549,7 @@ const buildRectangle = (
       const keyText: TextNode = buildText(type, hexToDecimalRgb('#ffffff'), innerText);
       rectangle.appendChild(keyText);
     }
-  } else if (['label', 'heading'].includes(type)) {
+  } else if (['label', 'heading', 'misc'].includes(type)) {
     rectangle.paddingLeft = 0;
     rectangle.paddingTop = 2;
     rectangle.paddingBottom = 2;
@@ -592,15 +597,7 @@ const buildRectangle = (
 const buildAnnotation = (options: {
   mainText: string,
   secondaryText?: string,
-  type:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'spacing'
-    | 'style',
+  type: PluginAnnotationType,
   isLegendIcon?: boolean,
 }): {
   diamond: PolygonNode,
@@ -621,7 +618,7 @@ const buildAnnotation = (options: {
   let text: TextNode = null;
   let innerText: string = '';
 
-  if (['label', 'heading'].includes(type) || (type === 'keystop' && isLegendIcon)) {
+  if (['label', 'heading', 'misc'].includes(type) || (type === 'keystop' && isLegendIcon)) {
     innerText = mainText;
   }
 
@@ -650,7 +647,6 @@ const buildAnnotation = (options: {
       icon = buildKeystopIcon(iconColor);
     }
   }
-
 
   return {
     diamond,
@@ -816,69 +812,6 @@ const buildBoundingBox = (position: {
   return boundingBox;
 };
 
-/**
- * @description Builds the initial legend frame for label annotation legend items.
- *
- * @kind function
- * @name buildLabelLegend
- *
- * @returns {Object} Returns the legend frame.
- */
-const buildLegend = () => {
-  const legend: FrameNode = figma.createFrame();
-  // auto-layout
-  legend.layoutMode = 'VERTICAL';
-  legend.primaryAxisSizingMode = 'AUTO';
-  legend.primaryAxisAlignItems = 'SPACE_BETWEEN';
-  legend.counterAxisSizingMode = 'FIXED';
-  legend.counterAxisAlignItems = 'CENTER';
-  legend.layoutAlign = 'STRETCH';
-  legend.layoutGrow = 0;
-  legend.verticalPadding = 0;
-  legend.horizontalPadding = 0;
-
-  return legend;
-};
-
-/**
- * @description Positions the legend frame respective to the design frame it corresponds with.
- *
- * @kind function
- * @name positionLegend
- *
- * @param {Object} legend The Figma frame that contains the annotation legend.
- * @param {string} originFramePosition The position of the design frame the legend pertains to.
- *
- * @returns {Object} The final legend after positioning.
- * @private
- */
-const positionLegend = (
-  legend: FrameNode,
-  originFramePosition: {
-    width: number,
-    height: number,
-    x: number,
-    y: number,
-  },
-) => {
-  const legendFrame = legend;
-
-  legendFrame.layoutMode = 'VERTICAL';
-  legendFrame.primaryAxisSizingMode = 'AUTO';
-  legendFrame.primaryAxisAlignItems = 'MIN';
-  legendFrame.counterAxisSizingMode = 'AUTO';
-  legendFrame.counterAxisAlignItems = 'CENTER';
-  legendFrame.layoutAlign = 'INHERIT';
-  legendFrame.fills = [];
-  legendFrame.clipsContent = false;
-
-  const placementX: number = originFramePosition.x + (originFramePosition.width + 20);
-  const placementY: number = originFramePosition.y;
-  legendFrame.x = placementX;
-  legendFrame.y = placementY;
-
-  return legendFrame;
-};
 
 /**
  * @description Gets the text to display for legend entries.
@@ -891,8 +824,8 @@ const positionLegend = (
  *
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
-const getLegendLabelText = (labels, labelName) => {
-  const { visible, alt, a11y } = labels || {};
+const getLegendLabelText = (labels: PluginAriaLabels, labelName: string) => {
+  const { visible, alt, a11y } = labels || { visible: true };
   if (labelName === 'alt') {
     return alt ? `"${alt}"` : 'undefined';
   }
@@ -903,7 +836,7 @@ const getLegendLabelText = (labels, labelName) => {
 };
 
 /**
- * @description Builds the initial legend frame for label annotation legend items.
+ * @description Builds the initial legend frame for annotation legend items.
  *
  * @kind function
  * @name getLegendEntryFields
@@ -913,13 +846,15 @@ const getLegendLabelText = (labels, labelName) => {
  *
  * @returns {Array} Returns the formatted field data to be used in the legend entry.
  */
-const getLegendEntryFields = (type, data) => {
+const getLegendEntryFields = (type: PluginStopType, data: any) => {
   const {
     role,
     labels,
     heading,
+    misc,
     keys,
   } = data;
+
   let fields;
 
   if (type === 'label') {
@@ -948,8 +883,8 @@ const getLegendEntryFields = (type, data) => {
           val: ROLE_OPTS.find(opt => opt.value === role).text,
         },
         {
-          name: 'Visible label',
-          val: labels?.visible ? 'Yes' : 'No',
+          name: 'Visible text',
+          val: !labels || labels?.visible ? 'Yes' : 'No',
         },
         {
           name: 'A11y label',
@@ -959,8 +894,8 @@ const getLegendEntryFields = (type, data) => {
     } else if (!role || role === 'no-role') {
       fields = [
         {
-          name: 'Visible label',
-          val: labels?.visible ? 'Yes' : 'No',
+          name: 'Visible text',
+          val: !labels || labels?.visible ? 'Yes' : 'No',
         }, {
           name: 'A11y label',
           val: getLegendLabelText(labels, 'a11y'),
@@ -973,17 +908,17 @@ const getLegendEntryFields = (type, data) => {
         name: 'Heading level',
         val: (heading?.level !== 'no-level' && heading?.level) || 'n/a',
       }, {
-        name: 'Visible',
+        name: 'Visible text',
         val: !heading || heading?.visible ? 'Yes' : 'No',
       },
     ];
     if (heading && !heading.visible) {
       fields.push({
-        name: 'Heading',
+        name: 'A11y label',
         val: heading.invisible ? `"${heading.invisible}"` : 'undefined',
       });
     }
-  } else {
+  } else if (type === 'keystop') {
     let keyList = '';
     keys?.forEach((key, i) => {
       const keyText = KEY_OPTS.find(opt => opt.value === key).text;
@@ -996,6 +931,8 @@ const getLegendEntryFields = (type, data) => {
         val: keyList || 'n/a',
       },
     ];
+  } else {
+    return misc?.length ? misc : [{ name: '? ', val: 'undefined' }];
   }
   return fields;
 };
@@ -1008,12 +945,18 @@ const getLegendEntryFields = (type, data) => {
  *
  * @param {string} type The type of the legend entry we're building.
  * @param {Object} nodeData The node's data to format and include in the legend entry.
+ * @param {Array} suppliedFields Optional argument of specific fields to provide, used for
+ * legend definitions.
  *
  * @returns {Array} Returns the legend entry nodes to append.
  */
-const buildLegendFieldNodes = (type, nodeData) => {
+const buildLegendFieldNodes = (
+  type: PluginStopType,
+  nodeData: any,
+  suppliedFields?: any,
+) => {
   const nodes = [];
-  const fields = getLegendEntryFields(type, nodeData);
+  const fields = suppliedFields || getLegendEntryFields(type, nodeData);
 
   fields.forEach(({ name, val }, index) => {
     const line: FrameNode = figma.createFrame();
@@ -1040,13 +983,113 @@ const buildLegendFieldNodes = (type, nodeData) => {
       line.bottomLeftRadius = 5;
       line.bottomRightRadius = 5;
     }
+    if (suppliedFields) {
+      line.horizontalPadding = 0;
+      line.verticalPadding = 5;
+      fieldTitle.resize(48, fieldTitle.height);
+      fieldValue.resize(286, fieldValue.height);
+    }
 
     line.appendChild(fieldTitle);
     line.appendChild(fieldValue);
+    line.locked = true;
+    line.fills = [];
     nodes.push(line);
   });
 
   return nodes;
+};
+
+/**
+ * @description Imports a library component and builds an instance from it.
+ *
+ * @kind function
+ * @name buildInstructionComponentInstance
+ *
+ * @param {string} keyName The key for the component we are importing from constants.
+ *
+ * @returns {Object} The newinstance to append to the new spec page.
+ *
+ */
+const buildInstructionComponentInstance = (keyName: string) => {
+  const panel = figma.createFrame();
+  panel.locked = true;
+  figma.importComponentByKeyAsync(INSTRUCTION_COMPONENT_KEYS[keyName]).then((n) => {
+    const instance = n.createInstance();
+    panel.resizeWithoutConstraints(instance.width, instance.height);
+    panel.appendChild(instance);
+  });
+  return panel;
+};
+
+/**
+ * @description Builds the initial legend frame for annotation legend items.
+ *
+ * @kind function
+ * @name buildLegend
+ *
+ * @param {string} type The type of the legend we're building.
+ * @param {boolean} includeHeader Optional flag for whether to include a legend header.
+ *
+ * @returns {Object} Returns the legend frame.
+ */
+const buildLegend = (type: PluginStopType, includeHeader?: boolean) => {
+  const legend: FrameNode = figma.createFrame();
+  legend.layoutMode = 'VERTICAL';
+  legend.primaryAxisSizingMode = 'AUTO';
+  legend.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  legend.counterAxisSizingMode = 'FIXED';
+  legend.counterAxisAlignItems = 'CENTER';
+  legend.layoutAlign = 'STRETCH';
+  legend.layoutGrow = 0;
+  legend.verticalPadding = 0;
+  legend.horizontalPadding = 0;
+
+  const headerType = !includeHeader ? `${type}LegendTitle` : `${type}LegendHeader`;
+  const header = buildInstructionComponentInstance(headerType);
+  header.name = 'Legend Header';
+  legend.appendChild(header);
+
+  return legend;
+};
+
+/**
+ * @description Positions the legend frame respective to the design frame it corresponds with.
+ *
+ * @kind function
+ * @name positionLegend
+ *
+ * @param {Object} legend The Figma frame that contains the annotation legend.
+ * @param {string} originFramePosition The position of the design frame the legend pertains to.
+ *
+ * @returns {Object} The final legend after positioning.
+ * @private
+ */
+const positionLegend = (
+  legend: FrameNode,
+  originFramePosition: {
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+  },
+) => {
+  const legendFrame = legend;
+  legendFrame.layoutMode = 'VERTICAL';
+  legendFrame.primaryAxisSizingMode = 'AUTO';
+  legendFrame.primaryAxisAlignItems = 'MIN';
+  legendFrame.counterAxisSizingMode = 'AUTO';
+  legendFrame.counterAxisAlignItems = 'CENTER';
+  legendFrame.layoutAlign = 'INHERIT';
+  legendFrame.fills = [];
+  legendFrame.clipsContent = false;
+
+  const placementX: number = originFramePosition.x + (originFramePosition.width + 20);
+  const placementY: number = originFramePosition.y;
+  legendFrame.x = placementX;
+  legendFrame.y = placementY;
+
+  return legendFrame;
 };
 
 /**
@@ -1090,10 +1133,10 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
   legendItem.counterAxisAlignItems = 'MIN';
   legendItem.layoutAlign = 'STRETCH';
   legendItem.layoutGrow = 0;
-  legendItem.paddingLeft = 15;
-  legendItem.paddingRight = 15;
-  legendItem.paddingTop = 15;
-  legendItem.paddingBottom = 15;
+  legendItem.paddingLeft = 10;
+  legendItem.paddingRight = 10;
+  legendItem.paddingTop = 6;
+  legendItem.paddingBottom = 6;
   legendItem.itemSpacing = 0;
 
   const legendData: FrameNode = figma.createFrame();
@@ -1112,11 +1155,9 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
   legendData.topRightRadius = 6;
   legendData.bottomRightRadius = 6;
   legendData.bottomLeftRadius = 6;
-  legendData.resize(300, legendData.height);
-  legendData.fills = [{
-    type: 'SOLID',
-    color: hexToDecimalRgb(COLORS[type]),
-  }];
+  legendData.resize(320, legendData.height);
+  legendData.strokes = [{ type: 'SOLID', color: hexToDecimalRgb(COLORS[type]) }];
+  legendData.strokeWeight = 2;
 
   const fieldNodes = buildLegendFieldNodes(type, nodeData);
   fieldNodes.forEach(field => legendData.appendChild(field));
@@ -1210,15 +1251,7 @@ const positionAnnotation = (
     x: number,
     y: number,
   },
-  annotationType:
-    'component'
-    | 'custom'
-    | 'dimension'
-    | 'keystop'
-    | 'label'
-    | 'heading'
-    | 'spacing'
-    | 'style' = 'component',
+  annotationType: PluginAnnotationType,
   orientation: 'top' | 'bottom' | 'right' | 'left' = 'top',
 ) => {
   const {
@@ -1386,7 +1419,7 @@ const positionAnnotation = (
       placementY = nodeY - rectangle.height - offsetY;
   }
 
-  if (['keystop', 'label', 'heading'].includes(annotationType)) {
+  if (['keystop', 'label', 'heading', 'misc'].includes(annotationType)) {
     if ((nodeWidth - 100) > rectangle.width) {
       placementX = nodeX + 10;
     }
@@ -1633,8 +1666,8 @@ const positionAnnotation = (
  * @kind function
  * @name refreshLegend
  *
+ * @param {Object} legend The legend frame to refresh.
  * @param {string} type The type of stops the legend is for.
- * @param {string} frameId The id of the design frame the legend corresponds to.
  * @param {Array} trackingData The up-to-date annotation tracking data.
  * @param {Array} stopList The up-to-date reordered list of stops.
  *
@@ -1642,15 +1675,18 @@ const positionAnnotation = (
  *
  */
 const refreshLegend = (
+  legend: FrameNode,
   type: PluginStopType,
-  frameId: string,
   trackingData: Array<PluginNodeTrackingData>,
   stopList: Array<PluginStopListData>,
 ) => {
-  const legend = getLegendFrame(frameId, figma.currentPage);
   const updatedTracking = [...trackingData];
   if (legend) {
-    legend.children.forEach(child => child.remove());
+    legend.children.forEach((child) => {
+      if (!child.name.includes('Header')) {
+        child.remove();
+      }
+    });
   }
 
   stopList.forEach((item) => {
@@ -1665,7 +1701,7 @@ const refreshLegend = (
         role: 'legendItem',
         id: trackingData[trackingIndex].linkId,
       }));
-      legend.appendChild(legendItem);
+      legend?.appendChild(legendItem);
     }
   });
   figma.currentPage.setPluginData(DATA_KEYS[`${type}Annotations`], JSON.stringify(updatedTracking));
@@ -1722,7 +1758,7 @@ const updateLegendEntry = (
   nodeData: Object,
 ) => {
   const trackingData = JSON.parse(figma.currentPage.getPluginData(DATA_KEYS[`${type}Annotations`]));
-  const { legendItemId } = trackingData?.find(entry => entry.id === nodeId);
+  const { legendItemId } = trackingData?.find(entry => entry.id === nodeId) || {};
 
   if (figma.getNodeById(nodeId) && legendItemId) {
     const legendItem = figma.getNodeById(legendItemId) as FrameNode;
@@ -1737,10 +1773,68 @@ const updateLegendEntry = (
   }
 };
 
+/**
+ * @description Updates the pointer of annotations to a specified direction.
+ *
+ * @kind function
+ * @name setPointerDirection
+ *
+ * @param {string} direction The direction the annotation should point.
+ * @param {Object} nodes The annotation nodes to update pointers within.
+ *
+ * @returns {undefined}
+ *
+ */
+const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
+  nodes.forEach((node) => {
+    const updatedNode = node;
+    const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
+    const pointerColor = pointer.fills[0].color;
+    if (pointer) pointer.remove();
+
+    const diamond = figma.createPolygon();
+    diamond.name = 'Diamond';
+    diamond.resize(10, 6);
+    diamond.rotation = 180;
+    diamond.pointCount = 3;
+    diamond.fills = [{
+      type: 'SOLID',
+      color: pointerColor,
+    }];
+    const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
+    const vertical = 'CENTER' as ConstraintType;
+
+    if (['left', 'right'].includes(direction)) {
+      updatedNode.layoutMode = 'HORIZONTAL';
+
+      if (direction === 'right') {
+        diamond.rotation = 270;
+        updatedNode.appendChild(diamond);
+      } else {
+        diamond.rotation = 90;
+        updatedNode.insertChild(0, diamond);
+      }
+    } else {
+      updatedNode.layoutMode = 'VERTICAL';
+
+      if (direction === 'down') {
+        diamond.rotation = 180;
+        updatedNode.appendChild(diamond);
+      } else {
+        diamond.rotation = 0;
+        updatedNode.insertChild(0, diamond);
+      }
+    }
+    updatedNode.constraints = { horizontal, vertical };
+    figma.flatten([diamond]);
+  });
+};
+
 export {
   buildAnnotation,
   buildAuxAnnotation,
   buildBoundingBox,
+  buildInstructionComponentInstance,
   buildKeystopArrowIcon,
   buildKeystopIcon,
   buildLegend,
@@ -1753,6 +1847,7 @@ export {
   positionAnnotation,
   positionLegend,
   refreshLegend,
+  setPointerDirection,
   updateAnnotationNum,
   updateLegendEntry,
 };
