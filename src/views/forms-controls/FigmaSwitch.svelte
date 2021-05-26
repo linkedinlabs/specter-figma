@@ -1,21 +1,17 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
-
   export let disabled = false;
   export let labelText = null;
   export let nameId = null;
   export let value = false;
-
-  const dispatch = createEventDispatcher();
 </script>
 
 <style>
   /* components/figma-switch */
 </style>
 
-<span class="switch" on:click={() => dispatch('saveSignal')}>
+<span class="switch" on:click>
   <input
-    checked={value}
+    bind:checked={value}
     class="switch__toggle"
     disabled={disabled}
     id={nameId}

@@ -13,23 +13,25 @@
   const savedLabels = { ...labels };
 
   const updateField = (key, value) => {
-    const changeDetected = key === 'role'
-      ? value !== savedRole
-      : deepCompare(savedLabels, value);
-
-    if (changeDetected) {
-      parent.postMessage({
-        pluginMessage: {
-          action: 'a11y-set-node-data',
-          payload: {
-            id: itemId,
-            key,
-            value,
-          },
+    parent.postMessage({
+      pluginMessage: {
+        action: 'a11y-set-node-data',
+        payload: {
+          id: itemId,
+          key,
+          value,
         },
-      }, '*');
-    }
+      },
+    }, '*');
   };
+
+  $: if (savedRole !== role) {
+    updateField('role', role);
+  }
+
+  $: if (deepCompare(savedLabels, labels)) {
+    updateField('labels', labels);
+  }
 
 </script>
 
@@ -47,7 +49,6 @@
         nameId={`${itemId}-role`}
         options={roleOptions}
         selectWatchChange={true}
-        on:saveSignal={() => updateField('role', role)}
         bind:value={role}
       />
     </span>
@@ -59,8 +60,6 @@
           labelText="Alt text"
           nameId={`${itemId}-label-alt`}
           placeholder="Short description of the scene"
-          inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.alt}
         />
       {:else}
@@ -69,8 +68,6 @@
           kind="inputSwitch"
           labelText="Visible text"
           nameId={`${itemId}-label-visible`}
-          inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.visible}
         />
         <FormUnit
@@ -79,8 +76,6 @@
           labelText="A11y label"
           nameId={`${itemId}-label-a11y`}
           placeholder="Leave empty to use visible text"
-          inputWatchBlur={true}
-          on:saveSignal={() => updateField('labels', labels)}
           bind:value={labels.a11y}
         />
       {/if}

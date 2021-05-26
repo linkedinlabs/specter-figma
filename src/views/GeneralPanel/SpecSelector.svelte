@@ -143,7 +143,7 @@
           Instructions 
           <FigmaSwitch
             className="form-element element-type-switch"
-            on:saveSignal={() => { settings.instructions = !settings.instructions; }}
+            on:click={() => { settings.instructions = !settings.instructions; }}
             value={settings.instructions}
           />
         </span>
@@ -151,7 +151,7 @@
             Design system components & spacing
             <FigmaSwitch
               className="form-element element-type-switch"
-              on:saveSignal={() => { settings.designSystem = !settings.designSystem; }}
+              on:click={() => { settings.designSystem = !settings.designSystem; }}
               value={settings.designSystem}
             />
           </span>
@@ -159,7 +159,7 @@
             Keyboard 
             <FigmaSwitch
               className="form-element element-type-switch"
-              on:saveSignal={() => { settings.keyboard = !settings.keyboard; }}
+              on:click={() => { settings.keyboard = !settings.keyboard; }}
               value={settings.keyboard}
             />
           </span>
@@ -167,7 +167,7 @@
             Labels 
             <FigmaSwitch
               className="form-element element-type-switch"
-              on:saveSignal={() => { settings.label = !settings.label; }}
+              on:click={() => { settings.label = !settings.label; }}
               value={settings.label}
             />
           </span>
@@ -175,7 +175,7 @@
             Headings 
             <FigmaSwitch
               className="form-element element-type-switch"
-              on:saveSignal={() => { settings.heading = !settings.heading; }}
+              on:click={() => { settings.heading = !settings.heading; }}
               value={settings.heading}
             />
           </span>
@@ -183,7 +183,7 @@
             Misc (blank)
             <FigmaSwitch
               className="form-element element-type-switch"
-              on:saveSignal={() => { settings.misc = !settings.misc; }}
+              on:click={() => { settings.misc = !settings.misc; }}
               value={settings.misc}
             />
           </span>

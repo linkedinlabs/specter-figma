@@ -10,20 +10,22 @@
 
   const savedHeading = { ...heading };
 
-  const updateHeading = (newHeading) => {
-    if (deepCompare(savedHeading, newHeading)) {
-      parent.postMessage({
-        pluginMessage: {
-          action: 'a11y-set-node-data',
-          payload: {
-            id: itemId,
-            key: 'heading',
-            value: newHeading,
-          },
+  const updateHeading = () => {
+    parent.postMessage({
+      pluginMessage: {
+        action: 'a11y-set-node-data',
+        payload: {
+          id: itemId,
+          key: 'heading',
+          value: heading,
         },
-      }, '*');
-    }
+      },
+    }, '*');
   };
+
+  $: if (deepCompare(savedHeading, heading)) {
+    updateHeading();
+  }
 
 </script>
 
@@ -41,7 +43,6 @@
       nameId={`${itemId}-heading-level`}
       placeholder="Leave empty to use browser default"
       selectWatchChange={true}
-      on:saveSignal={() => updateHeading(heading)}
       bind:value={heading.level}
     />
     <FormUnit
@@ -49,8 +50,6 @@
       kind="inputSwitch"
       labelText="Visible text"
       nameId={`${itemId}-heading-visible`}
-      inputWatchBlur={true}
-      on:saveSignal={() => updateHeading(heading)}
       bind:value={heading.visible}
     />
     {#if heading && !heading.visible}
@@ -60,8 +59,6 @@
         labelText="A11y label"
         nameId={`${itemId}-heading-invisible`}
         placeholder="e.g. 'Skip for now'"
-        inputWatchBlur={true}
-        on:saveSignal={() => updateHeading(heading)}
         bind:value={heading.invisible}
       />
     {/if}

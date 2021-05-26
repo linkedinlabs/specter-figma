@@ -36,9 +36,8 @@
   <FigmaSwitch
     className="form-element element-type-switch inverted"
     labelText="Lock annotations"
-    on:saveSignal={() => handleLockClick()}
     value={lockedAnnotations}
-    watchChange={true}
+    on:click={() => handleLockClick()}
   />
   <button class="info-icon" aria-label="Specter info" on:click={() => handleInfoClick(isInfoPanel)}>
     <svg width="16" height="16" viewBox="0 0 16 16" class="question-circle" fill="none">
