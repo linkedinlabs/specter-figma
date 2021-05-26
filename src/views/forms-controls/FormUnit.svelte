@@ -15,7 +15,7 @@
   export let inputType = 'text';
   export let inputWatchBlur = false;
   export let kind = 'inputText';
-  export let labelText = 'Type something…';
+  export let labelText;
   export let placeholder = null;
   export let nameId = 'text-input-id';
   export let resetValue = false;
@@ -84,7 +84,6 @@
         className="form-element element-type-switch"
         disabled={isDisabled}
         nameId={nameId}
-        labelText={labelText}
         options={options}
         on:saveSignal
         bind:value={value}

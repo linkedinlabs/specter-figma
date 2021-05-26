@@ -663,7 +663,7 @@ export default class App {
           ['keystop', 'label', 'heading', 'misc'].forEach((type) => {
             frame.setPluginData(DATA_KEYS[`${type}List`], '[]');
           });
-          frame.children.find(({type, name}) => type === 'GROUP'
+          frame.children.find(({ type, name }) => type === 'GROUP'
             && name.includes('Specter'))?.remove();
 
           categories.forEach((category) => {
@@ -978,7 +978,7 @@ export default class App {
     // need a selected node to annotate it
     if (selection === null || selection.length === 0) {
       messenger.log('Annotate node: nothing selected');
-      return messenger.toast('A layer must be selected');
+      return messenger.toast('A design layer must be selected');
     }
 
     // iterate through each node in a selection
@@ -1112,7 +1112,7 @@ export default class App {
 
     // need a selected node to annotate it
     if (selection === null || selection.length === 0) {
-      return messenger.toast('A layer must be selected');
+      return messenger.toast('A design layer must be selected');
     }
 
     // need a single selected node to annotate it

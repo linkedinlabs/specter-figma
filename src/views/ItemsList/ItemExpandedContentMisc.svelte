@@ -9,7 +9,7 @@
   export let type = null;
   export let fields = [];
 
-  const savedFields = { ...fields };
+  const savedFields = [...fields];
   let newField = { name: '', val: '' };
 
   const updateField = (newFields) => {

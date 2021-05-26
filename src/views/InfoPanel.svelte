@@ -28,7 +28,7 @@
       <p>Built by the Design Tools Team</p>
       <p>
         Join us in Slack: <br />
-        #ued-tool-specter
+        #design-tools-plugins
       </p>
     {:else}
       <p>

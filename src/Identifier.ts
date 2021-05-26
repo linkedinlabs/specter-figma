@@ -147,10 +147,7 @@ const cleanName = (name: string): string => {
       // ignore segments that begin with a “w” as-in “…Something w/ Icon”
       cleanedName = cleanedName.split(/(?:[^w|^\s])(\/)/).pop();
       if (cleanedName.includes(' / ')) {
-        const [substring1, substring2] = cleanedName.split(' / ');
-        if (substring2?.includes(substring1)) {
-          cleanedName = substring2;
-        }
+        cleanedName = cleanedName.split(' / ')[1];
       }
     } else {
       cleanedName = cleanedName.replace('☾ ', '');
