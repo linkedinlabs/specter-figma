@@ -516,7 +516,7 @@ const isAnnotationLayer = (node: any): boolean => {
   let currentTopGroup: GroupNode = null;
 
   if (node.name === 'Bounding Box') {
-    return true;
+    return false;
   }
 
   // set first; top group may be self
