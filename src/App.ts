@@ -668,6 +668,7 @@ export default class App {
 
           categories.forEach((category) => {
             const specFrame = figma.createFrame();
+            specFrame.setPluginData(DATA_KEYS.isSpecInstance, JSON.stringify(true));
             specFrame.resizeWithoutConstraints(frame.width, frame.height);
             const instance = masterFrame.createInstance();
             specFrame.name = `${category.toUpperCase()} Spec - ${frame.name}`;
