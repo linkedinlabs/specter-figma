@@ -72,44 +72,12 @@
 </script>
 
 <style>
-  .user-input {
-    padding: 15px;
-    margin: 0;
-    align-items: flex-start;
-    justify-content: space-between;
-    height: 100vh;
-  }
-  .spec-form {
-    width: 100%;
-  }
-  p {
-    text-align: left;
-    padding: 8px 6px 18px 6px;
-  }
-  .open {
-    border-bottom: 1px solid #DFDFDF;
-  }
-  .warning-msg {
-    font-size: 10px;
-    color: rgb(189, 92, 13);
-    margin: 2px 0 0 10px;
-    text-align: left;
-  }
-  .form-actions {
-    margin-top: 8px;
-  }
-  .setting {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 3px 15px;
-    color: rgb(85, 85, 85);
-  }
+  /* components/spec-selector */
 </style>
 
 <section
   on:keyup={watchKeys}
-  class="user-input"
+  class="user-input spec-selector"
 >
 <div class="spec-form">
   <p>
@@ -135,11 +103,9 @@
           bind:value={newSpecName}
         />
       </span>
-      {#if warning}
-        <p class="warning-msg">Warning: Page name must include 'SPEC ' to be included in the options above in future.</p>
-      {/if}
+      <p class="warning-msg" class:hidden={!warning}>Name must include 'SPEC ' to be in the page options above in future.</p>
       <ExpandCollapse name='Advanced options' on:handleClick={e => resizeWindow(e.detail ? 450 : 220)}>
-        <span class="form-row setting" class:open={settings.instructions}>
+        <span class="form-row setting" class:expanded={settings.instructions}>
           Instructions 
           <FigmaSwitch
             className="form-element element-type-switch"

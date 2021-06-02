@@ -1,0 +1,52 @@
+.spec-selector.user-input {
+  padding: 0;
+  margin: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 100vh;
+
+  .spec-form {
+    width: 100%;
+  }
+
+  p {
+    text-align: left;
+    padding: 8px 15px 18px 15px;
+  }
+
+  .expanded {
+    border-bottom: 1px solid #dfdfdf;
+  }
+
+  .warning-msg {
+    font-size: 10px;
+    color: rgb(189, 92, 13);
+    padding: 0;
+    margin: 5px 0 5px 15px;
+    text-align: left;
+
+    &.hidden {
+      visibility: hidden;
+    }
+  }
+
+  .form-inner-row {
+    margin-right: 12px;
+  }
+
+  .form-label {
+    padding-left: 15px;
+  }
+
+  .form-actions {
+    padding: 8px 12px;
+  }
+
+  .setting {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 3px 15px 3px 22px;
+    color: rgb(85, 85, 85);
+  }
+}

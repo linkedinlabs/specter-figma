@@ -1,7 +1,5 @@
 .expand-collapse-container {
   color: #f0f0f0;
-  width: calc(100% + 30px);
-  margin-left: -15px;
   margin-top: 10px;
   background: #f0f0f0;
   border-top: 1px solid #dfdfdf;
@@ -34,7 +32,7 @@
 }
 
 .expand-collapse-content {
-  padding: 0 15px 10px 30px;
+  padding: 0 15px 10px 15px;
 }
 
 .expand-collapse-header {
@@ -42,7 +40,7 @@
   align-items: center;
   color: rgb(113, 113, 113);
   cursor: pointer;
-  padding: 0 12px;
+  padding: 0 4px;
 }
 
 .isOpen {

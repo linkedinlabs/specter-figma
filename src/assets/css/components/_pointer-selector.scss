@@ -1,0 +1,49 @@
+.pointer-selector.user-input {
+  padding: 4px 8px;
+  margin: 2px 8px 0 8px;
+  align-items: flex-start;
+  width: 95.75%;
+
+  .container {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding-top: 10px;
+    padding-bottom: 20px;
+  }
+
+  .column {
+    display: flex;
+    align-items: center;
+  }
+
+  .column button {
+    background: none;
+    border: none;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    color: rgb(86, 147, 228);
+    opacity: 0.6;
+  }
+
+  .column button.selected {
+    opacity: 1;
+  }
+
+  .col2 {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .col2 button,
+  .col2 div {
+    flex: 1;
+  }
+
+  .col2 div {
+    min-height: 80px;
+    min-width: 80px;
+  }
+}

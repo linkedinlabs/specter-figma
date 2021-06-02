@@ -17,35 +17,52 @@
   outline: none;
   z-index: 1;
 
+  .info-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .question-circle {
+    fill: white;
+    height: 16px;
+    width: 16px;
+    opacity: 0.9;
+  }
+
   .label-text {
     color: white;
     margin-left: 14px;
-    opacity: 0.7;
+    opacity: 0.95;
   }
 
   .text {
     display: none;
   }
 
-  .switch__toggle {
-    &:checked + label {
-      &:before {
-        border-color: white;
-        background-color: black;
+  .switch {
+    opacity: 0.95;
+
+    .switch__toggle {
+      &:checked + label {
+        &:before {
+          border-color: white;
+          background-color: black;
+        }
+      }
+
+      &:enabled + label {
+        &:before,
+        &:after {
+          border-color: white;
+        }
       }
     }
 
-    &:enabled + label {
-      &:before,
+    .switch__label {
       &:after {
-        border-color: white;
+        background: black;
       }
-    }
-  }
-
-  .switch__label {
-    &:after {
-      background: black;
     }
   }
 

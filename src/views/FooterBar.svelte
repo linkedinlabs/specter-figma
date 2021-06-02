@@ -18,16 +18,7 @@
 </script>
 
 <style>
-  .info-icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-  .question-circle {
-    fill: white;
-    height: 16px;
-    width: 16px;
-  }
+
 </style>
 
 <div
