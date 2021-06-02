@@ -1,6 +1,6 @@
-// ++++++++++++++++++++++++++++++++++++++++++++++ info panel
+// ++++++++++++++++++++++++++++++++++++++++++++++ footer bar
 
-@mixin footer-bar {
+.footer-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -75,7 +75,7 @@
   }
 }
 
-@mixin info-panel-content {
+.info-panel {
   width: 100%;
   height: 100%;
 
@@ -147,6 +147,3 @@
     }
   }
 }
-
-.footer-bar { @include footer-bar; }
-.info-panel { @include info-panel-content; }
