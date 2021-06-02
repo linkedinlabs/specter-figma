@@ -3,6 +3,8 @@ import {
   findTopFrame,
   getRelativeIndex,
   getRelativePosition,
+  getSpecInnerLayer,
+  isSpecInstance,
 } from './utils/tools';
 
 /**
@@ -64,22 +66,30 @@ export default class Crawler {
 
     // iterate through initial selection
     initialSelection.forEach((node: any) => {
+      let targetNode = node;
+      if (isSpecInstance(node)) {
+        const innerLayer = getSpecInnerLayer(node);
+        if (innerLayer) {
+          targetNode = innerLayer;
+        }
+      }
+
       if (
-        excludedTypes.filter(type => type === node?.type).length < 1
-        && node?.visible
+        excludedTypes.filter(type => type === targetNode?.type).length < 1
+        && targetNode?.visible
       ) {
         // non-frame or -group nodes get added to the final selection
-        flatSelection.push(node);
+        flatSelection.push(targetNode);
       } else {
         // +++ frames and groups are added for their own styles to be evaluated
-        flatSelection.push(node);
+        flatSelection.push(targetNode);
 
         // +++ frames and groups are checked for child nodes
 
         // set initial holding array and add first level of children
         let innerLayers = [];
-        if (node?.visible) {
-          node.children.forEach((child) => {
+        if (targetNode?.visible) {
+          targetNode.children.forEach((child) => {
             if (child.visible) {
               innerLayers.push(child);
             }

@@ -64,6 +64,7 @@ const DATA_KEYS: {
   headingList: string,
   miscList: string,
   legendLinkId: string,
+  isSpecInstance: string,
   bundle: string,
   keystopNodeData: string,
   labelNodeData: string,
@@ -90,6 +91,7 @@ const DATA_KEYS: {
   headingList: `${PLUGIN_IDENTIFIER}.headingList-001`,
   miscList: `${PLUGIN_IDENTIFIER}.miscList-001`,
   legendLinkId: `${PLUGIN_IDENTIFIER}.legendLinkId-001`,
+  isSpecInstance: `${PLUGIN_IDENTIFIER}.isSpecInstance-001`,
   // node-level and up
   bundle: `${PLUGIN_IDENTIFIER}.bundle-001`,
   keystopNodeData: `${PLUGIN_IDENTIFIER}.keystopNodeData-001`,
