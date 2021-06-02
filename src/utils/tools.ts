@@ -543,6 +543,42 @@ const isAnnotationLayer = (node: any): boolean => {
 };
 
 /**
+ * @description Checks if a selected node is a Specter-generated template frame or instance.
+ *
+ * @kind function
+ * @name isSpecInstance
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {boolean} Returns flag for whether the node is a top-level template layer.
+ */
+const isSpecInstance = (node: any) => JSON.parse(node.getPluginData(DATA_KEYS.isSpecInstance)
+  || node.parent?.getPluginData(DATA_KEYS.isSpecInstance)
+  || null);
+
+/**
+ * @description Gets the inner layer of a spec template for annotating, otherwise it
+ * will be annotated as an instance itself.
+ *
+ * @kind function
+ * @name getSpecInnerLayer
+ *
+ * @param {Object} node A Figma node object (`SceneNode`).
+ *
+ * @returns {Object} Returns the inner layer for annotating.
+ */
+const getSpecInnerLayer = (node: any) => {
+  let layer = null;
+  if (JSON.parse(node.getPluginData(DATA_KEYS.isSpecInstance) || null)) {
+    const instance = node.findChild(child => child.type === 'INSTANCE');
+    layer = instance?.children[0];
+  } else if (JSON.parse(node.parent.getPluginData(DATA_KEYS.isSpecInstance))) {
+    layer = node.children[0];
+  }
+  return layer;
+};
+
+/**
  * @description A shared helper function to retrieve plugin data on a node from a
  * peer plugin (Stapler). The check is always done on a component node to get the
  * latest data.
@@ -997,10 +1033,12 @@ export {
   getPeerPluginData,
   getRelativeIndex,
   getRelativePosition,
+  getSpecInnerLayer,
   getStopTypeFromView,
   hexToDecimalRgb,
   isAnnotationLayer,
   isInternal,
+  isSpecInstance,
   isVisible,
   loadFirstAvailableFontAsync,
   matchMasterPeerNode,
