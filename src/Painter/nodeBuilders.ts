@@ -876,11 +876,11 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
           val: getLegendLabelText(labels, 'alt'),
         },
       ];
-    } else if (role && role !== 'no-role') {
+    } else if (role && !['none', 'no-role'].includes(role)) {
       fields = [
         {
           name: 'Role',
-          val: ROLE_OPTS.find(opt => opt.value === role).text,
+          val: ROLE_OPTS.find(opt => opt.value.toLowerCase() === role.toLowerCase()).text || '',
         },
         {
           name: 'Visible text',
@@ -891,7 +891,7 @@ const getLegendEntryFields = (type: PluginStopType, data: any) => {
           val: getLegendLabelText(labels, 'a11y'),
         },
       ];
-    } else if (!role || role === 'no-role') {
+    } else if (!role || ['none', 'no-role'].includes(role)) {
       fields = [
         {
           name: 'Visible text',
