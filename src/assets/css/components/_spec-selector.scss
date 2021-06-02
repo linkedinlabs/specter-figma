@@ -22,12 +22,16 @@
     font-size: 10px;
     color: rgb(189, 92, 13);
     padding: 0;
-    margin-left: 15px;
+    margin: 5px 0 5px 15px;
     text-align: left;
 
     &.hidden {
       visibility: hidden;
     }
+  }
+
+  .form-inner-row {
+    margin-right: 12px;
   }
 
   .form-label {
@@ -44,27 +48,5 @@
     align-items: center;
     margin: 3px 15px 3px 22px;
     color: rgb(85, 85, 85);
-
-    .switch__toggle {
-      &:checked + label {
-        &:before {
-          border-color: rgb(85, 85, 85);
-          background-color: rgb(85, 85, 85);
-        }
-      }
-
-      &:enabled + label {
-        &:before,
-        &:after {
-          border-color: rgb(85, 85, 85);
-        }
-      }
-    }
-
-    .switch__label {
-      &:after {
-        background: white;
-      }
-    }
   }
 }

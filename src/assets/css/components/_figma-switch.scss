@@ -10,6 +10,7 @@
   height: em(32);
   @include type-01;
   letter-spacing: 0.005em;
+  opacity: 0.8;
 
   input, label {
     cursor: pointer;
@@ -165,5 +166,5 @@
 }
 
 .switch { @include figma-switch-base; }
-.switch__toggle { @include figma-switch-toggle-grey; }
+.switch__toggle { @include figma-switch-toggle; }
 .switch__label { @include figma-switch-label; }

@@ -72,7 +72,7 @@
 </script>
 
 <style>
-
+  /* components/spec-selector */
 </style>
 
 <section
@@ -103,7 +103,7 @@
           bind:value={newSpecName}
         />
       </span>
-      <p class="warning-msg" class:hidden={!warning}>Warning: Name must include 'SPEC ' to be a spec page option in future.</p>
+      <p class="warning-msg" class:hidden={!warning}>Name must include 'SPEC ' to be in the page options above in future.</p>
       <ExpandCollapse name='Advanced options' on:handleClick={e => resizeWindow(e.detail ? 450 : 220)}>
         <span class="form-row setting" class:expanded={settings.instructions}>
           Instructions 
