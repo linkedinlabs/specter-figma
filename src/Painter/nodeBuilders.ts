@@ -1048,6 +1048,7 @@ const buildLegend = (type: PluginStopType, includeHeader?: boolean) => {
   const headerType = !includeHeader ? `${type}LegendTitle` : `${type}LegendHeader`;
   const header = buildInstructionComponentInstance(headerType);
   header.name = 'Legend Header';
+  header.locked = false;
   legend.appendChild(header);
 
   return legend;
