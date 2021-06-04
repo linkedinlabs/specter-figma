@@ -622,14 +622,15 @@ export default class App {
         : JSON.parse(specPage.getPluginData(DATA_KEYS.specSettings));
 
       const categories = Object.entries(pageSettings).reduce((acc, [key, val]) => {
-        let list = acc;
         if (val && key === 'designSystem') {
-          list = ['DS Component', 'DS Size/Spacing', ...list];
+          ['DS Component', 'DS Size/Spacing'].forEach((name) => {
+            acc.splice(1, 0, name);
+          });
         } else if (val && key !== 'instructions') {
-          list.push(key.charAt(0).toUpperCase() + key.slice(1));
+          acc.push(key.charAt(0).toUpperCase() + key.slice(1));
         }
-        return list;
-      }, []);
+        return acc;
+      }, ['Clean Design']);
 
       const topFrames = new Crawler({ for: selection }).topFrames();
       let yCoordinate = getOpenYCoordinate(specPage);
@@ -671,7 +672,10 @@ export default class App {
             specFrame.setPluginData(DATA_KEYS.isSpecInstance, JSON.stringify(true));
             specFrame.resizeWithoutConstraints(frame.width, frame.height);
             const instance = masterFrame.createInstance();
-            specFrame.name = `${category.toUpperCase()} Spec - ${frame.name}`;
+            instance.locked = category.includes('Clean Design');
+            specFrame.name = `${
+              category.includes('Clean') ? category : `${category.toUpperCase()} Spec`
+            } - ${frame.name}`;
             specFrame.x = xCoordinate;
             specFrame.y = yCoordinate;
             specFrame.layoutMode = 'HORIZONTAL';
@@ -681,7 +685,7 @@ export default class App {
             specFrame.layoutMode = 'NONE';
             specPage.appendChild(specFrame);
 
-            if (!category.includes('DS')) {
+            if (!category.includes('DS') && !category.includes('Clean')) {
               const painter = new Painter({
                 for: specFrame.children[0],
                 in: specPage,
