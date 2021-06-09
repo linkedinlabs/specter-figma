@@ -3,18 +3,77 @@
   margin: 2px 8px 0 8px;
   align-items: flex-start;
   width: 95.75%;
+  height: 100%;
+  justify-content: space-between;
 
-  .list {
-    display: flex;
-    flex-direction: column;
-    padding-left: 8px;
-    font-size: 12px;
+  .content-wrapper {
+    padding: 5px 0;
   }
 
-  .opt-wrapper {
+  .instructions {
+    text-align: left;
+    margin: 5px 0;
+  }
+
+  .options-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .color-list {
+    display: flex;
+    flex-direction: column;
+    font-size: 11px;
+  }
+
+  .orientation-grid {
+    width: 50%;
+    padding: 20px 25px 30px 25px;
+    display: grid;
+    grid-gap: 5px;
+    grid-template-areas:
+      "topleft topmiddle topright"
+      "middleleft middlecenter middleright"
+      "bottomleft bottommiddle bottomright";
+
+    .orientation-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &.up-btn {
+        grid-area: topmiddle;
+      }
+
+      &.down-btn {
+        grid-area: bottommiddle;
+      }
+
+      &.left-btn {
+        grid-area: middleleft;
+      }
+
+      &.right-btn {
+        grid-area: middleright;
+      }
+    }
+
+    .center-design {
+      grid-area: middlecenter;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .swatch-wrapper {
     display: flex;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     cursor: pointer;
   }
 
@@ -22,10 +81,14 @@
     font-weight: 600;
   }
 
+  .form-actions {
+    padding: 8px 12px;
+  }
+
   input[type="radio"] {
     position: relative;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     vertical-align: bottom;
     margin-right: 8px;
   }
@@ -37,12 +100,12 @@
   /* The "background" - white background with gray border. */
   input[type="radio"]:before {
     position: absolute;
-    top: -2px;
-    left: -2px;
+    top: -1.5px;
+    left: -1.5px;
     content: "";
     display: block;
-    width: 15px;
-    height: 15px;
+    width: 12px;
+    height: 12px;
     border: 3px solid #fff;
     border-radius: 4px;
     background-color: #fff;
@@ -55,8 +118,8 @@
     left: 0;
     content: "";
     display: block;
-    width: 17px;
-    height: 17px;
+    width: 14.5px;
+    height: 14.5px;
     border-radius: 2px;
   }
 

@@ -126,12 +126,9 @@ const dispatcher = async (action: {
         app.generateTemplate(pageId, newSpecName, settings);
         break;
       }
-      case 'color': {
-        app.updateAnnotationColor(payload.color);
-        break;
-      }
-      case 'pointer': {
-        app.updateAnnotationDirection(payload.direction);
+      case 'edit': {
+        const { color, orientation } = payload;
+        app.updateAnnotationColorOrientation(color, orientation);
         break;
       }
       case 'lock': {

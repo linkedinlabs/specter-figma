@@ -7,7 +7,6 @@ import {
   getLegendFrame,
   getOrderedStopNodes,
   getSelectedAnnotationItems,
-  getSpecPage,
   getSpecPageList,
   getSpecterGroups,
 } from './utils/nodeGetters';
@@ -31,6 +30,7 @@ import {
   updateAnnotationNum,
   updateLegendEntry,
   setPointerDirection,
+  buildSpecPage,
 } from './Painter/nodeBuilders';
 
 /**
@@ -615,7 +615,10 @@ export default class App {
     if (!selection?.length) {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
-      const specPage = getSpecPage(pageId, newPageName, settings);
+      let specPage = pageId && figma.root.children.find(child => child.id === pageId);
+      if (!specPage) {
+        specPage = buildSpecPage(newPageName, settings);
+      }
       // need to get settings from plugin data in case working with existing page
       const pageSettings = !pageId
         ? settings
@@ -713,33 +716,53 @@ export default class App {
    * @description Updates the color of all selected annotations created from the General tab.
    *
    * @kind function
-   * @name updateAnnotationColor
+   * @name updateAnnotationColorOrientation
    *
    * @param {string} color The hex value of the color chosen by the user.
+   * @param {string} orientation The new location/orientation chosen by the user.
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  updateAnnotationColor(color: string) { // eslint-disable-line class-methods-use-this
-    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
-      && node.name.includes('Annotation for')) as Array<FrameNode>;
+  // eslint-disable-next-line class-methods-use-this
+  updateAnnotationColorOrientation(color?: string, orientation?: string) {
+    if (color) {
+      // only applies to general tab annotations
+      const generalAnnotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+        && node.name.includes('Annotation for')) as Array<FrameNode>;
 
-    if (!annotations?.length) {
-      figma.notify('Error: Please select at least one General annotation.');
-    } else {
-      annotations.forEach((node) => {
-        const layers = node.children as Array<FrameNode | PolygonNode>;
-        layers.forEach((layer) => {
-          const updatedLayer = layer;
-          updatedLayer.fills = [
-            {
-              type: 'SOLID',
-              color: hexToDecimalRgb(color),
-            },
-          ];
+      if (!generalAnnotations?.length) {
+        figma.notify('Error: Please select at least one General annotation to change color.');
+      } else {
+        generalAnnotations.forEach((node) => {
+          const layers = node.children as Array<FrameNode | PolygonNode>;
+          layers.forEach((layer) => {
+            const updatedLayer = layer;
+            updatedLayer.fills = [
+              {
+                type: 'SOLID',
+                color: hexToDecimalRgb(color),
+              },
+            ];
+          });
         });
-      });
-      const { length } = annotations;
-      figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+        const { length } = generalAnnotations;
+        figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+      }
+    }
+
+    if (orientation) {
+      // applies to all types of annotations
+      const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+      && node.parent.type === 'GROUP'
+      && node.parent.name.includes('Annotations')) as Array<FrameNode>;
+
+      if (!annotations?.length) {
+        figma.notify('Error: Please select at least one annotation.');
+      } else {
+        setPointerDirection(orientation, annotations);
+        const { length } = annotations;
+        figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
+      }
     }
   }
 

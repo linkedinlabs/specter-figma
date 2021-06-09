@@ -116,7 +116,7 @@ svg {
 
     .button {
       cursor: pointer;
-      width: em(68);
+      min-width: em(68);
     }
 
     &.form-actions {

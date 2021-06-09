@@ -5,6 +5,7 @@ import {
   KEY_OPTS,
   ROLE_OPTS,
 } from '../constants';
+import { getDesignNodeFromAnnotation } from '../utils/nodeGetters';
 import { hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
@@ -1171,6 +1172,36 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
 };
 
 /**
+ * @description Creates a new spec template page.
+ *
+ * @kind function
+ * @name buildSpecPage
+ *
+ * @param {Object} newPageName Used to name a newly created page to append to.
+ * @param {Object} settings The advanced spec settings for template generation.
+ *
+ * @returns {Object} The spec page that will be used for new template additions.
+ */
+const buildSpecPage = (newPageName: string, settings: PluginSpecSettings) => {
+  let xCoordinate = 0;
+  const specPage = figma.createPage();
+  specPage.name = newPageName;
+  specPage.setPluginData(DATA_KEYS.specSettings, JSON.stringify(settings));
+  if (settings?.instructions) {
+    const instructionPanel = buildInstructionComponentInstance('instructionPanel');
+    instructionPanel.name = 'Spec Instruction Panel';
+    specPage.appendChild(instructionPanel);
+    xCoordinate = 940;
+  }
+  const notesPanel = buildInstructionComponentInstance('notesPanel');
+  notesPanel.name = 'Spec Notes Panel';
+  specPage.appendChild(notesPanel);
+  notesPanel.x = xCoordinate;
+
+  return specPage;
+};
+
+/**
  * @description Sets up the individual elements for a container group (inner or outer) and
  * adds the child node to the group.
  *
@@ -1793,6 +1824,9 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
     const pointerColor = pointer.fills[0].color;
     if (pointer) pointer.remove();
 
+    // find design node to use for relocation, if NOT general tab annotation
+    const designNode = getDesignNodeFromAnnotation(figma.currentPage, node) as SceneNode;
+
     const diamond = figma.createPolygon();
     diamond.name = 'Diamond';
     diamond.resize(10, 6);
@@ -1804,30 +1838,42 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
     }];
     const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
     const vertical = 'CENTER' as ConstraintType;
+    let xCoordinate;
+    let yCoordinate;
 
     if (['left', 'right'].includes(direction)) {
       updatedNode.layoutMode = 'HORIZONTAL';
+      yCoordinate = designNode && designNode.y + (designNode.height / 2) - (node.height / 2);
 
       if (direction === 'right') {
         diamond.rotation = 270;
         updatedNode.appendChild(diamond);
+        xCoordinate = designNode && designNode.x - node.width + 3;
       } else {
         diamond.rotation = 90;
         updatedNode.insertChild(0, diamond);
+        xCoordinate = designNode && designNode.x + designNode.width + 3;
       }
     } else {
       updatedNode.layoutMode = 'VERTICAL';
+      xCoordinate = designNode && designNode.x + (designNode.width / 2) - (node.width / 2);
 
       if (direction === 'down') {
         diamond.rotation = 180;
         updatedNode.appendChild(diamond);
+        yCoordinate = designNode && designNode.y - node.height - 3;
       } else {
         diamond.rotation = 0;
         updatedNode.insertChild(0, diamond);
+        yCoordinate = designNode && designNode.y + designNode.height + 3;
       }
     }
     updatedNode.constraints = { horizontal, vertical };
     figma.flatten([diamond]);
+    if (designNode) {
+      updatedNode.x = xCoordinate;
+      updatedNode.y = yCoordinate;
+    }
   });
 };
 
@@ -1843,6 +1889,7 @@ export {
   buildMeasureIcon,
   buildRectangle,
   buildRectangleInnerHalf,
+  buildSpecPage,
   buildText,
   drawContainerGroup,
   positionAnnotation,
