@@ -68,11 +68,17 @@
       Pointer changes apply to all selected annotations, and relocate a11y annotations. Color changes apply to general annotations.
     </p>
     <div class="options-wrapper">
-      <div class="color-list">
-        {#each colorOptions as opt} 
-          <label class:selected="{opt.hex === color}" class='swatch-wrapper' >
-            <input type="radio" bind:group={color} value={opt.hex} on:click={() => handleClick('color', opt.hex)} />{opt.label}
+      <div class="color-list custom-radios">
+        {#each colorOptions as opt, i} 
+        <div>
+          <input type="radio" id={opt.label.toLowerCase()} name="color" bind:group={color} value={opt.hex} on:click={() => handleClick('color', opt.hex)} checked>
+          <label for={opt.label.toLowerCase()}>
+            <span class={opt.label.toLowerCase()}>
+              <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="check" class="svg-inline--fa fa-check fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="white" d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"></path></svg>
+            </span>
+            {opt.label}
           </label>
+        </div>
         {/each}
       </div>   
       <div class="orientation-grid">

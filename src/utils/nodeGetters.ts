@@ -206,7 +206,7 @@ const getAssignedChildNodes = (
  * @param {Object} page The current Figma page, for getting the master annotation list.
  * @param {string} type The type of stop/tab we are working with.
  *
- * @returns {Array} A flat list of nodes whose RGN are selected.
+ * @returns {Array} A flat list of nodes whose annotations are selected.
  */
 const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
   const { selection } = page;
