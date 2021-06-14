@@ -743,6 +743,8 @@ export default class Painter {
       JSON.stringify(newPageSettings),
     );
 
+    this.setTrackingData(group, {}, 'general', null);
+
     // return a successful result
     result.status = 'success';
     return result;
@@ -983,9 +985,13 @@ export default class Painter {
   setTrackingData(
     annotationNode: FrameNode,
     nodePosition,
-    type: PluginStopType,
+    type: PluginStopType | 'general',
     legendNode: FrameNode,
   ) {
+    // set data types
+    const annotationsDataType = DATA_KEYS[`${type}Annotations`];
+    const linkIdDataType = DATA_KEYS[`${type}LinkId`];
+
     // ---------- set node tracking data
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
@@ -996,10 +1002,6 @@ export default class Painter {
       topFrameId: this.frame.id,
       nodePosition,
     };
-
-    // set data types
-    const annotationsDataType = DATA_KEYS[`${type}Annotations`];
-    const linkIdDataType = DATA_KEYS[`${type}LinkId`];
 
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
