@@ -7,91 +7,47 @@
   justify-content: space-between;
 
   .content-wrapper {
-    padding: 5px 0;
-  }
+    padding-top: 5px;
 
-  .instructions {
-    text-align: left;
-    margin: 5px 0;
+    .instructions {
+      text-align: left;
+      padding: 0;
+    }
   }
 
   .options-wrapper {
     width: 100%;
     display: flex;
     justify-content: space-between;
+
+    .half-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 50%;
+
+      h2 {
+        font-weight: 600;
+        color: $wl-ctrl-primary;
+        margin: 14px 0 4px 0;
+      }
+
+      &.orientation h2 {
+        width: 100%;
+        text-align: center;
+      }
+    }
   }
 
-  .color-list {
+  .color-radios {
     display: flex;
     flex-direction: column;
-    font-size: 11px;
-  }
-
-  .orientation-grid {
-    width: 50%;
-    padding: 20px 25px 30px 25px;
-    display: grid;
-    grid-gap: 5px;
-    /* stylelint-disable-next-line declaration-colon-space-after */
-    grid-template-areas:
-      "topleft topmiddle topright"
-      "middleleft middlecenter middleright"
-      "bottomleft bottommiddle bottomright";
-
-    .orientation-btn {
-      border: none;
-      background: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &.up-btn {
-        grid-area: topmiddle;
-      }
-
-      &.down-btn {
-        grid-area: bottommiddle;
-      }
-
-      &.left-btn {
-        grid-area: middleleft;
-      }
-
-      &.right-btn {
-        grid-area: middleright;
-      }
-    }
-
-    .center-design {
-      grid-area: middlecenter;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-
-  .swatch-wrapper {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-    cursor: pointer;
-  }
-
-  label.selected {
-    font-weight: 600;
-  }
-
-  .form-actions {
-    padding: 8px 12px;
-  }
-
-  .custom-radios {
     align-items: flex-start;
+    font-size: 11px;
 
     div {
       display: inline-block;
-      margin: 8px 0;
+      margin: 6px 0;
     }
 
     input[type="radio"] {
@@ -150,5 +106,84 @@
     .spacing {
       background-color: #007373;
     }
+  }
+
+  .orientation-radios {
+    width: 100%;
+    padding: 20px 30px 30px 30px;
+    display: grid;
+    grid-gap: 5px;
+    /* stylelint-disable-next-line declaration-colon-space-after */
+    grid-template-areas:
+      "topleft topmiddle topright"
+      "middleleft middlecenter middleright"
+      "bottomleft bottommiddle bottomright";
+
+    div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &.up-radio {
+        grid-area: topmiddle;
+      }
+
+      &.down-radio {
+        grid-area: bottommiddle;
+      }
+
+      &.left-radio {
+        grid-area: middleleft;
+      }
+
+      &.right-radio {
+        grid-area: middleright;
+      }
+    }
+
+    input[type="radio"] {
+      display: none;
+
+      + label {
+        cursor: pointer;
+      }
+    }
+
+    .color-radio {
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+
+      &.up {
+        grid-area: topmiddle;
+      }
+
+      &.down {
+        grid-area: bottommiddle;
+      }
+
+      &.left {
+        grid-area: middleleft;
+      }
+
+      &.right {
+        grid-area: middleright;
+      }
+    }
+
+    .center-design {
+      grid-area: middlecenter;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .form-actions {
+    padding: 0 0 12px 0;
   }
 }

@@ -1809,7 +1809,7 @@ const updateLegendEntry = (
  * @description Updates the pointer of annotations to a specified direction.
  *
  * @kind function
- * @name setPointerDirection
+ * @name setOrientation
  *
  * @param {string} direction The direction the annotation should point.
  * @param {Object} nodes The annotation nodes to update pointers within.
@@ -1817,7 +1817,7 @@ const updateLegendEntry = (
  * @returns {undefined}
  *
  */
-const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
+const setOrientation = (direction: string, nodes: Array<FrameNode>) => {
   nodes.forEach((node) => {
     const updatedNode = node;
     const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
@@ -1836,7 +1836,7 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
       type: 'SOLID',
       color: pointerColor,
     }];
-    const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
+    const horizontal = ['right', 'down'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
     const vertical = 'CENTER' as ConstraintType;
     let xCoordinate;
     let yCoordinate;
@@ -1845,7 +1845,7 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
       updatedNode.layoutMode = 'HORIZONTAL';
       yCoordinate = designNode && designNode.y + (designNode.height / 2) - (node.height / 2);
 
-      if (direction === 'right') {
+      if (direction === 'left') {
         diamond.rotation = 270;
         updatedNode.appendChild(diamond);
         xCoordinate = designNode && designNode.x - node.width + 3;
@@ -1858,7 +1858,7 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
       updatedNode.layoutMode = 'VERTICAL';
       xCoordinate = designNode && designNode.x + (designNode.width / 2) - (node.width / 2);
 
-      if (direction === 'down') {
+      if (direction === 'up') {
         diamond.rotation = 180;
         updatedNode.appendChild(diamond);
         yCoordinate = designNode && designNode.y - node.height - 3;
@@ -1895,7 +1895,7 @@ export {
   positionAnnotation,
   positionLegend,
   refreshLegend,
-  setPointerDirection,
+  setOrientation,
   updateAnnotationNum,
   updateLegendEntry,
 };

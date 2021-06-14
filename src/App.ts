@@ -29,7 +29,7 @@ import {
   positionLegend,
   updateAnnotationNum,
   updateLegendEntry,
-  setPointerDirection,
+  setOrientation,
   buildSpecPage,
 } from './Painter/nodeBuilders';
 
@@ -759,7 +759,7 @@ export default class App {
       if (!annotations?.length) {
         figma.notify('Error: Please select at least one annotation.');
       } else {
-        setPointerDirection(orientation, annotations);
+        setOrientation(orientation, annotations);
         const { length } = annotations;
         figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
       }
@@ -784,7 +784,7 @@ export default class App {
     if (!annotations?.length) {
       figma.notify('Error: Please select at least one annotation.');
     } else {
-      setPointerDirection(direction, annotations);
+      setOrientation(direction, annotations);
       const { length } = annotations;
       figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
     }
