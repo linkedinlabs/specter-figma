@@ -127,6 +127,9 @@ const watchIncomingMessages = (): void => {
         case 'hideInfo':
           showHideInfo('hide');
           break;
+        case 'stopLoading':
+          app.loading = false;
+          break;
         case 'refreshState': {
           const {
             currentView,
@@ -143,6 +146,7 @@ const watchIncomingMessages = (): void => {
           app.specPages = specPages;
           app.lockedAnnotations = lockedAnnotations;
           app.newSessionKey = sessionKey;
+          app.loading = false;
           break;
         }
         default:
