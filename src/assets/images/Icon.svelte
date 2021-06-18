@@ -2,6 +2,7 @@
   export let name;
   export let width = '1rem';
   export let height = '1rem';
+  export let clickable = false;
   export let focusable = false;
   export let active;
 
@@ -41,20 +42,31 @@
     fill: #fff;
   }
 
-  .orientation-icon:hover {
-    fill: #D5ECFF;
-  }
-
   .orientation-icon.active {
     fill: #000;
   }
+
+  .clickable {
+    padding: 4px;
+  }
+
+  .clickable:hover {
+    background: rgba(128, 128, 128, 0.1);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .clickable:hover .orientation-icon {
+    fill: #D5ECFF;
+  }
 </style>
 
-<svg
-  class={$$props.class}
-  class:active
-  {focusable}
-  {width}
-  {height}
-  viewBox="0 0 {displayIcon.box[0]} {displayIcon.box[1]}">{@html displayIcon.svg}
-</svg>
+<div class:clickable style={`width: ${width}px; height: ${height}px`}>
+  <svg
+    class={$$props.class}
+    class:active
+    {focusable}
+
+    viewBox="0 0 {displayIcon.box[0]} {displayIcon.box[1]}">{@html displayIcon.svg}
+  </svg>
+</div>

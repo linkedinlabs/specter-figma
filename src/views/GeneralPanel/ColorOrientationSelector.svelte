@@ -61,7 +61,7 @@
 </script>
 
 <style>
-  /* components/color-selector */
+  /* components/color-orientation-selector */
 </style>
 
 <section
@@ -74,10 +74,10 @@
     </p>
     <div class="options-wrapper">
       <div class="half-wrapper color">
-        <h2>Color</h2>
+        <h2>Select Color</h2>
         <div class="color-radios">
           {#each colorOptions as opt} 
-          <div>
+          <div class="color-radio">
             <input type="radio" id={opt.label.toLowerCase()} name="color" bind:group={color} value={opt.hex} on:click={() => handleClick('color', opt.hex)} checked>
             <label for={opt.label.toLowerCase()}>
               <span class={opt.label.toLowerCase()}>
@@ -90,10 +90,10 @@
         </div>   
       </div>
       <div class="half-wrapper orientation">
-        <h2>Orientation</h2>
+        <h2>Select Orientation</h2>
         <div class="orientation-radios">
           {#each orientationOptions as opt}
-          <div class={`color-radio ${opt}`}>
+          <div class={`orientation-radio ${opt}`}>
             <input 
               type="radio" 
               id={`${opt}-radio`}
@@ -108,9 +108,10 @@
                 name={`orientation-${opt}`} 
                 class="orientation-icon" 
                 active={orientation === opt} 
-                width={20} 
-                height={20}
-              />
+                width={['left', 'right'].includes(opt) ? 36 : 35} 
+                clickable={true}
+                focusable={true}
+                />
             </label>
           </div>
           {/each}
