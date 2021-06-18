@@ -560,7 +560,6 @@ const LEVEL_OPTS = [
   },
 ];
 
-
 const INSTRUCTION_COMPONENT_KEYS = {
   instructionPanel: '37f07e866f47fa7bb2690a49897471f66f851eab',
   notesPanel: 'e2abd4594dd4c3bfc73887052d30d3918fcf288e',

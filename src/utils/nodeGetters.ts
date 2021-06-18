@@ -228,8 +228,8 @@ const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
 const getDesignNodeFromAnnotation = (page: PageNode, annotation: FrameNode) => {
   let designNodeId;
   const stopType = ['keystop', 'label', 'heading', 'misc']
-    .find((type) => annotation.name.toLowerCase().includes(type));
-  
+    .find(type => annotation.name.toLowerCase().includes(type));
+
   if (stopType) {
     const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${stopType}Annotations`]) || null);
     designNodeId = trackingData?.find(entry => entry.annotationId === annotation.id)?.id;

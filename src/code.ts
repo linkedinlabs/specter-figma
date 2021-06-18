@@ -132,7 +132,7 @@ const dispatcher = async (action: {
         break;
       }
       case 'lock': {
-        App.toggleLocked();
+        app.lockedAnnotations = App.toggleLocked();
         break;
       }
       case 'info':

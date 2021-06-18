@@ -6,7 +6,7 @@ import {
   ROLE_OPTS,
 } from '../constants';
 import { getDesignNodeFromAnnotation } from '../utils/nodeGetters';
-import { hexToDecimalRgb, isAnnotationLayer } from '../utils/tools';
+import { hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 
@@ -1818,19 +1818,21 @@ const updateLegendEntry = (
  *
  */
 const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
-  const flipIcon = (annotation, icon, orientation) => {
-    let newIcon = icon.clone();
+  const flipIcon = (annotation, icon) => {
+    const newIcon = icon.clone();
     icon.remove();
     if (['up', 'left'].includes(orientation)) {
       annotation.appendChild(newIcon);
     } else {
       annotation.insertChild(0, newIcon);
     }
-  }
+  };
 
   nodes.forEach((node) => {
     const icon = node.findChild(child => child.name === 'Icon');
-    icon && flipIcon(node, icon, orientation);
+    if (icon) {
+      flipIcon(node, icon);
+    }
 
     const updatedNode = node;
     const pointer = node.findOne(layer => layer.name === 'Diamond') as PolygonNode;
@@ -1854,11 +1856,11 @@ const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
     const vertical = 'CENTER' as ConstraintType;
     let xCoordinate;
     let yCoordinate;
-    
+
     if (['left', 'right'].includes(orientation)) {
       pointerParent.layoutMode = 'HORIZONTAL';
       yCoordinate = designNode && designNode.y + (designNode.height / 2) - (node.height / 2);
-      
+
       if (orientation === 'left') {
         diamond.rotation = 270;
         pointerParent.appendChild(diamond);
@@ -1871,7 +1873,7 @@ const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
     } else {
       pointerParent.layoutMode = 'VERTICAL';
       xCoordinate = designNode && designNode.x + (designNode.width / 2) - (node.width / 2);
-      
+
       if (orientation === 'up') {
         diamond.rotation = 180;
         pointerParent.appendChild(diamond);
@@ -1886,9 +1888,26 @@ const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
     pointerParent.constraints = { horizontal, vertical };
     figma.flatten([diamond]);
 
-    if (designNode) {
+    if (designNode && !node.name.includes('Spacing for')) {
       updatedNode.x = xCoordinate;
       updatedNode.y = yCoordinate;
+    } else if (designNode && node.name.includes('Spacing for')) {
+      switch (orientation) {
+        case 'up':
+          updatedNode.y -= (node.height - 8);
+          break;
+        case 'down':
+          updatedNode.y += (node.height - 8);
+          break;
+        case 'left':
+          updatedNode.x -= (node.width - 8);
+          break;
+        case 'right':
+          updatedNode.x += (node.width - 8);
+          break;
+        default:
+          break;
+      }
     }
   });
 };

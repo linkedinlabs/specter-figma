@@ -296,6 +296,7 @@ export const createContainerGroup = (
     | 'topLevel',
   frame: FrameNode,
   node: SceneNode,
+  lockedAnnotations?: boolean,
 ): {
   newInnerGroup: GroupNode,
   updatedContainerSet: {
@@ -308,7 +309,7 @@ export const createContainerGroup = (
 } => {
   const groupName: string = setGroupName(groupType);
   const groupKey: string = setGroupKey(groupType);
-  const locked: boolean = groupType === 'topLevel';
+  const locked: boolean = groupType === 'topLevel' && lockedAnnotations;
 
   // set up new container group node on the frame
   const newInnerGroup: GroupNode = drawContainerGroup({
@@ -361,6 +362,7 @@ const setNodeInContainers = (nodeToContain: {
     | 'misc'
     | 'spacing'
     | 'style',
+  lockedAnnotations: boolean,
 }): {
   boundingInnerGroupId?: string,
   componentInnerGroupId?: string,
@@ -374,6 +376,7 @@ const setNodeInContainers = (nodeToContain: {
     frame,
     page,
     type,
+    lockedAnnotations,
   } = nodeToContain;
   const groupKey = setGroupKey(type);
   const frameId: string = frame.id;
@@ -436,7 +439,7 @@ const setNodeInContainers = (nodeToContain: {
 
     // create the `outerGroup`, if it does not exist
     if (!outerGroup) {
-      const ccgResult = createContainerGroup(updatedContainerSet, 'topLevel', frame, innerGroup);
+      const ccgResult = createContainerGroup(updatedContainerSet, 'topLevel', frame, innerGroup, lockedAnnotations);
       outerGroup = ccgResult.newInnerGroup;
       updatedContainerSet = ccgResult.updatedContainerSet;
     }
@@ -615,12 +618,15 @@ export default class Painter {
   isMercadoMode: boolean;
   node: SceneNode;
   page: PageNode;
+  lockedAnnotations?: boolean;
   constructor({
     for: node,
     in: page,
     isMercadoMode,
+    lockedAnnotations,
   }) {
     this.isMercadoMode = isMercadoMode;
+    this.lockedAnnotations = lockedAnnotations !== false;
     this.frame = findTopFrame(node);
     this.node = node;
     this.page = page;
@@ -715,6 +721,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -745,7 +752,7 @@ export default class Painter {
 
     group.setPluginData(
       DATA_KEYS.generalLinkId,
-      JSON.stringify({id: this.node.id}),
+      JSON.stringify({ id: this.node.id }),
     );
 
     // return a successful result
@@ -788,6 +795,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: 'boundingBox',
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     if (!boundingBox || !containerSet.boundingInnerGroupId) {
@@ -887,6 +895,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -937,6 +946,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -968,12 +978,12 @@ export default class Painter {
 
     groupWidth.setPluginData(
       DATA_KEYS.generalLinkId,
-      JSON.stringify({id: this.node.id}),
+      JSON.stringify({ id: this.node.id }),
     );
 
     groupHeight.setPluginData(
       DATA_KEYS.generalLinkId,
-      JSON.stringify({id: this.node.id}),
+      JSON.stringify({ id: this.node.id }),
     );
 
     // return a successful result
@@ -1166,6 +1176,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // ---------- set node tracking data with new annotation
@@ -1320,6 +1331,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -1357,7 +1369,7 @@ export default class Painter {
 
     group.setPluginData(
       DATA_KEYS.generalLinkId,
-      JSON.stringify({id: this.node.id}),
+      JSON.stringify({ id: this.node.id }),
     );
 
     return true;

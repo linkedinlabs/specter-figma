@@ -626,7 +626,7 @@ export default class App {
 
       const categories = Object.entries(pageSettings).reduce((acc, [key, val]) => {
         if (val && key === 'designSystem') {
-          ['DS Component', 'DS Size/Spacing'].forEach((name) => {
+          ['DS Size/Spacing', 'DS Component'].forEach((name) => {
             acc.splice(1, 0, name);
           });
         } else if (val && key !== 'instructions') {
@@ -675,7 +675,7 @@ export default class App {
             specFrame.setPluginData(DATA_KEYS.isSpecInstance, JSON.stringify(true));
             specFrame.resizeWithoutConstraints(frame.width, frame.height);
             const instance = masterFrame.createInstance();
-            instance.locked = category.includes('Clean Design');
+            specFrame.locked = category.includes('Clean Design');
             specFrame.name = `${
               category.includes('Clean') ? category : `${category.toUpperCase()} Spec`
             } - ${frame.name}`;
@@ -693,6 +693,7 @@ export default class App {
                 for: specFrame.children[0],
                 in: specPage,
                 isMercadoMode: this.isMercadoMode,
+                lockedAnnotations: this.lockedAnnotations,
               });
               const legendEntry = figma.createFrame();
               legendEntry.resize(364, 1);
@@ -728,21 +729,27 @@ export default class App {
     if (color) {
       // only applies to general tab annotations
       const generalAnnotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
-        && node.name.includes('Annotation for')) as Array<FrameNode>;
+        && (node.parent?.name?.includes('Annotations')
+          && !node.parent.name.includes('A11y'))) as Array<FrameNode>;
 
       if (!generalAnnotations?.length) {
         figma.notify('Error: Please select at least one General annotation to change color.');
       } else {
         generalAnnotations.forEach((node) => {
-          const layers = node.children as Array<FrameNode | PolygonNode>;
+          const layers = node.findAll(({ type }) => [
+            'FRAME',
+            'VECTOR',
+            'RECTANGLE',
+          ].includes(type)) as Array<FrameNode | PolygonNode>;
+
           layers.forEach((layer) => {
-            const updatedLayer = layer;
-            updatedLayer.fills = [
+            const updatedLayer = layer as FrameNode | PolygonNode;
+            updatedLayer.fills = layer.fills[0] ? [
               {
                 type: 'SOLID',
                 color: hexToDecimalRgb(color),
               },
-            ];
+            ] : [];
           });
         });
         const { length } = generalAnnotations;
@@ -751,61 +758,35 @@ export default class App {
     }
 
     if (orientation) {
-      // applies to all types of annotations
-      const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
-      && node.parent.type === 'GROUP'
-      && node.parent.name.includes('Annotations')) as Array<FrameNode>;
+      const annotations = figma.currentPage.selection.reduce((acc, node) => {
+        const { parent, layoutMode, type } = node as FrameNode;
 
-      if (!annotations?.length) {
+        const isAnnotation = type === 'FRAME'
+          && parent.type === 'GROUP'
+          && parent.name.includes('Annotations');
+
+        const isEligible = (['left', 'right'].includes(orientation) && layoutMode === 'HORIZONTAL')
+          || (['up', 'down'].includes(orientation) && layoutMode === 'VERTICAL');
+
+        if (isAnnotation && isEligible) {
+          acc.eligible.push(node as FrameNode);
+        } else if (isAnnotation) {
+          acc.ineligible.push(node as FrameNode);
+        }
+
+        return acc;
+      }, { ineligible: [] as Array<FrameNode>, eligible: [] as Array<FrameNode> });
+
+      const { eligible, ineligible } = annotations;
+      if (!eligible.length && !ineligible.length) {
         figma.notify('Error: Please select at least one annotation.');
+      } else if (!eligible.length) {
+        figma.notify('Error: Size/Spacing annotations can\'t move between horizontal and vertical.');
       } else {
-        setOrientation(orientation, annotations);
-        const { length } = annotations;
+        setOrientation(orientation, eligible);
+        const { length } = eligible;
         figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
       }
-    }
-  }
-
-  /**
-   * @description Updates the annotation orientation of all selected annotations.
-   *
-   * @kind function
-   * @name updateAnnotationDirection
-   *
-   * @param {string} orientation The annotation orientation chosen by the user.
-   *
-   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
-   */
-  updateAnnotationDirection(orientation: string) {
-    const annotations = figma.currentPage.selection.reduce((acc, node) => {
-      const { parent, layoutMode, type } = node as FrameNode;
-
-      const isAnnotation = type === 'FRAME'
-        && parent.type === 'GROUP'
-        && parent.name.includes('Annotations');
-      
-      const isEligible = (['left', 'right'].includes(orientation) && layoutMode === 'HORIZONTAL')
-        || (['up', 'down'].includes(orientation) && layoutMode === 'VERTICAL');
-      
-      if (isAnnotation && isEligible) {
-        acc.eligible.push(node as FrameNode);
-      } else if (isAnnotation) {
-        acc.ineligible.push(node as FrameNode);
-      }
-
-      return acc;
-    }, { ineligible: [] as Array<FrameNode>, eligible: [] as Array<FrameNode>});
-
-    const { eligible, ineligible } = annotations;
-    if (!eligible.length && !ineligible.length) {
-      figma.notify('Error: Please select at least one annotation.');
-    } else if (!eligible.length) {
-      figma.notify('Error: Size/Spacing annotations can\'t move between horizontal and vertical.');
-    } else {
-      console.log(eligible)
-      setOrientation(orientation, eligible);
-      const { length } = eligible;
-      figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
     }
   }
 
@@ -818,7 +799,7 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
    */
-  static toggleLocked() { 
+  static toggleLocked() {
     const specterGroups = getSpecterGroups(figma.currentPage);
     const locked = !specterGroups.find(group => !group.locked);
 
@@ -832,6 +813,7 @@ export default class App {
     } else {
       figma.notify('Error: There are no annotations to lock/unlock.');
     }
+    return !locked;
   }
 
   /**
@@ -899,6 +881,7 @@ export default class App {
             for: node,
             in: page,
             isMercadoMode: this.isMercadoMode,
+            lockedAnnotations: this.lockedAnnotations,
           });
 
           // retrieve corner token and set to node
@@ -950,7 +933,7 @@ export default class App {
 
     if (!selection?.length && !suppliedNodes?.length) {
       messenger.log(`Annotate ${type}: nothing selected`);
-      return messenger.toast('A layer must be supplied');
+      return messenger.toast('A design layer must be supplied');
     }
 
     const nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
@@ -979,6 +962,7 @@ export default class App {
         for: node,
         in: page,
         isMercadoMode: this.isMercadoMode,
+        lockedAnnotations: this.lockedAnnotations,
       });
 
       // get/set the stop info and paint it
@@ -1047,6 +1031,7 @@ export default class App {
         for: node,
         in: page,
         isMercadoMode: this.isMercadoMode,
+        lockedAnnotations: this.lockedAnnotations,
       });
 
       // set up function to draw annotations
@@ -1189,6 +1174,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // determine the annotation text
@@ -1257,6 +1243,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // draw the spacing annotation
@@ -1329,6 +1316,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // draw the spacing annotation
@@ -1396,6 +1384,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // draw the spacing annotations based on auto-layout padding settings
@@ -1464,6 +1453,7 @@ export default class App {
           for: node,
           in: page,
           isMercadoMode: this.isMercadoMode,
+          lockedAnnotations: this.lockedAnnotations,
         });
 
         // draw the bounding box (if position exists)
