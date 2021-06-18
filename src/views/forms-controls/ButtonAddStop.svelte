@@ -1,8 +1,10 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { getStopTypeFromView } from '../../utils/tools';
   import ButtonAction from './ButtonAction';
 
-  // props
+  const dispatch = createEventDispatcher();
+
   export let disabled = true;
   export let number = null;
   export let type = null;
@@ -18,6 +20,8 @@
         },
       },
     }, '*');
+
+    dispatch('handleAction', 'start-loading');
   };
 
   const setTextLabel = (currentType) => {

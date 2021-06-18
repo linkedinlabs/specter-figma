@@ -1,5 +1,6 @@
 <script>
   import { afterUpdate, beforeUpdate } from 'svelte';
+  import spinner from '../assets/images/spinner.gif';
   import {
     isMercadoStored,
     viewContextStored,
@@ -25,12 +26,13 @@
   export let newSessionKey = null;
   export let userInputValue = null;
   export let viewContext = null;
+  export let loading = true;
 
   let bodyHeight = 0;
   let wasBodyHeight = 0;
   let inputPage = null;
 
-  const handleSelectorAction = (action) => {
+  const showHideInputScreen = (action) => {
     if (action.includes('show-')) {
       inputPage = action;
     } else if (action === 'close') {
@@ -40,8 +42,11 @@
 
   const handleAction = (action) => {
     if (action.includes('show-') || inputPage) {
-      handleSelectorAction(action);
+      showHideInputScreen(action);
+    } else if (action === 'start-loading') {
+      loading = true;
     } else {
+      loading = true;
       parent.postMessage({
         pluginMessage: {
           action,
@@ -96,7 +101,10 @@
 <div bind:offsetHeight={bodyHeight}>
   <FontPreload/>
   {#if $viewContextStored && !isInfoPanel && !isUserInput && !inputPage}
-  <SceneNavigator currentView={$viewContextStored}/>
+  <SceneNavigator 
+    currentView={$viewContextStored} 
+    on:handleAction={customEvent => handleAction(customEvent.detail)}
+  />
   {/if}
 
   <div class={`container${isUserInput ? ' wide' : ''}${inputPage ? ' no-footer' : ''}`}>
@@ -108,6 +116,12 @@
         isInfoPanel={isInfoPanel}
         lockedAnnotations={lockedAnnotations}
       />
+    {/if}
+
+    {#if loading}
+    <div class="overlay">
+      <img class="spinner" src={spinner} alt="Action loading"/>
+    </div>
     {/if}
 
     {#if !isUserInput && !isInfoPanel && !inputPage}

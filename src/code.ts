@@ -155,6 +155,7 @@ const dispatcher = async (action: {
       default: // case 'tools'
         await App.showToolbar();
     }
+    figma.ui.postMessage({ action: 'stopLoading' });
   };
 
   // load the typeface and then run the action

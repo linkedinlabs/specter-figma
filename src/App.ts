@@ -1138,6 +1138,7 @@ export default class App {
     if (shouldTerminateLocal) {
       this.closeOrReset();
     }
+
     return null;
   }
 
