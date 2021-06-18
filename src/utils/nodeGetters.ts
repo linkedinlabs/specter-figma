@@ -163,22 +163,13 @@ const getAssignedChildNodes = (
     const {
       hasKeystop,
       allowKeystopPassthrough,
-      role,
-      labels,
-      heading,
     } = getPeerPluginData(node) || {};
     const hasKeystopData = type === 'keystop' && hasKeystop;
-    // 'none' ignore is a temp workaround for accidental setting in Stapler
-    const hasLabelData = type === 'label'
-    && (!['none', 'no-role', undefined, null].includes(role) || (role === 'no-role' && (labels?.visible || labels?.a11y)));
-    const hasHeadingData = type === 'heading'
-    && ((heading?.level && heading.level !== 'no-level') || heading?.visible || heading?.invisible);
-
 
     if (
       !existsInArray(currentList, node.id)
       && !existsInArray(list, node.id)
-      && (hasKeystopData || hasLabelData || hasHeadingData)
+      && (hasKeystopData)
     ) {
       list.push(node);
       if (node.children && (type === 'keystop' && allowKeystopPassthrough)) {
@@ -222,18 +213,31 @@ const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
   return nodes;
 };
 
+/**
+ * @description Gets a list of nodes who have a selected annotation, to be used when marking
+ * selected items in the UI item list.
+ *
+ * @kind function
+ * @name getDesignNodeFromAnnotation
+ *
+ * @param {Object} page The current Figma page, for getting the master annotation list.
+ * @param {Object} annotation The annotation node to find the linked design node of.
+ *
+ * @returns {Object} The linked design node for the annotation.
+ */
 const getDesignNodeFromAnnotation = (page: PageNode, annotation: FrameNode) => {
-  let type = 'general';
-  ['keystop', 'label', 'heading', 'misc'].forEach((annotationType) => {
-    if (annotation.name.toLowerCase().includes(annotationType)) {
-      type = annotationType;
-    }
-  });
-  const trackingData = type && JSON.parse(page.getPluginData(DATA_KEYS[`${type}Annotations`]) || null);
-  const designNodeId = trackingData?.find(entry => entry.annotationId === annotation.id)?.id;
-  const designNode = designNodeId && figma.getNodeById(designNodeId);
+  let designNodeId;
+  const stopType = ['keystop', 'label', 'heading', 'misc']
+    .find((type) => annotation.name.toLowerCase().includes(type));
+  
+  if (stopType) {
+    const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${stopType}Annotations`]) || null);
+    designNodeId = trackingData?.find(entry => entry.annotationId === annotation.id)?.id;
+  } else {
+    designNodeId = JSON.parse(annotation.getPluginData(DATA_KEYS.generalLinkId) || null)?.id;
+  }
 
-  return designNode;
+  return designNodeId && figma.getNodeById(designNodeId);
 };
 
 /**
@@ -270,7 +274,7 @@ const getOrderedStopNodes = (
     if (!suppliedNodes && frame.children) {
       const exclusionList = [...orderedNodes, ...selectedNodes, frame];
       const assignedChildNodes = getAssignedChildNodes(
-        [...frame.children],
+        [...selectedNodes],
         exclusionList,
         type,
       );

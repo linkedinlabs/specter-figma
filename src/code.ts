@@ -128,11 +128,11 @@ const dispatcher = async (action: {
       }
       case 'edit': {
         const { color, orientation } = payload;
-        app.updateAnnotationColorOrientation(color, orientation);
+        App.updateAnnotationColorOrientation(color, orientation);
         break;
       }
       case 'lock': {
-        app.toggleLocked();
+        App.toggleLocked();
         break;
       }
       case 'info':

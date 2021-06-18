@@ -743,7 +743,10 @@ export default class Painter {
       JSON.stringify(newPageSettings),
     );
 
-    this.setTrackingData(group, {}, 'general', null);
+    group.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({id: this.node.id}),
+    );
 
     // return a successful result
     result.status = 'success';
@@ -961,6 +964,16 @@ export default class Painter {
     this.page.setPluginData(
       PLUGIN_IDENTIFIER,
       JSON.stringify(newPageSettings),
+    );
+
+    groupWidth.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({id: this.node.id}),
+    );
+
+    groupHeight.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({id: this.node.id}),
     );
 
     // return a successful result
@@ -1340,6 +1353,11 @@ export default class Painter {
     this.page.setPluginData(
       PLUGIN_IDENTIFIER,
       JSON.stringify(newPageSettings),
+    );
+
+    group.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({id: this.node.id}),
     );
 
     return true;

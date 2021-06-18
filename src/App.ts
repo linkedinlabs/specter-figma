@@ -724,7 +724,7 @@ export default class App {
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
   // eslint-disable-next-line class-methods-use-this
-  updateAnnotationColorOrientation(color?: string, orientation?: string) {
+  static updateAnnotationColorOrientation(color?: string, orientation?: string) {
     if (color) {
       // only applies to general tab annotations
       const generalAnnotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
@@ -767,25 +767,44 @@ export default class App {
   }
 
   /**
-   * @description Updates the pointer direction of all selected annotations.
+   * @description Updates the annotation orientation of all selected annotations.
    *
    * @kind function
    * @name updateAnnotationDirection
    *
-   * @param {string} direction The annotation direction chosen by the user.
+   * @param {string} orientation The annotation orientation chosen by the user.
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  updateAnnotationDirection(direction: string) { // eslint-disable-line class-methods-use-this
-    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
-      && node.parent.type === 'GROUP'
-      && node.parent.name.includes('Annotations')) as Array<FrameNode>;
+  updateAnnotationDirection(orientation: string) {
+    const annotations = figma.currentPage.selection.reduce((acc, node) => {
+      const { parent, layoutMode, type } = node as FrameNode;
 
-    if (!annotations?.length) {
+      const isAnnotation = type === 'FRAME'
+        && parent.type === 'GROUP'
+        && parent.name.includes('Annotations');
+      
+      const isEligible = (['left', 'right'].includes(orientation) && layoutMode === 'HORIZONTAL')
+        || (['up', 'down'].includes(orientation) && layoutMode === 'VERTICAL');
+      
+      if (isAnnotation && isEligible) {
+        acc.eligible.push(node as FrameNode);
+      } else if (isAnnotation) {
+        acc.ineligible.push(node as FrameNode);
+      }
+
+      return acc;
+    }, { ineligible: [] as Array<FrameNode>, eligible: [] as Array<FrameNode>});
+
+    const { eligible, ineligible } = annotations;
+    if (!eligible.length && !ineligible.length) {
       figma.notify('Error: Please select at least one annotation.');
+    } else if (!eligible.length) {
+      figma.notify('Error: Size/Spacing annotations can\'t move between horizontal and vertical.');
     } else {
-      setOrientation(direction, annotations);
-      const { length } = annotations;
+      console.log(eligible)
+      setOrientation(orientation, eligible);
+      const { length } = eligible;
       figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
     }
   }
@@ -799,7 +818,7 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
    */
-  toggleLocked() { // eslint-disable-line class-methods-use-this
+  static toggleLocked() { 
     const specterGroups = getSpecterGroups(figma.currentPage);
     const locked = !specterGroups.find(group => !group.locked);
 

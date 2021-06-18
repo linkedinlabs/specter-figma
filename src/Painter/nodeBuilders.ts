@@ -6,7 +6,7 @@ import {
   ROLE_OPTS,
 } from '../constants';
 import { getDesignNodeFromAnnotation } from '../utils/nodeGetters';
-import { hexToDecimalRgb } from '../utils/tools';
+import { hexToDecimalRgb, isAnnotationLayer } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 
@@ -1811,17 +1811,31 @@ const updateLegendEntry = (
  * @kind function
  * @name setOrientation
  *
- * @param {string} direction The direction the annotation should point.
+ * @param {string} orientation The orientation the annotation should appear in.
  * @param {Object} nodes The annotation nodes to update pointers within.
  *
  * @returns {undefined}
  *
  */
-const setOrientation = (direction: string, nodes: Array<FrameNode>) => {
+const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
+  const flipIcon = (annotation, icon, orientation) => {
+    let newIcon = icon.clone();
+    icon.remove();
+    if (['up', 'left'].includes(orientation)) {
+      annotation.appendChild(newIcon);
+    } else {
+      annotation.insertChild(0, newIcon);
+    }
+  }
+
   nodes.forEach((node) => {
+    const icon = node.findChild(child => child.name === 'Icon');
+    icon && flipIcon(node, icon, orientation);
+
     const updatedNode = node;
-    const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
+    const pointer = node.findOne(layer => layer.name === 'Diamond') as PolygonNode;
     const pointerColor = pointer.fills[0].color;
+    const pointerParent = pointer.parent as FrameNode;
     if (pointer) pointer.remove();
 
     // find design node to use for relocation, if NOT general tab annotation
@@ -1836,40 +1850,42 @@ const setOrientation = (direction: string, nodes: Array<FrameNode>) => {
       type: 'SOLID',
       color: pointerColor,
     }];
-    const horizontal = ['right', 'down'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
+    const horizontal = ['right', 'down'].includes(orientation) ? 'MIN' : 'MAX' as ConstraintType;
     const vertical = 'CENTER' as ConstraintType;
     let xCoordinate;
     let yCoordinate;
-
-    if (['left', 'right'].includes(direction)) {
-      updatedNode.layoutMode = 'HORIZONTAL';
+    
+    if (['left', 'right'].includes(orientation)) {
+      pointerParent.layoutMode = 'HORIZONTAL';
       yCoordinate = designNode && designNode.y + (designNode.height / 2) - (node.height / 2);
-
-      if (direction === 'left') {
+      
+      if (orientation === 'left') {
         diamond.rotation = 270;
-        updatedNode.appendChild(diamond);
-        xCoordinate = designNode && designNode.x - node.width + 3;
+        pointerParent.appendChild(diamond);
+        xCoordinate = designNode && designNode.x - node.width - 3;
       } else {
         diamond.rotation = 90;
-        updatedNode.insertChild(0, diamond);
+        pointerParent.insertChild(0, diamond);
         xCoordinate = designNode && designNode.x + designNode.width + 3;
       }
     } else {
-      updatedNode.layoutMode = 'VERTICAL';
+      pointerParent.layoutMode = 'VERTICAL';
       xCoordinate = designNode && designNode.x + (designNode.width / 2) - (node.width / 2);
-
-      if (direction === 'up') {
+      
+      if (orientation === 'up') {
         diamond.rotation = 180;
-        updatedNode.appendChild(diamond);
+        pointerParent.appendChild(diamond);
         yCoordinate = designNode && designNode.y - node.height - 3;
       } else {
         diamond.rotation = 0;
-        updatedNode.insertChild(0, diamond);
+        pointerParent.insertChild(0, diamond);
         yCoordinate = designNode && designNode.y + designNode.height + 3;
       }
     }
-    updatedNode.constraints = { horizontal, vertical };
+
+    pointerParent.constraints = { horizontal, vertical };
     figma.flatten([diamond]);
+
     if (designNode) {
       updatedNode.x = xCoordinate;
       updatedNode.y = yCoordinate;
