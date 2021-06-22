@@ -53,9 +53,14 @@
       width: 100%;
       padding: 3px 6px 3px 3px;
       margin: 4px 0;
+      min-height: 22px;
 
-      &:active, &:focus {
-        outline: 2px solid royalblue;
+      &:focus-within {
+        border: 1px solid royalblue;
+        border-radius: 2px;
+        box-shadow:0 0 3px royalblue;
+        -moz-box-shadow:0 0 3px royalblue;
+        -webkit-box-shadow:0 0 3px royalblue;
       }
 
       &:hover {
@@ -66,12 +71,18 @@
     }
 
     input[type="radio"] {
-      display: none;
+      position: absolute;
+      z-index: 0;
+      margin: 0;
 
       + label {
         @include type-02;
         color: #333;
         cursor: pointer;
+        position: absolute;
+        z-index: 2;
+        display: flex;
+        align-items: center;
 
         span {
           display: inline-block;
@@ -136,6 +147,16 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      min-height: 30px;
+      min-width: 35px;
+
+      &:focus-within {
+        border: 1px solid royalblue;
+        border-radius: 2px;
+        box-shadow:0 0 3px royalblue;
+        -moz-box-shadow:0 0 3px royalblue;
+        -webkit-box-shadow:0 0 3px royalblue;
+      }
 
       &.up {
         grid-area: topmiddle;
@@ -155,10 +176,14 @@
     }
 
     input[type="radio"] {
-      display: none;
+      position: absolute;
+      z-index: 0;
+      margin: 0;
 
       + label {
         cursor: pointer;
+        position: absolute;
+        z-index: 1;
       }
     }
 

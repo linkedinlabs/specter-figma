@@ -189,6 +189,7 @@ const handleDuplicatedNodes = (
   options: {
     type: PluginStopType,
     isMercadoMode: boolean,
+    lockedAnnotations: boolean,
     messenger: any,
     page: PageNode,
     frame: FrameNode,
@@ -200,6 +201,7 @@ const handleDuplicatedNodes = (
   const {
     type,
     isMercadoMode,
+    lockedAnnotations,
     page,
     frame,
     nodes,
@@ -278,6 +280,7 @@ const handleDuplicatedNodes = (
               for: nodeToReassign,
               in: page,
               isMercadoMode,
+              lockedAnnotations,
             });
 
             // re-draw the annotation
@@ -308,6 +311,7 @@ const handleDuplicatedNodes = (
 const refreshAnnotations = (
   type: PluginStopType,
   isMercadoMode: boolean,
+  lockedAnnotations: boolean,
   page: PageNode,
   trackingData: Array<PluginNodeTrackingData>,
 ) => {
@@ -332,7 +336,7 @@ const refreshAnnotations = (
         app.annotateStops(type, [node as SceneNode]);
       }
     } else if (node && frame && !figma.getNodeById(trackingEntry.annotationId)) {
-      const painter = new Painter({ for: node, in: page, isMercadoMode });
+      const painter = new Painter({ for: node, in: page, isMercadoMode, lockedAnnotations, });
       painter.addStop(type);
     }
   });
@@ -355,6 +359,7 @@ const refreshAnnotations = (
  */
 const diffAnnotationLocations = (
   isMercadoMode: boolean,
+  lockedAnnotations: boolean,
   messenger: any,
   page: PageNode,
   selection: Array<any>,
@@ -369,7 +374,7 @@ const diffAnnotationLocations = (
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
       page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
     );
-    refreshAnnotations(type, isMercadoMode, page, trackingData);
+    refreshAnnotations(type, isMercadoMode, lockedAnnotations, page, trackingData);
     handleDuplicatedNodes({
       type,
       trackingData,
@@ -378,6 +383,7 @@ const diffAnnotationLocations = (
       nodes,
       messenger,
       isMercadoMode,
+      lockedAnnotations,
     });
   });
 };
@@ -765,10 +771,12 @@ export default class App {
           && parent.type === 'GROUP'
           && parent.name.includes('Annotations');
 
-        const isEligible = (['left', 'right'].includes(orientation) && layoutMode === 'HORIZONTAL')
-          || (['up', 'down'].includes(orientation) && layoutMode === 'VERTICAL');
+        const isMeasurement = isAnnotation && (node.name.includes('Dimension') || node.name.includes('Spacing'));
+        const hasMeasurementConflict = isMeasurement && (['left', 'right'].includes(orientation) && layoutMode !== 'HORIZONTAL')
+        || (['up', 'down'].includes(orientation) && layoutMode !== 'VERTICAL');
+        const isValidUpdate = isAnnotation && (!isMeasurement || !hasMeasurementConflict);
 
-        if (isAnnotation && isEligible) {
+        if (isValidUpdate) {
           acc.eligible.push(node as FrameNode);
         } else if (isAnnotation) {
           acc.ineligible.push(node as FrameNode);
@@ -1653,7 +1661,7 @@ export default class App {
     }
 
     if (selection?.length && runDiff) {
-      diffAnnotationLocations(isMercadoMode, messenger, page, selection);
+      diffAnnotationLocations(isMercadoMode, lockedAnnotations, messenger, page, selection);
     }
 
     // ---------- set up selected items bundle for view
