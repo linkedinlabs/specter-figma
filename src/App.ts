@@ -303,6 +303,7 @@ const handleDuplicatedNodes = (
  *
  * @param {string} type The type of annotation to repair (`keystop` or `label`).
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ * @param {boolean} lockedAnnotations Designates whether annotations are locked or not.
  * @param {Object} page The Figma PageNode.
  * @param {Object} trackingData The page-level node tracking data.
  *
@@ -336,7 +337,12 @@ const refreshAnnotations = (
         app.annotateStops(type, [node as SceneNode]);
       }
     } else if (node && frame && !figma.getNodeById(trackingEntry.annotationId)) {
-      const painter = new Painter({ for: node, in: page, isMercadoMode, lockedAnnotations, });
+      const painter = new Painter({
+        for: node,
+        in: page,
+        isMercadoMode,
+        lockedAnnotations,
+      });
       painter.addStop(type);
     }
   });
@@ -351,6 +357,7 @@ const refreshAnnotations = (
  * @name diffAnnotationLocations
  *
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ * @param {boolean} lockedAnnotations Designates whether annotations are locked or not.
  * @param {Object} messenger The class that handles error messaging.
  * @param {Object} page The Figma PageNode.
  * @param {Object} selection The figma selection to diff.
@@ -772,8 +779,8 @@ export default class App {
           && parent.name.includes('Annotations');
 
         const isMeasurement = isAnnotation && (node.name.includes('Dimension') || node.name.includes('Spacing'));
-        const hasMeasurementConflict = isMeasurement && (['left', 'right'].includes(orientation) && layoutMode !== 'HORIZONTAL')
-        || (['up', 'down'].includes(orientation) && layoutMode !== 'VERTICAL');
+        const hasMeasurementConflict = isMeasurement && ((['left', 'right'].includes(orientation) && layoutMode !== 'HORIZONTAL')
+          || (['up', 'down'].includes(orientation) && layoutMode !== 'VERTICAL'));
         const isValidUpdate = isAnnotation && (!isMeasurement || !hasMeasurementConflict);
 
         if (isValidUpdate) {

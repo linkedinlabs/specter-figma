@@ -269,6 +269,7 @@ const orderContainerNodes = (outerGroupId: string, page): void => {
  * @param {string} groupType A string representing the type of element going inside the continer.
  * @param {Object} frame An object representing the top-level Figma Frame for the container group.
  * @param {Object} node An object representing the Figma node to be set in the container group.
+ * @param {boolean} lockedAnnotations Designates whether annotations are locked or not.
  *
  * @returns {Object} The inner container group node object and the accompanying
  * updated parent container group settings object.
@@ -612,6 +613,7 @@ const getSetNodeSettings = (
  * @property node The SceneNode in the Figma file that we want to annotate or modify.
  * @property frame The top-level FrameNode in the Figma file that we want to annotate or modify.
  * @property page The PageNode in the Figma file containing the corresponding `frame` and `node`.
+ * @property lockedAnnotations The flag indicating whether annotations are locked or not.
  */
 export default class Painter {
   frame: FrameNode;

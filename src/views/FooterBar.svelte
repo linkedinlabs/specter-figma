@@ -26,7 +26,7 @@
 >
   <FigmaSwitch
     className="form-element element-type-switch inverted"
-    labelText="Lock annotations"
+    labelText="Annotation lock"
     value={lockedAnnotations}
     on:click={() => handleLockClick()}
   />
