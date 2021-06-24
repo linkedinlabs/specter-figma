@@ -699,6 +699,7 @@ export default class App {
             specFrame.counterAxisAlignItems = 'CENTER';
             specFrame.appendChild(instance);
             specFrame.layoutMode = 'NONE';
+            specFrame.clipsContent = false;
             specPage.appendChild(specFrame);
 
             if (!category.includes('DS') && !category.includes('Clean')) {
@@ -717,7 +718,7 @@ export default class App {
             xCoordinate += (frame.width + 100);
           });
         }
-        yCoordinate += (frame.height + 200);
+        yCoordinate += (frame.height + 300);
       });
 
       if (failedFrames < topFrames.length) {

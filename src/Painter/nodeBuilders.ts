@@ -6,7 +6,7 @@ import {
   ROLE_OPTS,
 } from '../constants';
 import { getDesignNodeFromAnnotation } from '../utils/nodeGetters';
-import { hexToDecimalRgb } from '../utils/tools';
+import { findTopFrame, getRelativeIndex, getRelativePosition, hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 
@@ -1839,9 +1839,11 @@ const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
     const pointerColor = pointer.fills[0].color;
     const pointerParent = pointer.parent as FrameNode;
     if (pointer) pointer.remove();
-
+    
     // find design node to use for relocation, if NOT general tab annotation
     const designNode = getDesignNodeFromAnnotation(figma.currentPage, node) as SceneNode;
+    const topFrame = findTopFrame(designNode);
+    const nodePosition = topFrame && designNode && getRelativePosition(designNode, topFrame) || {x: 0, y: 0};
 
     const diamond = figma.createPolygon();
     diamond.name = 'Diamond';
@@ -1859,29 +1861,29 @@ const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
 
     if (['left', 'right'].includes(orientation)) {
       pointerParent.layoutMode = 'HORIZONTAL';
-      yCoordinate = designNode && designNode.y + (designNode.height / 2) - (node.height / 2);
+      yCoordinate = nodePosition.y + (designNode.height / 2) - (node.height / 2);
 
       if (orientation === 'left') {
         diamond.rotation = 270;
         pointerParent.appendChild(diamond);
-        xCoordinate = designNode && designNode.x - node.width - 3;
+        xCoordinate = nodePosition.x - node.width - 3;
       } else {
         diamond.rotation = 90;
         pointerParent.insertChild(0, diamond);
-        xCoordinate = designNode && designNode.x + designNode.width + 3;
+        xCoordinate = nodePosition.x + designNode.width + 3;
       }
     } else {
       pointerParent.layoutMode = 'VERTICAL';
-      xCoordinate = designNode && designNode.x + (designNode.width / 2) - (node.width / 2);
+      xCoordinate = nodePosition.x + (designNode.width / 2) - (node.width / 2);
 
       if (orientation === 'up') {
         diamond.rotation = 180;
         pointerParent.appendChild(diamond);
-        yCoordinate = designNode && designNode.y - node.height - 3;
+        yCoordinate = nodePosition.y - node.height - 3;
       } else {
         diamond.rotation = 0;
         pointerParent.insertChild(0, diamond);
-        yCoordinate = designNode && designNode.y + designNode.height + 3;
+        yCoordinate = nodePosition.y + designNode.height + 3;
       }
     }
 
