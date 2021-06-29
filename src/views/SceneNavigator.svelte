@@ -1,4 +1,8 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
+  
   export let currentView = 'general';
 
   const menuItems = [
@@ -25,6 +29,8 @@
   ];
 
   const setCurrentViewContext = (newView) => {
+    dispatch('handleAction', 'start-loading');
+
     parent.postMessage({
       pluginMessage: {
         action: 'setViewContext',
