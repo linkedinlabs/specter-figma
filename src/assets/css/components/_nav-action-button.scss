@@ -14,7 +14,7 @@
 
   @include hover {
     cursor: pointer;
-    background-color: rgba($wl-accent-tertiary, 0.5);
+    background: rgba($wl-accent-tertiary, 0.5);
   }
 
   &:active,

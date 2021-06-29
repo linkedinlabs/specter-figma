@@ -22,7 +22,7 @@
   @include figma-button;
   color: $wl-type-01-invert;
   letter-spacing: 0.01em;
-  background-color: $wl-action-primary;
+  background: $wl-action-primary;
 
   &:enabled:active,
   &:enabled:focus {
@@ -36,7 +36,7 @@
 
 @mixin figma-button--primary-destructive {
   @include figma-button--primary;
-  background-color: $wl-action-destructive;
+  background: $wl-action-destructive;
 }
 
 @mixin figma-button--secondary {
@@ -44,7 +44,7 @@
   padding: em(6) em(16) em(6) em(16);
   color: rgba($wl-type-01, 0.8);
   border: 1px solid rgba($wl-ctrl-primary, 0.8);
-  background-color: $wl-ctrl-secondary;
+  background: $wl-ctrl-secondary;
   letter-spacing: 0.005em;
 
   &:enabled:active,

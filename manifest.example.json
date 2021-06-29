@@ -105,7 +105,7 @@
       "multipleSelection": true
     },
     {
-      "name": "Open Specter",
+      "name": "Open PLUGIN_NAME",
       "command": "tools"
     }
   ]

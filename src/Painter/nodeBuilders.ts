@@ -1182,18 +1182,18 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
  *
  * @returns {Object} The spec page that will be used for new template additions.
  */
-const buildSpecPage = (newPageName: string, settings: PluginSpecSettings) => {
-  let xCoordinate = 0;
+const buildSpecPage = (newPageName: string, settings: PluginSpecSettings): PageNode => {
+  let xCoordinate: number = 0;
   const specPage = figma.createPage();
   specPage.name = newPageName;
   specPage.setPluginData(DATA_KEYS.specSettings, JSON.stringify(settings));
   if (settings?.instructions) {
-    const instructionPanel = buildInstructionComponentInstance('instructionPanel');
+    const instructionPanel: FrameNode = buildInstructionComponentInstance('instructionPanel');
     instructionPanel.name = 'Spec Instruction Panel';
     specPage.appendChild(instructionPanel);
     xCoordinate = 940;
   }
-  const notesPanel = buildInstructionComponentInstance('notesPanel');
+  const notesPanel: FrameNode = buildInstructionComponentInstance('notesPanel');
   notesPanel.name = 'Spec Notes Panel';
   specPage.appendChild(notesPanel);
   notesPanel.x = xCoordinate;

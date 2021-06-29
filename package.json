@@ -18,7 +18,7 @@
     "start": "npm run watch",
     "start:public": "npm run watch:public",
     "start:internal": "npm run watch:internal",
-    "genmanifest": "cp manifest.example.json manifest.json && plugin_id=$(cat '.plugin-id') && sed -i.tmp s/PLUGIN_ID/$plugin_id/ manifest.json && sed -i.tmp 's/PLUGIN_NAME/Specter/' manifest.json && rm manifest.json.tmp",
+    "genmanifest": "cp manifest.example.json manifest.json && plugin_id=$(cat '.plugin-id') && sed -i.tmp s/PLUGIN_ID/$plugin_id/ manifest.json && plugin_name=$(cat '.plugin-name') && sed -i.tmp \"s/PLUGIN_NAME/$plugin_name/g\" manifest.json && rm manifest.json.tmp",
     "postinstall": "npm run build",
     "lint": "npm run lint:js && npm run lint:css",
     "lint:eslint": "eslint . --ext .js,.tsx,.ts,.svelte",
@@ -26,7 +26,7 @@
     "lint:js": "npm run lint:eslint",
     "lint:css": "npm run lint:stylelint",
     "lint:staged": "lint-staged",
-    "genbeta": "rsync -a src/ ../beta-specter-figma/src && npm run build --prefix ../beta-specter-figma"
+    "genbeta": "rsync -a --exclude='.*' * ../beta-specter-figma --delete && npm i --prefix ../beta-specter-figma && npm run build --prefix ../beta-specter-figma"
   },
   "lint-staged": {
     "*.{js,jsx,tsx,ts,svelte}": "eslint",

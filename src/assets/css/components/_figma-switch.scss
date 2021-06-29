@@ -26,7 +26,7 @@
 
   &:checked + label {
     &:before {
-      background-color: $wl-ctrl-primary;
+      background: $wl-ctrl-primary;
     }
 
     &:after {
@@ -43,7 +43,7 @@
 
   &:enabled:focus:checked + label {
     &:before {
-      background-color: $wl-action-primary;
+      background: $wl-action-primary;
     }
   }
 
@@ -65,7 +65,7 @@
 
   &:checked + label {
     &:before {
-      background-color: $wl-action-tertiary;
+      background: $wl-action-tertiary;
     }
   }
 
@@ -95,11 +95,11 @@
 
   &:checked + label {
     &:before {
-      background-color: rgba($wl-action-tertiary, 0.3);
+      background: rgba($wl-action-tertiary, 0.3);
     }
 
     &:after {
-      background-color: rgba($wl-ctrl-primary, 0.8);
+      background: rgba($wl-ctrl-primary, 0.8);
     }
   }
 
@@ -123,7 +123,7 @@
     &:before,
     &:after {
       border-color: $wl-action-primary;
-      background-color: $wl-ctrl-primary;
+      background: $wl-ctrl-primary;
     }
   }
 
@@ -147,7 +147,7 @@
     top: em(10);
     left: em(8);
     border: 1px solid $wl-ctrl-primary;
-    background-color: $wl-canvas;
+    background: $wl-canvas;
   }
 
   &:before {

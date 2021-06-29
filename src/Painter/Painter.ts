@@ -440,7 +440,13 @@ const setNodeInContainers = (nodeToContain: {
 
     // create the `outerGroup`, if it does not exist
     if (!outerGroup) {
-      const ccgResult = createContainerGroup(updatedContainerSet, 'topLevel', frame, innerGroup, lockedAnnotations);
+      const ccgResult = createContainerGroup(
+        updatedContainerSet,
+        'topLevel',
+        frame,
+        innerGroup,
+        lockedAnnotations,
+      );
       outerGroup = ccgResult.newInnerGroup;
       updatedContainerSet = ccgResult.updatedContainerSet;
     }
