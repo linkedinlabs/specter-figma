@@ -6,7 +6,7 @@ import {
   ROLE_OPTS,
 } from '../constants';
 import { getDesignNodeFromAnnotation } from '../utils/nodeGetters';
-import { findTopFrame, getRelativeIndex, getRelativePosition, hexToDecimalRgb } from '../utils/tools';
+import { findTopFrame, getRelativePosition, hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 
@@ -1839,11 +1839,11 @@ const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
     const pointerColor = pointer.fills[0].color;
     const pointerParent = pointer.parent as FrameNode;
     if (pointer) pointer.remove();
-    
+
     // find design node to use for relocation, if NOT general tab annotation
     const designNode = getDesignNodeFromAnnotation(figma.currentPage, node) as SceneNode;
-    const topFrame = findTopFrame(designNode);
-    const nodePosition = topFrame && designNode && getRelativePosition(designNode, topFrame) || {x: 0, y: 0};
+    const topFrame = designNode && findTopFrame(designNode);
+    const nodePosition = topFrame ? getRelativePosition(designNode, topFrame) : { x: 0, y: 0 };
 
     const diamond = figma.createPolygon();
     diamond.name = 'Diamond';

@@ -688,7 +688,7 @@ export default class App {
             specFrame.setPluginData(DATA_KEYS.isSpecInstance, JSON.stringify(true));
             specFrame.resizeWithoutConstraints(frame.width, frame.height);
             const instance = masterFrame.createInstance();
-            specFrame.locked = category.includes('Clean Design');
+            instance.locked = category.includes('Clean Design');
             specFrame.name = `${
               category.includes('Clean') ? category : `${category.toUpperCase()} Spec`
             } - ${frame.name}`;
@@ -750,13 +750,13 @@ export default class App {
         figma.notify('Error: Please select at least one General annotation to change color.');
       } else {
         generalAnnotations.forEach((node) => {
-          const layers = node.findAll(({ type }) => [
+          const fillLayers = node.findAll(({ type }) => [
             'FRAME',
             'VECTOR',
             'RECTANGLE',
           ].includes(type)) as Array<FrameNode | PolygonNode>;
 
-          layers.forEach((layer) => {
+          fillLayers.forEach((layer) => {
             const updatedLayer = layer as FrameNode | PolygonNode;
             updatedLayer.fills = layer.fills[0] ? [
               {
