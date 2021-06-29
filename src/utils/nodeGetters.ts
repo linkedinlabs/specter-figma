@@ -163,8 +163,12 @@ const getAssignedChildNodes = (
     const {
       hasKeystop,
       allowKeystopPassthrough,
+      hasLabels,
+      hasHeading,
     } = getPeerPluginData(node) || {};
     const hasKeystopData = type === 'keystop' && hasKeystop;
+    const hasLabelData = type === 'label' && hasLabels;
+    const hasHeadingData = type === 'heading' && hasHeading;
 
     if (
       !existsInArray(currentList, node.id)
