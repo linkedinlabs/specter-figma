@@ -1,3 +1,23 @@
+@mixin hidden-radio {
+  position: absolute;
+  z-index: 0;
+  margin: 0;
+
+  + label {
+    cursor: pointer;
+    position: absolute;
+    z-index: 1;
+  }
+}
+
+@mixin parent-focus {
+  &:focus-within {
+    border: 1px solid $blue01;
+    border-radius: 2px;
+    box-shadow: 0 0 3px $blue01;
+  }
+}
+
 .user-input.color-selector {
   padding: 4px 8px;
   margin: 2px 8px 0 8px;
@@ -20,7 +40,7 @@
     display: flex;
     justify-content: space-between;
 
-    .half-wrapper {
+    .options-column {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -48,18 +68,14 @@
 
     .color-radio {
       display: flex;
-      justify-content: flex-start;
       align-items: center;
+      justify-content: flex-start;
       width: 100%;
       padding: 3px 6px 3px 3px;
       margin: 4px 0;
       min-height: 22px;
 
-      &:focus-within {
-        border: 1px solid royalblue;
-        border-radius: 2px;
-        box-shadow: 0 0 3px royalblue;
-      }
+      @include parent-focus;
 
       &:hover {
         background: rgba(128, 128, 128, 0.1);
@@ -69,16 +85,11 @@
     }
 
     input[type="radio"] {
-      position: absolute;
-      z-index: 0;
-      margin: 0;
+      @include hidden-radio;
 
       + label {
         @include type-02;
         color: #333;
-        cursor: pointer;
-        position: absolute;
-        z-index: 2;
         display: flex;
         align-items: center;
 
@@ -148,11 +159,7 @@
       min-height: 30px;
       min-width: 35px;
 
-      &:focus-within {
-        border: 1px solid royalblue;
-        border-radius: 2px;
-        box-shadow: 0 0 3px royalblue;
-      }
+      @include parent-focus;
 
       &.up {
         grid-area: topmiddle;
@@ -172,15 +179,7 @@
     }
 
     input[type="radio"] {
-      position: absolute;
-      z-index: 0;
-      margin: 0;
-
-      + label {
-        cursor: pointer;
-        position: absolute;
-        z-index: 1;
-      }
+      @include hidden-radio;
     }
 
     .center-design {

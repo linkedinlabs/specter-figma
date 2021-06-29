@@ -73,7 +73,7 @@
       [Limited functionality] Change color of general annotations, or change caret orientation of any annotation.
     </p>
     <div class="options-wrapper">
-      <div class="half-wrapper color">
+      <div class="options-column color">
         <h2>Select Color</h2>
         <div class="color-radios">
           {#each colorOptions as opt} 
@@ -89,7 +89,7 @@
           {/each}
         </div>   
       </div>
-      <div class="half-wrapper orientation">
+      <div class="options-column orientation">
         <h2>Select Orientation</h2>
         <div class="orientation-radios">
           {#each orientationOptions as opt}

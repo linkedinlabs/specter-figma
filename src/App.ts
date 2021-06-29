@@ -785,22 +785,22 @@ export default class App {
         const isValidUpdate = isAnnotation && (!isMeasurement || !hasMeasurementConflict);
 
         if (isValidUpdate) {
-          acc.eligible.push(node as FrameNode);
+          acc.validUpdates.push(node as FrameNode);
         } else if (isAnnotation) {
-          acc.ineligible.push(node as FrameNode);
+          acc.invalidUpdates.push(node as FrameNode);
         }
 
         return acc;
-      }, { ineligible: [] as Array<FrameNode>, eligible: [] as Array<FrameNode> });
+      }, { invalidUpdates: [] as Array<FrameNode>, validUpdates: [] as Array<FrameNode> });
 
-      const { eligible, ineligible } = annotations;
-      if (!eligible.length && !ineligible.length) {
+      const { validUpdates, invalidUpdates } = annotations;
+      if (!validUpdates.length && !invalidUpdates.length) {
         figma.notify('Error: Please select at least one annotation.');
-      } else if (!eligible.length) {
+      } else if (!validUpdates.length) {
         figma.notify('Error: Size/Spacing annotations can\'t move between horizontal and vertical.');
       } else {
-        setOrientation(orientation, eligible);
-        const { length } = eligible;
+        setOrientation(orientation, validUpdates);
+        const { length } = validUpdates;
         figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
       }
     }
