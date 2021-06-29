@@ -47,12 +47,12 @@
       &:checked + label {
         &:after,
         &:before {
-          border-color: white;
-          background: black;
+          border-color: $white;
+          background: $black;
         }
 
         &:before {
-          background: white;
+          background: $white;
         }
       }
     }
@@ -60,8 +60,8 @@
     .switch__label {
       &:after,
       &:before {
-        border-color: white;
-        background: black;
+        border-color: $white;
+        background: $black;
       }
     }
   }

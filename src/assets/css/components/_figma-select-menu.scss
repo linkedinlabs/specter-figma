@@ -27,7 +27,7 @@
   cursor: default;
   border: 1px solid transparent;
   border-radius: 2px;
-  background-color: $wl-ctrl-secondary;
+  background: $wl-ctrl-secondary;
 
   @include hover {
     &:enabled {
@@ -92,7 +92,7 @@
     margin-top: em(6);
     margin-left: em(4);
     content: "";
-    background-color: transparent;
+    background: transparent;
     background-image: url("data:image/svg+xml;utf8,%3Csvg%20fill%3D%22none%22%20height%3D%225%22%20viewBox%3D%220%200%207%205%22%20width%3D%227%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20clip-rule%3D%22evenodd%22%20d%3D%22m3%203.70711-3-3.000003.707107-.707107%202.646443%202.64645%202.64645-2.64645.70711.707107-3%203.000003-.35356.35355z%22%20fill%3D%22%23000%22%20fill-opacity%3D%22.3%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E");
   }
 
@@ -122,12 +122,12 @@
   padding: em(8) 0 em(8) 0;
   width: 100%;
   border-radius: 2px;
-  background-color: $wl-ctrl-secondary-invert;
+  background: $wl-ctrl-secondary-invert;
   box-shadow: 0 em(5) em(17) rgba($wl-ctrl-primary, 0.2), 0 em(2) em(7) rgba($wl-ctrl-primary, 0.15);
 }
 
 @mixin hover-indicate-state {
-  background-color: $wl-action-primary;
+  background: $wl-action-primary;
 }
 
 .styled-select__list-item {
@@ -203,7 +203,7 @@
   display: block;
   height: 1px;
   margin: em(8) 0 em(7);
-  background-color: rgba($wl-ctrl-primary-invert, 0.2);
+  background: rgba($wl-ctrl-primary-invert, 0.2);
 }
 
 .styled-select__divider-label {

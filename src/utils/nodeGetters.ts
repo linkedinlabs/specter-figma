@@ -163,12 +163,13 @@ const getAssignedChildNodes = (
     const {
       hasKeystop,
       allowKeystopPassthrough,
-      hasLabels,
-      hasHeading,
+      // hasLabels,
+      // hasHeading,
     } = getPeerPluginData(node) || {};
     const hasKeystopData = type === 'keystop' && hasKeystop;
-    const hasLabelData = type === 'label' && hasLabels;
-    const hasHeadingData = type === 'heading' && hasHeading;
+    // tktk: implement below with passthrough option
+    // const hasLabelData = type === 'label' && hasLabels;
+    // const hasHeadingData = type === 'heading' && hasHeading;
 
     if (
       !existsInArray(currentList, node.id)
@@ -229,10 +230,10 @@ const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
  *
  * @returns {Object} The linked design node for the annotation.
  */
-const getDesignNodeFromAnnotation = (page: PageNode, annotation: FrameNode) => {
-  let designNodeId;
+const getDesignNodeFromAnnotation = (page: PageNode, annotation: FrameNode): SceneNode => {
+  let designNodeId: string;
   const stopType = ['keystop', 'label', 'heading', 'misc']
-    .find(type => annotation.name.toLowerCase().includes(type));
+    .find(type => annotation.name.toLowerCase().includes(type)) as PluginStopType;
 
   if (stopType) {
     const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${stopType}Annotations`]) || null);
@@ -241,7 +242,7 @@ const getDesignNodeFromAnnotation = (page: PageNode, annotation: FrameNode) => {
     designNodeId = JSON.parse(annotation.getPluginData(DATA_KEYS.generalLinkId) || null)?.id;
   }
 
-  return designNodeId && figma.getNodeById(designNodeId);
+  return designNodeId && figma.getNodeById(designNodeId) as SceneNode;
 };
 
 /**

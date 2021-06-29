@@ -41,7 +41,7 @@
   }
 
   @include hover {
-    background-color: $iconColorHover;
+    background: $iconColorHover;
     border-color: $iconColorHover;
   }
 
@@ -51,7 +51,7 @@
   }
 
   &:enabled:active {
-    background-color: $iconColorHover;
+    background: $iconColorHover;
   }
 
   &:disabled {

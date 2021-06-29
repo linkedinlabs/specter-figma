@@ -106,7 +106,7 @@
             <label for={`${opt}-radio`}>
               <Icon 
                 name={`orientation-${opt}`} 
-                class="orientation-icon" 
+                className="orientation-icon" 
                 active={orientation === opt} 
                 width={['left', 'right'].includes(opt) ? 36 : 35} 
                 clickable={true}

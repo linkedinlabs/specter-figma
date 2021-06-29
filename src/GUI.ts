@@ -13,6 +13,7 @@ const appProps: {
   items: Array<PluginViewObject>,
   specPages: Array<{name: string, id: string}>,
   lockedAnnotations: boolean,
+  loading: boolean,
   userInputValue: string,
   viewContext: PluginViewTypes,
 } = {
@@ -23,6 +24,7 @@ const appProps: {
   items: null,
   specPages: [],
   lockedAnnotations: true,
+  loading: false,
   userInputValue: null,
   viewContext: null,
 };
