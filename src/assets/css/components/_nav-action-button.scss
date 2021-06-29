@@ -48,6 +48,12 @@
       }
     }
 
+    &.icons-adjust {
+      rect {
+        fill: rgba(#6255ca, 0.3); // custom color for bounding box icon
+      }
+    }
+
     &.icons-generate {
       rect {
         fill: rgba($blue01, 0.25);

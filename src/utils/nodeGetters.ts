@@ -6,7 +6,6 @@ import {
   updateArray,
 } from './tools';
 import Crawler from '../Crawler';
-import { buildInstructionComponentInstance } from '../Painter/nodeBuilders';
 
 /**
  * @description Reverse iterates the node tree to determine the immediate parent component instance
@@ -71,43 +70,6 @@ const getLegendFrame = (frameId: string, page: PageNode) => {
     legendFrame = figma.getNodeById(trackingEntry.legendId);
   }
   return legendFrame;
-};
-
-/**
- * @description Takes a page and finds the corresponding spec page if it exists.
- *
- * @kind function
- * @name getSpecPage
- *
- * @param {Object} specPageId The id of the Figma page to append to.
- * @param {Object} newPageName Optional argument used to name a newly created page to append to.
- * @param {Object} settings The advanced spec settings for template generation.
- *
- * @returns {Object} The spec page that will be used for new template additions.
- */
-const getSpecPage = (specPageId?: string, newPageName?: string, settings?: PluginSpecSettings) => {
-  let specPage;
-  let xCoordinate = 0;
-
-  if (specPageId) {
-    specPage = figma.root.children.find(child => child.id === specPageId);
-  } else {
-    specPage = figma.createPage();
-    specPage.name = newPageName;
-    specPage.setPluginData(DATA_KEYS.specSettings, JSON.stringify(settings));
-    if (settings?.instructions) {
-      const instructionPanel = buildInstructionComponentInstance('instructionPanel');
-      instructionPanel.name = 'Spec Instruction Panel';
-      specPage.appendChild(instructionPanel);
-      xCoordinate = 940;
-    }
-    const notesPanel = buildInstructionComponentInstance('notesPanel');
-    notesPanel.name = 'Spec Notes Panel';
-    specPage.appendChild(notesPanel);
-    notesPanel.x = xCoordinate;
-  }
-
-  return specPage;
 };
 
 /**
@@ -211,7 +173,7 @@ const getAssignedChildNodes = (
     if (
       !existsInArray(currentList, node.id)
       && !existsInArray(list, node.id)
-      && (hasKeystopData || hasLabelData || hasHeadingData)
+      && (hasKeystopData)
     ) {
       list.push(node);
       if (node.children && (type === 'keystop' && allowKeystopPassthrough)) {
@@ -256,6 +218,33 @@ const getSelectedAnnotationItems = (page: PageNode, type: PluginStopType) => {
 };
 
 /**
+ * @description Gets a list of nodes who have a selected annotation, to be used when marking
+ * selected items in the UI item list.
+ *
+ * @kind function
+ * @name getDesignNodeFromAnnotation
+ *
+ * @param {Object} page The current Figma page, for getting the master annotation list.
+ * @param {Object} annotation The annotation node to find the linked design node of.
+ *
+ * @returns {Object} The linked design node for the annotation.
+ */
+const getDesignNodeFromAnnotation = (page: PageNode, annotation: FrameNode) => {
+  let designNodeId;
+  const stopType = ['keystop', 'label', 'heading', 'misc']
+    .find(type => annotation.name.toLowerCase().includes(type));
+
+  if (stopType) {
+    const trackingData = JSON.parse(page.getPluginData(DATA_KEYS[`${stopType}Annotations`]) || null);
+    designNodeId = trackingData?.find(entry => entry.annotationId === annotation.id)?.id;
+  } else {
+    designNodeId = JSON.parse(annotation.getPluginData(DATA_KEYS.generalLinkId) || null)?.id;
+  }
+
+  return designNodeId && figma.getNodeById(designNodeId);
+};
+
+/**
  * @description A function that gets a list of all nodes to annotate in the order we want them.
  *
  * @kind function
@@ -289,7 +278,7 @@ const getOrderedStopNodes = (
     if (!suppliedNodes && frame.children) {
       const exclusionList = [...orderedNodes, ...selectedNodes, frame];
       const assignedChildNodes = getAssignedChildNodes(
-        [...frame.children],
+        [...selectedNodes],
         exclusionList,
         type,
       );
@@ -348,9 +337,9 @@ const getSpecterGroups = (page) => {
 export {
   findParentInstance,
   findTopComponent,
+  getDesignNodeFromAnnotation,
   getLegendFrame,
   getSelectedAnnotationItems,
-  getSpecPage,
   getSpecPageList,
   getOrderedStopNodes,
   getSpecterGroups,

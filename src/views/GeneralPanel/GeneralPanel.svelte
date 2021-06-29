@@ -53,7 +53,7 @@
         <ButtonAction
           on:handleAction
           action="bounding"
-          text="Bounding Box"
+          text="Bounding box"
         >
           <svg viewBox="0 0 21 18" class="icons-bounding">
             <path d="M2,16H19V2H2ZM0,0H21V18H0Z"/>
@@ -65,7 +65,7 @@
         <ButtonAction
           on:handleAction
           action="show-page-input"
-          text="Generate Template"
+          text="Generate template"
         >
         <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="14" y="8" width="6" height="2" fill="black"/>
@@ -87,6 +87,18 @@
           <rect x="18" y="16" width="2" height="2" fill="black"/>
           <rect x="22" y="16" width="2" height="2" fill="black"/>
           </svg>
+        </ButtonAction>
+      </li>
+      <li>
+        <ButtonAction
+          on:handleAction
+          action="show-adjust-input"
+          text="Adjust annotations"
+        >
+        <svg viewBox="0 0 21 18" class="icons-adjust">
+          <path d="M2,16H19V2H2ZM0,0H21V18H0Z"/>
+          <rect width="21" height="18"/>
+        </svg>
         </ButtonAction>
       </li>
     </ul>

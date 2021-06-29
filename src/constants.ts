@@ -52,6 +52,7 @@ const PLUGIN_NAME: string = process.env.PLUGIN_NAME || 'Specter';
  */
 const DATA_KEYS: {
   options: string,
+  generalAnnotations: string,
   keystopAnnotations: string,
   labelAnnotations: string,
   headingAnnotations: string,
@@ -70,14 +71,16 @@ const DATA_KEYS: {
   labelNodeData: string,
   headingNodeData: string,
   miscNodeData: string,
+  generalLinkId: string,
   keystopLinkId: string,
   labelLinkId: string,
   headingLinkId: string,
   miscLinkId: string,
   relaunch: string,
 } = {
-  // page-level (e.g. in case an annotated element is moved out of a frame?)
+  // page-level (e.g. in case an annotated element is moved out of a frame)
   options: `${PLUGIN_IDENTIFIER}.options-001`,
+  generalAnnotations: `${PLUGIN_IDENTIFIER}.annotations-001`,
   keystopAnnotations: `${PLUGIN_IDENTIFIER}.keystopAnnotations-001`,
   labelAnnotations: `${PLUGIN_IDENTIFIER}.labelAnnotations-001`,
   headingAnnotations: `${PLUGIN_IDENTIFIER}.headingAnnotations-001`,
@@ -98,7 +101,8 @@ const DATA_KEYS: {
   labelNodeData: `${PLUGIN_IDENTIFIER}.labelNodeData-001`,
   headingNodeData: `${PLUGIN_IDENTIFIER}.headingNodeData-001`,
   miscNodeData: `${PLUGIN_IDENTIFIER}.miscNodeData-001`,
-  keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`, // legacy, “.linkId”
+  generalLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`,
+  keystopLinkId: `${PLUGIN_IDENTIFIER}.linkId-001`,
   labelLinkId: `${PLUGIN_IDENTIFIER}.labelLinkId-001`,
   headingLinkId: `${PLUGIN_IDENTIFIER}.headingLinkId-001`,
   miscLinkId: `${PLUGIN_IDENTIFIER}.miscLinkId-001`,
@@ -283,13 +287,13 @@ const CONTAINER_NODE_TYPES = {
 const GUI_SETTINGS = {
   accessibilityDefault: {
     width: 360,
-    // height: 306,
-    height: 234,
+    height: 270,
+    // height: 234,
   },
   default: {
     width: 360,
-    // height: 306,
-    height: 234,
+    height: 270,
+    // height: 234,
   },
   input: {
     width: 440,
@@ -301,8 +305,8 @@ const GUI_SETTINGS = {
   },
   mercadoDefault: {
     width: 360,
-    // height: 366,
-    height: 292,
+    height: 330,
+    // height: 292,
   },
 };
 
@@ -555,7 +559,6 @@ const LEVEL_OPTS = [
     disabled: false,
   },
 ];
-
 
 const INSTRUCTION_COMPONENT_KEYS = {
   instructionPanel: '37f07e866f47fa7bb2690a49897471f66f851eab',

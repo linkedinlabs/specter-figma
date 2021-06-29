@@ -5,7 +5,8 @@ import {
   KEY_OPTS,
   ROLE_OPTS,
 } from '../constants';
-import { hexToDecimalRgb } from '../utils/tools';
+import { getDesignNodeFromAnnotation } from '../utils/nodeGetters';
+import { findTopFrame, getRelativePosition, hexToDecimalRgb } from '../utils/tools';
 
 // --- private functions for drawing/positioning annotation elements in the Figma file
 
@@ -1171,6 +1172,36 @@ const buildLegendEntry = (type: PluginStopType, nodeData: any) => {
 };
 
 /**
+ * @description Creates a new spec template page.
+ *
+ * @kind function
+ * @name buildSpecPage
+ *
+ * @param {Object} newPageName Used to name a newly created page to append to.
+ * @param {Object} settings The advanced spec settings for template generation.
+ *
+ * @returns {Object} The spec page that will be used for new template additions.
+ */
+const buildSpecPage = (newPageName: string, settings: PluginSpecSettings) => {
+  let xCoordinate = 0;
+  const specPage = figma.createPage();
+  specPage.name = newPageName;
+  specPage.setPluginData(DATA_KEYS.specSettings, JSON.stringify(settings));
+  if (settings?.instructions) {
+    const instructionPanel = buildInstructionComponentInstance('instructionPanel');
+    instructionPanel.name = 'Spec Instruction Panel';
+    specPage.appendChild(instructionPanel);
+    xCoordinate = 940;
+  }
+  const notesPanel = buildInstructionComponentInstance('notesPanel');
+  notesPanel.name = 'Spec Notes Panel';
+  specPage.appendChild(notesPanel);
+  notesPanel.x = xCoordinate;
+
+  return specPage;
+};
+
+/**
  * @description Sets up the individual elements for a container group (inner or outer) and
  * adds the child node to the group.
  *
@@ -1778,20 +1809,41 @@ const updateLegendEntry = (
  * @description Updates the pointer of annotations to a specified direction.
  *
  * @kind function
- * @name setPointerDirection
+ * @name setOrientation
  *
- * @param {string} direction The direction the annotation should point.
+ * @param {string} orientation The orientation the annotation should appear in.
  * @param {Object} nodes The annotation nodes to update pointers within.
  *
  * @returns {undefined}
  *
  */
-const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
+const setOrientation = (orientation: string, nodes: Array<FrameNode>) => {
+  const flipIcon = (annotation, icon) => {
+    const newIcon = icon.clone();
+    icon.remove();
+    if (['up', 'left'].includes(orientation)) {
+      annotation.appendChild(newIcon);
+    } else {
+      annotation.insertChild(0, newIcon);
+    }
+  };
+
   nodes.forEach((node) => {
+    const icon = node.findChild(child => child.name === 'Icon');
+    if (icon) {
+      flipIcon(node, icon);
+    }
+
     const updatedNode = node;
-    const pointer = node.children.find(layer => layer.name === 'Diamond') as PolygonNode;
+    const pointer = node.findOne(layer => layer.name === 'Diamond') as PolygonNode;
     const pointerColor = pointer.fills[0].color;
+    const pointerParent = pointer.parent as FrameNode;
     if (pointer) pointer.remove();
+
+    // find design node to use for relocation, if NOT general tab annotation
+    const designNode = getDesignNodeFromAnnotation(figma.currentPage, node) as SceneNode;
+    const topFrame = designNode && findTopFrame(designNode);
+    const nodePosition = topFrame ? getRelativePosition(designNode, topFrame) : { x: 0, y: 0 };
 
     const diamond = figma.createPolygon();
     diamond.name = 'Diamond';
@@ -1802,32 +1854,63 @@ const setPointerDirection = (direction: string, nodes: Array<FrameNode>) => {
       type: 'SOLID',
       color: pointerColor,
     }];
-    const horizontal = ['left', 'up'].includes(direction) ? 'MIN' : 'MAX' as ConstraintType;
+    const horizontal = ['right', 'down'].includes(orientation) ? 'MIN' : 'MAX' as ConstraintType;
     const vertical = 'CENTER' as ConstraintType;
+    let xCoordinate;
+    let yCoordinate;
 
-    if (['left', 'right'].includes(direction)) {
-      updatedNode.layoutMode = 'HORIZONTAL';
+    if (['left', 'right'].includes(orientation)) {
+      pointerParent.layoutMode = 'HORIZONTAL';
+      yCoordinate = nodePosition.y + (designNode.height / 2) - (node.height / 2);
 
-      if (direction === 'right') {
+      if (orientation === 'left') {
         diamond.rotation = 270;
-        updatedNode.appendChild(diamond);
+        pointerParent.appendChild(diamond);
+        xCoordinate = nodePosition.x - node.width - 3;
       } else {
         diamond.rotation = 90;
-        updatedNode.insertChild(0, diamond);
+        pointerParent.insertChild(0, diamond);
+        xCoordinate = nodePosition.x + designNode.width + 3;
       }
     } else {
-      updatedNode.layoutMode = 'VERTICAL';
+      pointerParent.layoutMode = 'VERTICAL';
+      xCoordinate = nodePosition.x + (designNode.width / 2) - (node.width / 2);
 
-      if (direction === 'down') {
+      if (orientation === 'up') {
         diamond.rotation = 180;
-        updatedNode.appendChild(diamond);
+        pointerParent.appendChild(diamond);
+        yCoordinate = nodePosition.y - node.height - 3;
       } else {
         diamond.rotation = 0;
-        updatedNode.insertChild(0, diamond);
+        pointerParent.insertChild(0, diamond);
+        yCoordinate = nodePosition.y + designNode.height + 3;
       }
     }
-    updatedNode.constraints = { horizontal, vertical };
+
+    pointerParent.constraints = { horizontal, vertical };
     figma.flatten([diamond]);
+
+    if (designNode && !node.name.includes('Spacing for')) {
+      updatedNode.x = xCoordinate;
+      updatedNode.y = yCoordinate;
+    } else if (designNode && node.name.includes('Spacing for')) {
+      switch (orientation) {
+        case 'up':
+          updatedNode.y -= (node.height - 8);
+          break;
+        case 'down':
+          updatedNode.y += (node.height - 8);
+          break;
+        case 'left':
+          updatedNode.x -= (node.width - 8);
+          break;
+        case 'right':
+          updatedNode.x += (node.width - 8);
+          break;
+        default:
+          break;
+      }
+    }
   });
 };
 
@@ -1843,12 +1926,13 @@ export {
   buildMeasureIcon,
   buildRectangle,
   buildRectangleInnerHalf,
+  buildSpecPage,
   buildText,
   drawContainerGroup,
   positionAnnotation,
   positionLegend,
   refreshLegend,
-  setPointerDirection,
+  setOrientation,
   updateAnnotationNum,
   updateLegendEntry,
 };

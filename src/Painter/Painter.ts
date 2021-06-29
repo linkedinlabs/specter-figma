@@ -269,6 +269,7 @@ const orderContainerNodes = (outerGroupId: string, page): void => {
  * @param {string} groupType A string representing the type of element going inside the continer.
  * @param {Object} frame An object representing the top-level Figma Frame for the container group.
  * @param {Object} node An object representing the Figma node to be set in the container group.
+ * @param {boolean} lockedAnnotations Designates whether annotations are locked or not.
  *
  * @returns {Object} The inner container group node object and the accompanying
  * updated parent container group settings object.
@@ -296,6 +297,7 @@ export const createContainerGroup = (
     | 'topLevel',
   frame: FrameNode,
   node: SceneNode,
+  lockedAnnotations?: boolean,
 ): {
   newInnerGroup: GroupNode,
   updatedContainerSet: {
@@ -308,7 +310,7 @@ export const createContainerGroup = (
 } => {
   const groupName: string = setGroupName(groupType);
   const groupKey: string = setGroupKey(groupType);
-  const locked: boolean = groupType === 'topLevel';
+  const locked: boolean = groupType === 'topLevel' && lockedAnnotations;
 
   // set up new container group node on the frame
   const newInnerGroup: GroupNode = drawContainerGroup({
@@ -361,6 +363,7 @@ const setNodeInContainers = (nodeToContain: {
     | 'misc'
     | 'spacing'
     | 'style',
+  lockedAnnotations: boolean,
 }): {
   boundingInnerGroupId?: string,
   componentInnerGroupId?: string,
@@ -374,6 +377,7 @@ const setNodeInContainers = (nodeToContain: {
     frame,
     page,
     type,
+    lockedAnnotations,
   } = nodeToContain;
   const groupKey = setGroupKey(type);
   const frameId: string = frame.id;
@@ -436,7 +440,7 @@ const setNodeInContainers = (nodeToContain: {
 
     // create the `outerGroup`, if it does not exist
     if (!outerGroup) {
-      const ccgResult = createContainerGroup(updatedContainerSet, 'topLevel', frame, innerGroup);
+      const ccgResult = createContainerGroup(updatedContainerSet, 'topLevel', frame, innerGroup, lockedAnnotations);
       outerGroup = ccgResult.newInnerGroup;
       updatedContainerSet = ccgResult.updatedContainerSet;
     }
@@ -609,18 +613,22 @@ const getSetNodeSettings = (
  * @property node The SceneNode in the Figma file that we want to annotate or modify.
  * @property frame The top-level FrameNode in the Figma file that we want to annotate or modify.
  * @property page The PageNode in the Figma file containing the corresponding `frame` and `node`.
+ * @property lockedAnnotations The flag indicating whether annotations are locked or not.
  */
 export default class Painter {
   frame: FrameNode;
   isMercadoMode: boolean;
   node: SceneNode;
   page: PageNode;
+  lockedAnnotations?: boolean;
   constructor({
     for: node,
     in: page,
     isMercadoMode,
+    lockedAnnotations,
   }) {
     this.isMercadoMode = isMercadoMode;
+    this.lockedAnnotations = lockedAnnotations !== false;
     this.frame = findTopFrame(node);
     this.node = node;
     this.page = page;
@@ -715,6 +723,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -741,6 +750,11 @@ export default class Painter {
     this.page.setPluginData(
       PLUGIN_IDENTIFIER,
       JSON.stringify(newPageSettings),
+    );
+
+    group.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({ id: this.node.id }),
     );
 
     // return a successful result
@@ -783,6 +797,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: 'boundingBox',
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     if (!boundingBox || !containerSet.boundingInnerGroupId) {
@@ -882,6 +897,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -932,6 +948,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -961,6 +978,16 @@ export default class Painter {
       JSON.stringify(newPageSettings),
     );
 
+    groupWidth.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({ id: this.node.id }),
+    );
+
+    groupHeight.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({ id: this.node.id }),
+    );
+
     // return a successful result
     result.status = 'success';
     result.messages.log = `Dimensions annotated for “${this.node.name}”`;
@@ -983,9 +1010,13 @@ export default class Painter {
   setTrackingData(
     annotationNode: FrameNode,
     nodePosition,
-    type: PluginStopType,
+    type: PluginStopType | 'general',
     legendNode: FrameNode,
   ) {
+    // set data types
+    const annotationsDataType = DATA_KEYS[`${type}Annotations`];
+    const linkIdDataType = DATA_KEYS[`${type}LinkId`];
+
     // ---------- set node tracking data
     const linkId: string = uuid();
     const newAnnotatedNodeData: PluginNodeTrackingData = {
@@ -996,10 +1027,6 @@ export default class Painter {
       topFrameId: this.frame.id,
       nodePosition,
     };
-
-    // set data types
-    const annotationsDataType = DATA_KEYS[`${type}Annotations`];
-    const linkIdDataType = DATA_KEYS[`${type}LinkId`];
 
     // update the `trackingSettings` array
     const trackingDataRaw = JSON.parse(
@@ -1151,6 +1178,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // ---------- set node tracking data with new annotation
@@ -1305,6 +1333,7 @@ export default class Painter {
       frame: this.frame,
       page: this.page,
       type: annotationType,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // new object with IDs to add to settings
@@ -1338,6 +1367,11 @@ export default class Painter {
     this.page.setPluginData(
       PLUGIN_IDENTIFIER,
       JSON.stringify(newPageSettings),
+    );
+
+    group.setPluginData(
+      DATA_KEYS.generalLinkId,
+      JSON.stringify({ id: this.node.id }),
     );
 
     return true;

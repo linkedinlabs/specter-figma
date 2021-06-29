@@ -573,7 +573,7 @@ const getSpecInnerLayer = (node: any) => {
     const instance = node.findChild(child => child.type === 'INSTANCE');
     layer = instance?.children[0];
   } else if (JSON.parse(node.parent.getPluginData(DATA_KEYS.isSpecInstance))) {
-    layer = node.children[0];
+    layer = node.children?.length && node.children[0];
   }
   return layer;
 };

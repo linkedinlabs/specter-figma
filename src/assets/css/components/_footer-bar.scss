@@ -45,22 +45,22 @@
 
     .switch__toggle {
       &:checked + label {
+        &:after,
         &:before {
           border-color: white;
-          background-color: black;
+          background: black;
         }
-      }
 
-      &:enabled + label {
-        &:before,
-        &:after {
-          border-color: white;
+        &:before {
+          background: white;
         }
       }
     }
 
     .switch__label {
-      &:after {
+      &:after,
+      &:before {
+        border-color: white;
         background: black;
       }
     }

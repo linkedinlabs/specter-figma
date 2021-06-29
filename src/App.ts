@@ -7,7 +7,6 @@ import {
   getLegendFrame,
   getOrderedStopNodes,
   getSelectedAnnotationItems,
-  getSpecPage,
   getSpecPageList,
   getSpecterGroups,
 } from './utils/nodeGetters';
@@ -30,7 +29,8 @@ import {
   positionLegend,
   updateAnnotationNum,
   updateLegendEntry,
-  setPointerDirection,
+  setOrientation,
+  buildSpecPage,
 } from './Painter/nodeBuilders';
 
 /**
@@ -189,6 +189,7 @@ const handleDuplicatedNodes = (
   options: {
     type: PluginStopType,
     isMercadoMode: boolean,
+    lockedAnnotations: boolean,
     messenger: any,
     page: PageNode,
     frame: FrameNode,
@@ -200,6 +201,7 @@ const handleDuplicatedNodes = (
   const {
     type,
     isMercadoMode,
+    lockedAnnotations,
     page,
     frame,
     nodes,
@@ -278,6 +280,7 @@ const handleDuplicatedNodes = (
               for: nodeToReassign,
               in: page,
               isMercadoMode,
+              lockedAnnotations,
             });
 
             // re-draw the annotation
@@ -300,6 +303,7 @@ const handleDuplicatedNodes = (
  *
  * @param {string} type The type of annotation to repair (`keystop` or `label`).
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ * @param {boolean} lockedAnnotations Designates whether annotations are locked or not.
  * @param {Object} page The Figma PageNode.
  * @param {Object} trackingData The page-level node tracking data.
  *
@@ -308,6 +312,7 @@ const handleDuplicatedNodes = (
 const refreshAnnotations = (
   type: PluginStopType,
   isMercadoMode: boolean,
+  lockedAnnotations: boolean,
   page: PageNode,
   trackingData: Array<PluginNodeTrackingData>,
 ) => {
@@ -332,7 +337,12 @@ const refreshAnnotations = (
         app.annotateStops(type, [node as SceneNode]);
       }
     } else if (node && frame && !figma.getNodeById(trackingEntry.annotationId)) {
-      const painter = new Painter({ for: node, in: page, isMercadoMode });
+      const painter = new Painter({
+        for: node,
+        in: page,
+        isMercadoMode,
+        lockedAnnotations,
+      });
       painter.addStop(type);
     }
   });
@@ -347,6 +357,7 @@ const refreshAnnotations = (
  * @name diffAnnotationLocations
  *
  * @param {boolean} isMercadoMode Designates whether “Mercado” rules apply.
+ * @param {boolean} lockedAnnotations Designates whether annotations are locked or not.
  * @param {Object} messenger The class that handles error messaging.
  * @param {Object} page The Figma PageNode.
  * @param {Object} selection The figma selection to diff.
@@ -355,6 +366,7 @@ const refreshAnnotations = (
  */
 const diffAnnotationLocations = (
   isMercadoMode: boolean,
+  lockedAnnotations: boolean,
   messenger: any,
   page: PageNode,
   selection: Array<any>,
@@ -369,7 +381,7 @@ const diffAnnotationLocations = (
     const trackingData: Array<PluginNodeTrackingData> = JSON.parse(
       page.getPluginData(DATA_KEYS[`${type}Annotations`]) || '[]',
     );
-    refreshAnnotations(type, isMercadoMode, page, trackingData);
+    refreshAnnotations(type, isMercadoMode, lockedAnnotations, page, trackingData);
     handleDuplicatedNodes({
       type,
       trackingData,
@@ -378,6 +390,7 @@ const diffAnnotationLocations = (
       nodes,
       messenger,
       isMercadoMode,
+      lockedAnnotations,
     });
   });
 };
@@ -615,7 +628,10 @@ export default class App {
     if (!selection?.length) {
       figma.notify('Please select at least one top frame, or layer within a top frame.');
     } else {
-      const specPage = getSpecPage(pageId, newPageName, settings);
+      let specPage = pageId && figma.root.children.find(child => child.id === pageId);
+      if (!specPage) {
+        specPage = buildSpecPage(newPageName, settings);
+      }
       // need to get settings from plugin data in case working with existing page
       const pageSettings = !pageId
         ? settings
@@ -623,7 +639,7 @@ export default class App {
 
       const categories = Object.entries(pageSettings).reduce((acc, [key, val]) => {
         if (val && key === 'designSystem') {
-          ['DS Component', 'DS Size/Spacing'].forEach((name) => {
+          ['DS Size/Spacing', 'DS Component'].forEach((name) => {
             acc.splice(1, 0, name);
           });
         } else if (val && key !== 'instructions') {
@@ -683,6 +699,7 @@ export default class App {
             specFrame.counterAxisAlignItems = 'CENTER';
             specFrame.appendChild(instance);
             specFrame.layoutMode = 'NONE';
+            specFrame.clipsContent = false;
             specPage.appendChild(specFrame);
 
             if (!category.includes('DS') && !category.includes('Clean')) {
@@ -690,6 +707,7 @@ export default class App {
                 for: specFrame.children[0],
                 in: specPage,
                 isMercadoMode: this.isMercadoMode,
+                lockedAnnotations: this.lockedAnnotations,
               });
               const legendEntry = figma.createFrame();
               legendEntry.resize(364, 1);
@@ -700,7 +718,7 @@ export default class App {
             xCoordinate += (frame.width + 100);
           });
         }
-        yCoordinate += (frame.height + 200);
+        yCoordinate += (frame.height + 300);
       });
 
       if (failedFrames < topFrames.length) {
@@ -713,57 +731,78 @@ export default class App {
    * @description Updates the color of all selected annotations created from the General tab.
    *
    * @kind function
-   * @name updateAnnotationColor
+   * @name updateAnnotationColorOrientation
    *
    * @param {string} color The hex value of the color chosen by the user.
+   * @param {string} orientation The new location/orientation chosen by the user.
    *
    * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
    */
-  updateAnnotationColor(color: string) { // eslint-disable-line class-methods-use-this
-    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
-      && node.name.includes('Annotation for')) as Array<FrameNode>;
+  // eslint-disable-next-line class-methods-use-this
+  static updateAnnotationColorOrientation(color?: string, orientation?: string) {
+    if (color) {
+      // only applies to general tab annotations
+      const generalAnnotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
+        && (node.parent?.name?.includes('Annotations')
+          && !node.parent.name.includes('A11y'))) as Array<FrameNode>;
 
-    if (!annotations?.length) {
-      figma.notify('Error: Please select at least one General annotation.');
-    } else {
-      annotations.forEach((node) => {
-        const layers = node.children as Array<FrameNode | PolygonNode>;
-        layers.forEach((layer) => {
-          const updatedLayer = layer;
-          updatedLayer.fills = [
-            {
-              type: 'SOLID',
-              color: hexToDecimalRgb(color),
-            },
-          ];
+      if (!generalAnnotations?.length) {
+        figma.notify('Error: Please select at least one General annotation to change color.');
+      } else {
+        generalAnnotations.forEach((node) => {
+          const fillLayers = node.findAll(({ type }) => [
+            'FRAME',
+            'VECTOR',
+            'RECTANGLE',
+          ].includes(type)) as Array<FrameNode | PolygonNode>;
+
+          fillLayers.forEach((layer) => {
+            const updatedLayer = layer as FrameNode | PolygonNode;
+            updatedLayer.fills = layer.fills[0] ? [
+              {
+                type: 'SOLID',
+                color: hexToDecimalRgb(color),
+              },
+            ] : [];
+          });
         });
-      });
-      const { length } = annotations;
-      figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+        const { length } = generalAnnotations;
+        figma.notify(`Success! ${length} annotation color${length > 1 ? 's' : ''} updated.`);
+      }
     }
-  }
 
-  /**
-   * @description Updates the pointer direction of all selected annotations.
-   *
-   * @kind function
-   * @name updateAnnotationDirection
-   *
-   * @param {string} direction The annotation direction chosen by the user.
-   *
-   * @returns {undefined} Shows a Toast in the UI indicating whether the option has succeeded.
-   */
-  updateAnnotationDirection(direction: string) { // eslint-disable-line class-methods-use-this
-    const annotations = figma.currentPage.selection.filter(node => node.type === 'FRAME'
-      && node.parent.type === 'GROUP'
-      && node.parent.name.includes('Annotations')) as Array<FrameNode>;
+    if (orientation) {
+      const annotations = figma.currentPage.selection.reduce((acc, node) => {
+        const { parent, layoutMode, type } = node as FrameNode;
 
-    if (!annotations?.length) {
-      figma.notify('Error: Please select at least one annotation.');
-    } else {
-      setPointerDirection(direction, annotations);
-      const { length } = annotations;
-      figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
+        const isAnnotation = type === 'FRAME'
+          && parent.type === 'GROUP'
+          && parent.name.includes('Annotations');
+
+        const isMeasurement = isAnnotation && (node.name.includes('Dimension') || node.name.includes('Spacing'));
+        const hasMeasurementConflict = isMeasurement && ((['left', 'right'].includes(orientation) && layoutMode !== 'HORIZONTAL')
+          || (['up', 'down'].includes(orientation) && layoutMode !== 'VERTICAL'));
+        const isValidUpdate = isAnnotation && (!isMeasurement || !hasMeasurementConflict);
+
+        if (isValidUpdate) {
+          acc.validUpdates.push(node as FrameNode);
+        } else if (isAnnotation) {
+          acc.invalidUpdates.push(node as FrameNode);
+        }
+
+        return acc;
+      }, { invalidUpdates: [] as Array<FrameNode>, validUpdates: [] as Array<FrameNode> });
+
+      const { validUpdates, invalidUpdates } = annotations;
+      if (!validUpdates.length && !invalidUpdates.length) {
+        figma.notify('Error: Please select at least one annotation.');
+      } else if (!validUpdates.length) {
+        figma.notify('Error: Size/Spacing annotations can\'t move between horizontal and vertical.');
+      } else {
+        setOrientation(orientation, validUpdates);
+        const { length } = validUpdates;
+        figma.notify(`Success! ${length} annotation pointer${length > 1 ? 's' : ''} updated.`);
+      }
     }
   }
 
@@ -776,7 +815,7 @@ export default class App {
    *
    * @returns {undefined} Shows a Toast when Specter groups are found and toggled.
    */
-  toggleLocked() { // eslint-disable-line class-methods-use-this
+  static toggleLocked() {
     const specterGroups = getSpecterGroups(figma.currentPage);
     const locked = !specterGroups.find(group => !group.locked);
 
@@ -790,6 +829,7 @@ export default class App {
     } else {
       figma.notify('Error: There are no annotations to lock/unlock.');
     }
+    return !locked;
   }
 
   /**
@@ -857,6 +897,7 @@ export default class App {
             for: node,
             in: page,
             isMercadoMode: this.isMercadoMode,
+            lockedAnnotations: this.lockedAnnotations,
           });
 
           // retrieve corner token and set to node
@@ -908,7 +949,7 @@ export default class App {
 
     if (!selection?.length && !suppliedNodes?.length) {
       messenger.log(`Annotate ${type}: nothing selected`);
-      return messenger.toast('A layer must be supplied');
+      return messenger.toast('A design layer must be supplied');
     }
 
     const nodesToAnnotate: Array<SceneNode> = getOrderedStopNodes(
@@ -937,6 +978,7 @@ export default class App {
         for: node,
         in: page,
         isMercadoMode: this.isMercadoMode,
+        lockedAnnotations: this.lockedAnnotations,
       });
 
       // get/set the stop info and paint it
@@ -1005,6 +1047,7 @@ export default class App {
         for: node,
         in: page,
         isMercadoMode: this.isMercadoMode,
+        lockedAnnotations: this.lockedAnnotations,
       });
 
       // set up function to draw annotations
@@ -1147,6 +1190,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // determine the annotation text
@@ -1215,6 +1259,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // draw the spacing annotation
@@ -1287,6 +1332,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // draw the spacing annotation
@@ -1354,6 +1400,7 @@ export default class App {
       for: node,
       in: page,
       isMercadoMode: this.isMercadoMode,
+      lockedAnnotations: this.lockedAnnotations,
     });
 
     // draw the spacing annotations based on auto-layout padding settings
@@ -1422,6 +1469,7 @@ export default class App {
           for: node,
           in: page,
           isMercadoMode: this.isMercadoMode,
+          lockedAnnotations: this.lockedAnnotations,
         });
 
         // draw the bounding box (if position exists)
@@ -1621,7 +1669,7 @@ export default class App {
     }
 
     if (selection?.length && runDiff) {
-      diffAnnotationLocations(isMercadoMode, messenger, page, selection);
+      diffAnnotationLocations(isMercadoMode, lockedAnnotations, messenger, page, selection);
     }
 
     // ---------- set up selected items bundle for view

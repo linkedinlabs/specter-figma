@@ -14,8 +14,7 @@
   import SceneNavigator from './SceneNavigator';
   import UserInput from './GeneralPanel/UserInput';
   import SpecSelector from './GeneralPanel/SpecSelector';
-  import ColorSelector from './GeneralPanel/ColorSelector';
-  import PointerSelector from './GeneralPanel/PointerSelector';
+  import ColorOrientationSelector from './GeneralPanel/ColorOrientationSelector';
 
   export let isInternal = false;
   export let isMercadoMode = false;
@@ -154,14 +153,8 @@
       />
     {/if}
 
-    {#if inputPage === 'show-color-input'}
-      <ColorSelector
-        on:handleAction={customEvent => handleAction(customEvent.detail)}
-      />
-    {/if}
-
-    {#if inputPage === 'show-pointer-input'}
-      <PointerSelector
+    {#if inputPage === 'show-adjust-input'}
+      <ColorOrientationSelector
         on:handleAction={customEvent => handleAction(customEvent.detail)}
       />
     {/if}
