@@ -66,7 +66,7 @@
   });
 
   onDestroy(() => {
-    resizeWindow(204);
+    resizeWindow(220);
   });
 
 </script>
